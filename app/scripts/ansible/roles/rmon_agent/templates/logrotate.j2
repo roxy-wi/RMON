@@ -1,0 +1,11 @@
+/var/log/rmon/rmon-agent.log {
+    daily
+    rotate 10
+    missingok
+    notifempty
+	create 0644 apache apache
+	dateext
+    sharedscripts
+    postrotate
+        /bin/kill -HUP `cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null || true
+}

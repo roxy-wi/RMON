@@ -1,0 +1,118 @@
+<html lang="{{lang|default('en')}}">
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+{% from 'languages/languages.html' import languages %}
+{% from 'include/input_macros.html' import select, checkbox %}
+	<head>
+		<title>{% block title %}{% endblock %}</title>
+		<meta id="translate" style="display: none;" data-delete="{{lang.words.delete|title()}}" data-cancel="{{lang.words.cancel|title()}}" data-add="{{lang.words.add|title()}}"
+			  data-superAdmin_pass="{{lang.phrases.superAdmin_pass}}" data-superAdmin_services="{{lang.phrases.superAdmin_services}}" data-change="{{lang.words.change|title()}}"
+			  data-change2="{{lang.words.change2|title()}}" data-password="{{lang.words.password}}" data-groups="{{lang.words.groups}}" data-save="{{lang.words.save|title()}}"
+			  data-manage="{{lang.words.manage|title()}}" data-logout="{{lang.words.logout|title()}}" data-something_wrong="{{lang.words.something_wrong}}"
+              data-check_logs="{{lang.words.check_logs}}" data-wait_mess="{{lang.phrases.wait_mess}}" data-group2="{{lang.words.group2}}" data-restart="{{lang.words.restart|title()}}"
+              data-are_you_sure="{{lang.phrases.are_you_sure}}" data-select_server="{{lang.errors.select_server}}" data-start="{{lang.words.start|title()}}"
+			  data-empty_name="{{lang.errors.empty_name}}" data-edit="{{lang.words.edit|title()}}" data-close="{{lang.words.close|title()}}" data-server_info="{{lang.phrases.server_info}}"
+			  data-stop="{{lang.words.stop|title()}}" data-reload="{{lang.words.reload|title()}}" data-user_groups="{{lang.phrases.user_groups}}" data-settings="{{lang.words.settings|title()}}"
+			  data-for="{{lang.words.for}}" data-show="{{lang.words.show|title()}}" data-hide="{{lang.words.hide|title()}}" data-logs="{{lang.words.logs}}" data-name="{{lang.words.name}}"
+			  data-value="{{lang.words.value}}" data-if-title="{{lang.words.if|title()}}" data-then="{{lang.words.then}}" data-autorefresh="{{lang.words.auto|title()}}-{{lang.words.refresh}}"
+			  data-raw="{{lang.words.raw|title()}}" data-resp_time="{{lang.smon_page.desc.resp_time}}" data-next="{{lang.words.next|title()}}" data-back="{{lang.words.back|title()}}"
+			  data-installing="{{lang.words.installing|title()}}" data-apply="{{lang.words.apply|title()}}" />
+        {% include 'include/main_head.html' %}
+	</head>
+	<body>
+		{% if g.user_params['user'] %}
+		<input type="hidden" id="token" value="{{ g.user_params['token'] }}">
+		<script>show_version();</script>
+		{% include 'include/main_menu.html' %}
+		<div class="container">
+			<h2>
+				{% block h2 %}{% endblock %}
+				{% include 'include/login.html' %}
+				{% if autorefresh %}
+				<span class="auto-refresh">
+					<a onclick="pauseAutoRefresh()" class="auto-refresh-pause" style="display: none; margin-top: 3px; position: absolute;"></a>
+					<a onclick="pauseAutoResume()" class="auto-refresh-resume" style="display: none; margin-top: 4px; position: absolute;"></a>
+					<span id="0" class="auto-refresh-span">
+						<span class="auto-refresh-reload auto-refresh-reload-icon"></span>
+						{{lang.words.auto|title()}}-{{lang.words.refresh}}
+					</span>
+					<span id="1" style="display: none;" class="auto-refresh-span">
+						<span class="auto-refresh-reload auto-refresh-reload-icon"></span>
+						{{lang.words.auto|title()}}-{{lang.words.refresh}}
+					</span>
+				</span>
+				{% endif %}
+			</h2>
+			{% if autorefresh %}
+				{% include 'include/autorefresh_submenu.html' %}
+			{% endif %}
+			<ul id='browse_history'></ul>
+			{% if g.user_params['role'] %}
+				{% if g.user_params['role'] <= 2 %}
+					<div id="apply" style="display: none;">
+						<div class="alert alert-warning" id="apply_div"></div>
+					</div>
+				{% endif %}
+			{% endif %}
+		{% endif %}
+			{% block content %}{% endblock %}
+			<div id="ajax-compare"></div>
+			<div id="ajax"></div>			
+		</div>	
+		<div id="show-updates" style="display: none;">	
+			<div>
+				{{lang.phrases.new_version}} <a href="{{ url_for('admin.admin') }}#updatehapwi" class="link">{{lang.words.w_update|title()}}</a>
+			</div>
+		</div>	
+		<div class="footer">
+			<a href="#" id="hide_menu" title="{{lang.words.hide|title()}} {{lang.words.menu}}" style="float: left;">
+				<span class="ui-state-default ui-corner-all">
+					<span class="ui-icon ui-icon-arrowthick-1-w" id="arrow"></span>
+				</span>
+			</a>
+			<div class="show_menu" style="display: none; float: left;">
+				<a href="#" id="show_menu" title="{{lang.words.show|title()}} {{lang.words.menu}}">
+					<span class="ui-state-default ui-corner-all">
+						<span class="ui-icon ui-icon-arrowthick-1-e" id="arrow"></span>
+					</span>
+				</a>
+			</div>
+			<div id="version"></div>
+			<div id="logo_footer">
+				<a href="https://rmon.io" title="RMON official site" target="_blank">
+					<img src="{{ url_for('static', filename='images/logo/dop_logo_grad.png')}}" alt="logo" id="logo_footer_img" />
+				</a>
+			</div>
+			<div class="footer-div">
+				<div id="useful-links">
+					<a href="https://rmon.io" class="footer-link" target="_blank" title="{{lang.words.about|title()}} RMON">{{lang.words.about|title()}}</a>
+					<a href="https://github.com/hap-wi/rmon/issues" class="footer-link" target="_blank" title="Community help">{{lang.words.help|title()}}</a>
+					<a href="https://sd.rmon.io" class="footer-link" target="_blank" title="Service Desk">SD</a>
+					<a href="https://rmon.io/contacts" class="footer-link" target="_blank">{{lang.words.contacts|title()}}</a>
+					<a href="https://rmon.io/cabinet" class="footer-link" target="_blank" title="Private cabinet">{{lang.words.cabinet|title()}}</a>
+					<a href="https://rmon.io/legal" class="footer-link" target="_blank" title="Legal Note">{{lang.words.legal|title()}}</a>
+				</div>
+			</div>
+		</div>
+		<div id="show-user-settings">
+			<table class="overview" id="show-user-settings-table" title="{{lang.words.user3|title()}} {{lang.words.settings}}">
+				<tr>
+					<td class="padding20" style="width: 70%">{{lang.words.alerts|title()}}</td>
+					<td>
+						{{ checkbox('disable_alerting') }}
+					</td>
+				</tr>
+				<tr class="padding20">
+					<td class="padding20">{{lang.words.language|title()}}</td>
+					<td>
+						{{ select('lang_select', values=languages, selected=lang.lang_short) }}
+					</td>
+				</tr>
+				<tr id="show-user-settings-group"></tr>
+			</table>
+		</div>
+		<div id="statistic" style="display: none;">
+			<div style="font-size: 1em;font-weight: bold;padding-top: 10px;" id="statistic-body"></div>
+		</div>
+		{% include 'include/change_pass_form.html' %}
+	</body>
+</html>

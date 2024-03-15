@@ -1,0 +1,51 @@
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+<tr class="odd">
+</tr>
+<tr class="even">
+	<td>
+		{% if roxy_tools_status['smon'] == 'active' %}
+			<span class="serverUp server-status-small" title="RMON {{lang.words.started}}"></span>
+			<a href="{{ url_for('smon.smon_main_dashboard') }}" title="RMON Dashboard" class="logs_link">
+				RMON
+			</a>
+		{% else %}
+			{% if roxy_tools_status['smon'] == 'inactive' or roxy_tools_status['smon'] == 'failed' %}
+				<span class="serverDown server-status-small" title="RMON {{lang.words.stopped}}"></span>
+				<a href="{{ url_for('admin.admin') }}#services" title="{{lang.words.start|title()}} RMON" class="logs_link">
+					RMON
+				</a>
+			{% else %}
+				<span title="RMON is not installed"><span class="serverNone server-status-small"></span></span>
+				<a href="https://rmon.io/tools/smon" title="Simple monitoring ports installation" target="_blank" class="logs_link">
+					RMON
+				</a>
+			{% endif %}
+		{% endif %}
+	</td>
+</tr>
+<tr class="odd">
+	<td {% if role != 1 %}class="padding10 first-collumn-wi"{%endif%}>
+		{% if roxy_tools_status['rmon-socket'] == 'active' %}
+			<span class="serverUp server-status-small" title="Socket {{lang.words.started}}"></span>
+			{% if role <= 1 %}
+				<a href="{{ url_for('logs.logs_internal') }}" title="{{lang.words.view|title()}} {{lang.words.logs2}}" class="logs_link">
+					Socket service
+				</a>
+			{% else %}
+					Socket service
+			{% endif %}
+		{% else %}
+			{% if roxy_tools_status['rmon-socket']  == 'inactive' or roxy_tools_status['rmon-socket']  == 'failed' %}
+				<span class="serverDown server-status-small" title="Socket {{lang.words.stopped}}"></span>
+				<a href="{{ url_for('admin.admin') }}#services" title="{{lang.words.start|title()}} Socket" class="logs_link">
+					Socket service
+				</a>
+			{% else %}
+				<span title="Socket service is not installed"><span class="serverNone server-status-small"></span></span>
+				<a href="https://rmon.io/tools/socket" title="Socket service" target="_blank" class="logs_link">
+					Socket service
+				</a>
+			{% endif %}
+		{% endif %}
+	</td>
+</tr>

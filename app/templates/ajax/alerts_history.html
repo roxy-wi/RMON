@@ -1,0 +1,76 @@
+<link href="{{ url_for('static', filename='css/table-6.3.9.css') }}" rel="stylesheet" type="text/css">
+<script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/dataTables.min.js') }}"></script>
+{% if action == "checker" %}
+{% set column_for_sort = 3 %}
+{% else %}
+{% set column_for_sort = 4 %}
+{% endif %}
+<script>
+    $(document).ready(function() {
+        $('#alerts_table').on( 'page.dt' )
+            .DataTable( {
+                "order": [[ {{ column_for_sort }}, "desc" ]],
+                "pageLength": 25,
+                "columnDefs": [
+                    {
+                        "searchable": false,
+                        "orderable": false,
+                    }
+                ],
+                "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]]
+            } );
+    } );
+</script>
+<table class="overview hover order-column display compact" id="alerts_table">
+    <thead>
+        <tr class="overviewHead">
+            <th class="padding10" style="width: 10%; padding-left: 10px;">{{lang.words.level|title()}}</th>
+            {% if action == 'smon' %}
+                <th>{{lang.words.check|title()}}</th>
+            {% else %}
+                <th>{{lang.words.host|title()}}</th>
+            {% endif %}
+            {% if action != "checker" %}
+            <th>{{lang.words.port|title()}}</th>
+            {% endif %}
+            <th>{{lang.words.alert|title()}}</th>
+            <th>{{lang.words.date|title()}}</th>
+            <th>{{lang.words.time|title()}}</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% if smon != '' %}
+    {% for t in smon %}
+    {% set date_time = t.4|string %}
+    <tr>
+        <td class="padding10" style="width: 10%; padding: 7px 7px 7px 10px;">
+            {% if t.1 == 'info' %}
+                {% set color = '#5ad05a' %}
+            {% elif t.1 == 'warning' %}
+                {% set color = '#daa70e' %}
+            {% else %}
+                {% set color = '#be2424' %}
+            {% endif %}
+            <span style="color: {{color}};"><b>{{t.1 |upper}}</b></span>
+        </td>
+        <td>
+            {% if action == 'smon' %}
+            <a href="/rmon/history/host/{{t.2|replace("'","")}}" title="{{lang.words.open|title()}} {{lang.words.history}} {{lang.words.for}} {{t.2}} {{lang.words.host}}">{{t.2|replace("'","")}}</a>
+            {% else %}
+            <a href="/history/server/{{t.2|replace("'","")}}" title="{{lang.words.open|title()}} {{lang.words.history}} {{lang.words.for}} {{t.2}} {{lang.words.host}}">{{t.2|replace("'","")}}</a>
+            {% endif %}
+        </td>
+        {% if action != "checker" %}
+        <td>{{t.3}}</td>
+        {% endif %}
+        <td>{{t.0}}</td>
+        <td>{{date_time.split(' ')[0]}}
+        </td>
+        <td>{{date_time.split(' ')[1]}}</td>
+    </tr>
+    {% endfor %}
+    {% else %}
+    <span class="alert alert-warning" style="margin-bottom: 0px;">{{lang.words.table|title()}} {{lang.words.is}} {{lang.words.empty}}</span>
+    {% endif %}
+    </tbody>
+</table>

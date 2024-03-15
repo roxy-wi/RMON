@@ -1,0 +1,87 @@
+{% set sections_name = {
+    'rabbitmq': 'RabbitMQ',
+    'main': 'Main',
+    'mail': 'Mail',
+    'monitoring': 'Monitoring',
+    'logs': 'Logs',
+    'ldap': 'LDAP',
+    'smon': 'RMON',
+    }
+%}
+<script defer src="{{ url_for('static', filename='js/admin_settings.js') }}"></script>
+<table id="settings">
+    <tbody>
+        {% set section = namespace(section='') %}
+        {% for set in settings %}
+        {% if page == "servers.py" and (set.section in ('monitoring', 'rabbitmq', 'mail', 'rmon')) %}
+        <!-- continue -->
+        {% else %}
+        {% if section.section|string() != set.section|string() %}
+        <th colspan="3" title="Show {{ set.section }} section" id="{{set.section}}-section-head" style="cursor: pointer; padding-top: 10px; color: #5b5a5a;">
+            <h3 class="plus-after" id="{{set.section}}-section-h3" style="font-size: 1em; padding-left: 20px;">
+                {{sections_name[set.section]}}
+            </h3>
+        </th>
+        <tr class="overviewHead {{set.section}}-section" style="display: none">
+            <td class="padding10 first-collumn">Parameter</td>
+            <td class="addOption">Value</td>
+            <td class="addOption">Description</td>
+        </tr>
+        {% endif %}
+        {% set section.section = set.section %}
+        {% if page == "servers.py" and (set.param == 'proxy') %}
+        <!-- continue -->
+        {% else %}
+        <tr class="{{ loop.cycle('odd', 'even') }} {{set.section}}-section" style="display: none">
+            <td class="addName">
+                {{set.param}}
+            </td>
+            <td class="addOption">
+                {% if set.param in ('ldap_password', 'rabbitmq_password', 'mail_smtp_password') %}
+                    {% if set.value is none %}
+                        {{ input(set.param, size='25', type='password', style='width: 210px;') }}
+                    {% else %}
+                        {{ input(set.param, size='25', type='password', style='width: 210px;', placeholder='******') }}
+                    {% endif %}
+                {% elif set.param in ('session_ttl', 'token_ttl', 'ldap_port', 'log_time_storage', 'keep_history_range',
+                    'mail_smtp_port', 'rabbitmq_port', 'ssl_expire_warning_alert', 'ssl_expire_critical_alert', 'action_keep_history_range') %}
+                    {{ input(set.param, value=set.value, style='width: 210px;', type='number') }}
+                {% elif set.param == 'time_zone' %}
+                    <select name="{{set.param}}" id="{{set.param}}" style="width: 215px;">
+                        {% for zone in timezones %}
+                        {% if set.value == zone %}
+                        <option value="{{zone}}" selected>{{zone}}</option>
+                        {% else %}
+                        <option value="{{zone}}">{{zone}}</option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                {% elif set.param in ('ldap_type', 'ldap_enable', 'syslog_server_enable', 'mail_ssl') %}
+                    {% if set.value|int() == 1 %}
+                        {{ checkbox(set.param, checked='checked', style='margin: 0') }}
+                    {% else %}
+                        {{ checkbox(set.param, style='margin: 0') }}
+                    {% endif %}
+                {% else %}
+                    {% if set.value is none %}
+                        {{ input(set.param, size='25', style='width: 210px;') }}
+                    {% else %}
+                        {{ input(set.param, value=set.value, size='25', style='width: 210px;') }}
+                    {% endif %}
+                {% endif %}
+            </td>
+            <td class="addOption">
+                {{ lang.settings[set.section][set.param] }}
+            </td>
+        </tr>
+        {% endif %}
+        {% endif %}
+        {% endfor %}
+    </tbody>
+</table>
+<script>
+	$(document).ready(function() {
+        $("#time_zone").selectmenu("destroy");
+		$('#time_zone').select2();
+	});
+</script>

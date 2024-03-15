@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}{{lang.menu_links.overview.title}}{% endblock %}
+{% block h2 %}{{lang.menu_links.overview.h2}}{% endblock %}
+{% block content %}
+<link href="{{ url_for('static', filename='css/chart.min.css') }}" rel="stylesheet">
+<script src="{{ url_for('static', filename='js/metrics.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chart.min-4.3.0.js') }}"></script>
+<script src="{{ url_for('static', filename='js/overview.js') }}"></script>
+<script>
+	$("#secIntervals").css("display", "none");
+	var ip = []
+	var hostnamea = []
+	{% for s in g.user_params['servers'] %}
+		ip.push("{{s[2]}}")
+		var host = "{{s[2]}}"
+		host = host.replace(/\./g, '\\.');
+		host = host.replace(/ /g, '');
+		hostnamea.push(host)
+	{% endfor %}
+</script>
+<style>
+	.fa-sync-alt { margin-bottom: -1px; }
+</style>
+<table class="overview-wi" id="overview-load">
+	<tr class="overviewHead" style="height: 30px;">
+		<td class="padding10 first-collumn-wi" colspan="2">
+			{% if g.user_params['role'] <= 1 %}
+				<a href="/app/logs/internal" title="{{lang.words.view|title()}} RMON {{lang.words.logs}}" class="logs_link">
+					RMON {{lang.words.server_status}}
+				</a>
+			{% else %}
+				RMON {{lang.words.server_status}}
+			{% endif %}
+		</td> 
+		<td>
+			<a onclick="showOverviewHapWI()" title="{{lang.words.refresh|title()}}" style="float: right; margin-right: 15px;">
+				<span class="refresh"></span>
+			</a>
+		</td>
+	</tr>		
+	<tr>
+		<td style="width:100%" colspan="3">
+			<div id="cpu_div" style="height: 122px;width: 50%;float: left; margin:0; padding:0;">
+				<canvas id="cpu" role="img"></canvas>
+			</div>
+			<div id="ram_div" style="height: 122px;width: 50%;float: right;margin:0; padding:0;">
+				<canvas id="ram" role="img"></canvas>
+			</div>		
+		</td>
+	</tr>
+</table>
+<table class="overview-wi" id="overview-services">
+	<thead>
+		<tr class="overviewHead">
+			<td class="padding10 first-collumn-wi" colspan=2>
+				{% if g.user_params['role'] <= 1 %}
+					<a href="admin#tools" title="{{lang.words.view|title()}} {{lang.words.services}} {{lang.words.status}}" class="logs_link">
+						RMON {{lang.words.services_status}}
+					</a>
+				{% else %}
+					RMON {{lang.words.services_status}}
+				{% endif %}
+			</td>
+			<td>
+				<a onclick="showServicesOverview()" title="{{lang.words.refresh|title()}}" style="float: right; margin-right: 15px;">
+					<span class="refresh"></span>
+				</a>
+			</td>
+		</tr>
+	</thead>
+	<tbody id="services_ovw"></tbody>
+</table>
+{% if g.user_params['role'] <= 2 %}
+	{% if g.user_params['role'] == 2 %}
+		{% set admin_uri = 'servers' %}
+	{% elif g.user_params['role'] == 1 %}
+		{% set admin_uri = 'admin' %}
+	{% endif %}
+	<table class="overview-wi" id="overview-users">
+		<thead>
+			<tr class="overviewHead" style="height: 30px;">
+				<td class="padding10 first-collumn-wi">
+					<a href="{{admin_uri}}#users" title="{{lang.words.manage|title()}} {{lang.words.users2}}" class="logs_link">{{lang.words.login|title()}}</a>
+				</td>
+				<td class="second-collumn">{{lang.words.groups|title()}}</td>
+				<td>{{lang.words.role|title()}}</td>
+				<td>
+					<span class="add-button-wi" id="show_all_users" style="display: none;">
+						<span id="show-all-users">
+							{{lang.words.show_all}}
+						</span>
+						<span id="hide-all-users" style="display: none;">
+							{{lang.words.hide|title()}}
+						</span>
+					</span>
+				</td>
+				<td style="padding-right: 10px;">
+					<a onclick="showUsersOverview()" title="{{lang.words.refresh|title()}}" style="float: right;">
+						<span class="refresh"></span>
+					</a>
+				</td>
+			</tr>
+		</thead>
+		<tbody id="users-table"></tbody>
+	</table>
+{% endif %}
+{% if g.user_params['role'] <= 1 %}
+	<table class="overview-wi" id="overview-groups">
+		<tr class="overviewHead">
+			<td class="padding10 first-collumn-wi">
+				<a href="/app/users#groups" title="{{lang.words.manage|title()}} {{lang.words.groups3}}" class="logs_link">{{lang.words.groups|title()}}</a>
+			</td>
+			<td class="second-collumn" style="width: 40%">{{lang.words.desc|title()}}</td>
+			<td>
+				{% if groups|length > 3 %}
+				<span class="add-button-wi">
+					<span id="show-all-groups">
+						{{lang.words.show_all}}
+					</span>
+					<span id="hide-all-groups" style="display: none;">
+						{{lang.words.hide|title()}} {{lang.words.groups}}
+					</span>
+				</span>
+				{% endif %}
+			</td>
+		</tr>		
+		{% set counter = 0 -%}
+		{% for group in groups %}
+			{% set counter = counter + loop.index0 %}
+			{% if counter <= 2 %}
+			<tr class="{{ loop.cycle('odd', 'even') }}">
+				<td class="padding10 first-collumn-wi"> 
+					{{ group.name }}
+				</td>
+				<td class="third-collumn-wi" colspan="2">{{ group.description }}</td>
+			</tr>
+			{% else %}
+			<tr style="display: none;" class="show-groups {{ loop.cycle('odd', 'even') }}">
+				<td class="padding10 first-collumn-wi">
+					{{ group.name }}
+				</td>
+				<td class="third-collumn-wi" colspan="2">{{ group.description }}</td>
+			</tr>
+			{% endif %}
+		{% endfor %}
+	</table>
+	
+	<table class="overview-wi" id="overview-roles">
+		<tr class="overviewHead">
+			<td class="padding10 first-collumn-wi">{{lang.words.role|title()}}</td>
+			<td class="second-collumn" style="width: 60%">{{lang.words.desc|title()}}</td>
+		</tr>
+		{% for role in roles %}
+			<tr class="{{ loop.cycle('odd', 'even') }}">
+				<td class="padding10 first-collumn-wi"> 
+					{{ role.name }}
+				</td>
+				<td class="third-collumn-wi">{{ lang.roles[role.name] }}</td>
+			</tr>
+		{% endfor %}
+	</table>
+{% endif %}
+{% if g.user_params['role'] <= 2 %}
+	<script>ShowOverviewLogs();</script>
+	<table class="overview-wi" id="overview-logs"></table>
+{% endif %}
+{% if g.user_params['role'] <= 1 %}
+	<table class="overview-wi" id="overview-subs">
+		<tr class="overviewHead" style="height: 30px;">
+			<td class="padding10 first-collumn-wi" colspan="2">
+				<a href="https://rmon.io/cabinet" title="{{lang.words.personal|title()}} {{lang.words.cabinet}}" class="logs_link" target="_blank">{{lang.words.subs|title()}}</a>
+			</td>
+			<td style="padding-right: 10px;">
+				<a onclick="showSubOverview()" title="{{lang.words.refresh|title()}}" style="float: right;">
+					<span class="refresh"></span>
+				</a>
+			</td>
+		</tr>
+		<tbody id="sub-table"></tbody>
+	</table>
+{% endif %}
+<div id="dialog-confirm" style="display: none;">
+  <p><span class="ui-icon ui-icon-alert" style="float:left; margin:3px 12px 20px 0;"></span>Are you sure?</p>
+</div>
+<script>
+	showOverview(ip, hostnamea);
+</script>
+{% endblock %}

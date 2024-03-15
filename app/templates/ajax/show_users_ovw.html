@@ -1,0 +1,75 @@
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+{% set counter = 0 %}
+{% for USER in users %}
+	{% set counter = counter + loop.index0 %}
+	{% if counter <= 2 %}
+	    <tr class="{{ loop.cycle('odd', 'even') }}">
+            <td class="padding10 first-collumn-wi">
+                {% if USER.last_login %}
+                <span class="serverUp" style="margin-right: 5px;" title="{{USER.username}} {{lang.words.is_online}}"></span>
+                {% else %}
+                <span class="serverNone" style="margin-right: 5px;" title="{{USER.username}} {{lang.words.is_offline}}"></span>
+                {% endif %}
+                {% if USER.last_login_date == '0000-00-00 00:00:00' %}
+                    {% set last_login_date = lang.words.never %}
+                {% else %}
+                    {% set last_login_date = USER.last_login_date %}
+                {% endif %}
+                <span title="{{lang.words.last|title()}} {{lang.words.activity}}: {{last_login_date}}, IP: {{USER.last_login_ip}}">{{ USER.username }}</span>
+			</td>
+			<td class="third-collumn-wi">
+			    {% for group in users_groups %}
+				    {% if USER.user_id|string() == group.user_id|string() %}
+					    <span title="{{ group.groups.name }}: {{ group.groups.description }}"> {{ group.groups.name }}</span>
+					{% endif %}
+				{% endfor %}
+			</td>
+			<td>
+				{% for r in roles %}
+					{% if r.role_id == USER.role|int() %}
+						{{ r.name }}
+					{% endif %}
+				{% endfor %}
+			</td>
+            <td></td>
+            <td></td>
+		</tr>
+	{% else %}
+	    <tr style="display: none;" class="show-users {{ loop.cycle('odd', 'even') }}">
+		    <td class="padding10 first-collumn-wi">
+			    {% if USER.last_login %}
+				<span class="serverUp" style="margin-right: 5px;" title="{{USER.username}} {{lang.words.is_online}}"></span>
+				{% else %}
+				<span class="serverNone" style="margin-right: 5px;" title="{{USER.username}} {{lang.words.is_offline}}"></span>
+				{% endif %}
+				{% if USER.last_login_date == '0000-00-00 00:00:00' %}
+				    {% set last_login_date = lang.words.never %}
+				{% else %}
+				    {% set last_login_date = USER.last_login_date %}
+				{% endif %}
+				<span title="{{lang.words.last|title()}} {{lang.words.activity}}: {{last_login_date}}, IP: {{USER.last_login_ip}}">{{ USER.username }}</span>
+			</td>
+			<td class="third-collumn-wi">
+			    {% for group in users_groups %}
+				    {% if group.user_id|string() == USER.user_id|string() %}
+					    <span title="{{ group.groups.name }}: {{ group.groups.description }}"> {{ group.groups.name }}</span>
+					{% endif %}
+				{% endfor %}
+			</td>
+			<td>
+				{% for r in roles %}
+					{% if r.role_id == USER.role|int() %}
+						{{ r.name }}
+					{% endif %}
+				{% endfor %}
+			</td>
+            <td></td>
+            <td></td>
+		</tr>
+	{% endif %}
+{% endfor %}
+{% if users|length > 3 %}
+<script>
+	$('#show_all_users').show();
+</script>
+{% endif %}

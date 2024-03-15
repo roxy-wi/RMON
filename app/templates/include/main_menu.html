@@ -1,0 +1,49 @@
+<div class="top-menu">
+	<div class="LogoText">
+		<span id="logo_text">
+			<a href="https://rmon.io" title="RMON site" target="_blank">
+				<img src="{{ url_for('static', filename='images/logo/white_320.png') }}" alt="logo" width="110" />
+			</a>
+		</span>
+	</div>
+	<div id="top-link" class="top-link">
+		<nav id="menu">
+			<ul class="menu">
+                <li><a href="{{ url_for('overview.index') }}" title="{{lang.menu_links.overview.title}}" class="overview-link ">{{lang.menu_links.overview.link}}</a></li>
+                <li><a href="{{ url_for('smon.smon_main_dashboard') }}" title="{{lang.menu_links.monitoring.smon.dashboard}}" class="overview-link">{{lang.menu_links.monitoring.smon.dashboard}}</a></li>
+                <li><a href="{{ url_for('smon.status_page') }}" title="{{lang.menu_links.monitoring.smon.status_page}}" class="overview-link">{{lang.menu_links.monitoring.smon.status_page}}</a></li>
+                <li><a href="{{ url_for('smon.smon_history') }}" title="{{lang.menu_links.monitoring.smon.history}}" class="lists">{{lang.menu_links.monitoring.smon.history}}</a></li>
+                <li><a href="{{ url_for('channel.channels') }}" title="{{lang.words.channels|title()}} {{ lang.words.for }} Checker {{ lang.words.and }} SMON" class="channel">{{lang.words.channels|title}}</a></li>
+                {% if g.user_params['role'] <= 3 %}
+                    <li><a href="{{ url_for('smon.agent') }}" title="{{lang.menu_links.monitoring.smon.agent}}" class="admin">{{lang.menu_links.monitoring.smon.agent}}</a></li>
+                {% endif %}
+                <li><a href="{{ url_for('main.nettools') }}" title="{{lang.menu_links.monitoring.net_tools}}" class="net-tools">{{lang.menu_links.monitoring.net_tools}}</a></li>
+				{% if g.user_params['role'] <= 2 %}
+				<li class="p_menu">
+					<a href="{{ url_for('main.servers') }}#users" title="{{lang.menu_links.servers.title}}" class="runtime">{{lang.menu_links.servers.link}}</a>
+					<ul class="v_menu">
+						<li><a href="{{ url_for('main.servers') }}#users" title="{{lang.words.servers|title()}}: {{lang.words.manage|title()}} {{lang.words.users2}}" class="users head-submenu">{{lang.words.users|title()}}</a></li>
+						<li><a href="{{ url_for('main.servers') }}#servers" title="{{lang.words.servers|title()}}: {{lang.words.manage|title()}} {{lang.words.servers2}}" class="runtime servers head-submenu">{{lang.words.servers|title()}}</a></li>
+						<li><a href="{{ url_for('main.servers') }}#ssh" title="{{lang.words.servers|title()}}: {{lang.words.manage|title()}} SSH {{lang.words.creds2}}" class="admin ssh head-submenu">SSH {{lang.words.creds|title()}}</a></li>
+						<li><a href="{{ url_for('main.servers') }}#settings" title="{{lang.words.servers|title()}}: {{lang.words.manage|title()}} RMON {{lang.words.settings2}}" class="settings head-submenu">{{lang.words.settings|title()}}</a></li>
+					</ul>
+				</li>
+				{% endif %}
+				{% if g.user_params['role'] <= 1 %}
+				<li class="p_menu" id="admin-area">
+					<a href="{{ url_for('admin.admin') }}#users" title="{{lang.menu_links.admin_area.title}}" class="admin">{{lang.menu_links.admin_area.link}}</a>
+					<ul class="v_menu">
+						<li><a href="{{ url_for('admin.admin') }}#users" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} {{lang.words.users2}}" class="users head-submenu" id="admin-area-users">{{lang.words.users|title()}}</a></li>
+						<li><a href="{{ url_for('admin.admin') }}#groups" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} {{lang.words.groups3}}" class="group groups head-submenu" id="admin-area-groups">{{lang.words.groups|title()}}</a></li>
+						<li><a href="{{ url_for('admin.admin') }}#servers" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} {{lang.words.servers2}}" class="runtime servers head-submenu" id="admin-area-servers">{{lang.words.servers|title()}}</a></li>
+						<li><a href="{{ url_for('admin.admin') }}#ssh" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} SSH {{lang.words.creds2}}" class="admin ssh head-submenu" id="admin-area-ssh">SSH {{lang.words.creds|title()}}</a></li>
+						<li><a href="{{ url_for('admin.admin') }}#settings" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} RMON {{lang.words.settings2}}" class="settings head-submenu" id="admin-area-settings">{{lang.words.settings|title()}}</a></li>
+						<li><a href="{{ url_for('admin.admin') }}#tools" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} RMON {{lang.words.tools}}" class="tools head-submenu" id="admin-area-services">{{lang.words.tools|title()}}</a></li>
+						<li><a href="{{ url_for('admin.admin') }}#updatehapwi" title="{{lang.words.admin_area|title()}}: {{lang.words.w_update|title()}} RMON" class="upload updatehapwi head-submenu" id="admin-area-update">{{lang.words.w_update|title()}}</a></li>
+					</ul>
+				</li>
+				{% endif %}
+			</ul>
+		</nav>
+	</div>
+</div>

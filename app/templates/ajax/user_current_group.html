@@ -1,0 +1,13 @@
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+<td class="padding20" style="width: 70%">{{lang.words.current2|title()}} {{lang.words.group}}</td>
+<td>
+	<select id="newCurrentGroup" name="newCurrentGroup">
+		{% for g in groups %}
+			{% if g.user_group_id|string() == group|string() %}
+				<option value="{{ g.user_group_id }}" selected>{{ g.groups.name }}</option>
+			{% else %}
+				<option value="{{ g.user_group_id }}">{{ g.groups.name }}</option>
+			{% endif %}
+		{% endfor %}
+	</select>
+</td>

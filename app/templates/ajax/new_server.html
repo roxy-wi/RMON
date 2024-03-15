@@ -1,0 +1,19 @@
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+{% for server in servers %}
+	{% include 'include/admin_servers.html' %}
+	<script>
+		$( function() {
+			{% if page != "servers.py" %}
+			$("#servergroup-{{ server.0}}" ).selectmenu({
+			  width: 100
+			});
+			{% endif %}
+			$("#slavefor-{{server.0}}" ).selectmenu({
+			  width: 130
+			});
+			$("#credentials-{{server.0}}" ).selectmenu({
+			  width: 150
+			});
+		});
+	</script>
+{% endfor %}

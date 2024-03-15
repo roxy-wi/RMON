@@ -1,0 +1,22 @@
+- name: Stop and disable Roxy-WI RMON Agent
+  ansible.builtin.systemd_service:
+    name: rmon-agent
+    enabled: false
+    state: stopped
+
+- name: Delete RMON Agent directory
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:  ["/var/lib/rmon/rmon-agent"]
+  ignore_errors: yes
+
+- name: Remove files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "/etc/rmon/rmon-agent.cfg"
+    - "/etc/systemd/system/rmon-rmon-agent.service"
+    - "/etc/logrotate.d/rmon-agent"
+    - "/etc/rsyslog.d/rmon-agent.conf"

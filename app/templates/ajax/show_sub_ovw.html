@@ -1,0 +1,39 @@
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+{% for s in sub %}
+    <tr class="odd">
+        <td class="padding10 first-collumn-wi">{{lang.words.plan|title()}}</td>
+        <td colspan="2">{{s.Plan|title()}}</td>
+    </tr>
+    <tr class="even">
+        <td class="padding10 first-collumn-wi">{{lang.words.status|title()}}</td>
+        <td colspan="2">
+            {% if s.Plan == 'free' %}
+                N/A
+            {% else %}
+            <span
+            {% if s.Status|int() == 1 %}
+                style="color: var(--green-color); font-weight: bold">{{lang.words.active|title()}}
+            {% else %}
+                style="color: var(--red-color); font-weight: bold">Blocked
+             {% endif %}
+            </span>
+            {% endif %}
+        </td>
+    </tr>
+    <tr class="odd">
+        <td class="padding10 first-collumn-wi">{{lang.words.pay_method|title()}}</td>
+        <td colspan="2">
+            {% if s.Plan == 'free' %}
+                N/A
+            {% else %}
+                {% if s.Method == 'boosty' %}
+                    <a href="https://boosty.to/roxy-wi" title="Boosty.to" class="logs_link" target="_blank">Boosty</a>
+                {% elif s.Method == 'patreon' %}
+                    <a href="https://www.patreon.com/roxy_wi" title="Patreon.con" class="logs_link" target="_blank">Patreon</a>
+                {% else %}
+                    {{s.Method}}
+                {% endif %}
+            {% endif %}
+        </td>
+    </tr>
+{% endfor %}

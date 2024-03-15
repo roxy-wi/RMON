@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}{{lang.words.admin_area|title()}}{% endblock %}
+{% block h2 %}{{lang.words.admin_area|title()}}{% endblock %}
+{% block content %}
+{% from 'include/input_macros.html' import input, select, copy_to_clipboard, checkbox %}
+<script src="{{ url_for('static', filename='js/users.js') }}"></script>
+<script src="{{ url_for('static', filename='js/fontawesome.min.js') }}"></script>
+{% include 'include/del_confirm.html' %}
+<div id="tabs">
+	<ul id="admin-tabs">
+		<li><a href="#users" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} {{lang.words.users}} - RMON">{{lang.words.users|title()}}</a></li>
+		<li><a href="#groups" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} {{lang.words.groups}} - RMON">{{lang.words.groups|title()}}</a></li>
+		<li><a href="#servers" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} {{lang.words.servers}} - RMON">{{lang.words.servers|title()}}</a></li>
+		<li><a href="#ssh" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} SSH {{lang.words.creds}} - RMON">SSH {{lang.words.creds}}</a></li>
+		<li><a href="#settings" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} RMON {{lang.words.settings}} - RMON">{{lang.words.settings|title()}}</a></li>
+		<li><a href="#tools" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} RMON {{lang.words.tools}} - RMON">{{lang.words.tools|title()}}</a></li>
+		<li><a href="#updatehapwi" title="{{lang.words.admin_area|title()}}: {{lang.words.w_update|title()}} RMON - RMON">{{lang.words.w_update|title()}}</a></li>
+	</ul>
+	<div id="users">
+		{% include 'include/admin_users.html' %}
+	</div>
+
+	<div id="groups">
+		<table class="overview" id="ajax-group">
+			<thead>
+			<tr class="overviewHead">
+				<th class="padding10" style="width: 0;">Id</th>
+				<th class="padding10 first-collumn">{{lang.words.name|title()}}</th>
+				<th style="width: 100%;">{{lang.words.desc|title()}}</th>
+				<th></th>
+			</tr>
+			<tbody>
+		{% for group in groups %}
+			<tr id="group-{{ group.group_id }}" class="{{ loop.cycle('odd', 'even') }}">
+				<td class="padding10" style="width: 0">{{group.group_id}}</td>
+			{% if group.name == "Default" %}
+				<td class="padding10 first-collumn">{{ group.name }}</td>
+				<td>{{ group.description }}</td>
+				<td></td>
+			{% else %}
+				<td class="padding10 first-collumn">
+					{% set id = 'name-' + group.group_id|string() %}
+					{{ input(id, value=group.name) }}
+				</td>
+				<td>
+					{% set id = 'descript-' + group.group_id|string() %}
+					{% if group.description is not none %}
+						{{ input(id, value=group.description, size='60') }}
+					{% else %}
+						{{ input(id, value='', size='60') }}
+					{% endif %}
+				</td>
+				<td>
+					<a class="delete" onclick="confirmDeleteGroup({{ group.group_id }})" title="{{lang.words.delete|title()}} {{lang.words.group2}} {{group.name}}" style="cursor: pointer;"></a>
+				</td>
+			{% endif %}
+			</tr>
+		{% endfor %}
+			</tbody>
+		</table>
+		<br /><span class="add-button" title="{{lang.words.add|title()}} {{lang.words.group2}}" id="add-group-button">+ {{lang.words.add|title()}}</span>
+		<br /><br />
+		<div class="add-note alert addName alert-info" style="width: inherit; margin-right: 15px;">
+			{{lang.phrases.read_howto}} <a href="https://rmon.io/howto/roles-and-groups" title="How to use groups and roles" target="_blank">{{lang.words.article}}</a>
+			{{lang.words.and}} {{lang.words.this2}} <a href="https://rmon.io/howto/setup" title="How to setup servers, group and SSH credentials" target="_blank">{{lang.words.article}}</a>
+		</div>
+	</div>
+	<div id="servers">
+		{% include 'include/admin_servers.html' %}
+	</div>
+
+	<div id="ssh">
+		{% include 'include/admin_ssh.html' %}
+	</div>
+
+	<div id="settings">
+		{% include 'include/admin_settings.html' %}
+	</div>
+	
+	<div id="tools">
+		<table id="services_table" class="overview">
+			<thead>
+				<tr class="overviewHead">
+					<td class="padding10 first-collumn" style="width: 25%;">
+						{{lang.words.service|title()}}
+					</td>
+					<td class="padding10 first-collumn">
+						{{lang.words.actions|title()}}
+					</td>
+					<td class="first-collumn">{{lang.words.version|title()}}</td>
+					<td style="width: 100%">{{lang.words.desc|title()}}</td>
+					<td><span onclick="loadServices()" class="refresh" title="{{lang.words.reload|title()}} {{lang.words.services}}"></span></td>
+				</tr>
+			</thead>
+			<tbody id="ajax-services-body"></tbody>
+		</table>
+		<div class="add-note alert addName alert-info" style="width: inherit; margin-right: 15px;">
+			{{lang.words.read|title()}} {{lang.words.about}} {{lang.words.services}} <a href="https://rmon.io/tools" title="RMON {{lang.words.services4}}" target="_blank">{{lang.words.here}}</a>
+		</div>
+	</div>
+	
+	<div id="updatehapwi">
+		<table class="overview">
+			<thead>
+			<tr class="overviewHead">
+				<td class="padding10 first-collumn" style="width: 25%;">{{lang.words.service|title()}}</td>
+				<td class="first-collumn" style="width: 10%">{{lang.words.current2|title()}} {{lang.words.version}}</td>
+				<td class="padding10" style="width: 10%">{{lang.words.latest|title()}} {{lang.words.version}}</td>
+				<td style="width: 10%"></td>
+				<td style="width: 100%">{{lang.words.desc|title()}}</td>
+				<td><span onclick="checkUpdateRoxy()" class="refresh service-restart" title="{{lang.words.check|title()}} {{lang.words.new4}} {{lang.words.versions}}"></span></td>
+				<td><span onclick="loadupdatehapwi()" class="refresh" title="{{lang.words.refresh|title()}}"></span></td>
+			</tr>
+			</thead>
+			<tbody id="ajax-updatehapwi-body"></tbody>
+		</table>
+		<div class="add-note alert addName alert-info" style="width: inherit; margin-right: 15px;">
+			<b style="font-size: 20px; display: block; padding-bottom: 10px;">{{lang.words.note|title()}}:</b>
+			{{lang.admin_page.desc.for_updating}}. {{lang.words.read|title()}} <a href="https://rmon.io/installation" title="RMON installation" target="_blank">{{lang.words.here}}</a>
+			{{lang.admin_page.desc.how_to_using_repo}}
+			<br /><br />
+			{{lang.admin_page.desc.proxy_settings}}
+			<br /><br />
+			{{lang.words.read|title()}} {{lang.words.about}} {{lang.words.updating}} <a href="https://rmon.io/updates" title="Doc" target="_blank">docs</a>
+			{{lang.words.and}} <a href="https://rmon.io/changelog" title="Changelog" target="_blank">changelog</a>
+		</div>
+		<div id="ajax-update"></div>
+	</div>
+
+</div>
+{% include 'include/admins_dialogs.html' %}
+<script>
+	$( function() {
+		{% for user in users %}
+			$("#role-{{user.role_id}}" ).selectmenu({
+				width: 100
+			});
+		{% endfor %}
+		{% for server in servers %}
+			$("#servergroup-{{ server.0}}" ).selectmenu({
+				width: 100
+			});
+			$("#slavefor-{{server.0}}" ).selectmenu({
+				width: 115
+			});
+			$("#credentials-{{server.0}}" ).selectmenu({
+				width: 150
+			});
+		{% endfor %}
+		{% for ssh in sshs %}
+			if (window.matchMedia('(max-width: 1280px)').matches) {
+				$("#sshgroup-{{ ssh.0}}" ).selectmenu({
+					width: 100
+				});
+			}
+		{% endfor %}
+	});
+</script>
+<link href="{{ url_for('static', filename='css/servers.css') }}" rel="stylesheet"/>
+{% endblock %}

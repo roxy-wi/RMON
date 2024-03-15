@@ -1,0 +1,10 @@
+- name: Install Agent
+  hosts: all
+  become: yes
+  become_method: sudo
+  gather_facts: yes
+  roles:
+    - role: rmon_agent
+      environment:
+        http_proxy: "{{PROXY}}"
+        https_proxy: "{{PROXY}}"

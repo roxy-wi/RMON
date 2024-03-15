@@ -1,0 +1,32 @@
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+{% for user in users %}
+	{% include 'include/admin_users.html' %}
+	<script>
+		$( function() {
+			$("#role-{{user.0}}" ).selectmenu({
+				width: 100
+			});
+			$("#usergroup-{{user.0}}" ).selectmenu({
+				width: 100
+			});	
+			$( ".newuser" ).addClass( "update", 1000 );	
+			$( "input[type=submit], button" ).button();
+			$( "input[type=checkbox]" ).checkboxradio();
+			$( "select" ).selectmenu();	
+			$.getScript(awesome);					
+			setTimeout(function() {
+				$( ".newuser" ).removeClass( "update" );
+			}, 2500 );
+		});
+	</script>
+{% endfor %}
+<script>
+$( "#ajax-users input" ).change(function() {
+	var id = $(this).attr('id').split('-');
+	updateUser(id[1])
+});
+$( "#ajax-users select" ).on('selectmenuchange',function() {
+	var id = $(this).attr('id').split('-');
+	updateUser(id[1])
+});
+</script>

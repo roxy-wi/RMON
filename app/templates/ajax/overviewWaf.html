@@ -1,0 +1,107 @@
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+{% set waf_modes = [] %}
+{% do waf_modes.append("On") %}
+{% do waf_modes.append("Off") %}
+{% do waf_modes.append("DetectionOnly") %}
+{% if waf_service == 'haproxy' %}
+{% set service_name = 'waf' %}
+{% else %}
+{% set service_name = 'waf_nginx' %}
+{% endif %}
+{% for service in service_status %}
+	<td class="padding10 first-collumn-wi">
+	{% if service.5|int() >= 1 %}
+		{% if service.2|int() >= 1 %}
+			<span class="serverUp server-status" title="running {{service.2 }} processes"></span>
+		{% else %}
+		<span class="serverDown server-status" title="WAF {{lang.words.is}} {{lang.words.stopped}} "></span>
+		{% endif %}
+			{{ service.0 }}
+	{% else %}
+		<span class="serverNone server-status" title="WAF {{lang.words.is}} {{lang.words.not}} {{lang.words.installed}}"></span> <span title="WAF {{lang.words.is}} {{lang.words.not}} {{lang.words.installed}}">{{ service.0 }}</span>
+	{% endif %}
+	</td>
+{{service.3}}
+	{% if service.3 == "On" or service.3 == "Off" or service.3 == "DetectionOnly" %}
+		<td>
+		{% if role <= 2 %}
+			<a id="{{ service.1 }}" class="start-waf" title="{{lang.words.start|title()}} WAF {{lang.words.service}}">
+				<span class="service-start" onclick="confirmAjaxAction('start', '{{service_name}}', '{{service.1}}')"></span>
+			</a>
+			<a id="{{ service.1 }}" class="stop-waf" title="{{lang.words.stop|title()}} WAF {{lang.words.service}}">
+				<span class="service-stop" onclick="confirmAjaxAction('stop', '{{service_name}}', '{{service.1}}')"></span>
+			</a>
+			{% if waf_service == 'haproxy' %}
+			<a id="{{ service.1 }}" class="restart-waf" title="{{lang.words.restart|title()}} WAF {{lang.words.service}}">
+				<span class="service-reload" onclick="confirmAjaxAction('restart', 'waf', '{{service.1}}')"></span>
+			</a>
+			{% else %}
+			<a id="{{ service.1 }}" class="reload-waf" title="{{lang.words.reload|title()}} WAF {{lang.words.service}}">
+				<span class="service-reload" onclick="confirmAjaxAction('reload', 'nginx', '{{service.1}}')"></span>
+			</a>
+			{% endif %}
+		{% endif %}
+		</td>
+		<td>
+		{% if role <= 2 %}
+			<select class="waf_mode" id="{{ service.0 }}_select">
+				{% for waf_mode in waf_modes %}
+					{% if service.3 == waf_mode %}
+					<option value={{waf_mode}} selected="selected">{{waf_mode}}</option>
+					{% else %}
+					<option value={{waf_mode}}>{{waf_mode}}</option>
+					{% endif %}
+				{% endfor %}
+			</select>
+		{% else %}
+			{{ service.3 }}
+		{% endif %}
+		</td>
+		{% if waf_service == 'haproxy' %}
+		<td class="ajaxwafstatus">
+		{% if service.4|int() == 1 %}
+			<label for="metrics{{ service.0 }}"></label><input type="checkbox" id="metrics{{ service.0 }}" checked />
+		{% else %}
+			<label for="metrics{{ service.0 }}"></label><input type="checkbox" id="metrics{{ service.0 }}" />
+		{% endif %}
+		</td>
+		{% endif %}
+		<td>
+		{% if role <= 2 %}
+			<a href="{{ url_for('waf.waf_rules', service=waf_service, server_ip=service.1) }}" class="ui-button ui-widget ui-corner-all">{{lang.words.open|title()}}</a>
+		{% endif %}
+		</td>
+		<td>
+			{% if waf_service == 'haproxy' %}
+			<a href="{{ url_for('logs.logs', service=waf_service) }}/waf?serv={{ service.1 }}" class="ui-button ui-widget ui-corner-all" title="{{lang.words.view|title()}} {{lang.words.log}}">{{lang.words.view|title()}}</a>
+			{% elif waf_service == 'nginx' %}
+			<a href="{{ url_for('logs.logs', service=waf_service) }}/waf?serv={{ service.1 }}&rows=100&grep=ModSecurity&hour=00&minute=00&hour1=24&minute1=00&file=error.log&waf=0" class="ui-button ui-widget ui-corner-all" title="{{lang.words.view|title()}} {{lang.words.log}}">{{lang.words.view|title()}}</a>
+			{% endif %}
+		</td>
+		<td></td>
+	{% else %}
+		{% if role <= 2 %}
+		<td colspan="6">
+			<a title="{{lang.words.install|title()}} WAF"><button onclick="installWaf('{{ service.1 }}')">{{lang.words.install|title()}}</button></a>
+		</td>
+		{% endif %}	
+	{% endif %}
+{% endfor %}
+<script>
+	{% if role <= 2 %}
+		$( "select" ).selectmenu();
+		$( "input[type=checkbox]" ).checkboxradio();
+		$( ".waf_mode" ).on('selectmenuchange',function() {
+			var id = $(this).attr('id');
+			changeWafMode(id)
+		});	
+		$( ".ajaxwafstatus input" ).change(function() {
+			var id = $(this).attr('id');
+			metrics_waf(id);
+		});
+	{% endif %}
+</script>
+<style>
+.ui-selectmenu-button.ui-button {width: 10em;}
+.fa-play, .fa-stop, .fa-sync-alt { margin-bottom: -1px; }
+</style>

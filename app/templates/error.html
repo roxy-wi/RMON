@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %} {{title}} {% endblock %}
+{% block h2 %} {{title}} {% endblock %}
+{% block content %}
+<div class="container">
+        <style>
+            #oops_div {
+                position: absolute;
+                right: 0;
+                margin-top: 50px;
+                bottom: -15px;
+            }
+        </style>
+        <center>
+            <h4>{{e}}</h4>
+        </center>
+        <div id="oops_div">
+            <img src="{{ url_for('static', filename='images/oops.png')}}" alt="Oops">
+        </div>
+</div>
+{% endblock %}

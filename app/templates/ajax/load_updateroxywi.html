@@ -1,0 +1,85 @@
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+{% set current_ver = versions.0 %}
+{% set new_ver = versions.1 %}
+{% set current_ver_without_dots = versions.2 %}
+{% set new_ver_without_dots = versions.3 %}
+{% set services_name = {
+    'rmon-server': { 'link': 'rmon-server', 'name': 'RMON Server', 'desc': lang.admin_page.desc.smon_desc },
+    'rmon-socket': { 'link': 'socket', 'name': 'Socket', 'desc': lang.admin_page.desc.socket_desc },
+    }
+%}
+<tr class="odd">
+    <td class="padding10 first-collumn">
+        RMON
+    </td>
+    <td>
+        <b
+                {% if new_ver_without_dots > current_ver_without_dots and new_ver != "Sorry cannot get current version" %}
+                title=lang.admin_page.desc.a_new_version+" RMON"
+                style="color: var(--red-color)"
+                {% else %}
+                title=lang.admin_page.desc.no_new_version+" RMON"
+                style="color: var(--green-color)"
+                {% endif %}
+        >
+            {{current_ver}}
+        </b>
+    </td>
+    <td class="padding10">
+        <b>{{new_ver}}</b>
+    </td>
+    <td>
+        {% if new_ver_without_dots > current_ver_without_dots and new_ver != "Sorry cannot get current version" %}
+        <a class="ui-button ui-widget ui-corner-all" onclick="updateService('rmon')" title="{{lang.words.w_update|title()}} RMON">{{lang.words.w_update|title()}}</a>
+        {% endif %}
+    </td>
+    <td colspan="2">
+        {{lang.admin_page.desc.main_app}}
+    </td>
+</tr>
+{% for s in services %}
+    {% if s.0 in ('rmon-server', 'rmon-socket') %}
+        {% set is_need_update = 0 %}
+        {% if s.2['current_version']|float < s.2['new_version']|float %}
+            {% set is_need_update = 1 %}
+        {% endif %}
+<tr class="{{ loop.cycle('even', 'odd') }}">
+    <td class="padding10 first-collumn">
+        <a href="https://rmon.io/tools/{{services_name[s.0]['link']}}" title="{{lang.words.read|title()}} {{lang.words.more}} {{lang.words.about}} {{services_name[s.0]['name']}}" target="_blank" class="link" rel="noopener noreferrer">{{services_name[s.0]['name']}}</a>
+    </td>
+    <td>
+        {% if s.2['current_version'] != '* is not installed' and s.2['current_version'] != '' %}
+        <b id="current-version-{{s.0}}"
+                {% if is_need_update %}
+                title="{{lang.admin_page.desc.a_new_version}} {{services_name[s.0]['name']}}"
+                style="color: var(--red-color)"
+                {% else %}
+                title="{{lang.admin_page.desc.no_new_version}} {{services_name[s.0]['name']}}"
+                style="color: var(--green-color)"
+                {% endif %}
+        >
+            {{s.2['current_version']}}
+        </b>
+        {% endif %}
+    </td>
+    <td class="padding10">
+        <b>
+            {{s.2['new_version']}}
+        </b>
+    </td>
+    <td>
+        {% if 'is not installed' not in s.2['current_version'] and s.2['current_version'] != '' and s.2['current_version'] != '0' %}
+            {% if is_need_update %}
+                <a class="ui-button ui-widget ui-corner-all" onclick="updateService('{{s.0}}')" title="{{lang.words.w_update|title()}} {{services_name[s.0]['name']}}">{{lang.words.w_update|title()}}</a>
+            {% endif %}
+        {% endif %}
+        {% if s.2['current_version'] == '0'  %}
+            <a class="ui-button ui-widget ui-corner-all" onclick="updateService('{{s.0}}', 'install')" title="{{lang.words.install|title()}} {{service_name}}">{{lang.words.install|title()}}</a>
+        {% endif %}
+    </td>
+    <td colspan="3">
+        {{services_name[s.0]['desc']|safe}}
+    </td>
+</tr>
+{% endif %}
+{% endfor %}

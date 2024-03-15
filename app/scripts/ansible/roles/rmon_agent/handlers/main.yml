@@ -1,0 +1,9 @@
+- name: Restart rsyslog
+  ansible.builtin.service:
+    name: rsyslog
+    state: restarted
+
+- name: Restart RMON agent
+  ansible.builtin.service:
+    name: rmon-agent
+    state: restarted

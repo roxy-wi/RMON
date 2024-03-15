@@ -1,0 +1,51 @@
+.ui-selectmenu-button.ui-button {
+    width: 10em;
+}
+.first-collumn {
+    width: 15%;
+}
+.container {
+    margin-right: 0;
+}
+@media screen and (-webkit-min-device-pixel-ratio:0) and (min-resolution:.001dpcm) {
+    .ui-checkboxradio-label {
+        padding-bottom: 0.5em !important;
+        padding-top: 0.5em !important;
+    }
+    .ui-checkboxradio-checked {
+        padding-bottom: 0.5em !important;
+        padding-top: 0.6em !important;
+    }
+}
+@-moz-document url-prefix() {
+    .ui-checkboxradio-label {
+        padding-bottom: 0.4em !important;
+        padding-top: 0.4em !important;
+    }
+    .ui-checkboxradio-checked {
+        padding-bottom: 0.4em !important;
+        padding-top: 0.5em !important;
+    }
+}
+.group_error {
+    display: none;
+    clear: both;
+    height: 60px;
+}
+.user_group_caption {
+    text-align: center;
+    font-size: 1.3em;
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #ddd;
+}
+.add_user_group, .remove_user_group {
+    background: var(--right-menu-blue-rolor);
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    padding: 10px 14px 10px 13px;
+}
+.remove_user_group {
+    padding: 10px 14px 10px 15px;
+}
