@@ -8,7 +8,6 @@ import app.modules.db.user as user_sql
 import app.modules.db.group as group_sql
 import app.modules.db.server as server_sql
 import app.modules.db.channel as channel_sql
-import app.modules.db.checker as checker_sql
 import app.modules.common.common as common
 import app.modules.roxywi.common as roxywi_common
 

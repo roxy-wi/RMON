@@ -263,7 +263,7 @@ def status_page():
             'lang': g.user_params['lang'],
             'smon': smon_sql.smon_list(g.user_params['group_id']),
             'pages': smon_sql.select_status_pages(g.user_params['group_id']),
-            'smon_status': tools_common.is_tool_active('roxy-wi-smon'),
+            'smon_status': tools_common.is_tool_active('rmon-server'),
             'user_subscription': roxywi_common.return_user_subscription()
         }
 
@@ -346,7 +346,7 @@ def smon_history():
     kwargs = {
         'lang': g.user_params['lang'],
         'smon': history_sql.alerts_history('RMON', g.user_params['group_id']),
-        'smon_status': tools_common.is_tool_active('roxy-wi-smon'),
+        'smon_status': tools_common.is_tool_active('rmon-server'),
         'user_subscription': roxywi_common.return_user_subscription(),
         'action': 'smon'
     }

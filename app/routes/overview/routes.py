@@ -35,11 +35,6 @@ def index():
 @bp.route('/overview/services')
 def show_services_overview():
     return roxy_overview.show_services_overview()
-#
-#
-# @bp.route('/overview/server/<server_ip>')
-# def overview_server(server_ip):
-#     return roxy_overview.show_overview(server_ip)
 
 
 @bp.route('/overview/users')

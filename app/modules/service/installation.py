@@ -1,5 +1,7 @@
 import os
+from packaging import version
 
+import ansible
 import ansible_runner
 
 import app.modules.db.sql as sql
@@ -105,13 +107,22 @@ def run_ansible(inv: dict, server_ips: str, ansible_role: str) -> object:
 
 
 def _install_ansible_collections():
+	old_ansible_server = ''
 	collections = ('community.general', 'ansible.posix', 'community.docker')
+	trouble_link = 'Read <a href="https://rmon.op/troubleshooting#ansible_collection" target="_blank" class="link">troubleshooting</a>'
 	for collection in collections:
-		if not os.path.isdir(f'/usr/share/httpd/.ansible/collections/ansible_collections/{collection.replace(".", "/")}'):
+		if not os.path.isdir(
+				f'/usr/share/httpd/.ansible/collections/ansible_collections/{collection.replace(".", "/")}'):
 			try:
-				exit_code = os.system(f'ansible-galaxy collection install {collection}')
+				if version.parse(ansible.__version__) < version.parse('2.13.9'):
+					old_ansible_server = '--server https://old-galaxy.ansible.com/'
+				exit_code = os.system(f'ansible-galaxy collection install {collection} {old_ansible_server}')
 			except Exception as e:
-				roxywi_common.handle_exceptions(e, 'RMON server', 'Cannot install as collection', roxywi=1)
+				roxywi_common.handle_exceptions(e,
+												'Roxy-WI server',
+												f'Cannot install as collection. {trouble_link}',
+												roxywi=1)
 			else:
 				if exit_code != 0:
-					raise Exception(f'error: Ansible collection installation was not successful: {exit_code}')
+					raise Exception(
+						f'error: Ansible collection installation was not successful: {exit_code}. {trouble_link}')

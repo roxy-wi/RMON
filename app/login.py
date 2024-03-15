@@ -15,7 +15,6 @@ def check_login():
             'login_page', 'static', 'main.show_roxywi_version', 'smon.show_smon_status_page',
             'smon.smon_history_statuses', 'smon.agent_get_checks', 'smon.get_check_status'
     ):
-        print(request)
         try:
             user_params = roxywi_common.get_users_params()
         except Exception:

@@ -20,7 +20,7 @@ def agent():
         kwargs = {
             'agents': smon_sql.get_agents(group_id),
             'lang': roxywi_common.get_user_lang_for_flask(),
-            'smon_status': tools_common.is_tool_active('roxy-wi-smon'),
+            'smon_status': tools_common.is_tool_active('rmon-server'),
             'user_subscription': roxywi_common.return_user_subscription(),
         }
 
@@ -172,7 +172,7 @@ def agent_action(action):
         return 'error: Wrong action'
 
     try:
-        command = [f'sudo systemctl {action} roxy-wi-smon-agent']
+        command = [f'sudo systemctl {action} rmon-agent']
         server_mod.ssh_command(server_ip, command)
     except Exception as e:
         return f'{e}'

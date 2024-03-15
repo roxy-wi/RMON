@@ -92,6 +92,7 @@ def update_user_status() -> None:
 	roxy_wi_get_plan = requests.post(f'https://rmon.io/user/license', timeout=1, proxies=proxy_dict, json=json_body)
 	try:
 		status = roxy_wi_get_plan.json()
+		print(status)
 		roxy_sql.update_user_status(status['status'], status['plan'], status['method'])
 	except Exception as e:
 		roxywi_common.logging('RMON server', f'error: Cannot get user status {e}', roxywi=1)
@@ -113,4 +114,8 @@ def action_service(action: str, service: str) -> str:
 
 
 def update_plan():
+	if roxy_sql.select_user_name():
+		roxy_sql.update_user_name('user')
+	else:
+		roxy_sql.insert_user_name('user')
 	update_user_status()

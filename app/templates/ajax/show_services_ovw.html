@@ -3,21 +3,21 @@
 </tr>
 <tr class="even">
 	<td>
-		{% if roxy_tools_status['smon'] == 'active' %}
-			<span class="serverUp server-status-small" title="RMON {{lang.words.started}}"></span>
+		{% if roxy_tools_status['rmon-server'] == 'active' %}
+			<span class="serverUp server-status-small" title="RMON-server {{lang.words.started}}"></span>
 			<a href="{{ url_for('smon.smon_main_dashboard') }}" title="RMON Dashboard" class="logs_link">
-				RMON
+				RMON-server
 			</a>
 		{% else %}
-			{% if roxy_tools_status['smon'] == 'inactive' or roxy_tools_status['smon'] == 'failed' %}
-				<span class="serverDown server-status-small" title="RMON {{lang.words.stopped}}"></span>
+			{% if roxy_tools_status['rmon-server'] == 'inactive' or roxy_tools_status['rmon-server'] == 'failed' %}
+				<span class="serverDown server-status-small" title="RMON-server {{lang.words.stopped}}"></span>
 				<a href="{{ url_for('admin.admin') }}#services" title="{{lang.words.start|title()}} RMON" class="logs_link">
-					RMON
+					RMON-server
 				</a>
 			{% else %}
 				<span title="RMON is not installed"><span class="serverNone server-status-small"></span></span>
-				<a href="https://rmon.io/tools/smon" title="Simple monitoring ports installation" target="_blank" class="logs_link">
-					RMON
+				<a href="https://rmon.io/tools/rmon-server" title="Simple monitoring ports installation" target="_blank" class="logs_link">
+					RMON-server
 				</a>
 			{% endif %}
 		{% endif %}

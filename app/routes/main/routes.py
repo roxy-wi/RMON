@@ -4,7 +4,7 @@ import pytz
 from flask import render_template, request, session, g, abort
 from flask_login import login_required
 
-sys.path.insert(0,"/var/www/smon/app")
+sys.path.insert(0,"/var/www/rmon/app")
 
 from app import app, cache
 from app.routes.main import bp

@@ -1,4 +1,4 @@
-#!/var/www/smon/.venv/bin/python3
+#!/usr/bin/env python3
 from modules.db.db_model import *
 
 
