@@ -65,6 +65,7 @@ def run_ansible(inv: dict, server_ips: str, ansible_role: str) -> object:
 		'AWX_DISPLAY': False,
 		'SSH_AUTH_PID': agent_pid['pid'],
 		'SSH_AUTH_SOCK': agent_pid['socket'],
+		'ANSIBLE_PYTHON_INTERPRETER': '/usr/bin/python3'
 	}
 	kwargs = {
 		'private_data_dir': '/var/www/rmon/app/scripts/ansible/',

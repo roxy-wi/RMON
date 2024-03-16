@@ -4,6 +4,8 @@ RMON (remote monitoring) is an easy to understand and use geo-distributed monito
 # Get involved
 * [Telegram Channel](https://t.me/roxy_wi_channel) about RMON, talks and questions are welcome
 
+![alt text](https://rmon.io/static//images/rmon_history_dashboard.png "RMON check history")
+
 # Features:
 1. Checking ping availability
 2. Checking DNS records availability
@@ -21,3 +23,9 @@ RMON (remote monitoring) is an easy to understand and use geo-distributed monito
 14. Status pages
 15. RMON Agents 
 16. Network tools
+
+# Install
+
+For installation on EL and Ubuntu read this [guide](https://rmon.io/installation)
+
+![alt text](https://rmon.io/static//images/rmon_checks.png "RMON checks")

@@ -417,5 +417,5 @@ def create_tables():
         conn.create_tables(
             [User, Server, Role, Telegram, Slack, UUID, Token, ApiToken, Groups, UserGroups, Setting, Cred, Version, ActionHistory,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
-             SmonStatusPage, SmonStatusPageCheck]
+             SmonStatusPage, SmonStatusPageCheck, SMON]
         )

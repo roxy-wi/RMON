@@ -1,0 +1,1 @@
+gunicorn_bin: "{% if ansible_facts['distribution_major_version'] == '7' %}/usr/bin/gunicorn-3{% else %}gunicorn{% endif %}"

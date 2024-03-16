@@ -33,7 +33,7 @@ def smon_main_dashboard():
         'smon': smon_sql.smon_list(group_id),
         'agents': smon_sql.get_agents(group_id),
         'group': group_id,
-        'smon_status': tools_common.is_tool_active('roxy-wi-smon'),
+        'smon_status': tools_common.is_tool_active('rmon-server'),
         'user_subscription': roxywi_common.return_user_subscription(),
         'telegrams': channel_sql.get_user_telegram_by_group(group_id),
         'slacks': channel_sql.get_user_pd_by_group(group_id),
@@ -233,7 +233,7 @@ def status_page():
               - 'lang': The language from user parameters
               - 'smon': The list of smon from sql.smon_list() using the 'group_id' from user parameters
               - 'pages': The status pages from sql.select_status_pages() using the 'group_id' from user parameters
-              - 'smon_status': The status of the 'roxy-wi-smon' tool from tools_common.is_tool_active()
+              - 'smon_status': The status of the 'rmon-server' tool from tools_common.is_tool_active()
               - 'user_subscription': The user subscription from roxywi_common.return_user_subscription()
           - POST method: Creates a status page with the following parameters:
               - 'name': The name of the status page
@@ -362,7 +362,7 @@ def smon_host_history(server_ip):
     needed_host = common.checkAjaxInput(server_ip)
     if ' ' in needed_host:
         needed_host = f"'{needed_host}'"
-    smon_status = tools_common.is_tool_active('roxy-wi-smon')
+    smon_status = tools_common.is_tool_active('rmon-server')
     smon = history_sql.alerts_history('RMON', g.user_params['group_id'], host=needed_host)
     user_subscription = roxywi_common.return_user_subscription()
     kwargs = {

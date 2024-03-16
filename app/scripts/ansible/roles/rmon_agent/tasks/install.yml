@@ -49,13 +49,26 @@
     state: present
   when: ansible_os_family == "Debian"
 
+- name: Install EPEL
+  yum:
+    name: epel-release
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Upgrade pip3
+  pip:
+    name: pip
+    executable: pip3
+    state: latest
+    extra_args: --upgrade
+
 - name: Install RMON Agent python requirements
   ansible.builtin.pip:
     requirements: /var/lib/rmon/rmon-agent/requirements.txt
 
-- name: Start and enable rmon RMON Agent
+- name: Start and enable RMON Agent
   ansible.builtin.systemd:
-    name: rmon-rmon-agent
+    name: rmon-agent
     enabled: true
     masked: no
     daemon_reload: true
