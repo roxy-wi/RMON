@@ -1,17 +1,17 @@
 [Unit]
-Description=Roxy-WI SMON Agent
+Description=RMON Agent
 After=syslog.target network.target
 
 [Service]
 Type=simple
-EnvironmentFile=/etc/roxy-wi/smon-agent.cfg
-WorkingDirectory=/var/lib/roxy-wi/smon-agent
+EnvironmentFile=/etc/rmon/rmon-agent.cfg
+WorkingDirectory=/var/lib/rmon/rmon-agent
 ExecStart={{ gunicorn_bin }} --workers 1 --bind 0.0.0.0:${agent_port} -m 007 wsgi:app
-ExecStartPost=python3 -c 'from smon_checks import ask_for_checks; ask_for_checks()'
+ExecStartPost=python3 -c 'from rmon_checks import ask_for_checks; ask_for_checks()'
 
 StandardOutput=syslog
 StandardError=syslog
-SyslogIdentifier=roxy-wi-smon-agent
+SyslogIdentifier=rmon-agent
 
 RestartSec=30s
 Restart=on-failure

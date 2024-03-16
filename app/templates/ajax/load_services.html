@@ -35,7 +35,7 @@
     <td class="padding10 first-collumn">
         {% if 'is not installed' in s.2['current_version'] or not s.2['current_version'] or s.2['current_version'] == '0' %}
             {% if s.0 in ('rabbitmq-server', 'fail2ban') %}
-                <a class="ui-button ui-widget ui-corner-all" href="https://roxy-wi.org/tools/{{s.0.split('-')[0]}}" title="{{lang.words.install|title()}} {{services_name[s.0]['name']}}" target="_blank">{{lang.words.install|title()}}</a>
+                <a class="ui-button ui-widget ui-corner-all" href="https://rmon.io/tools/{{s.0.split('-')[0]}}" title="{{lang.words.install|title()}} {{services_name[s.0]['name']}}" target="_blank">{{lang.words.install|title()}}</a>
             {% else %}
                 <a class="ui-button ui-widget ui-corner-all" onclick="updateService('{{s.0}}', 'install')" title="{{lang.words.install|title()}} {{service_name}}">{{lang.words.install|title()}}</a>
             {% endif %}

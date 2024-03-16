@@ -139,20 +139,16 @@ def update_server():
     roxywi_auth.page_for_admin(level=2)
     name = request.form.get('updateserver')
     group = request.form.get('servergroup')
-    typeip = request.form.get('typeip')
-    firewall = request.form.get('firewall')
     enable = request.form.get('enable')
-    master = int(request.form.get('slave'))
-    serv_id = request.form.get('id')
+    serv_id = int(request.form.get('id'))
     cred = request.form.get('cred')
     port = request.form.get('port')
-    protected = request.form.get('protected')
     desc = request.form.get('desc')
 
     if name is None or port is None:
         return error_mess
     else:
-        server_sql.update_server(name, group, typeip, enable, master, serv_id, cred, port, desc, firewall, protected)
+        server_sql.update_server(name, group, enable, serv_id, cred, port, desc)
         server_ip = server_sql.select_server_ip_by_id(serv_id)
         roxywi_common.logging(server_ip, f'The server {name} has been update', roxywi=1, login=1, keep_history=1, service='server')
 
