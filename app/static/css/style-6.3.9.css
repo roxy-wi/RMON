@@ -1031,8 +1031,8 @@ label {
 	height: 25px;
 }
 .up, .down, .disable, .unknown {
-	height: 95%;
-	width: 281px;
+	height: 45px;
+	width: 96%;
 	font-size: 30px;
 	color: #fff;
 	text-align: center;
