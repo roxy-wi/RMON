@@ -995,7 +995,7 @@ label {
 	padding: 10px 20px 0 0;
 }
 .smon_services {
-	width: 300px;
+	width: 360px;
 	height: 185px;
 	float: left;
 	background-color: #fbfbfb;;
@@ -1031,7 +1031,7 @@ label {
 	height: 25px;
 }
 .up, .down, .disable, .unknown {
-	height: 45px;
+	height: 95%;
 	width: 281px;
 	font-size: 30px;
 	color: #fff;

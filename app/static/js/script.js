@@ -1,6 +1,5 @@
 var url = "/static/js/script.js";
-var cur_url = window.location.href.split('/').pop();
-cur_url = cur_url.split('/');
+var cur_url = window.location.href.split('/');
 var intervalId;
 function validateEmail(email) {
 	const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -31,9 +30,6 @@ $( function() {
 	   var link2 = link.split('/')[2];
 	   var link3 = link.split('/')[3];
 	   var link4 = link.split('/')[4];
-	   if (cur_url[1] == null) {
-		   cur_url[1] = 'haproxy';
-	   }
 	   var full_uri = cur_url[0] + '/' + cur_url[1]
 	   var full_uri1 = link2 + '/' + link3
 	   var full_uri2 = cur_url[0] + '/' + cur_url[1] + '/' + cur_url[2]
@@ -80,46 +76,15 @@ window.onblur= function() {
 				viewLogs();
 			} else if (cur_url[0] == "metrics") {
 				showMetrics();
-			} else if (cur_url[0] == "smon" && cur_url[1] == "dashboard") {
-				showSmon('refresh')
+			} else if (cur_url[3] == "rmon" && cur_url[4] == "dashboard" && !cur_url[5]) {
+				showSmon('refresh');
+			} else if (cur_url[3] == "rmon" && cur_url[4] == "dashboard" && cur_url[5]) {
+				showSmonHistory();
 			}
 		}
 	}
 };
-if(localStorage.getItem('restart')) {
-	var ip_for_restart = localStorage.getItem('restart');
-	$.ajax({
-		url: "/service/check-restart/" + ip_for_restart,
-		// data: {
-		// 	token: $('#token').val()
-		// },
-		// type: "POST",
-		success: function (data) {
-			if (data.indexOf('ok') != '-1') {
-				var apply_div = $.find("#apply_div");
-				apply_div = apply_div[0].id;
-				$("#apply").css('display', 'block');
-				$('#' + apply_div).css('width', '850px');
-				ip_for_restart = escapeHtml(ip_for_restart);
-				if (cur_url[0] == "service") {
-					$('#' + apply_div).css('width', '650px');
-					$('#' + apply_div).addClass("alert-one-row");
-					$('#' + apply_div).html("You have made changes to the server: " + ip_for_restart + ". Changes will take effect only after<a id='" + ip_for_restart + "' class='restart' title='Restart HAproxy service' onclick=\"confirmAjaxAction('restart', 'hap', '" + ip_for_restart + "')\">restart</a><a href='#' title='close' id='apply_close' style='float: right'><b>X</b></a>");
-				} else {
-					$('#' + apply_div).html("You have made changes to the server: " + ip_for_restart + ". Changes will take effect only after restart. <a href='service' title='Overview'>Go to the HAProxy Overview page and restart</a><a href='#' title='close' id='apply_close' style='float: right'><b>X</b></a>");
-				}
-				$.getScript('/static/js/overview.js');
-			}
-		}
-	});
-}
 function autoRefreshStyle(autoRefresh) {
-	var margin;
-	if (cur_url[0] == "/" || cur_url[0] == "waf" || cur_url[0] == "metrics") {
-		if (autoRefresh < 60000) {
-			autoRefresh = 60000;
-		}
-	}
 	autoRefresh = autoRefresh / 1000;
 	if (autoRefresh == 60) {
 		timeRange = " minute"
@@ -181,13 +146,10 @@ function startSetInterval(interval) {
 		} else if (cur_url[1] == "internal") {
 			intervalId = setInterval('viewLogs()', interval);
 			viewLogs();
-		} else if (cur_url[0] == "rmon" && cur_url[1] == "dashboard") {
+		} else if (cur_url[0] == "dashboard") {
 			intervalId = setInterval("showSmon('refresh')", interval);
 			showSmon('refresh');
-		} else if (cur_url[0] == "rmon" && cur_url[1] == "history") {
-			if(interval < 60000) {
-				interval = 60000;
-			}
+		} else if (cur_url[3] == "rmon" && cur_url[4] == "dashboard" && cur_url[5]) {
 			intervalId = setInterval('showSmonHistory()', interval);
 			showSmonHistory();
 		}
@@ -801,13 +763,13 @@ function replace_text(id_textarea, text_var) {
 	var text_val = str.substring(0, beg) + str.substring(end, len);
 	$(id_textarea).text(text_val);
 }
-function createHistroy() {
+function createHistory() {
 	if(localStorage.getItem('history') === null) {
 		var get_history_array = ['login', 'login','login'];
 		localStorage.setItem('history', JSON.stringify(get_history_array));
 	}
 }
-function listHistroy() {
+function listHistory() {
 	var browse_history = JSON.parse(localStorage.getItem('history'));
 	var history_link = '';
 	var title = []
@@ -837,8 +799,8 @@ function listHistroy() {
 	}
 	localStorage.setItem('history', JSON.stringify(browse_history));
 }
-createHistroy();
-listHistroy();
+createHistory();
+listHistory();
 
 function changeCurrentGroupF() {
 	Cookies.remove('group');
@@ -1006,25 +968,6 @@ function changeUserPasswordItOwn(d) {
 			}
 		});
 	}
-}
-function findInConfig(words) {
-	clearAllAjaxFields();
-	$.ajax({
-		url: "/config/" + $("#service").val() + "/find-in-config",
-		data: {
-			serv: $("#serv").val(),
-			words: words
-		},
-		type: "POST",
-		success: function (data) {
-			if (data.indexOf('error:') != '-1') {
-				toastr.error(data);
-			} else {
-				toastr.clear();
-				$("#ajax").html(data);
-			}
-		}
-	});
 }
 function waitForElm(selector) {
 	return new Promise(resolve => {

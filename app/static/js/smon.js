@@ -1,7 +1,7 @@
-let add_word = $('#translate').attr('data-add');
-const delete_word = $('#translate').attr('data-delete');
-const cancel_word = $('#translate').attr('data-cancel');
-const check_types = {'tcp': 1, 'http': 2, 'ping': 4, 'dns': 5};
+var add_word = $('#translate').attr('data-add');
+var delete_word = $('#translate').attr('data-delete');
+var cancel_word = $('#translate').attr('data-cancel');
+var check_types = {'tcp': 1, 'http': 2, 'ping': 4, 'dns': 5};
 $(function () {
 	$( "#check_type" ).on('selectmenuchange',function() {
 		check_and_clear_check_type($('#check_type').val());

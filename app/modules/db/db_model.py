@@ -411,11 +411,25 @@ class RoxyTool(BaseModel):
         constraints = [SQL('UNIQUE (name)')]
 
 
+class Alerts(BaseModel):
+    message = CharField()
+    level = CharField()
+    ip = CharField()
+    port = IntegerField()
+    user_group = IntegerField(constraints=[SQL('DEFAULT 1')])
+    service = CharField()
+    date = DateTimeField(default=datetime.now)
+
+    class Meta:
+        table_name = 'alerts'
+        primary_key = False
+
+
 def create_tables():
     conn = connect()
     with conn:
         conn.create_tables(
             [User, Server, Role, Telegram, Slack, UUID, Token, ApiToken, Groups, UserGroups, Setting, Cred, Version, ActionHistory,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
-             SmonStatusPage, SmonStatusPageCheck, SMON]
+             SmonStatusPage, SmonStatusPageCheck, SMON, Alerts]
         )
