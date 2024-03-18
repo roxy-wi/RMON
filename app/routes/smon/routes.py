@@ -34,7 +34,6 @@ def smon_main_dashboard():
         'agents': smon_sql.get_agents(group_id),
         'group': group_id,
         'smon_status': tools_common.is_tool_active('rmon-server'),
-        'user_subscription': roxywi_common.return_user_subscription(),
         'telegrams': channel_sql.get_user_telegram_by_group(group_id),
         'slacks': channel_sql.get_user_pd_by_group(group_id),
         'pds': channel_sql.get_user_slack_by_group(group_id),

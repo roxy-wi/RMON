@@ -447,23 +447,6 @@ def show_server_services(server_id: int) -> str:
 	return render_template('ajax/show_server_services.html', server=server, lang=lang)
 
 
-# def change_server_services(server_id: int, server_name: str, server_services: dict) -> str:
-# 	services = service_sql.select_services()
-# 	services_status = {}
-#
-# 	for k, v in server_services.items():
-# 		for service in services:
-# 			if service.service_id == int(k):
-# 				services_status[service.service_id] = v
-#
-# 	try:
-# 		if service_sql.update_server_services(server_id, services_status[1], services_status[2], services_status[4], services_status[3]):
-# 			roxywi_common.logging('Roxy-WI server', f'Active services have been updated for {server_name}', roxywi=1, login=1)
-# 			return 'ok'
-# 	except Exception as e:
-# 		return f'error: {e}'
-
-
 def start_ssh_agent() -> dict:
 	"""
 	Start SSH agent

@@ -436,30 +436,21 @@ def check_receiver(channel_id: int, receiver_name: str) -> str:
 
 def load_channels():
 	try:
-		user_subscription = roxywi_common.return_user_status()
-	except Exception as e:
-		user_subscription = roxywi_common.return_unsubscribed_user_status()
-		roxywi_common.logging('RMON server', f'Cannot get a user plan: {e}', roxywi=1)
-
-	try:
 		user_params = roxywi_common.get_users_params()
 	except Exception:
 		abort(403)
 
 	kwargs = {
-		'user_subscription': user_subscription,
 		'user_params': user_params,
 		'lang': user_params['lang']
 	}
 
-	if user_subscription['user_status']:
-		user_group = roxywi_common.get_user_group(id=1)
-		kwargs.setdefault('telegrams', channel_sql.get_user_telegram_by_group(user_group))
-		kwargs.setdefault('pds', channel_sql.get_user_pd_by_group(user_group))
-		kwargs.setdefault('groups', group_sql.select_groups())
-		kwargs.setdefault('slacks', channel_sql.get_user_slack_by_group(user_group))
-		kwargs.setdefault('user_subscription', user_subscription)
-		kwargs.setdefault('user_params', user_params)
-		kwargs.setdefault('lang', user_params['lang'])
+	user_group = roxywi_common.get_user_group(id=1)
+	kwargs.setdefault('telegrams', channel_sql.get_user_telegram_by_group(user_group))
+	kwargs.setdefault('pds', channel_sql.get_user_pd_by_group(user_group))
+	kwargs.setdefault('groups', group_sql.select_groups())
+	kwargs.setdefault('slacks', channel_sql.get_user_slack_by_group(user_group))
+	kwargs.setdefault('user_params', user_params)
+	kwargs.setdefault('lang', user_params['lang'])
 
 	return render_template('ajax/channels.html', **kwargs)

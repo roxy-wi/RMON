@@ -8,9 +8,7 @@
 <link href="{{ url_for('static', filename='css/servers.css') }}" rel="stylesheet"/>
 <link href="{{ url_for('static', filename='css/smon.css') }}" rel="stylesheet"/>
 <link href="{{ url_for('static', filename='css/ha.css') }}" rel="stylesheet">
-{% if user_subscription['user_status'] == 0  %}
-	{% include 'include/no_sub.html' %}
-{% elif smon_status in ('failed', 'inactive', 'ERROR') %}
+{% if smon_status in ('failed', 'inactive', 'ERROR') %}
 <div style="text-align: center;">
 	<br />
 	<h3>{{lang.smon_page.desc.smon_is_not_run}}</h3>

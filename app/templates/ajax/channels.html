@@ -1,8 +1,5 @@
 {% import 'languages/'+lang|default('en')+'.html' as lang %}
 {% from 'include/input_macros.html' import input, select, checkbox %}
-{% if user_subscription['user_status'] == 0 %}
-{% include 'include/no_sub.html' %}
-{% else %}
 <table id="checker_telegram_table" class="overview-overflow">
     <caption><i class="fab fa-telegram caption-icon"></i><h3>Telegram {{lang.words.channels}}</h3></caption>
     <tr class="overviewHead" style="width: 50%;">
@@ -181,5 +178,4 @@
     <a href="https://rmon.io/howto/create-slack-app" title="How to create Slack APP and use it with RMON" target="_blank">{{lang.phrases.howto_user}} Slack APP</a>,
     <a href="https://rmon.io/howto/create-pd-integration" title="How to create PagerDuty integration and use it with RMON" target="_blank">{{lang.phrases.howto_user}} PagerDuty</a>.
 </div>
-{% endif %}
 {% include 'include/admins_dialogs.html' %}

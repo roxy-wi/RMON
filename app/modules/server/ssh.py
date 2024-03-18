@@ -87,8 +87,8 @@ def create_ssh_cred() -> str:
 		try:
 			cred_sql.insert_new_ssh(name, enable, group, username, password)
 		except Exception as e:
-			roxywi_common.handle_exceptions(e, 'Roxy-WI server', 'Cannot create new SSH credentials', roxywi=1, login=1)
-		roxywi_common.logging('Roxy-WI server', f'New SSH credentials {name} has been created', roxywi=1, login=1)
+			roxywi_common.handle_exceptions(e, 'RMON server', 'Cannot create new SSH credentials', roxywi=1, login=1)
+		roxywi_common.logging('RMON server', f'New SSH credentials {name} has been created', roxywi=1, login=1)
 		return render_template('ajax/new_ssh.html', groups=group_sql.select_groups(), sshs=cred_sql.select_ssh(name=name), page=page, lang=lang)
 
 
@@ -111,10 +111,10 @@ def create_ssh_cread_api(name: str, enable: str, group: str, username: str, pass
 	else:
 		try:
 			cred_sql.insert_new_ssh(name, enable, group, username, password)
-			roxywi_common.logging('Roxy-WI server', f'New SSH credentials {name} has been created', roxywi=1)
+			roxywi_common.logging('RMON server', f'New SSH credentials {name} has been created', roxywi=1)
 			return True
 		except Exception as e:
-			roxywi_common.handle_exceptions(e, 'Roxy-WI server', f'Cannot create SSH credentials {name}', roxywi=1)
+			roxywi_common.handle_exceptions(e, 'RMON server', f'Cannot create SSH credentials {name}', roxywi=1)
 
 
 def upload_ssh_key(name: str, user_group: str, key: str, passphrase: str) -> str:
@@ -154,7 +154,7 @@ def upload_ssh_key(name: str, user_group: str, key: str, passphrase: str) -> str
 	try:
 		os.chmod(ssh_keys, 0o600)
 	except IOError as e:
-		roxywi_common.logging('Roxy-WI server', e.args[0], roxywi=1)
+		roxywi_common.logging('RMON server', e.args[0], roxywi=1)
 		raise Exception(f'error: something went wrong: {e}')
 
 	if passphrase != '':
@@ -168,7 +168,7 @@ def upload_ssh_key(name: str, user_group: str, key: str, passphrase: str) -> str
 	except Exception as e:
 		raise Exception(e)
 
-	roxywi_common.logging("Roxy-WI server", f"A new SSH cert has been uploaded {ssh_keys}", roxywi=1, login=1)
+	roxywi_common.logging("RMON server", f"A new SSH cert has been uploaded {ssh_keys}", roxywi=1, login=1)
 	return f'success: SSH key has been saved into: {ssh_keys}'
 
 
@@ -204,7 +204,7 @@ def update_ssh_key() -> str:
 		os.chmod(new_ssh_key_name, 0o600)
 
 	cred_sql.update_ssh(ssh_id, name, enable, group, username, password)
-	roxywi_common.logging('Roxy-WI server', f'The SSH credentials {name} has been updated ', roxywi=1, login=1)
+	roxywi_common.logging('RMON server', f'The SSH credentials {name} has been updated ', roxywi=1, login=1)
 
 	return 'ok'
 
@@ -227,10 +227,10 @@ def delete_ssh_key(ssh_id) -> str:
 			pass
 	try:
 		cred_sql.delete_ssh(ssh_id)
-		roxywi_common.logging('Roxy-WI server', f'The SSH credentials {name} has deleted', roxywi=1, login=1)
+		roxywi_common.logging('RMON server', f'The SSH credentials {name} has deleted', roxywi=1, login=1)
 		return 'ok'
 	except Exception as e:
-		roxywi_common.handle_exceptions(e, 'Roxy-WI server', f'Cannot delete SSH credentials {name}', roxywi=1, login=1)
+		roxywi_common.handle_exceptions(e, 'RMON server', f'Cannot delete SSH credentials {name}', roxywi=1, login=1)
 
 
 def crypt_password(password: str) -> bytes:

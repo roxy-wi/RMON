@@ -82,7 +82,7 @@ def create_server():
                 user_subscription = roxywi_common.return_user_status()
             except Exception as e:
                 user_subscription = roxywi_common.return_unsubscribed_user_status()
-                roxywi_common.logging('Roxy-WI server', f'Cannot get a user plan: {e}', roxywi=1)
+                roxywi_common.logging('RMON server', f'Cannot get a user plan: {e}', roxywi=1)
 
             if add_to_smon:
                 try:
@@ -171,7 +171,7 @@ def create_group():
     else:
         try:
             if group_sql.add_group(newgroup, desc):
-                roxywi_common.logging('Roxy-WI server', f'A new group {newgroup} has been created', roxywi=1, login=1)
+                roxywi_common.logging('RMON server', f'A new group {newgroup} has been created', roxywi=1, login=1)
                 return render_template('ajax/new_group.html', groups=group_sql.select_groups(group=newgroup))
         except Exception as e:
             return str(e)
