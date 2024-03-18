@@ -98,31 +98,6 @@ def check_update():
     return 'ok'
 
 
-@bp.route('/openvpn')
-def load_openvpn():
-    roxywi_auth.page_for_admin()
-    openvpn_configs = ''
-    openvpn_sess = ''
-    openvpn = ''
-
-    if distro.id() == 'ubuntu':
-        stdout, stderr = server_mod.subprocess_execute("apt show openvpn3 2>&1|grep E:")
-    elif distro.id() == 'centos' or distro.id() == 'rhel':
-        stdout, stderr = server_mod.subprocess_execute("rpm --query openvpn3-client")
-
-    if (
-            (stdout[0] != 'package openvpn3-client is not installed' and stderr != '/bin/sh: rpm: command not found')
-            and stdout[0] != 'E: No packages found'
-    ):
-        cmd = "sudo openvpn3 configs-list |grep -E 'ovpn|(^|[^0-9])[0-9]{4}($|[^0-9])' |grep -v net|awk -F\"    \" '{print $1}'|awk 'ORS=NR%2?\" \":\"\\n\"'"
-        openvpn_configs, stderr = server_mod.subprocess_execute(cmd)
-        cmd = "sudo openvpn3 sessions-list|grep -E 'Config|Status'|awk -F\":\" '{print $2}'|awk 'ORS=NR%2?\" \":\"\\n\"'| sed 's/^ //g'"
-        openvpn_sess, stderr = server_mod.subprocess_execute(cmd)
-        openvpn = stdout[0]
-
-    return render_template('ajax/load_openvpn.html', openvpn=openvpn, openvpn_sess=openvpn_sess, openvpn_configs=openvpn_configs)
-
-
 @bp.post('/setting/<param>')
 def update_settings(param):
     roxywi_auth.page_for_admin(level=2)

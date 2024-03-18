@@ -102,9 +102,6 @@ def action_service(action: str, service: str) -> str:
 	cmd = f"sudo systemctl disable {service} --now"
 	if action in ("start", "restart"):
 		cmd = f"sudo systemctl {action} {service} --now"
-		if not roxy_sql.select_user_status():
-			return 'warning: The service is disabled because you are not subscribed. Read <a href="https://rmon.io/pricing" ' \
-				   'title="RMON pricing" target="_blank">here</a> about subscriptions'
 	if is_in_docker:
 		cmd = f"sudo supervisorctl {action} {service}"
 	os.system(cmd)
