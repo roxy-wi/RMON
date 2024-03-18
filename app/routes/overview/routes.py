@@ -26,7 +26,6 @@ def index():
         'autorefresh': 1,
         'roles': sql.select_roles(),
         'groups': group_sql.select_groups(),
-        'guide_me': 1,
         'lang': g.user_params['lang']
     }
     return render_template('ovw.html', **kwargs)

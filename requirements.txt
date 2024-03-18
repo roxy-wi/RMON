@@ -3,6 +3,7 @@ paramiko-ng>=2.5.0
 pytz>=2017.3
 tzlocal==2.0.0
 requests>=2.22.0
+urllib3<2
 pyTelegramBotAPI>=3.6.3
 slack-sdk>=3.4.0
 pdpyras>=4.5.2

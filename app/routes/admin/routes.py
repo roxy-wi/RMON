@@ -41,7 +41,6 @@ def admin():
         'settings': sql.get_setting('', all=1),
         'ldap_enable': sql.get_setting('ldap_enable'),
         'masters': server_sql.select_servers(get_master_servers=1),
-        'guide_me': 1,
         'user_subscription': roxywi_common.return_user_subscription()
     }
 

@@ -3,21 +3,6 @@
 {% else %}
 	<a href=/app/login title="Login" class="login"> Login</a>
 {% endif %}
-{% if guide_me %}
-	<style>
-		.guid_me {
-			float: right;
-			position: absolute;
-			color: #fff !important;
-			cursor: pointer;
-			top: 9px;
-			right: -3px;
-			font-size: 17px;
-			margin-right: 10px
-		}
-	</style>
-	<span class="info guid_me" title="Guide me" onclick="startIntroAgain()"></span>
-{% endif %}
 <a href="/logout" title="{{lang.words.logout|title()}}" style="float: right;
     right: 27px;
     position: absolute;

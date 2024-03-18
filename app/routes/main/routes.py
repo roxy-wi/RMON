@@ -20,6 +20,7 @@ import app.modules.roxywi.roxy as roxy
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.nettools as nettools_mod
 import app.modules.roxywi.common as roxywi_common
+import app.modules.server.server as server_mod
 
 
 @app.errorhandler(403)
@@ -143,7 +144,6 @@ def servers():
         'masters': server_sql.select_servers(get_master_servers=1, uuid=g.user_params['user_uuid']),
         'group': roxywi_common.get_user_group(id=1),
         'timezones': pytz.all_timezones,
-        'guide_me': 1,
         'settings': sql.get_setting('', all=1),
         'page': 'servers.py',
         'ldap_enable': sql.get_setting('ldap_enable'),
@@ -159,3 +159,28 @@ def servers():
 @cache.cached()
 def show_roxywi_version():
     return render_template('ajax/check_version.html', versions=roxy.versions())
+
+
+@bp.route('/portscanner/scan/<int:server_id>', defaults={'server_ip': None})
+@bp.route('/portscanner/scan/<server_ip>', defaults={'server_id': None})
+def scan_port(server_id, server_ip):
+    if server_ip:
+        ip = server_ip
+    else:
+        server = server_sql.select_servers(id=server_id)
+        ip = ''
+
+        for s in server:
+            ip = s[2]
+
+    cmd = f"sudo nmap -sS {ip} |grep -E '^[[:digit:]]'|sed 's/  */ /g'"
+    cmd1 = f"sudo nmap -sS {ip} |head -5|tail -2"
+
+    stdout, stderr = server_mod.subprocess_execute(cmd)
+    stdout1, stderr1 = server_mod.subprocess_execute(cmd1)
+
+    if stderr != '':
+        return f'error: {stderr}'
+    else:
+        lang = roxywi_common.get_user_lang_for_flask()
+        return render_template('ajax/scan_ports.html', ports=stdout, info=stdout1, lang=lang)
