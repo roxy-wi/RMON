@@ -68,7 +68,7 @@ def delete_agent(agent_id: int):
     agent_uuid = ''
     try:
         inv, server_ips = generate_agent_inc(server_ip, 'uninstall', agent_uuid)
-        run_ansible(inv, server_ips, 'smon_agent')
+        run_ansible(inv, server_ips, 'rmon_agent')
     except Exception as e:
         roxywi_common.handle_exceptions(e, server_ip, 'Cannot uninstall RMON agent', roxywi=1, login=1)
 

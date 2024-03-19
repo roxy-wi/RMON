@@ -1,5 +1,5 @@
-- name: Stop and disable Roxy-WI RMON Agent
-  ansible.builtin.systemd_service:
+- name: Stop and disable RMON Agent
+  ansible.builtin.systemd:
     name: rmon-agent
     enabled: false
     state: stopped
