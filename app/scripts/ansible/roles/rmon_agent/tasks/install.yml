@@ -37,18 +37,6 @@
     - Restart rsyslog
     - Restart RMON agent
 
-- name: Install gunicorn RedHat
-  ansible.builtin.package:
-    name: python3-gunicorn
-    state: present
-  when: ansible_os_family == "RedHat"
-
-- name: Install gunicorn Debian
-  ansible.builtin.package:
-    name: gunicorn
-    state: present
-  when: ansible_os_family == "Debian"
-
 - name: Install EPEL
   yum:
     name: epel-release

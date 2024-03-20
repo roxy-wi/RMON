@@ -218,11 +218,9 @@ def select_servers(**kwargs):
 def get_dick_permit(group_id, **kwargs):
 	only_group = kwargs.get('only_group')
 	disable = 'enable = 1'
-	haproxy = ''
-	nginx = ''
-	keepalived = ''
-	apache = ''
 	ip = ''
+	conn = connect()
+	cursor = conn.cursor()
 
 	if kwargs.get('virt'):
 		type_ip = ""
@@ -232,27 +230,18 @@ def get_dick_permit(group_id, **kwargs):
 		disable = '(enable = 1 or enable = 0)'
 	if kwargs.get('ip'):
 		ip = "and ip = '%s'" % kwargs.get('ip')
-	if kwargs.get('haproxy') or kwargs.get('service') == 'haproxy':
-		haproxy = "and haproxy = 1"
-	if kwargs.get('nginx') or kwargs.get('service') == 'nginx':
-		nginx = "and nginx = 1"
-	if kwargs.get('keepalived') or kwargs.get('service') == 'keepalived':
-		keepalived = "and keepalived = 1"
-	if kwargs.get('apache') or kwargs.get('service') == 'apache':
-		apache = "and apache = 1"
-	conn = connect()
-	cursor = conn.cursor()
+
 	try:
 		if mysql_enable == '1':
 			if group_id == '1' and not only_group:
-				sql = f" select * from `servers` where {disable} {type_ip} {nginx} {haproxy} {keepalived} {apache} {ip} order by `pos` asc"
+				sql = f" select * from `servers` where {disable} {type_ip} {ip} order by `pos` asc"
 			else:
-				sql = f" select * from `servers` where `groups` = {group_id} and ({disable}) {type_ip} {ip} {haproxy} {nginx} {keepalived} {apache} order by `pos` asc"
+				sql = f" select * from `servers` where `groups` = {group_id} and ({disable}) {type_ip} {ip} order by `pos` asc"
 		else:
 			if group_id == '1' and not only_group:
-				sql = f" select * from servers where {disable} {type_ip} {nginx} {haproxy} {keepalived} {apache} {ip} order by pos"
+				sql = f" select * from servers where {disable} {type_ip} {ip} order by pos"
 			else:
-				sql = f" select * from servers where groups = '{group_id}' and ({disable}) {type_ip} {ip} {haproxy} {nginx} {keepalived} {apache} order by pos"
+				sql = f" select * from servers where groups = '{group_id}' and ({disable}) {type_ip} {ip} order by pos"
 
 	except Exception as e:
 		raise Exception(f'error: {e}')

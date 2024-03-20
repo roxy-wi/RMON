@@ -95,8 +95,7 @@ def return_nice_path(return_path: str, is_service=1) -> str:
 	Formats the given return path to make it a nice path.
 
 	:param return_path: The return path that needs to be formatted.
-	:param is_service: A flag indicating whether the return path must contain the name of the service.
-	                   Defaults to 1.
+	:param is_service: A flag indicating whether the return path must contain the name of the service. Defaults to 1.
 	:return: The formatted nice path.
 
 	"""
@@ -109,17 +108,17 @@ def return_nice_path(return_path: str, is_service=1) -> str:
 	return return_path
 
 
-def check_is_conf(config_path: str) -> bool:
-	"""
-	    Check if the config_path is a service folder and contains either 'conf' or 'cfg'.
-	    Raise an exception if the check fails.
-
-	    :param config_path: Path string to be checked.
-	    :return: True if the path passes the checks, otherwise an exception is raised.
-	    """
-	if check_is_service_folder(config_path) and ('conf' in config_path or 'cfg' in config_path):
-		return True
-	raise ValueError(f'error: The provided path "{config_path}" is not a service folder or does not contain "conf" or "cfg"')
+# def check_is_conf(config_path: str) -> bool:
+# 	"""
+# 	Check if the config_path is a service folder and contains either 'conf' or 'cfg'.
+# 	Raise an exception if the check fails.
+#
+# 	:param config_path: Path string to be checked.
+# 	:return: True if the path passes the checks, otherwise an exception is raised.
+# 	"""
+# 	if check_is_service_folder(config_path) and ('conf' in config_path or 'cfg' in config_path):
+# 		return True
+# 	raise ValueError(f'error: The provided path "{config_path}" is not a service folder or does not contain "conf" or "cfg"')
 
 
 def get_key(item):

@@ -126,10 +126,10 @@ def create_server():
 def after_add():
     hostname = common.checkAjaxInput(request.form.get('servername'))
     ip = common.is_ip_or_dns(request.form.get('newip'))
-    scan_server = common.checkAjaxInput(request.form.get('scan_server'))
+    # scan_server = common.checkAjaxInput(request.form.get('scan_server'))
 
     try:
-        return server_mod.update_server_after_creating(hostname, ip, scan_server)
+        return server_mod.update_server_after_creating(hostname, ip)
     except Exception as e:
         return str(e)
 

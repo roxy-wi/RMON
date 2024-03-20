@@ -409,7 +409,7 @@ def create_server(hostname, ip, group, typeip, enable, master, cred, port, desc,
 		return False
 
 
-def update_server_after_creating(hostname: str, ip: str, scan_server: int) -> str:
+def update_server_after_creating(hostname: str, ip: str) -> str:
 	try:
 		get_system_info(ip)
 	except Exception as e:
