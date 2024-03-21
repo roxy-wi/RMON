@@ -21,6 +21,30 @@
 <style>
 	.fa-sync-alt { margin-bottom: -1px; }
 </style>
+<table class="overview-wi" id="overview-roxy-wi">
+	<tr class="overviewHead">
+		<td class="padding10 first-collumn-wi">
+			{% if g.user_params['role'] <= 2 %}
+				<a href="servers#servers" title="{{lang.words.manage|title()}} {{lang.words.servers}}">{{lang.words.servers|title()}}</a>
+			{% else %}
+				{{lang.words.servers|title()}}
+			{% endif %}
+		</td>
+		<td class="padding10 third-collumn-wi" style="width: 20%;">
+			<a href="/rmon/agent" title="HAProxy {{lang.words.servers}} {{lang.words.overview}}" class="logs_link">
+				{{ lang.words.agent|title() }}
+			</a>
+		</td>
+		<td class="padding10">
+			<a onclick="showOverview(ip, hostnamea)" title="{{lang.words.refresh|title()}}" style="float: right;">
+				<span class="refresh"></span>
+			</a>
+		</td>
+	</tr>
+	{% for s in g.user_params['servers'] %}
+		<tr class="{{ loop.cycle('odd', 'even') }}" id="{{s[2]}}"></tr>
+	{% endfor %}
+</table>
 <table class="overview-wi" id="overview-load">
 	<tr class="overviewHead" style="height: 30px;">
 		<td class="padding10 first-collumn-wi" colspan="2">

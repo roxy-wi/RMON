@@ -2,7 +2,7 @@
 <tr class="odd">
 </tr>
 <tr class="even">
-	<td>
+	<td class="padding10 first-collumn-wi">
 		{% if roxy_tools_status['rmon-server'] == 'active' %}
 			<span class="serverUp server-status-small" title="RMON-server {{lang.words.started}}"></span>
 			<a href="{{ url_for('smon.smon_main_dashboard') }}" title="RMON Dashboard" class="logs_link">
@@ -24,7 +24,7 @@
 	</td>
 </tr>
 <tr class="odd">
-	<td {% if role != 1 %}class="padding10 first-collumn-wi"{%endif%}>
+	<td class="padding10 first-collumn-wi">
 		{% if roxy_tools_status['rmon-socket'] == 'active' %}
 			<span class="serverUp server-status-small" title="Socket {{lang.words.started}}"></span>
 			{% if role <= 1 %}

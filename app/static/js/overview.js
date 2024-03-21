@@ -6,6 +6,28 @@ function showOverview(serv, hostnamea) {
 	showSubOverview();
 	showServicesOverview();
 	updatingCpuRamCharts();
+	var i;
+	for (i = 0; i < serv.length; i++) {
+		showOverviewCallBack(serv[i], hostnamea[i])
+	}
+}
+function showOverviewCallBack(serv, hostnamea) {
+	$.ajax( {
+		url: "/overview/server/"+serv,
+		beforeSend: function() {
+			$("#"+hostnamea).html('<img class="loading_small" src="/app/static/images/loading.gif" />');
+		},
+		type: "GET",
+		success: function( data ) {
+			if (data.indexOf('error:') != '-1') {
+				toastr.error(data);
+				$("#"+hostnamea).html("");
+			} else {
+				$("#" + hostnamea).empty();
+				$("#" + hostnamea).html(data);
+			}
+		}
+	} );
 }
 function showServicesOverview() {
 	$.ajax( {

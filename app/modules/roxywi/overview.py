@@ -1,10 +1,15 @@
-from flask import render_template
+import json
+
+from flask import render_template, request
 
 import app.modules.db.sql as sql
 import app.modules.db.roxy as roxy_sql
 import app.modules.db.user as user_sql
+import app.modules.db.smon as smon_sql
+import app.modules.db.server as server_sql
 import app.modules.tools.common as tools_common
 import app.modules.roxywi.common as roxywi_common
+import app.modules.tools.smon_agent as smon_agent
 
 
 def user_owv() -> str:
@@ -47,3 +52,28 @@ def show_services_overview():
     return render_template(
         'ajax/show_services_ovw.html', role=user_params['role'], roxy_tools_status=roxy_tools_status, lang=lang
     )
+
+
+def show_overview(server_ip) -> str:
+    servers_sorted = []
+    user_uuid = request.cookies.get('uuid')
+    group_id = request.cookies.get('group')
+    lang = roxywi_common.get_user_lang_for_flask()
+    role = user_sql.get_user_role_by_uuid(user_uuid, group_id)
+    server_name = server_sql.get_hostname_by_server_ip(server_ip)
+    try:
+        agent_id = smon_sql.get_agent_id_by_ip(server_ip)
+    except Exception:
+        agent_id = 0
+
+    try:
+        req = smon_agent.send_get_request_to_agent(agent_id, server_ip, 'scheduler')
+        req = json.loads(req.decode('utf-8'))
+    except Exception:
+        req = {'running': False}
+
+    servers_sorted.append(server_ip)
+    servers_sorted.append(server_name)
+    servers_sorted.append(agent_id)
+    servers_sorted.append(req)
+    return render_template('ajax/overview.html', service_status=servers_sorted, role=role, lang=lang)
