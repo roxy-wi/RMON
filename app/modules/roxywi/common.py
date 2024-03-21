@@ -223,9 +223,7 @@ def get_users_params(**kwargs):
 	except Exception as e:
 		raise Exception(f'error: Cannot get user token {e}')
 
-	if kwargs.get('virt') and kwargs.get('service') == 'haproxy':
-		servers = get_dick_permit(virt=1, haproxy=1)
-	elif kwargs.get('virt'):
+	if kwargs.get('virt'):
 		servers = get_dick_permit(virt=1)
 	elif kwargs.get('disable'):
 		servers = get_dick_permit(disable=0)

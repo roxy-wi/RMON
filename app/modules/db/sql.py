@@ -11,7 +11,7 @@ def get_setting(param, **kwargs):
 		user_group_id = request.cookies.get('group')
 	except Exception:
 		pass
-	if user_group_id == '' or user_group_id is None or param == 'proxy':
+	if user_group_id == '' or user_group_id is None or param in ('proxy', 'agent_port', 'master_port', 'master_ip'):
 		user_group_id = 1
 
 	if kwargs.get('all'):

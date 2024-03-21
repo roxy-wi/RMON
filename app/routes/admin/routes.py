@@ -1,5 +1,4 @@
 import pytz
-import distro
 from flask import render_template, request, g
 from flask_login import login_required
 
@@ -14,7 +13,6 @@ from app.middleware import get_user_params
 import app.modules.roxywi.roxy as roxy
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.common as roxywi_common
-import app.modules.server.server as server_mod
 import app.modules.tools.common as tools_common
 
 

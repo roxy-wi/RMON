@@ -233,12 +233,12 @@ def get_dick_permit(group_id, **kwargs):
 
 	try:
 		if mysql_enable == '1':
-			if group_id == '1' and not only_group:
+			if group_id == 1 and not only_group:
 				sql = f" select * from `servers` where {disable} {type_ip} {ip} order by `pos` asc"
 			else:
 				sql = f" select * from `servers` where `groups` = {group_id} and ({disable}) {type_ip} {ip} order by `pos` asc"
 		else:
-			if group_id == '1' and not only_group:
+			if group_id == 1 and not only_group:
 				sql = f" select * from servers where {disable} {type_ip} {ip} order by pos"
 			else:
 				sql = f" select * from servers where groups = '{group_id}' and ({disable}) {type_ip} {ip} order by pos"
