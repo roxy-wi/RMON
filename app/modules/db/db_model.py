@@ -64,30 +64,30 @@ class Server(BaseModel):
     hostname = CharField()
     ip = CharField(constraints=[SQL('UNIQUE')])
     groups = CharField()
-    type_ip = IntegerField(constraints=[SQL('DEFAULT 0')])
+    shared = IntegerField(constraints=[SQL('DEFAULT 0')])
     enable = IntegerField(constraints=[SQL('DEFAULT 1')])
     master = IntegerField(constraints=[SQL('DEFAULT 0')])
     cred = IntegerField(constraints=[SQL('DEFAULT 1')])
-    alert = IntegerField(constraints=[SQL('DEFAULT 0')])
+    checker = IntegerField(constraints=[SQL('DEFAULT 0')])
     metrics = IntegerField(constraints=[SQL('DEFAULT 0')])
     port = IntegerField(constraints=[SQL('DEFAULT 22')])
     desc = CharField(null=True)
-    active = IntegerField(constraints=[SQL('DEFAULT 0')])
-    keepalived = IntegerField(constraints=[SQL('DEFAULT 0')])
-    nginx = IntegerField(constraints=[SQL('DEFAULT 0')])
-    haproxy = IntegerField(constraints=[SQL('DEFAULT 0')])
+    # active = IntegerField(constraints=[SQL('DEFAULT 0')])
+    # keepalived = IntegerField(constraints=[SQL('DEFAULT 0')])
+    # nginx = IntegerField(constraints=[SQL('DEFAULT 0')])
+    # haproxy = IntegerField(constraints=[SQL('DEFAULT 0')])
     pos = IntegerField(constraints=[SQL('DEFAULT 0')])
-    nginx_active = IntegerField(constraints=[SQL('DEFAULT 0')])
+    # nginx_active = IntegerField(constraints=[SQL('DEFAULT 0')])
     firewall_enable = IntegerField(constraints=[SQL('DEFAULT 0')])
-    nginx_alert = IntegerField(constraints=[SQL('DEFAULT 0')])
-    protected = IntegerField(constraints=[SQL('DEFAULT 0')])
-    nginx_metrics = IntegerField(constraints=[SQL('DEFAULT 0')])
-    keepalived_active = IntegerField(constraints=[SQL('DEFAULT 0')])
-    keepalived_alert = IntegerField(constraints=[SQL('DEFAULT 0')])
-    apache = IntegerField(constraints=[SQL('DEFAULT 0')])
-    apache_active = IntegerField(constraints=[SQL('DEFAULT 0')])
-    apache_alert = IntegerField(constraints=[SQL('DEFAULT 0')])
-    apache_metrics = IntegerField(constraints=[SQL('DEFAULT 0')])
+    # nginx_alert = IntegerField(constraints=[SQL('DEFAULT 0')])
+    # protected = IntegerField(constraints=[SQL('DEFAULT 0')])
+    # nginx_metrics = IntegerField(constraints=[SQL('DEFAULT 0')])
+    # keepalived_active = IntegerField(constraints=[SQL('DEFAULT 0')])
+    # keepalived_alert = IntegerField(constraints=[SQL('DEFAULT 0')])
+    # apache = IntegerField(constraints=[SQL('DEFAULT 0')])
+    # apache_active = IntegerField(constraints=[SQL('DEFAULT 0')])
+    # apache_alert = IntegerField(constraints=[SQL('DEFAULT 0')])
+    # apache_metrics = IntegerField(constraints=[SQL('DEFAULT 0')])
 
     class Meta:
         table_name = 'servers'
@@ -230,8 +230,8 @@ class SMON(BaseModel):
     response_time = CharField(null=True)
     time_state = DateTimeField(constraints=[SQL('DEFAULT "0000-00-00 00:00:00"')])
     group = CharField(null=True)
-    http = CharField(null=True)
-    body = CharField(null=True)
+    # http = CharField(null=True)
+    # body = CharField(null=True)
     body_status = IntegerField(constraints=[SQL('DEFAULT 1')])
     telegram_channel_id = IntegerField(null=True)
     user_group = IntegerField()
@@ -346,6 +346,15 @@ class SmonHttpCheck(BaseModel):
     body = CharField(null=True)
     interval = IntegerField(constraints=[SQL('DEFAULT 120')])
     agent_id = IntegerField(constraints=[SQL('DEFAULT 1')])
+    headers = CharField(null=True)
+    body_req = CharField(null=True)
+    name_lookup = CharField(null=True)
+    connect = CharField(null=True)
+    app_connect = CharField(null=True)
+    pre_transfer = CharField(null=True)
+    redirect = CharField(null=True)
+    start_transfer = CharField(null=True)
+    download = CharField(null=True)
 
     class Meta:
         table_name = 'smon_http_check'
@@ -384,6 +393,7 @@ class SmonStatusPage(BaseModel):
     slug = CharField(unique=True)
     desc = CharField(null=True)
     group_id = IntegerField()
+    style = TextField(null=True)
 
     class Meta:
         table_name = 'smon_status_pages'
@@ -409,20 +419,6 @@ class RoxyTool(BaseModel):
     class Meta:
         table_name = 'roxy_tools'
         constraints = [SQL('UNIQUE (name)')]
-
-
-class Alerts(BaseModel):
-    message = CharField()
-    level = CharField()
-    ip = CharField()
-    port = IntegerField()
-    user_group = IntegerField(constraints=[SQL('DEFAULT 1')])
-    service = CharField()
-    date = DateTimeField(default=datetime.now)
-
-    class Meta:
-        table_name = 'alerts'
-        primary_key = False
 
 
 def create_tables():

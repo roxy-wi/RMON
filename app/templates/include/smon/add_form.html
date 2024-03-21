@@ -8,7 +8,7 @@
 				<span class="need-field">*</span>
 			</td>
 			<td>
-				{{ input('new-smon-name') }}
+				{{ input('new-smon-name', style="width: 240px;") }}
 			</td>
 		</tr>
 		<tr>
@@ -41,7 +41,7 @@
 				<span class="need-field">*</span>
 			</td>
 			<td>
-				{{ input('new-smon-interval', value='120', type='number', placeholder='120', title=lang.phrases.check_interval_title) }}
+				{{ input('new-smon-interval', value='120', type='number', placeholder='120', title=lang.phrases.check_interval_title, style="width: 240px;") }}
 			</td>
 		</tr>
 		<tr class="new_smon_hostname">
@@ -50,7 +50,7 @@
 				<span class="need-field">*</span>
 			</td>
 			<td>
-				{{ input('new-smon-ip') }}
+				{{ input('new-smon-ip', style="width: 240px;") }}
 			</td>
 		</tr>
 		<tr class="smon_ping_check">
@@ -59,7 +59,7 @@
 				<span class="need-field">*</span>
 			</td>
 			<td>
-				{{ input('new-smon-packet_size', value='56', type='number', placeholder='56') }}
+				{{ input('new-smon-packet_size', value='56', type='number', placeholder='56', style="width: 240px;") }}
 			</td>
 		</tr>
 		<tr class="smon_dns_check">
@@ -68,7 +68,7 @@
 				<span class="need-field">*</span>
 			</td>
 			<td>
-				{{ input('new-smon-resolver-server', value='8.8.8.8') }}
+				{{ input('new-smon-resolver-server', value='8.8.8.8', style="width: 240px;") }}
 			</td>
 		</tr>
 		<tr class="smon_tcp_check smon_dns_check">
@@ -77,7 +77,7 @@
 				<span class="need-field">*</span>
 			</td>
 			<td>
-				{{ input('new-smon-port', type='number', size='4') }}
+				{{ input('new-smon-port', type='number', style="width: 240px;") }}
 			</td>
 		</tr>
 		<tr class="smon_http_check">
@@ -85,11 +85,11 @@
 				URL
 				<span class="need-field">*</span>
 			</td>
-			<td>{{ input('new-smon-url', value='https://', title='proto://url[:port]/', placeholder='proto://url[:port]/') }}</td>
+			<td>{{ input('new-smon-url', value='https://', title='proto://url[:port]/', placeholder='proto://url[:port]/', style="width: 240px;") }}</td>
 		</tr>
 		<tr class="smon_http_check">
 			<td class="padding20">{{lang.words.body|title()}}</td>
-			<td>{{ input('new-smon-body') }}</td>
+			<td>{{ input('new-smon-body', style="width: 240px;") }}</td>
 		</tr>
 		<tr class="smon_http_check">
 			<td class="padding20">HTTP {{lang.words.method}}</td>
@@ -151,11 +151,11 @@
 		</tr>
 		<tr>
 			<td class="padding20">{{lang.words.group|title()}}</td>
-			<td>{{ input('new-smon-group') }}</td>
+			<td>{{ input('new-smon-group', style="width: 240px;") }}</td>
 		</tr>
 		<tr>
 			<td class="padding20">{{lang.words.desc|title()}}</td>
-			<td>{{ input('new-smon-description') }}</td>
+			<td>{{ input('new-smon-description', style="width: 240px;") }}</td>
 		</tr>
 	</table>
 	{% include 'include/del_confirm.html' %}
