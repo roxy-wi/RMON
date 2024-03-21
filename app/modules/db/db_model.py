@@ -244,7 +244,7 @@ class SMON(BaseModel):
 
     class Meta:
         table_name = 'smon'
-        constraints = [SQL('UNIQUE (name, port, http, body)')]
+        constraints = [SQL('UNIQUE (name, port)')]
 
 
 class Alerts(BaseModel):
