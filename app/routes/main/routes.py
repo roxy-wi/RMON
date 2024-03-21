@@ -147,7 +147,6 @@ def servers():
         'page': 'servers.py',
         'ldap_enable': sql.get_setting('ldap_enable'),
         'user_roles': user_sql.select_user_roles_by_group(user_group),
-        'user_subscription': roxywi_common.return_user_subscription(),
         'lang': g.user_params['lang']
     }
 

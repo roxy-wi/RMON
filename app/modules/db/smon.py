@@ -18,7 +18,6 @@ def get_agents(group_id: int):
 def get_free_servers_for_agent(group_id: int):
 	try:
 		query = Server.select().where(
-			(Server.type_ip == 0) &
 			(Server.server_id.not_in(SmonAgent.select(SmonAgent.server_id))) &
 			(Server.groups == group_id)
 		)

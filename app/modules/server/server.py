@@ -440,10 +440,10 @@ def server_is_up(server_ip: str) -> str:
 	return server_status[0]
 
 
-def show_server_services(server_id: int) -> str:
-	server = server_sql.select_servers(id=server_id)
-	lang = roxywi_common.get_user_lang_for_flask()
-	return render_template('ajax/show_server_services.html', server=server, lang=lang)
+# def show_server_services(server_id: int) -> str:
+# 	server = server_sql.select_servers(id=server_id)
+# 	lang = roxywi_common.get_user_lang_for_flask()
+# 	return render_template('ajax/show_server_services.html', server=server, lang=lang)
 
 
 def start_ssh_agent() -> dict:

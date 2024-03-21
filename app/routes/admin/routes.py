@@ -37,8 +37,7 @@ def admin():
         'roles': sql.select_roles(),
         'timezones': pytz.all_timezones,
         'settings': sql.get_setting('', all=1),
-        'ldap_enable': sql.get_setting('ldap_enable'),
-        'user_subscription': roxywi_common.return_user_subscription()
+        'ldap_enable': sql.get_setting('ldap_enable')
     }
 
     return render_template('admin.html', **kwargs)

@@ -223,21 +223,21 @@ def get_dick_permit(group_id, **kwargs):
 		return cursor.fetchall()
 
 
-def is_master(ip, **kwargs):
-	conn = connect()
-	cursor = conn.cursor()
-	if kwargs.get('master_slave'):
-		sql = """ select master.hostname, master.ip, slave.hostname, slave.ip
-		from servers as master
-		left join servers as slave on master.id = slave.master
-		where slave.master > 0 """
-	else:
-		sql = """ select slave.ip, slave.hostname from servers as master
-		left join servers as slave on master.id = slave.master
-		where master.ip = '%s' """ % ip
-	try:
-		cursor.execute(sql)
-	except Exception as e:
-		out_error(e)
-	else:
-		return cursor.fetchall()
+# def is_master(ip, **kwargs):
+# 	conn = connect()
+# 	cursor = conn.cursor()
+# 	if kwargs.get('master_slave'):
+# 		sql = """ select master.hostname, master.ip, slave.hostname, slave.ip
+# 		from servers as master
+# 		left join servers as slave on master.id = slave.master
+# 		where slave.master > 0 """
+# 	else:
+# 		sql = """ select slave.ip, slave.hostname from servers as master
+# 		left join servers as slave on master.id = slave.master
+# 		where master.ip = '%s' """ % ip
+# 	try:
+# 		cursor.execute(sql)
+# 	except Exception as e:
+# 		out_error(e)
+# 	else:
+# 		return cursor.fetchall()

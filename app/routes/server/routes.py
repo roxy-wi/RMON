@@ -72,12 +72,6 @@ def create_server():
         return 'error: IP or DNS name is not valid'
     try:
         if server_mod.create_server(hostname, ip, group, shared, enable, cred, port, desc):
-            try:
-                user_subscription = roxywi_common.return_user_status()
-            except Exception as e:
-                user_subscription = roxywi_common.return_unsubscribed_user_status()
-                roxywi_common.logging('RMON server', f'Cannot get a user plan: {e}', roxywi=1)
-
             if add_to_smon:
                 try:
                     user_group = roxywi_common.get_user_group(id=1)
@@ -109,7 +103,7 @@ def create_server():
 
             return render_template(
                 'ajax/new_server.html', groups=group_sql.select_groups(), servers=server_sql.select_servers(server=ip), lang=lang,
-                sshs=cred_sql.select_ssh(group=group), page=page, user_subscription=user_subscription, adding=1
+                sshs=cred_sql.select_ssh(group=group), page=page, adding=1
             )
     except Exception as e:
         return f'{e}'
@@ -236,17 +230,17 @@ def update_system_info(server_ip, server_id):
     return server_mod.update_system_info(server_ip, server_id)
 
 
-@bp.route('/services/<int:server_id>', methods=['GET', 'POST'])
-def show_server_services(server_id):
-    roxywi_auth.page_for_admin(level=2)
-
-    if request.method == 'GET':
-        return server_mod.show_server_services(server_id)
-    else:
-        server_name = common.checkAjaxInput(request.form.get('changeServerServicesServer'))
-        server_services = json.loads(request.form.get('jsonDatas'))
-
-        return server_mod.change_server_services(server_id, server_name, server_services)
+# @bp.route('/services/<int:server_id>', methods=['GET', 'POST'])
+# def show_server_services(server_id):
+#     roxywi_auth.page_for_admin(level=2)
+#
+#     if request.method == 'GET':
+#         return server_mod.show_server_services(server_id)
+#     else:
+#         server_name = common.checkAjaxInput(request.form.get('changeServerServicesServer'))
+#         server_services = json.loads(request.form.get('jsonDatas'))
+#
+#         return server_mod.change_server_services(server_id, server_name, server_services)
 
 
 @bp.route('/firewall/<server_ip>')

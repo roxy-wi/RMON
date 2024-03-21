@@ -36,7 +36,7 @@
 			</td>
 			<td>
 				{% set id = 'port-' + server.0|string() %}
-				{{ input(id, value=server.10, type='number', style='width: 50px;') }}
+				{{ input(id, value=server.8, type='number', style='width: 50px;') }}
 			</td>
 			{% if page != "servers.py" %}
 			<td>
@@ -72,7 +72,7 @@
 					<select id="credentials-{{server.0}}">
 						<option disabled selected>------</option>
 						{% for ssh in sshs %}
-							{% if ssh.id == server.7 %}
+							{% if ssh.id == server.6 %}
 								<option value="{{ssh.id}}" selected>{{ssh.name}}</option>
 							{% else %}
 								<option value="{{ssh.id}}">{{ssh.name}}</option>
@@ -84,8 +84,8 @@
 			</td>
 			<td>
 				{% set id = 'desc-' + server.0|string() %}
-				{% if server.11 is not none %}
-					{{ input(id, value=server.11, size='20') }}
+				{% if server.9 is not none %}
+					{{ input(id, value=server.9|replace("'", ""), size='20') }}
 				{% else %}
 					{{ input(id, size='20') }}
 				{% endif %}
@@ -113,19 +113,6 @@
 <div class="add-note addName alert alert-info" style="width: inherit; margin-right: 15px;" id="servers-help-link">
 	{{lang.phrases.read_about_parameters}} <a href="https://roxy-wi.org/description/servers" title="{{lang.words.servers|title()}} {{lang.words.desc}}" target="_blank">{{lang.words.here}}</a>, {{lang.phrases.read_howto}} <a href="https://roxy-wi.org/howto/setup" title="How to setup servers, group and SSH credentials" target="_blank">{{lang.words.article}}</a>
 </div>
-{% endif %}
-{% if user_subscription['user_status'] == 0 or user_subscription['user_plan'] == 'home' %}
-<script>
-	$( function() {
-		$('select:regex(id, slavefor)').selectmenu();
-		$('select:regex(id, slavefor)').selectmenu("disable");
-		{% if user_subscription['user_status'] == 0 %}
-			$('#slavefor-th').attr("title", "{{lang.phrases.slave_for_title}}. {{lang.phrases.no_sub}}. {{lang.phrases.pls_sub}}.");
-		{% elif user_subscription['user_plan'] == 'home' %}
-			$('#slavefor-th').attr("title", "{{lang.phrases.slave_for_title}}. {{lang.phrases.no_av_feat}}");
-		{% endif %}
-	});
-</script>
 {% endif %}
 <script>
 	{%- for server in servers %}
