@@ -223,8 +223,8 @@ def get_users_params(**kwargs):
 	except Exception as e:
 		raise Exception(f'error: Cannot get user token {e}')
 
-	if kwargs.get('virt'):
-		servers = get_dick_permit(virt=1)
+	if kwargs.get('shared'):
+		servers = get_dick_permit(shared=1)
 	elif kwargs.get('disable'):
 		servers = get_dick_permit(disable=0)
 	elif kwargs.get('service'):

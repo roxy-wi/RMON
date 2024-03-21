@@ -68,7 +68,7 @@ class Server(BaseModel):
     enable = IntegerField(constraints=[SQL('DEFAULT 1')])
     master = IntegerField(constraints=[SQL('DEFAULT 0')])
     cred = IntegerField(constraints=[SQL('DEFAULT 1')])
-    checker = IntegerField(constraints=[SQL('DEFAULT 0')])
+    alert = IntegerField(constraints=[SQL('DEFAULT 0')])
     metrics = IntegerField(constraints=[SQL('DEFAULT 0')])
     port = IntegerField(constraints=[SQL('DEFAULT 22')])
     desc = CharField(null=True)

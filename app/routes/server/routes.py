@@ -115,8 +115,7 @@ def create_server():
 
             return render_template(
                 'ajax/new_server.html', groups=group_sql.select_groups(), servers=server_sql.select_servers(server=ip), lang=lang,
-                masters=server_sql.select_servers(get_master_servers=1), sshs=cred_sql.select_ssh(group=group), page=page,
-                user_subscription=user_subscription, adding=1
+                sshs=cred_sql.select_ssh(group=group), page=page, user_subscription=user_subscription, adding=1
             )
     except Exception as e:
         return f'{e}'
