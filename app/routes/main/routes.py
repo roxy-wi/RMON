@@ -138,7 +138,7 @@ def servers():
         'h2': 1,
         'users': user_sql.select_users(group=user_group),
         'groups': group_sql.select_groups(),
-        'servers': roxywi_common.get_dick_permit(shared=1, disable=0, only_group=1),
+        'servers': roxywi_common.get_dick_permit(disable=0, only_group=1),
         'roles': sql.select_roles(),
         'sshs': cred_sql.select_ssh(group=user_group),
         'group': roxywi_common.get_user_group(id=1),

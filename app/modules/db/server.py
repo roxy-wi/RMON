@@ -168,30 +168,23 @@ def select_servers(**kwargs):
 def get_dick_permit(group_id, **kwargs):
 	only_group = kwargs.get('only_group')
 	disable = 'enable = 1'
-	ip = ''
 	conn = connect()
 	cursor = conn.cursor()
 
-	if kwargs.get('shared'):
-		shared = ""
-	else:
-		shared = "and shared = 0"
 	if kwargs.get('disable') == 0:
 		disable = '(enable = 1 or enable = 0)'
-	if kwargs.get('ip'):
-		ip = "and ip = '%s'" % kwargs.get('ip')
 
 	try:
 		if mysql_enable == '1':
 			if group_id == 1 and not only_group:
-				sql = f" select * from `servers` where {disable} {shared} {ip} order by `pos` asc"
+				sql = f" select * from `servers` where {disable} order by `pos` asc"
 			else:
-				sql = f" select * from `servers` where `groups` = {group_id} and ({disable}) {shared} {ip} order by `pos` asc"
+				sql = f" select * from `servers` where `groups` = {group_id} and ({disable}) order by `pos` asc"
 		else:
 			if group_id == 1 and not only_group:
-				sql = f" select * from servers where {disable} {shared} {ip} order by pos"
+				sql = f" select * from servers where {disable} order by pos"
 			else:
-				sql = f" select * from servers where groups = '{group_id}' and ({disable}) {shared} {ip} order by pos"
+				sql = f" select * from servers where groups = '{group_id}' and ({disable}) order by pos"
 
 	except Exception as e:
 		raise Exception(f'error: {e}')
