@@ -66,7 +66,7 @@ class Server(BaseModel):
     groups = CharField()
     shared = IntegerField(constraints=[SQL('DEFAULT 0')])
     enable = IntegerField(constraints=[SQL('DEFAULT 1')])
-    master = IntegerField(constraints=[SQL('DEFAULT 0')])
+    # master = IntegerField(constraints=[SQL('DEFAULT 0')])
     cred = IntegerField(constraints=[SQL('DEFAULT 1')])
     alert = IntegerField(constraints=[SQL('DEFAULT 0')])
     metrics = IntegerField(constraints=[SQL('DEFAULT 0')])

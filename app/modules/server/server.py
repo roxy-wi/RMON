@@ -399,11 +399,11 @@ def show_firewalld_rules(server_ip) -> str:
 	return render_template('ajax/firewall_rules.html', input_chain=input_chain2, IN_public_allow=in_public_allow, output_chain=output_chain, lang=lang)
 
 
-def create_server(hostname, ip, group, typeip, enable, master, cred, port, desc, haproxy, nginx, apache, firewall, **kwargs) -> bool:
+def create_server(hostname, ip, group, shared, enable, cred, port, desc, **kwargs) -> bool:
 	if not roxywi_auth.is_admin(level=2, role_id=kwargs.get('role_id')):
 		raise Exception('error: not enough permission')
 
-	if server_sql.add_server(hostname, ip, group, typeip, enable, master, cred, port, desc, haproxy, nginx, apache, firewall):
+	if server_sql.add_server(hostname, ip, group, shared, enable, cred, port, desc):
 		return True
 	else:
 		return False
@@ -413,8 +413,7 @@ def update_server_after_creating(hostname: str, ip: str) -> str:
 	try:
 		get_system_info(ip)
 	except Exception as e:
-		roxywi_common.logging(f'Cannot get information from {hostname}', str(e), roxywi=1, login=1)
-		raise Exception(f'error: Cannot get information from {hostname} {e}')
+		roxywi_common.handle_exceptions(e, hostname, f'Cannot get info from server {hostname}', login=1)
 
 	return 'ok'
 

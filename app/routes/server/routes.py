@@ -58,13 +58,8 @@ def create_server():
     hostname = common.checkAjaxInput(request.form.get('servername'))
     ip = common.is_ip_or_dns(request.form.get('newip'))
     group = common.checkAjaxInput(request.form.get('newservergroup'))
-    typeip = common.checkAjaxInput(request.form.get('typeip'))
-    haproxy = common.checkAjaxInput(request.form.get('haproxy'))
-    nginx = common.checkAjaxInput(request.form.get('nginx'))
-    apache = common.checkAjaxInput(request.form.get('apache'))
-    firewall = common.checkAjaxInput(request.form.get('firewall'))
+    shared = common.checkAjaxInput(request.form.get('shared'))
     enable = common.checkAjaxInput(request.form.get('enable'))
-    master = common.checkAjaxInput(request.form.get('slave'))
     cred = common.checkAjaxInput(request.form.get('cred'))
     page = common.checkAjaxInput(request.form.get('page'))
     page = page.split("#")[0]
@@ -76,8 +71,7 @@ def create_server():
     if ip == '':
         return 'error: IP or DNS name is not valid'
     try:
-        if server_mod.create_server(hostname, ip, group, typeip, enable, master, cred, port, desc, haproxy, nginx,
-                                    apache, firewall):
+        if server_mod.create_server(hostname, ip, group, shared, enable, cred, port, desc):
             try:
                 user_subscription = roxywi_common.return_user_status()
             except Exception as e:
@@ -125,7 +119,6 @@ def create_server():
 def after_add():
     hostname = common.checkAjaxInput(request.form.get('servername'))
     ip = common.is_ip_or_dns(request.form.get('newip'))
-    # scan_server = common.checkAjaxInput(request.form.get('scan_server'))
 
     try:
         return server_mod.update_server_after_creating(hostname, ip)

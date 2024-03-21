@@ -2,11 +2,10 @@ from app.modules.db.db_model import mysql_enable, connect, Server, SystemInfo
 from app.modules.db.common import out_error
 
 
-def add_server(hostname, ip, group, shared, enable, master, cred, port, desc, haproxy, nginx, apache, firewall):
+def add_server(hostname, ip, group, shared, enable, cred, port, desc):
 	try:
 		server_id = Server.insert(
-			hostname=hostname, ip=ip, groups=group, shared=shared, enable=enable, master=master, cred=cred,
-			port=port, desc=desc, haproxy=haproxy, nginx=nginx, apache=apache, firewall_enable=firewall
+			hostname=hostname, ip=ip, groups=group, shared=shared, enable=enable, cred=cred, port=port, desc=desc
 		).execute()
 		return server_id
 	except Exception as e:
