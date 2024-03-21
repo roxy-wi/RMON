@@ -2,10 +2,10 @@ from app.modules.db.db_model import mysql_enable, connect, Server, SystemInfo
 from app.modules.db.common import out_error
 
 
-def add_server(hostname, ip, group, shared, enable, cred, port, desc):
+def add_server(hostname, ip, group, enable, cred, port, desc):
 	try:
 		server_id = Server.insert(
-			hostname=hostname, ip=ip, groups=group, shared=shared, enable=enable, cred=cred, port=port, desc=desc
+			hostname=hostname, ip=ip, groups=group, enable=enable, cred=cred, port=port, desc=desc
 		).execute()
 		return server_id
 	except Exception as e:
@@ -96,25 +96,6 @@ def select_os_info(server_id):
 		return
 	else:
 		return query_res
-
-
-def update_firewall(serv):
-	query = Server.update(firewall_enable=1).where(Server.ip == serv)
-	try:
-		query.execute()
-		return True
-	except Exception as e:
-		out_error(e)
-		return False
-
-
-def return_firewall(serv):
-	try:
-		query_res = Server.get(Server.ip == serv).firewall_enable
-	except Exception:
-		return False
-	else:
-		return True if query_res == 1 else False
 
 
 def update_server_pos(pos, server_id) -> str:
@@ -221,23 +202,3 @@ def get_dick_permit(group_id, **kwargs):
 		out_error(e)
 	else:
 		return cursor.fetchall()
-
-
-# def is_master(ip, **kwargs):
-# 	conn = connect()
-# 	cursor = conn.cursor()
-# 	if kwargs.get('master_slave'):
-# 		sql = """ select master.hostname, master.ip, slave.hostname, slave.ip
-# 		from servers as master
-# 		left join servers as slave on master.id = slave.master
-# 		where slave.master > 0 """
-# 	else:
-# 		sql = """ select slave.ip, slave.hostname from servers as master
-# 		left join servers as slave on master.id = slave.master
-# 		where master.ip = '%s' """ % ip
-# 	try:
-# 		cursor.execute(sql)
-# 	except Exception as e:
-# 		out_error(e)
-# 	else:
-# 		return cursor.fetchall()

@@ -64,30 +64,12 @@ class Server(BaseModel):
     hostname = CharField()
     ip = CharField(constraints=[SQL('UNIQUE')])
     groups = CharField()
-    shared = IntegerField(constraints=[SQL('DEFAULT 0')])
     enable = IntegerField(constraints=[SQL('DEFAULT 1')])
-    # master = IntegerField(constraints=[SQL('DEFAULT 0')])
     cred = IntegerField(constraints=[SQL('DEFAULT 1')])
     alert = IntegerField(constraints=[SQL('DEFAULT 0')])
-    # metrics = IntegerField(constraints=[SQL('DEFAULT 0')])
     port = IntegerField(constraints=[SQL('DEFAULT 22')])
     desc = CharField(null=True)
-    # active = IntegerField(constraints=[SQL('DEFAULT 0')])
-    # keepalived = IntegerField(constraints=[SQL('DEFAULT 0')])
-    # nginx = IntegerField(constraints=[SQL('DEFAULT 0')])
-    # haproxy = IntegerField(constraints=[SQL('DEFAULT 0')])
     pos = IntegerField(constraints=[SQL('DEFAULT 0')])
-    # nginx_active = IntegerField(constraints=[SQL('DEFAULT 0')])
-    firewall_enable = IntegerField(constraints=[SQL('DEFAULT 0')])
-    # nginx_alert = IntegerField(constraints=[SQL('DEFAULT 0')])
-    # protected = IntegerField(constraints=[SQL('DEFAULT 0')])
-    # nginx_metrics = IntegerField(constraints=[SQL('DEFAULT 0')])
-    # keepalived_active = IntegerField(constraints=[SQL('DEFAULT 0')])
-    # keepalived_alert = IntegerField(constraints=[SQL('DEFAULT 0')])
-    # apache = IntegerField(constraints=[SQL('DEFAULT 0')])
-    # apache_active = IntegerField(constraints=[SQL('DEFAULT 0')])
-    # apache_alert = IntegerField(constraints=[SQL('DEFAULT 0')])
-    # apache_metrics = IntegerField(constraints=[SQL('DEFAULT 0')])
 
     class Meta:
         table_name = 'servers'
@@ -321,6 +303,7 @@ class SmonAgent(BaseModel):
     uuid = CharField()
     enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
     desc = CharField()
+    shared = IntegerField(constraints=[SQL('DEFAULT 0')])
 
     class Meta:
         table_name = 'smon_agents'

@@ -311,31 +311,11 @@ function addServer(dialog_id) {
 	var newip = $('#new-ip').val();
 	var newservergroup = $('#new-server-group-add').val();
 	var cred = $('#credentials').val();
-	var scan_server = 0;
-	var typeip = 0;
 	var enable = 0;
-	var haproxy = 0;
-	var nginx = 0;
-	var apache = 0;
 	var firewall = 0;
 	var add_to_smon = 0;
-	if ($('#scan_server').is(':checked')) {
-		scan_server = '1';
-	}
-	if ($('#typeip').is(':checked')) {
-		typeip = '1';
-	}
 	if ($('#enable').is(':checked')) {
 		enable = '1';
-	}
-	if ($('#haproxy').is(':checked')) {
-		haproxy = '1';
-	}
-	if ($('#nginx').is(':checked')) {
-		nginx = '1';
-	}
-	if ($('#apache').is(':checked')) {
-		apache = '1';
 	}
 	if ($('#firewall').is(':checked')) {
 		firewall = '1';
@@ -364,14 +344,9 @@ function addServer(dialog_id) {
 				newip: newip,
 				newport: $('#new-port').val(),
 				newservergroup: newservergroup,
-				typeip: typeip,
-				haproxy: haproxy,
-				nginx: nginx,
-				apache: apache,
 				firewall: firewall,
 				add_to_smon: add_to_smon,
 				enable: enable,
-				slave: $('#slavefor').val(),
 				cred: cred,
 				page: cur_url[0].split('#')[0],
 				desc: $('#desc').val(),
@@ -390,31 +365,19 @@ function addServer(dialog_id) {
 					$("select").selectmenu();
 					var getId = new RegExp('server-[0-9]+');
 					var id = data.match(getId) + '';
-					id = id.split('-').pop();
-					$('select:regex(id, git-server)').append('<option value=' + id + '>' + $('#hostname-' + id).val() + '</option>').selectmenu("refresh");
-					$('select:regex(id, backup-server)').append('<option value=' + $('#ip-' + id).text() + '>' + $('#hostname-' + id).val() + '</option>').selectmenu("refresh");
-					$('select:regex(id, haproxy_exp_addserv)').append('<option value=' + $('#ip-' + id).text() + '>' + $('#hostname-' + id).val() + '</option>').selectmenu("refresh");
-					$('select:regex(id, nginx_exp_addserv)').append('<option value=' + $('#ip-' + id).text() + '>' + $('#hostname-' + id).val() + '</option>').selectmenu("refresh");
-					$('select:regex(id, apache_exp_addserv)').append('<option value=' + $('#ip-' + id).text() + '>' + $('#hostname-' + id).val() + '</option>').selectmenu("refresh");
-					$('select:regex(id, node_exp_addserv)').append('<option value=' + $('#ip-' + id).text() + '>' + $('#hostname-' + id).val() + '</option>').selectmenu("refresh");
-					$('select:regex(id, geoipserv)').append('<option value=' + $('#ip-' + id).text() + '>' + $('#hostname-' + id).val() + '</option>').selectmenu("refresh");
-					$('select:regex(id, haproxyaddserv)').append('<option value=' + newip + '>' + servername + '</option>').selectmenu("refresh");
-					$('select:regex(id, nginxaddserv)').append('<option value=' + newip + '>' + servername + '</option>').selectmenu("refresh");
-					$('select:regex(id, apacheaddserv)').append('<option value=' + newip + '>' + servername + '</option>').selectmenu("refresh");
-					after_server_creating(servername, newip, scan_server);
+					after_server_creating(servername, newip);
 				}
 			}
 		});
 	}
 }
-function after_server_creating(servername, newip, scan_server) {
+function after_server_creating(servername, newip) {
 	$.ajax({
 		url: "/server/create/after",
 		data: {
 			act: 'after_adding',
 			servername: servername,
 			newip: newip,
-			scan_server: scan_server,
 			token: $('#token').val()
 		},
 		type: "POST",
@@ -756,21 +719,12 @@ function updateGroup(id) {
 }
 function updateServer(id) {
 	toastr.clear();
-	let typeip = 0;
 	let enable = 0;
-	let firewall = 0;
-	let protected_serv = 0;
-	if ($('#typeip-' + id).is(':checked')) {
-		typeip = '1';
-	}
 	if ($('#enable-' + id).is(':checked')) {
 		enable = '1';
 	}
 	if ($('#firewall-' + id).is(':checked')) {
 		firewall = '1';
-	}
-	if ($('#protected-' + id).is(':checked')) {
-		protected_serv = '1';
 	}
 	var servergroup = $('#servergroup-' + id + ' option:selected').val();
 	if (cur_url[0].indexOf('servers#') != '-1') {
@@ -782,14 +736,10 @@ function updateServer(id) {
 			updateserver: $('#hostname-' + id).val(),
 			port: $('#port-' + id).val(),
 			servergroup: servergroup,
-			typeip: typeip,
-			firewall: firewall,
 			enable: enable,
-			slave: $('#slavefor-' + id + ' option:selected').val(),
 			cred: $('#credentials-' + id + ' option:selected').val(),
 			id: id,
 			desc: $('#desc-' + id).val(),
-			protected: protected_serv,
 			token: $('#token').val()
 		},
 		type: "POST",
@@ -1065,13 +1015,13 @@ function updateService(service, action='update') {
 				toastr.error('There is setting for RMON repository, but RMON is installed without repository. Please reinstall with package manager');
 			} else if (data.indexOf('No Match for argument') != '-1' || data.indexOf('Unable to find a match') != '-1') {
 				toastr.clear();
-				toastr.error('It seems like RMON repository is not set. Please read docs for <b><a href="https://roxy-wi.org/updates">detail</a></b>');
+				toastr.error('It seems like RMON repository is not set. Please read docs for <b><a href="https://rmon.io/updates">detail</a></b>');
 			} else if (data.indexOf('password for') != '-1') {
 				toastr.clear();
-				toastr.error('It seems like apache user needs to be add to sudoers. Please read docs for <b><a href="https://roxy-wi.org/installation#ansible">detail</a></b>');
+				toastr.error('It seems like apache user needs to be added to sudoers. Please read docs for <b><a href="https://roxy-wi.org/installation#ansible">detail</a></b>');
 			} else if (data.indexOf('No packages marked for update') != '-1') {
 				toastr.clear();
-				toastr.info('It seems like the lastest version RMON is installed');
+				toastr.info('It seems like the latest version RMON is installed');
 			} else if (data.indexOf('Connection timed out') != '-1') {
 				toastr.clear();
 				toastr.error('Cannot connect to RMON repository. Connection timed out');
@@ -1168,10 +1118,6 @@ function loadupdatehapwi() {
 function checkUpdateRoxy() {
 	$.ajax({
 		url: "/admin/update/check",
-		// data: {
-		// 	token: $('#token').val()
-		// },
-		// type: "POST",
 		success: function (data) {
 			loadupdatehapwi();
 		}
@@ -1180,10 +1126,6 @@ function checkUpdateRoxy() {
 function updateServerInfo(ip, id) {
 	$.ajax({
 		url: "/server/system_info/update/" + ip + "/" + id,
-		// data: {
-		// 	token: $('#token').val()
-		// },
-		// type: "POST",
 		success: function (data) {
 			data = data.replace(/\s+/g, ' ');
 			if (data.indexOf('error:') != '-1' || data.indexOf('error_code') != '-1') {
@@ -1202,10 +1144,6 @@ function showServerInfo(id, ip) {
 	var server_info = $('#translate').attr('data-server_info');
 	$.ajax({
 		url: "/server/system_info/get/" + ip + "/" +id,
-		// data: {
-		// 	token: $('#token').val()
-		// },
-		// type: "POST",
 		success: function (data) {
 			data = data.replace(/\s+/g, ' ');
 			if (data.indexOf('error:') != '-1' || data.indexOf('error_code') != '-1') {
@@ -1235,10 +1173,6 @@ function serverIsUp(server_ip, server_id) {
 	if (cur_url.split('#')[1] == 'servers') {
 		$.ajax({
 			url: "/server/check/server/" + server_ip,
-			// data: {
-			// 	token: $('#token').val()
-			// },
-			// type: "POST",
 			success: function (data) {
 				data = data.replace(/^\s+|\s+$/g, '');
 				if (data.indexOf('up') != '-1') {
@@ -1268,10 +1202,6 @@ function confirmChangeGroupsAndRoles(user_id) {
 	var username = $('#login-' + user_id).val();
 	$.ajax({
 		url: "/user/groups/" + user_id,
-		// data: {
-		// 	token: $('#token').val()
-		// },
-		// type: "POST",
 		success: function (data) {
 			$("#groups-roles").html(data);
 			$("#groups-roles").dialog({

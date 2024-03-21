@@ -399,11 +399,11 @@ def show_firewalld_rules(server_ip) -> str:
 	return render_template('ajax/firewall_rules.html', input_chain=input_chain2, IN_public_allow=in_public_allow, output_chain=output_chain, lang=lang)
 
 
-def create_server(hostname, ip, group, shared, enable, cred, port, desc, **kwargs) -> bool:
+def create_server(hostname, ip, group, enable, cred, port, desc, **kwargs) -> bool:
 	if not roxywi_auth.is_admin(level=2, role_id=kwargs.get('role_id')):
 		raise Exception('error: not enough permission')
 
-	if server_sql.add_server(hostname, ip, group, shared, enable, cred, port, desc):
+	if server_sql.add_server(hostname, ip, group, enable, cred, port, desc):
 		return True
 	else:
 		return False

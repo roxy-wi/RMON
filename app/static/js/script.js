@@ -5,6 +5,12 @@ function validateEmail(email) {
 	const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
 	return re.test(email);
 }
+function ValidateIPaddress(ipaddress) {
+	if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ipaddress)) {
+		return (true)
+	}
+	return (false)
+}
 function escapeHtml(unsafe) {
 	return unsafe
 		.replace(/&/g, "&amp;")
@@ -1049,6 +1055,7 @@ function common_ajax_action_after_success(dialog_id, new_group, ajax_append_id, 
 	$("#"+ajax_append_id).append(data);
 	$( "."+new_group ).addClass( "update", 1000);
 	$.getScript(awesome);
+	$.getScript('/inc/users.js');
 	clearTips();
 	$( dialog_id ).dialog("close" );
 	setTimeout(function() {

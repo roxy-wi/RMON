@@ -58,7 +58,6 @@ def create_server():
     hostname = common.checkAjaxInput(request.form.get('servername'))
     ip = common.is_ip_or_dns(request.form.get('newip'))
     group = common.checkAjaxInput(request.form.get('newservergroup'))
-    shared = common.checkAjaxInput(request.form.get('shared'))
     enable = common.checkAjaxInput(request.form.get('enable'))
     cred = common.checkAjaxInput(request.form.get('cred'))
     page = common.checkAjaxInput(request.form.get('page'))
@@ -71,7 +70,7 @@ def create_server():
     if ip == '':
         return 'error: IP or DNS name is not valid'
     try:
-        if server_mod.create_server(hostname, ip, group, shared, enable, cred, port, desc):
+        if server_mod.create_server(hostname, ip, group, enable, cred, port, desc):
             if add_to_smon:
                 try:
                     user_group = roxywi_common.get_user_group(id=1)
@@ -97,9 +96,9 @@ def create_server():
                     }
                     smon_mod.create_smon(json_data, user_group)
                 except Exception as e:
-                    roxywi_common.logging(ip, f'error: Cannot add server {hostname} to SMON: {e}', roxywi=1)
+                    roxywi_common.logging(ip, f'error: Cannot add server {hostname} to SMON: {e}')
 
-            roxywi_common.logging(ip, f'A new server {hostname} has been created', roxywi=1, login=1, keep_history=1, service='server')
+            roxywi_common.logging(ip, f'A new server {hostname} has been created', login=1, keep_history=1, service='server')
 
             return render_template(
                 'ajax/new_server.html', groups=group_sql.select_groups(), servers=server_sql.select_servers(server=ip), lang=lang,
@@ -228,19 +227,6 @@ def update_system_info(server_ip, server_id):
     server_ip = common.is_ip_or_dns(server_ip)
 
     return server_mod.update_system_info(server_ip, server_id)
-
-
-# @bp.route('/services/<int:server_id>', methods=['GET', 'POST'])
-# def show_server_services(server_id):
-#     roxywi_auth.page_for_admin(level=2)
-#
-#     if request.method == 'GET':
-#         return server_mod.show_server_services(server_id)
-#     else:
-#         server_name = common.checkAjaxInput(request.form.get('changeServerServicesServer'))
-#         server_services = json.loads(request.form.get('jsonDatas'))
-#
-#         return server_mod.change_server_services(server_id, server_name, server_services)
 
 
 @bp.route('/firewall/<server_ip>')
