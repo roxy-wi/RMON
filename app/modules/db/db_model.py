@@ -213,7 +213,6 @@ class SMON(BaseModel):
     time_state = DateTimeField(constraints=[SQL('DEFAULT "0000-00-00 00:00:00"')])
     group = CharField(null=True)
     http = CharField(null=True)
-    # body = CharField(null=True)
     body_status = IntegerField(constraints=[SQL('DEFAULT 1')])
     telegram_channel_id = IntegerField(null=True)
     user_group = IntegerField()
@@ -222,6 +221,7 @@ class SMON(BaseModel):
     ssl_expire_critical_alert = IntegerField(constraints=[SQL('DEFAULT 0')])
     ssl_expire_date = CharField(null=True)
     pd_channel_id = IntegerField(null=True)
+    mm_channel_id = IntegerField(null=True)
     check_type = CharField(constraints=[SQL('DEFAULT "tcp"')])
 
     class Meta:
