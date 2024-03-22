@@ -212,7 +212,7 @@ class SMON(BaseModel):
     response_time = CharField(null=True)
     time_state = DateTimeField(constraints=[SQL('DEFAULT "0000-00-00 00:00:00"')])
     group = CharField(null=True)
-    # http = CharField(null=True)
+    http = CharField(null=True)
     # body = CharField(null=True)
     body_status = IntegerField(constraints=[SQL('DEFAULT 1')])
     telegram_channel_id = IntegerField(null=True)
