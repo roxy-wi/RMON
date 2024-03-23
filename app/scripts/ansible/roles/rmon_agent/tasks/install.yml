@@ -16,14 +16,6 @@
     mode: '0644'
   with_items: ["rmon_agent.py", "rmon_agent_common.py", "rmon_checks.py", "wsgi.py", "requirements.txt"]
 
-- name: Copy RMON Agent config file
-  template:
-    src: rmon-agent.cfg.j2
-    dest: /etc/rmon/rmon-agent.cfg
-    mode: 0644
-  notify:
-    - Restart RMON agent
-
 - name: Copy RMON Agent service file
   template:
     src: "{{ item.file }}"
@@ -37,23 +29,16 @@
     - Restart rsyslog
     - Restart RMON agent
 
-- name: Install EPEL
-  yum:
-    name: epel-release
-    state: present
-  when: ansible_os_family == "RedHat"
+- name: Install requirements
+  ansible.builtin.include_tasks: "{{ role_path }}/tasks/install-{{ ansible_facts['os_family'] | lower }}.yml"
 
-- name: Upgrade pip3
-  pip:
-    name: pip
-    executable: pip3
-    state: latest
-    extra_args: --upgrade --break-system-packages
-
-- name: Install RMON Agent python requirements
-  ansible.builtin.pip:
-    requirements: /var/lib/rmon/rmon-agent/requirements.txt
-    extra_args: --break-system-packages
+- name: Copy RMON Agent config file
+  template:
+    src: rmon-agent.cfg.j2
+    dest: /etc/rmon/rmon-agent.cfg
+    mode: 0644
+  notify:
+    - Restart RMON agent
 
 - name: Start and enable RMON Agent
   ansible.builtin.systemd:
