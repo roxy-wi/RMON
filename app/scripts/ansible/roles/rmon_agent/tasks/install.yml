@@ -48,11 +48,12 @@
     name: pip
     executable: pip3
     state: latest
-    extra_args: --upgrade
+    extra_args: --upgrade --break-system-packages
 
 - name: Install RMON Agent python requirements
   ansible.builtin.pip:
     requirements: /var/lib/rmon/rmon-agent/requirements.txt
+    extra_args: --break-system-packages
 
 - name: Start and enable RMON Agent
   ansible.builtin.systemd:
