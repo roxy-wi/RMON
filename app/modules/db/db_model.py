@@ -223,6 +223,8 @@ class SMON(BaseModel):
     pd_channel_id = IntegerField(null=True)
     mm_channel_id = IntegerField(null=True)
     check_type = CharField(constraints=[SQL('DEFAULT "tcp"')])
+    created_at = DateTimeField(default=datetime.now)
+    updated_at = DateTimeField(default=datetime.now)
 
     class Meta:
         table_name = 'smon'

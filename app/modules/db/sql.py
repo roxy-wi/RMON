@@ -2,7 +2,6 @@ from flask import request
 
 from app.modules.db.db_model import Setting, Role
 from app.modules.db.common import out_error
-import modules.roxy_wi_tools as roxy_wi_tools
 
 
 def get_setting(param, **kwargs):
@@ -35,10 +34,6 @@ def get_setting(param, **kwargs):
 					return int(setting.value)
 				else:
 					return setting.value
-
-
-time_zone = get_setting('time_zone')
-get_date = roxy_wi_tools.GetDate(time_zone)
 
 
 def update_setting(param: str, val: str, user_group: int) -> bool:

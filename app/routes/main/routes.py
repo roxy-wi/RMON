@@ -4,7 +4,7 @@ import pytz
 from flask import render_template, request, session, g, abort
 from flask_login import login_required
 
-sys.path.insert(0,"/var/www/rmon/app")
+sys.path.insert(0, "/var/www/rmon/app")
 
 from app import app, cache
 from app.routes.main import bp
@@ -21,6 +21,11 @@ import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.nettools as nettools_mod
 import app.modules.roxywi.common as roxywi_common
 import app.modules.server.server as server_mod
+
+
+@app.template_filter('strftime')
+def _jinja2_filter_datetime(date, fmt=None):
+    return common.get_time_zoned_date(date, fmt)
 
 
 @app.errorhandler(403)

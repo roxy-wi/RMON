@@ -34,9 +34,11 @@
             {{ lang.words.agent|title() }}
             {% for a in agents %}
             {% if a.id|string() == s.agent_id|string() %}
-            {{ a.name }}
+            {{ a.name }},
             {% endif %}
             {% endfor %}
+            {{ lang.words.created_at }}: {{ s.smon_id.created_at|strftime }},
+            {{ lang.words.updated_at }}: {{ s.smon_id.updated_at|strftime }}
         </div>
     </div>
     <div class="col-md-4" id="cur_status"></div>

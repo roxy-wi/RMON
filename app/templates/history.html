@@ -17,11 +17,11 @@
 <script>
     $(document).ready(function() {
         $('#table_history').on('page.dt')
-            .DataTable( {
+            .DataTable({
                 dom: 'Blfrtip',
                 colReorder: true,
                 "pageLength": 25,
-                "order": [ 4, "desc" ],
+                "order": [5, "desc"],
                 stateSave: true,
                 "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
                 "columnDefs": [
@@ -35,8 +35,8 @@
                     'csvHtml5',
                     'pdfHtml5'
                 ],
-            } );
-    } );
+            });
+    });
 </script>
 <table class="overview hover order-column display compact" id="table_history">
     <thead>
@@ -47,6 +47,7 @@
             <th style="width: 100px">{%if service == 'cluster' %}{{lang.words.cluster|title()}} {%else%}{{lang.words.server|title()}}{% endif %}</th>
             <th>{{lang.words.action|title()}}</th>
             <th>{{lang.words.date|title()}}</th>
+            <th>{{lang.words.time|title()}}</th>
         </tr>
     </thead>
     <tbody>
@@ -62,16 +63,11 @@
         </td>
         <td>{{ copy_to_clipboard(id=h.ip, value=h.ip) }}</td>
         <td>
-            {% if h.server_ip != None %}
-                {% if h.service in ('haproxy', 'nginx', 'apache', 'keepalived') %}
-                    <a href="/service/{{h.service}}/{{h.server_ip}}" title="Open history for {{h.hostname}}">{{ h.hostname }}</a>
-                {% elif h.service == 'HA cluster' %}
-                    {{h.hostname}}
-                {% endif %}
-            {% endif %}
+            {{h.hostname}}
         </td>
         <td>{{h.action}}</td>
-        <td>{{h.date}}</td>
+        <td>{{h.date|strftime('%Y %m %d')}}</td>
+        <td>{{h.date|strftime('%H:%M:%S')}}</td>
     </tr>
     {% endfor %}
     </tbody>

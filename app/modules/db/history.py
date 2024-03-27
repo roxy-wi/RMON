@@ -1,38 +1,26 @@
-from app.modules.db.db_model import connect, ActionHistory, Alerts
+from app.modules.db.db_model import ActionHistory, Alerts
 from app.modules.db.sql import get_setting
 from app.modules.db.common import out_error
 import app.modules.roxy_wi_tools as roxy_wi_tools
 
 
 def alerts_history(service, user_group, **kwargs):
-	conn = connect()
-	cursor = conn.cursor()
-	and_host = ''
 	if kwargs.get('host'):
-		and_host = "and ip = '{}'".format(kwargs.get('host'))
-
-	if user_group == 1:
-		sql_user_group = ""
+		query = Alerts.select().where(
+			(Alerts.service == service) &
+			(Alerts.ip == kwargs.get('host')) &
+			(Alerts.user_group == user_group)
+		)
 	else:
-		sql_user_group = "and user_group = '{}'".format(user_group)
-
-	sql = (
-		f"select message, level, ip, port, date "
-		f"from alerts "
-		f"where service = '{service}' {sql_user_group} {and_host} "
-		f"order by date desc; "
-	)
+		query = Alerts.select().where(Alerts.service == service)
 	try:
-		cursor.execute(sql)
+		return query.execute()
 	except Exception as e:
 		out_error(e)
-	else:
-		# conn.close()
-		return cursor.fetchall()
 
 
 def insert_alerts(user_group, level, ip, port, message, service):
-	get_date = roxy_wi_tools.GetDate(get_setting('time_zone'))
+	get_date = roxy_wi_tools.GetDate()
 	cur_date = get_date.return_date('regular')
 	try:
 		Alerts.insert(
@@ -44,7 +32,7 @@ def insert_alerts(user_group, level, ip, port, message, service):
 
 
 def delete_alert_history(keep_interval: int, service: str):
-	get_date = roxy_wi_tools.GetDate(get_setting('time_zone'))
+	get_date = roxy_wi_tools.GetDate()
 	cur_date = get_date.return_date('regular', timedelta_minus=keep_interval)
 	query = Alerts.delete().where(
 		(Alerts.date < cur_date) & (Alerts.service == service)
@@ -56,7 +44,7 @@ def delete_alert_history(keep_interval: int, service: str):
 
 
 def insert_action_history(service: str, action: str, server_id: int, user_id: int, user_ip: str, server_ip: str, hostname: str):
-	get_date = roxy_wi_tools.GetDate(get_setting('time_zone'))
+	get_date = roxy_wi_tools.GetDate()
 	cur_date = get_date.return_date('regular')
 	try:
 		ActionHistory.insert(
@@ -83,7 +71,7 @@ def delete_action_history(server_id: int):
 
 def delete_action_history_for_period():
 	time_period = get_setting('action_keep_history_range')
-	get_date = roxy_wi_tools.GetDate(get_setting('time_zone'))
+	get_date = roxy_wi_tools.GetDate()
 	cur_date = get_date.return_date('regular', timedelta_minus=time_period)
 	query = ActionHistory.delete().where(ActionHistory.date < cur_date)
 	try:

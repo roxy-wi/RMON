@@ -212,12 +212,12 @@ $( function() {
 		var activeTab = $(this).find("a").attr("href");
 		var activeTabClass = activeTab.replace('#', '');
 		$('.menu li ul li').each(function () {
-			$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-rolor)');
+			$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-color)');
 			$(this).find('a').css('padding-left', '20px')
 			$(this).find('a').css('background-color', '#48505A');
 			$(this).children("."+activeTabClass).css('padding-left', '30px');
-			$(this).children("."+activeTabClass).css('border-left', '4px solid var(--right-menu-blue-rolor)');
-			$(this).children("."+activeTabClass).css('background-color', 'var(--right-menu-blue-rolor)');
+			$(this).children("."+activeTabClass).css('border-left', '4px solid var(--right-menu-blue-color)');
+			$(this).children("."+activeTabClass).css('background-color', 'var(--right-menu-blue-color)');
 		});
 		if (activeTab == '#tools') {
 			loadServices();

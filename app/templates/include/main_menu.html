@@ -9,15 +9,15 @@
 	<div id="top-link" class="top-link">
 		<nav id="menu">
 			<ul class="menu">
-                <li><a href="{{ url_for('overview.index') }}" title="{{lang.menu_links.overview.title}}" class="overview-link ">{{lang.menu_links.overview.link}}</a></li>
-                <li><a href="{{ url_for('smon.smon_main_dashboard') }}" title="{{lang.menu_links.monitoring.smon.dashboard}}" class="overview-link">{{lang.menu_links.monitoring.smon.dashboard}}</a></li>
-                <li><a href="{{ url_for('smon.status_page') }}" title="{{lang.menu_links.monitoring.smon.status_page}}" class="overview-link">{{lang.menu_links.monitoring.smon.status_page}}</a></li>
-                <li><a href="{{ url_for('smon.smon_history') }}" title="{{lang.menu_links.monitoring.smon.history}}" class="lists">{{lang.menu_links.monitoring.smon.history}}</a></li>
-                <li><a href="{{ url_for('channel.channels') }}" title="{{lang.words.channels|title()}} {{ lang.words.for }} Checker {{ lang.words.and }} SMON" class="channel">{{lang.words.channels|title}}</a></li>
+                <li><a href="{{ url_for('overview.index') }}" title="{{lang.menu_links.overview.title}}" class="overview-link {% if request.url_rule.endpoint == 'overview.index' %} menu-active{% endif %}">{{lang.menu_links.overview.link}}</a></li>
+                <li><a href="{{ url_for('smon.smon_main_dashboard') }}" title="{{lang.menu_links.monitoring.smon.dashboard}}" class="overview-link {% if request.url_rule.endpoint == 'smon.smon_main_dashboard' %} menu-active{% endif %}">{{lang.menu_links.monitoring.smon.dashboard}}</a></li>
+                <li><a href="{{ url_for('smon.status_page') }}" title="{{lang.menu_links.monitoring.smon.status_page}}" class="overview-link {% if request.url_rule.endpoint == 'smon.status_page' %} menu-active{% endif %}">{{lang.menu_links.monitoring.smon.status_page}}</a></li>
+                <li><a href="{{ url_for('smon.smon_history') }}" title="{{lang.menu_links.monitoring.smon.history}}" class="lists {% if request.url_rule.endpoint == 'smon.smon_history' %} menu-active{% endif %}">{{lang.menu_links.monitoring.smon.history}}</a></li>
+                <li><a href="{{ url_for('channel.channels') }}" title="{{lang.words.channels|title()}} {{ lang.words.for }} RMON" class="channel {% if request.url_rule.endpoint == 'channel.channels' %} menu-active{% endif %}">{{lang.words.channels|title}}</a></li>
                 {% if g.user_params['role'] <= 3 %}
-                    <li><a href="{{ url_for('smon.agent') }}" title="{{lang.menu_links.monitoring.smon.agent}}" class="admin">{{lang.menu_links.monitoring.smon.agent}}</a></li>
+                    <li><a href="{{ url_for('smon.agent') }}" title="{{lang.menu_links.monitoring.smon.agent}}" class="admin {% if request.url_rule.endpoint == 'smon.agent' %} menu-active{% endif %}">{{lang.menu_links.monitoring.smon.agent}}</a></li>
                 {% endif %}
-                <li><a href="{{ url_for('main.nettools') }}" title="{{lang.menu_links.monitoring.net_tools}}" class="net-tools">{{lang.menu_links.monitoring.net_tools}}</a></li>
+                <li><a href="{{ url_for('main.nettools') }}" title="{{lang.menu_links.monitoring.net_tools}}" class="net-tools {% if request.url_rule.endpoint == 'main.nettools' %} menu-active{% endif %}">{{lang.menu_links.monitoring.net_tools}}</a></li>
 				{% if g.user_params['role'] <= 2 %}
 				<li class="p_menu">
 					<a href="{{ url_for('main.servers') }}#users" title="{{lang.menu_links.servers.title}}" class="runtime">{{lang.menu_links.servers.link}}</a>

@@ -28,31 +28,16 @@ function show_current_page(id) {
 	id.parent().css('left', '0');
 	id.parent().children().css('margin-left', '-20px');
 	id.parent().find('a').css('padding-left', '20px');
-	id.find('a').css('background-color', 'var(--right-menu-blue-rolor)');
+	id.find('a').css('background-color', 'var(--right-menu-blue-color)');
 }
 $( function() {		
    $('.menu li ul li').each(function () {
-	   var link = $(this).find('a').attr('href');
-	   var link2 = link.split('/')[2];
-	   var link3 = link.split('/')[3];
-	   var link4 = link.split('/')[4];
-	   var full_uri = cur_url[0] + '/' + cur_url[1]
-	   var full_uri1 = link2 + '/' + link3
-	   var full_uri2 = cur_url[0] + '/' + cur_url[1] + '/' + cur_url[2]
-	   var full_uri3 = link2 + '/' + link3 + '/' + link4
-	   if (cur_url[0] == link2 && link3 == null) {
-		   show_current_page($(this))
-	   } else if (full_uri == 'rmon/dashboard' && full_uri1 == 'rmon/dashboard') {
-		   show_current_page($(this))
-	   } else if (full_uri == 'rmon/agent' && full_uri1 == 'rmon/agent') {
-		   show_current_page($(this))
-	   } else if (full_uri == 'rmon/history' && full_uri1 == 'rmon/history') {
-		   show_current_page($(this))
-	   } else if (full_uri == 'rmon/status-page' && full_uri1 == 'rmon/status-page') {
-		   show_current_page($(this))
-	   } else if (cur_url[0] == 'app/logs' && cur_url[1].split('&')[0] == 'type=2' && link2 == 'viewlogs.py?type=2') {
+	   var link = $(this).find('a').attr('href').split('/').pop();
+	   var link2 = link.split('#')[0];
+	   var link3 = link.split('#')[1];
+	   var full_uri1 = link2 + '#' + link3
+	   if (cur_url == full_uri1) {
 		   show_current_page($(this));
-		   return false;
 	   }
    });
 });
@@ -74,14 +59,10 @@ window.onblur= function() {
 		if(sessionStorage.getItem('auto-refresh-pause') == "0" && sessionStorage.getItem('auto-refresh') > 5000) {
 			if (cur_url[0] == "logs") {
 				showLog();
-			} else if (cur_url[0] == "stats") {
-				showStats()
 			} else if (cur_url[0] == "/") {
 				showOverview();
 			} else if (cur_url[0] == "internal") {
 				viewLogs();
-			} else if (cur_url[0] == "metrics") {
-				showMetrics();
 			} else if (cur_url[3] == "rmon" && cur_url[4] == "dashboard" && !cur_url[5]) {
 				showSmon('refresh');
 			} else if (cur_url[3] == "rmon" && cur_url[4] == "dashboard" && cur_url[5]) {
@@ -606,15 +587,17 @@ $( function() {
 	});
 	var cur_url = window.location.href.split('/').pop();
 	cur_url = cur_url.split('/');
+	cur_url = cur_url[0].split('#');
+	console.log(cur_url)
 	if (cur_url[0].indexOf('admin') != '-1' || cur_url[0].indexOf('servers') != '-1') {
 		$(".users").on("click", function () {
 			$('.menu li ul li').each(function () {
 				$(this).find('a').css('padding-left', '20px')
-				$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-rolor)');
+				$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-color)');
 				$(this).find('a').css('background-color', '#48505A');
 				$(this).children(".users").css('padding-left', '30px');
-				$(this).children(".users").css('border-left', '4px solid var(--right-menu-blue-rolor)');
-				$(this).children(".users").css('background-color', 'var(--right-menu-blue-rolor)');
+				$(this).children(".users").css('border-left', '4px solid var(--right-menu-blue-color)');
+				$(this).children(".users").css('background-color', 'var(--right-menu-blue-color)');
 			});
 			$("#tabs").tabs("option", "active", 0);
 		});
@@ -622,91 +605,102 @@ $( function() {
 			$(".group").on("click", function () {
 				$('.menu li ul li').each(function () {
 					$(this).find('a').css('padding-left', '20px');
-					$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-rolor)');
+					$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-color)');
 					$(this).find('a').css('background-color', '#48505A');
 					$(this).children(".group").css('padding-left', '30px');
-					$(this).children(".group").css('border-left', '4px solid var(--right-menu-blue-rolor)');
-					$(this).children(".group").css('background-color', 'var(--right-menu-blue-rolor)');
+					$(this).children(".group").css('border-left', '4px solid var(--right-menu-blue-color)');
+					$(this).children(".group").css('background-color', 'var(--right-menu-blue-color)');
 				});
 				$("#tabs").tabs("option", "active", 1);
 			});
 			$(".runtime").on("click", function () {
 				$('.menu li ul li').each(function () {
-					$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-rolor)');
+					$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-color)');
 					$(this).find('a').css('padding-left', '20px');
 					$(this).find('a').css('background-color', '#48505A');
 					$(this).children(".runtime").css('padding-left', '30px');
-					$(this).children(".runtime").css('border-left', '4px solid var(--right-menu-blue-rolor)');
-					$(this).children(".runtime").css('background-color', 'var(--right-menu-blue-rolor)');
+					$(this).children(".runtime").css('border-left', '4px solid var(--right-menu-blue-color)');
+					$(this).children(".runtime").css('background-color', 'var(--right-menu-blue-color)');
 				});
 				$("#tabs").tabs("option", "active", 2);
 			});
 			$(".admin").on("click", function () {
 				$('.menu li ul li').each(function () {
 					$(this).find('a').css('padding-left', '20px');
-					$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-rolor)');
+					$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-color)');
 					$(this).find('a').css('background-color', '#48505A');
 					$(this).children(".admin").css('padding-left', '30px');
-					$(this).children(".admin").css('border-left', '4px solid var(--right-menu-blue-rolor)');
-					$(this).children(".admin").css('background-color', 'var(--right-menu-blue-rolor)');
+					$(this).children(".admin").css('border-left', '4px solid var(--right-menu-blue-color)');
+					$(this).children(".admin").css('background-color', 'var(--right-menu-blue-color)');
 				});
 				$("#tabs").tabs("option", "active", 3);
 			});
 			$(".settings").on("click", function () {
 				$('.menu li ul li').each(function () {
-					$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-rolor)');
+					$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-color)');
 					$(this).find('a').css('padding-left', '20px');
 					$(this).find('a').css('background-color', '#48505A');
 					$(this).children(".settings").css('padding-left', '30px');
-					$(this).children(".settings").css('border-left', '4px solid var(--right-menu-blue-rolor)');
-					$(this).children(".settings").css('background-color', 'var(--right-menu-blue-rolor)');
+					$(this).children(".settings").css('border-left', '4px solid var(--right-menu-blue-color)');
+					$(this).children(".settings").css('background-color', 'var(--right-menu-blue-color)');
 				});
-				$("#tabs").tabs("option", "active", 5);
+				$("#tabs").tabs("option", "active", 4);
 			});
-			$(".services").on("click", function () {
+			$(".tools").on("click", function () {
 				$('.menu li ul li').each(function () {
-					$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-rolor)');
+					$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-color)');
 					$(this).find('a').css('padding-left', '20px');
 					$(this).find('a').css('background-color', '#48505A');
 					$(this).children(".services").css('padding-left', '30px');
-					$(this).children(".services").css('border-left', '4px solid var(--right-menu-blue-rolor)');
-					$(this).children(".services").css('background-color', 'var(--right-menu-blue-rolor)');
+					$(this).children(".services").css('border-left', '4px solid var(--right-menu-blue-color)');
+					$(this).children(".services").css('background-color', 'var(--right-menu-blue-color)');
 				});
-				$("#tabs").tabs("option", "active", 6);
+				$("#tabs").tabs("option", "active", 5);
 				loadServices();
 			});
 			$(".updatehapwi").on("click", function () {
 				$('.menu li ul li').each(function () {
-					$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-rolor)');
+					$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-color)');
 					$(this).find('a').css('padding-left', '20px');
 					$(this).find('a').css('background-color', '#48505A');
 					$(this).children(".updatehapwi").css('padding-left', '30px');
-					$(this).children(".updatehapwi").css('border-left', '4px solid var(--right-menu-blue-rolor)');
-					$(this).children(".updatehapwi").css('background-color', 'var(--right-menu-blue-rolor)');
+					$(this).children(".updatehapwi").css('border-left', '4px solid var(--right-menu-blue-color)');
+					$(this).children(".updatehapwi").css('background-color', 'var(--right-menu-blue-color)');
 				});
-				$("#tabs").tabs("option", "active", 7);
+				$("#tabs").tabs("option", "active", 6);
 				loadupdatehapwi();
 			});
 		} else {
+			$(".runtime").on("click", function () {
+				$('.menu li ul li').each(function () {
+					$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-color)');
+					$(this).find('a').css('padding-left', '20px');
+					$(this).find('a').css('background-color', '#48505A');
+					$(this).children(".runtime").css('padding-left', '30px');
+					$(this).children(".runtime").css('border-left', '4px solid var(--right-menu-blue-color)');
+					$(this).children(".runtime").css('background-color', 'var(--right-menu-blue-color)');
+				});
+				$("#tabs").tabs("option", "active", 1);
+			});
 			$(".admin").on("click", function () {
 				$('.menu li ul li').each(function () {
-					$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-rolor)');
+					$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-color)');
 					$(this).find('a').css('padding-left', '20px');
 					$(this).find('a').css('background-color', '#48505A');
 					$(this).children(".admin").css('padding-left', '30px');
-					$(this).children(".admin").css('border-left', '4px solid var(--right-menu-blue-rolor)');
-					$(this).children(".admin").css('background-color', 'var(--right-menu-blue-rolor)');
+					$(this).children(".admin").css('border-left', '4px solid var(--right-menu-blue-color)');
+					$(this).children(".admin").css('background-color', 'var(--right-menu-blue-color)');
 				});
 				$("#tabs").tabs("option", "active", 2);
 			});
 			$(".settings").on("click", function () {
 				$('.menu li ul li').each(function () {
-					$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-rolor)');
+					$(this).find('a').css('border-left', '0px solid var(--right-menu-blue-color)');
 					$(this).find('a').css('padding-left', '20px');
 					$(this).find('a').css('background-color', '#48505A');
 					$(this).children(".settings").css('padding-left', '30px');
-					$(this).children(".settings").css('border-left', '4px solid var(--right-menu-blue-rolor)');
-					$(this).children(".settings").css('background-color', 'var(--right-menu-blue-rolor)');
+					$(this).children(".settings").css('border-left', '4px solid var(--right-menu-blue-color)');
+					$(this).children(".settings").css('background-color', 'var(--right-menu-blue-color)');
 				});
 				$("#tabs").tabs("option", "active", 3);
 			});
