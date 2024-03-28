@@ -58,14 +58,14 @@ def create_smon(json_data, user_group, show_new=1) -> bool:
         smon_sql.insert_smon_dns(last_id, hostname, port, resolver, record_type, interval, agent_id)
 
     if last_id:
-        roxywi_common.logging('RMON', f'A new server {name} to RMON has been add', roxywi=1, login=1)
+        roxywi_common.logging('RMON', f'A new server {name} to RMON has been add', login=1)
 
     try:
         api_path = f'check/{last_id}'
         check_json = create_check_json(json_data)
         smon_agent.send_post_request_to_agent(agent_id, agent_ip, api_path, check_json)
     except Exception as e:
-        roxywi_common.logging('RMON', f'Cannot add check to the agent {agent_ip}: {e}', roxywi=1, login=1)
+        roxywi_common.logging('RMON', f'Cannot add check to the agent {agent_ip}: {e}', login=1)
 
     if last_id and show_new:
         return last_id
@@ -101,13 +101,13 @@ def update_smon(smon_id, json_data) -> str:
         try:
             port = int(port)
         except Exception:
-            raise Exception('RMON error: port must number')
+            raise Exception('error: port must number')
         if port > 65535 or port < 0:
-            raise Exception('RMON error: port must be 0-65535')
+            raise Exception('error: port must be 0-65535')
 
     if check_type == 'ping':
         if int(packet_size) < 16:
-            raise Exception('RMON error: a packet size cannot be less than 16')
+            raise Exception('error: a packet size cannot be less than 16')
 
     try:
         agent_id_old = smon_sql.get_agent_id_by_check_id(smon_id)
@@ -128,14 +128,16 @@ def update_smon(smon_id, json_data) -> str:
                 is_edited = smon_sql.update_smonDns(smon_id, hostname, port, resolver, record_type, interval, agent_id)
 
             if is_edited:
-                roxywi_common.logging('RMON', f'The RMON server {name} has been update', roxywi=1, login=1)
+                roxywi_common.logging('RMON', f'The check {name} has been update', login=1)
+                if not enabled:
+                    return 'Ok'
                 try:
                     api_path = f'check/{smon_id}'
                     check_json = create_check_json(json_data)
                     server_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
                     smon_agent.send_post_request_to_agent(agent_id, server_ip, api_path, check_json)
                 except Exception as e:
-                    roxywi_common.logging('RMON', f'error: Cannot add check to the agent {agent_ip}: {e}', roxywi=1, login=1)
+                    roxywi_common.logging('RMON', f'error: Cannot add check to the agent {agent_ip}: {e}', login=1)
 
                 return "Ok"
     except Exception as e:
@@ -179,10 +181,10 @@ def delete_smon(smon_id, user_group) -> str:
         server_ip = smon_sql.get_agent_ip_by_id(agent_id)
         smon_agent.delete_check(agent_id, server_ip, smon_id)
     except Exception as e:
-        roxywi_common.handle_exceptions(e, 'Roxy-WI server', 'Cannot delete check', roxywi=1, login=1)
+        roxywi_common.handle_exceptions(e, 'Roxy-WI server', 'Cannot delete check', login=1)
     try:
         if smon_sql.delete_smon(smon_id, user_group):
-            roxywi_common.logging('RMON', ' The server from RMON has been delete ', roxywi=1, login=1)
+            roxywi_common.logging('RMON', ' The server from RMON has been delete ', login=1)
             return 'Ok'
     except Exception as e:
         raise Exception(f'error: Cannot delete the server {e}')
