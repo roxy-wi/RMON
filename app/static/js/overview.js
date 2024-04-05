@@ -15,7 +15,7 @@ function showOverviewCallBack(serv, hostnamea) {
 	$.ajax( {
 		url: "/overview/server/"+serv,
 		beforeSend: function() {
-			$("#"+hostnamea).html('<img class="loading_small" src="/app/static/images/loading.gif" />');
+			$("#"+hostnamea).html('<img class="loading_small" src="/static/images/loading.gif" />');
 		},
 		type: "GET",
 		success: function( data ) {
