@@ -174,10 +174,12 @@ def smon_add():
 
 @bp.route('/check/settings/<int:smon_id>/<int:check_type_id>')
 @login_required
+@get_user_params()
 def check(smon_id, check_type_id):
     smon = smon_sql.select_one_smon(smon_id, check_type_id)
     settings = {}
     for s in smon:
+        group_name = smon_sql.get_smon_group_name_by_id(s.smon_id.group_id)
         settings = {
             'id': s.smon_id.id,
             'name': s.smon_id.name,
@@ -191,7 +193,7 @@ def check(smon_id, check_type_id):
             'slack': s.smon_id.slack_channel_id,
             'pd': s.smon_id.pd_channel_id,
             'check_type': s.smon_id.check_type,
-            'group': s.smon_id.group,
+            'group': group_name,
         }
         if check_type_id in (1, 5):
             settings.setdefault('port', s.port)

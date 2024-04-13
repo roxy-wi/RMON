@@ -682,6 +682,13 @@ def get_smon_group_by_name(user_group: int, name: str) -> int:
 		return 0
 
 
+def get_smon_group_name_by_id(group_id: int) -> str:
+	try:
+		return SmonGroup.get(SmonGroup.id == group_id).name
+	except Exception as e:
+		out_error(e)
+
+
 def add_smon_group(user_group: int, name: str) -> int:
 	try:
 		return SmonGroup.insert(name=name, user_group=user_group).on_conflict('replace').execute()

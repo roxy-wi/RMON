@@ -13,6 +13,7 @@ from app.middleware import get_user_params
 import app.modules.roxywi.roxy as roxy
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.common as roxywi_common
+import app.modules.tools.smon as smon_mod
 import app.modules.tools.common as tools_common
 
 
@@ -99,6 +100,12 @@ def update_settings(param):
     val = request.form.get('val').replace('92', '/')
     user_group = roxywi_common.get_user_group(id=1)
     if sql.update_setting(param, val, user_group):
-        roxywi_common.logging('Roxy-WI server', f'The {param} setting has been changed to: {val}', roxywi=1, login=1)
+        roxywi_common.logging('RMON server', f'The {param} setting has been changed to: {val}', roxywi=1, login=1)
+
+        # if param == 'master_port':
+        #     try:
+        #         smon_mod.change_smon_port(val)
+        #     except Exception as e:
+        #         return f'{e}'
 
         return 'Ok'
