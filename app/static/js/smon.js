@@ -6,6 +6,21 @@ $(function () {
 	$( "#check_type" ).on('selectmenuchange',function() {
 		check_and_clear_check_type($('#check_type').val());
 	});
+	$("#new-smon-group").autocomplete({
+		source: function (request, response) {
+			$.ajax({
+				url: "/rmon/groups",
+				success: function (data) {
+					response(data.split("\n"));
+				}
+			});
+		},
+		autoFocus: true,
+		minLength: -1,
+		select: function (event, ui) {
+			$('#new-smon-group').focus();
+		},
+	});
 });
 function sort_by_status() {
 	$('<div id="err_services" style="clear: both;"></div>').appendTo('.main');
@@ -19,36 +34,10 @@ function sort_by_status() {
 	window.history.pushState("SMON Dashboard", "SMON Dashboard", "?sort=by_status");
 }
 function showSmon(action) {
-	let sort = '';
-	let location = window.location.href;
-	let cur_url = '/' + location.split('/').pop();
-	if (action === 'refresh') {
-		try {
-			sort = cur_url[1].split('&')[1];
-			sort = sort.split('=')[1];
-		} catch (e) {
-			sort = '';
-		}
-	}
 	if (action === 'not_sort') {
 		window.history.pushState("SMON Dashboard", "SMON Dashboard", "/rmon/dashboard");
 	}
-	$.ajax({
-		url: "/rmon/refresh",
-		data: {
-			sort: sort,
-			token: $('#token').val()
-		},
-		type: "POST",
-		success: function (data) {
-			if (data.indexOf('SMON error:') != '-1') {
-				toastr.error(data);
-			} else {
-				toastr.clear();
-				$("#smon_dashboard").html(data);
-			}
-		}
-	});
+	window.location.reload();
 }
 function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 	let valid = true;
@@ -285,7 +274,7 @@ function getSmonCheck(smon_id, check_id, dialog_id, new_check=false) {
 				$('#smon-' + smon_id).replaceWith(data);
 			}
 			$(dialog_id).dialog("close");
-			// $.getScript("/static/js/fontawesome.min.js");
+			$.getScript("/static/js/fontawesome.min.js");
 		}
 	});
 }
@@ -368,6 +357,7 @@ function show_smon_history_statuses(dashboard_id, id_for_history_replace) {
 					},
 					show: {"delay": 1000}
 				});
+				$.getScript("/static/js/fontawesome.min.js");
 			}
 		}
 	});
@@ -837,7 +827,7 @@ function cleanAgentAddForm() {
 }
 function getAgent(agent_id, new_agent=false) {
 	$.ajax({
-		url: "/rmon/agent/" + agent_id,
+		url: "/rmon/agent/info/" + agent_id,
 		success: function (data) {
 			data = data.replace(/^\s+|\s+$/g, '');
 			if (data.indexOf('error:') != '-1') {
@@ -1009,6 +999,43 @@ function agentAction(action, id, server_ip, dialog_id) {
 	});
 }
 var charts = []
+function getSmonHistoryCheckDataStatusPage(server) {
+	$.ajax({
+		url: "/rmon/history/metric/" + server,
+		success: function (result) {
+			let data = [];
+			data.push(result.chartData.curr_con);
+			let labels = result.chartData.labels;
+			renderSMONChart(data[0], labels, server);
+			$('#en_table_metric-' + server).css('display', 'none');
+			$('#dis_table_metric-' + server).css('display', 'inline');
+			$('#history-status-' + server).show();
+		}
+	});
+}
+function hideSmonHistoryCheckDataStatusPage(server) {
+	$('#en_table_metric-' + server).css('display', 'inline');
+	$('#dis_table_metric-' + server).css('display', 'none');
+	Chart.getChart('metrics_' + server).destroy();
+	$('#history-status-' + server).hide();
+}
+function showSmonGroup(group_id) {
+	$('#show-smon-group-' + group_id).css('display', 'none');
+	$('#hide-smon-group-' + group_id).css('display', 'block');
+	$('#smon-group-' + group_id).show();
+	localStorage.setItem('show-smon-group-' + group_id, '1');
+}
+function hideSmonGroup(group_id) {
+	$('#show-smon-group-' + group_id).css('display', 'block');
+	$('#hide-smon-group-' + group_id).css('display', 'none');
+	$('#smon-group-' + group_id).hide();
+	localStorage.removeItem('show-smon-group-' + group_id, '1');
+}
+function isSmonGroupShowed(group_id) {
+	if(localStorage.getItem('show-smon-group-' + group_id) === '1') {
+		showSmonGroup(group_id);
+	}
+}
 function getSmonHistoryCheckData(server) {
     $.ajax({
         url: "/rmon/history/metric/" + server,

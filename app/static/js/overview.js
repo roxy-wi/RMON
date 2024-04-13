@@ -47,31 +47,9 @@ function showServicesOverview() {
 		}
 	} );
 }
-function showOverviewServer(name, ip, id, service) {
-	$.ajax( {
-		url: "/service/cpu-ram-metrics/" + ip + "/" + id + "/" + name + "/" + service,
-		success: function( data ) {
-			if (data.indexOf('error:') != '-1') {
-				toastr.error(data);
-			} else {
-				$("#ajax-server-" + id).empty();
-				$("#ajax-server-" + id).css('display', 'block');
-				$("#ajax-server-" + id).css('background-color', '#fbfbfb');
-				$("#ajax-server-" + id).css('border', '1px solid #A4C7F5');
-				$(".ajax-server").css('display', 'block');
-				$(".div-server").css('clear', 'both');
-				$(".div-pannel").css('clear', 'both');
-				$(".div-pannel").css('display', 'block');
-				$(".div-pannel").css('padding-top', '10px');
-				$(".div-pannel").css('height', '70px');
-				$("#div-pannel-" + id).insertBefore('#up-pannel')
-				$("#ajax-server-" + id).html(data);
-				$.getScript("/static/js/fontawesome.min.js")
-				getChartDataHapWiRam()
-				getChartDataHapWiCpu()
-			}
-		}					
-	} );
+function showOverviewServer(id) {
+	getChartDataHapWiRam();
+	getChartDataHapWiCpu();
 }
 $( function() {
 	try {

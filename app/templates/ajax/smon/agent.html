@@ -3,7 +3,9 @@
 {% for agent in agents %}
 <div id="agent-{{agent.id}}" class="div-server-hapwi">
     <div class="server-name">
-        <span id="agent-name-{{agent.id}}">{{agent.name.replace("'","")}}</span>
+        <span id="agent-name-{{agent.id}}">
+            <a href="/rmon/agent/{{ agent.id }}" title="{{ lang.words.more|title }} {{ lang.words.info }}">{{agent.name.replace("'","")}}</a>
+        </span>
         <span id="agent-desc-{{agent.id}}">{% if agent.desc != '' %} ({{agent.desc.replace("'", "")}}) {% endif %}</span>
         <span class="server-action">
             {% if g.user_params['role'] <= 3 %}
@@ -48,5 +50,6 @@
         getAgentStatus('{{ agent.ip }}', '{{ agent.id }}');
         getAgentTotalChecks('{{ agent.ip }}', '{{ agent.id }}');
         getAgentUptime('{{ agent.ip }}', '{{ agent.id }}');
+        showOverviewServer('{{ agent.id }}');
     </script>
 {% endfor %}

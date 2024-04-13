@@ -17,7 +17,9 @@
         <meta name="msapplication-TileColor" content="#da532c">
         <meta name="msapplication-config" content="/static/images/favicon/browserconfig.xml">
         <meta name="theme-color" content="#ffffff">
+        <script defer src="{{ url_for('static', filename='js/fontawesome.min.js') }}"></script>
         <script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" data-auto-replace-svg="nest"></script>
+        <script>FontAwesomeConfig = { searchPseudoElements: true, observeMutations: false };</script>
         <link href="{{ url_for('static', filename='css/jquery-ui.min.css') }}" rel="stylesheet">
 		<link href="{{ url_for('static', filename='css/jquery-ui.structure.min.css') }}" rel="stylesheet">
         <link href="{{ url_for('static', filename='css/style-6.3.9.css') }}" rel="stylesheet">
@@ -27,6 +29,9 @@
         <script src="{{ url_for('static', filename='js/smon.js') }}"></script>
         <link href="{{ url_for('static', filename='css/toastr-6.3.9.css') }}" rel="stylesheet"/>
 		<script src="{{ url_for('static', filename='js/toastr.js') }}"></script>
+        <link href="{{ url_for('static', filename='css/awesome-6.3.9.css') }}" rel="stylesheet">
+        <script src="{{ url_for('static', filename='js/chart.min-4.3.0.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/metrics.js') }}"></script>
     </head>
     <body>
         <h2>Status page - {{p.name|replace("'", "")}}</h2>
@@ -49,7 +54,16 @@
             </div>
             <div class="history_statuses" id="history-{{check}}"></div>
             <div class="tooltip check_tooltip">Group: {{value.group}}, check type: {{value.check_type}}</div>
-            <div class="tooltip check_tooltip check_last_check">last check</div>
+            <div class="tooltip check_tooltip check_last_check">
+                last check
+                <span id="en_table_metric-{{ check }}" class="plus switcher_table_metric" onclick="getSmonHistoryCheckDataStatusPage('{{ check }}')" title="{{lang.words.show|title()}} {{lang.words.response}}"></span>
+                <span id="dis_table_metric-{{ check }}" class="minus switcher_table_metric" onclick="hideSmonHistoryCheckDataStatusPage('{{ check }}')" style="display: none;" title="{{lang.words.hide}}"></span>
+            </div>
+            <div id="history-status-{{ check }}" style="display: none;">
+                <div class="chart-container_overview" style="width: 98%;">
+                    <canvas id="metrics_{{ check }}" role="img"></canvas>
+                </div>
+            </div>
         </div>
         <script>show_smon_history_statuses('{{check}}', '#history-{{check}}');</script>
         {% endfor %}

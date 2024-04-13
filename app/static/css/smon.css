@@ -220,3 +220,45 @@ h4 {
 .add .fa-clone {
     margin-bottom: 3px;
 }
+.overview-checks {
+    clear: both;
+    margin: 20px;
+    border: 1px solid rgb(164, 199, 245);
+    padding-left: var(--indent);
+    padding-top: 7px;
+    padding-bottom: var(--indent);
+}
+.overview-check-type {
+    padding-top: var(--indent);
+    padding-bottom: 5px;
+    font-size: larger;
+    font-weight: bold;
+}
+.overview-checks-div {
+    border-bottom: 1px solid var(--border-color);
+    width: 99%;
+    padding-bottom: var(--indent);
+}
+.overview-check {
+    margin-left: var(--indent);
+    color: var(--color-grey);
+}
+.overview-check-name, .overview-check-hostname, .overview-check-col {
+    width: 100px;
+    display: inline-block;
+}
+.overview-check-hostname, .overview-check-name {
+    width: 200px;
+}
+.smon_named_group {
+    display: none;
+}
+.smon_group_switcher {
+    font-size: 13px;
+    margin-top: 6px;
+    display: block;
+}
+.smon_group_name {
+    float: left;
+    margin-right: 10px;
+}

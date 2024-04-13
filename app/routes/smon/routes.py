@@ -33,6 +33,7 @@ def smon_main_dashboard():
         'smon': smon_sql.smon_list(group_id),
         'agents': smon_sql.get_agents(group_id),
         'group': group_id,
+        'smon_groups': smon_sql.select_smon_groups(group_id),
         'smon_status': tools_common.is_tool_active('rmon-server'),
         'telegrams': channel_sql.get_user_telegram_by_group(group_id),
         'slacks': channel_sql.get_user_pd_by_group(group_id),
@@ -109,6 +110,17 @@ def smon_dashboard(smon_id, check_id):
     }
 
     return render_template('include/smon/smon_history.html', **kwargs)
+
+
+@bp.get('/groups')
+@login_required
+@get_user_params()
+def get_groups():
+    groups = smon_sql.select_smon_groups(g.user_params['group_id'])
+    smon_groups = ''
+    for group in groups:
+        smon_groups += f'{group.name}\n'
+    return smon_groups
 
 
 @bp.get('/checks/count')
@@ -376,7 +388,6 @@ def smon_host_history(server_ip):
 
 
 @bp.route('/history/metric/<int:dashboard_id>')
-@login_required
 def smon_history_metric(dashboard_id):
     return jsonify(smon_mod.history_metrics(dashboard_id))
 
@@ -390,10 +401,3 @@ def smon_history_statuses(dashboard_id):
 @login_required
 def smon_history_cur_status(dashboard_id, check_id):
     return smon_mod.history_cur_status(dashboard_id, check_id)
-
-
-@bp.post('/refresh')
-@login_required
-def smon_show():
-    sort = common.checkAjaxInput(request.form.get('sort'))
-    return smon_mod.show_smon(sort)

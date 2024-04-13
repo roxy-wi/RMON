@@ -23,7 +23,7 @@ def agent():
             'smon_status': tools_common.is_tool_active('rmon-server'),
         }
 
-        return render_template('smon/agent.html', **kwargs)
+        return render_template('smon/agents.html', **kwargs)
     elif request.method == 'POST':
         data = request.get_json()
         try:
@@ -46,6 +46,23 @@ def agent():
         except Exception as e:
             return f'{e}'
         return 'ok'
+
+
+@bp.get('/agent/<int:agent_id>')
+@login_required
+@get_user_params()
+def get_agent(agent_id):
+    kwargs = {
+        'agents': smon_sql.get_agent(agent_id),
+        'lang': roxywi_common.get_user_lang_for_flask(),
+        'smon_status': tools_common.is_tool_active('rmon-server'),
+        'http_checks': smon_sql.select_checks_for_agent(agent_id, 'http'),
+        'tcp_checks': smon_sql.select_checks_for_agent(agent_id, 'tcp'),
+        'dns_checks': smon_sql.select_checks_for_agent(agent_id, 'dns'),
+        'ping_checks': smon_sql.select_checks_for_agent(agent_id, 'ping')
+    }
+
+    return render_template('smon/agent.html', **kwargs)
 
 
 @bp.post('/agent/hello')
@@ -83,10 +100,10 @@ def get_agent_count():
     return 'ok'
 
 
-@bp.get('/agent/<int:agent_id>')
+@bp.get('/agent/info/<int:agent_id>')
 @login_required
 @get_user_params()
-def get_agent(agent_id):
+def get_agent_info(agent_id):
     try:
         agent_data = smon_sql.get_agent(agent_id)
     except Exception as e:

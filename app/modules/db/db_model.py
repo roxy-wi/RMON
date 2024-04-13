@@ -202,6 +202,16 @@ class Version(BaseModel):
         primary_key = False
 
 
+class SmonGroup(BaseModel):
+    id = AutoField()
+    name = CharField()
+    user_group = IntegerField(constraints=[SQL('DEFAULT 1')])
+
+    class Meta:
+        table_name = 'smon_groups'
+        constraints = [SQL('UNIQUE (name, user_group)')]
+
+
 class SMON(BaseModel):
     id = AutoField()
     name = CharField(null=True)
@@ -211,7 +221,7 @@ class SMON(BaseModel):
     desc = CharField(null=True)
     response_time = CharField(null=True)
     time_state = DateTimeField(constraints=[SQL('DEFAULT "0000-00-00 00:00:00"')])
-    group = CharField(null=True)
+    group_id = IntegerField(null=True)
     http = CharField(null=True)
     body_status = IntegerField(constraints=[SQL('DEFAULT 1')])
     telegram_channel_id = IntegerField(null=True)
@@ -412,5 +422,5 @@ def create_tables():
         conn.create_tables(
             [User, Server, Role, Telegram, Slack, UUID, Token, ApiToken, Groups, UserGroups, Setting, Cred, Version, ActionHistory,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
-             SmonStatusPage, SmonStatusPageCheck, SMON, Alerts]
+             SmonStatusPage, SmonStatusPageCheck, SMON, Alerts, SmonGroup]
         )

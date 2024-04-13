@@ -1,7 +1,8 @@
+import os
 import sys
 import pytz
 
-from flask import render_template, request, session, g, abort
+from flask import render_template, request, session, g, abort, send_from_directory, jsonify
 from flask_login import login_required
 
 sys.path.insert(0, "/var/www/rmon/app")
@@ -77,6 +78,13 @@ def make_session_permanent():
     session.permanent = True
 
 
+@app.route('/favicon.ico')
+def favicon():
+    print(app.root_path, 'static')
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                               'images/favicon/favicon.ico', mimetype='image/vnd.microsoft.icon')
+
+
 @bp.route('/nettools')
 @login_required
 @get_user_params(1)
@@ -86,7 +94,7 @@ def nettools():
 
 @bp.post('/nettools/<check>')
 @login_required
-def nettols_check(check):
+def nettools_check(check):
     server_from = common.checkAjaxInput(request.form.get('server_from'))
     server_to = common.is_ip_or_dns(request.form.get('server_to'))
     action = common.checkAjaxInput(request.form.get('nettools_action'))
@@ -94,6 +102,7 @@ def nettols_check(check):
     dns_name = common.checkAjaxInput(request.form.get('nettools_nslookup_name'))
     dns_name = common.is_ip_or_dns(dns_name)
     record_type = common.checkAjaxInput(request.form.get('nettools_nslookup_record_type'))
+    domain_name = common.is_ip_or_dns(request.form.get('nettools_whois_name'))
 
     if check == 'icmp':
         return nettools_mod.ping_from_server(server_from, server_to, action)
@@ -101,6 +110,8 @@ def nettols_check(check):
         return nettools_mod.telnet_from_server(server_from, server_to, port_to)
     elif check == 'dns':
         return nettools_mod.nslookup_from_server(server_from, dns_name, record_type)
+    elif check == 'whois':
+        return jsonify(nettools_mod.whois_check(domain_name))
     else:
         return 'error: Wrong check'
 
@@ -187,3 +198,14 @@ def scan_port(server_id, server_ip):
     else:
         lang = roxywi_common.get_user_lang_for_flask()
         return render_template('ajax/scan_ports.html', ports=stdout, info=stdout1, lang=lang)
+
+
+@bp.route('/cpu-ram-metrics/<server_id>')
+@get_user_params()
+def cpu_ram_metrics(server_id):
+    kwargs = {
+        'id': server_id,
+        'lang': g.user_params['lang']
+    }
+
+    return render_template('ajax/overviewServers.html', **kwargs)

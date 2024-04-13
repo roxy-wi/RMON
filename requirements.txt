@@ -21,3 +21,4 @@ psutil>=5.9.1
 aio-pika>=7.1.0
 pika>=1.2.0
 websockets>=9.0
+python-whois>=0.8.0

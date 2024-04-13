@@ -588,7 +588,6 @@ $( function() {
 	var cur_url = window.location.href.split('/').pop();
 	cur_url = cur_url.split('/');
 	cur_url = cur_url[0].split('#');
-	console.log(cur_url)
 	if (cur_url[0].indexOf('admin') != '-1' || cur_url[0].indexOf('servers') != '-1') {
 		$(".users").on("click", function () {
 			$('.menu li ul li').each(function () {

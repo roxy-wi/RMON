@@ -104,7 +104,7 @@
     </table>
 </form>
 <form name="nettools_portscanner_form" id="nettools_portscanner_form" method="post" action="/nettools/portscan">
-    <table class="overview">
+    <table class="overview" style="width: 40%;float: left;">
         <caption><h3>Port scanner</h3></caption>
         <tr class="overviewHead">
             <th class="padding10 first-collumn">{{lang.words.server|title()}}</th>
@@ -116,6 +116,23 @@
             </td>
             <td class="padding10" style="width: 0">
                 <button type="submit" title="{{lang.words.run|title()}} port scanning" id="nettools_portscan" name="nettools_portscan" value="nettools_portscan">{{lang.words.run|title()}}</button>
+            </td>
+        </tr>
+    </table>
+</form>
+<form name="nettools_whois_form" id="nettools_whois_form" method="post" action="/nettools/whois">
+    <table class="overview" style="width: 60%;">
+        <caption><h3>Whois</h3></caption>
+        <tr class="overviewHead">
+            <th class="padding10 first-collumn">{{lang.words.name|title()}}</th>
+            <th></th>
+        </tr>
+        <tr>
+            <td class="padding10 first-collumn">
+                {{ input('nettools_whois_name', title=lang.nettools_page.dns_name) }}
+            </td>
+            <td class="padding10" style="width: 0">
+                <button type="submit" title="{{lang.words.check|title()}}" id="nettools_whois" name="nettools_whois" value="nettools_whois">{{lang.words.check|title()}}</button>
             </td>
         </tr>
     </table>

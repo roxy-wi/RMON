@@ -3,7 +3,9 @@ from datetime import datetime
 
 from peewee import fn
 
-from app.modules.db.db_model import SmonAgent, Server, SMON, SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonHistory, SmonStatusPageCheck, SmonStatusPage
+from app.modules.db.db_model import (
+	SmonAgent, Server, SMON, SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonHistory, SmonStatusPageCheck, SmonStatusPage, SmonGroup
+)
 from app.modules.db.common import out_error
 import app.modules.roxy_wi_tools as roxy_wi_tools
 
@@ -212,10 +214,10 @@ def select_one_smon(smon_id: int, check_id: int) -> tuple:
 		return query_res
 
 
-def insert_smon(name, enable, group, desc, telegram, slack, pd, user_group, check_type):
+def insert_smon(name, enable, group_id, desc, telegram, slack, pd, user_group, check_type):
 	try:
 		last_id = SMON.insert(
-			name=name, en=enable, desc=desc, group=group, telegram_channel_id=telegram, slack_channel_id=slack,
+			name=name, en=enable, desc=desc, group_id=group_id, telegram_channel_id=telegram, slack_channel_id=slack,
 			pd_channel_id=pd, user_group=user_group, status='3', check_type=check_type
 		).execute()
 	except Exception as e:
@@ -329,9 +331,9 @@ def delete_smon(smon_id, user_group):
 
 def smon_list(user_group):
 	if user_group == 1:
-		query = (SMON.select().order_by(SMON.group))
+		query = (SMON.select().order_by(SMON.group_id))
 	else:
-		query = (SMON.select().where(SMON.user_group == user_group).order_by(SMON.group))
+		query = (SMON.select().where(SMON.user_group == user_group).order_by(SMON.group_id))
 
 	try:
 		query_res = query.execute()
@@ -656,5 +658,39 @@ def delete_smon_history():
 	query = SmonHistory.delete().where(SmonHistory.date < cur_date)
 	try:
 		query.execute()
+	except Exception as e:
+		out_error(e)
+
+
+def select_checks_for_agent(agent_id: int, check_type: str) -> dict:
+	select_query = {
+		'http': SmonHttpCheck.select(SmonHttpCheck, SMON).join(SMON).where(SmonHttpCheck.agent_id == agent_id).objects(),
+		'tcp': SmonTcpCheck.select(SmonTcpCheck, SMON).join(SMON).where(SmonTcpCheck.agent_id == agent_id).objects(),
+		'dns': SmonDnsCheck.select(SmonDnsCheck, SMON).join(SMON).where(SmonDnsCheck.agent_id == agent_id).objects(),
+		'ping': SmonPingCheck.select(SmonPingCheck, SMON).join(SMON).where(SmonPingCheck.agent_id == agent_id).objects()
+	}
+	try:
+		return select_query[check_type].execute()
+	except Exception as e:
+		out_error(e)
+
+
+def get_smon_group_by_name(user_group: int, name: str) -> int:
+	try:
+		return SmonGroup.select().where((SmonGroup.name == name) & (SmonGroup.user_group == user_group)).get().id
+	except Exception as e:
+		return 0
+
+
+def add_smon_group(user_group: int, name: str) -> int:
+	try:
+		return SmonGroup.insert(name=name, user_group=user_group).on_conflict('replace').execute()
+	except Exception as e:
+		out_error(e)
+
+
+def select_smon_groups(user_group: int) -> object:
+	try:
+		return SmonGroup.select().where(SmonGroup.user_group == user_group)
 	except Exception as e:
 		out_error(e)

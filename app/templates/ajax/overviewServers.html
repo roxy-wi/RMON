@@ -1,34 +1,19 @@
 {% import 'languages/'+lang|default('en')+'.html' as lang %}
-{%- for service in service_status -%}
 <div class="server-info">
-	{% if service_page == 'nginx' or service_page == 'keepalived' %}
-	<div class="server-name" style="padding-bottom: 0px;">
-	{% else %}
 	<div class="server-name">
-	{% endif %}
 		{{lang.words.server_status|title()}}
 		<span class="update-icon">
-			<a onclick="showOverviewServer('{{ service.0 }}', '{{ service.1 }}', '{{id}}', '{{service_page}}')" title="{{lang.words.refresh|title()}}">
+			<a onclick="showOverviewServer('{{id}}')" title="{{lang.words.refresh|title()}}">
 				<span class="service-reload"></span>
 			</a>
 		</span>
 	</div>
-	{% if service_page == 'haproxy' %}
-	<div class="haproxy-info">
-		{{ service.2 }}
-	</div>
-	{% endif %}
-	{% if service_page == 'nginx' or service_page == 'keepalived' %}
-		<div class="top-info" style="margin-top: 5px; width: 100%;">
-	{% else %}
-		<div class="top-info" style="width: 640px;">
-	{% endif %}
-			<div id="cpu_div" style="height: 140px;width: 50%;float: left; margin:0; padding:0;">
-				<canvas id="cpu" role="img"></canvas>
-			</div>
-			<div id="ram_div" style="height: 140px;width: 50%;float: right;margin:0; padding:0;">
-				<canvas id="ram" role="img"></canvas>
-			</div>
+    <div class="top-info" style="width: 640px;">
+        <div id="cpu_div" style="height: 140px;width: 50%;float: left; margin:0; padding:0;">
+            <canvas id="cpu" role="img"></canvas>
+        </div>
+        <div id="ram_div" style="height: 140px;width: 50%;float: right;margin:0; padding:0;">
+            <canvas id="ram" role="img"></canvas>
+        </div>
 	</div>
 </div>
-{% endfor %}

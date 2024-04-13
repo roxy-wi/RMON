@@ -9,7 +9,9 @@
 	--menu-color: #06212a;
 	--right-menu-blue-color: #5D9CEB;
 	--yellow-color: #ffcc00;
+	--color-grey: #999;
 	--border-radius: 3px;
+	--border-color: #A4C7F5;
 	--indent: 15px;
 }
 html {
@@ -390,7 +392,7 @@ pre {
 	font-weight: bold;
 }
 .overview-wi .overviewHead {
-	border-bottom: 1px solid #A4C7F5;
+	border-bottom: 1px solid var(--border-color);
 	height: 25px;
 }
 .overview tr{
@@ -629,6 +631,9 @@ ul{
 #tabs.ui-corner-all {
 	border-radius: none !important;
 }
+ul.ui-autocomplete {
+    z-index: 1100 !important;
+}
 .overflow_div {
 	overflow: hidden;
     text-overflow: ellipsis;
@@ -816,7 +821,7 @@ label {
 }
 .div-server, .div-server-hapwi, .bin_bout {
 	background-color: #fbfbfb;
-	border: 1px solid #A4C7F5;
+	border: 1px solid var(--border-color);
 	border-radius: var(--border-radius);
 	height: 165px;
 	width: 400px;
@@ -862,7 +867,7 @@ label {
 	padding-bottom: 3px;
     font-size: 1.4em;
     color: var(--blue-color);
-    border-bottom: 1px solid #A4C7F5;
+    border-bottom: 1px solid var(--border-color);
 	width: 99%;
 	height: 25px;
 }
@@ -886,7 +891,7 @@ label {
 	margin-top: 6px;
 }
 .server-desc {
-    color: #999;
+    color: var(--color-grey);
     padding-top: 5px;
 	height: 80px;
 	width: 395px;
@@ -922,14 +927,17 @@ label {
 	float: left;
 }
 .server-info {
-	height: 100%;
-	width: 790px;
+	height: 157px;
+    width: 790px;
+    float: left;
+    border: 1px solid rgb(164, 199, 245);
+    padding-left: var(--indent);
+    margin-left: var(--indent);
 }
 .top-info {
 	display: inline-block;
-	width: 350px;
-	margin-top: 5px;
-	font-size: 10px;
+    width: 350px;
+    font-size: 10px;
 }
 .bin_bout {
 	width: 110px;
@@ -998,6 +1006,7 @@ label {
 .group_name {
 	font-size: 18px;
 	padding: 10px 20px 0 0;
+	margin-bottom: var(--indent);
 }
 .smon_services {
 	width: 360px;
@@ -1007,7 +1016,7 @@ label {
 	margin: 10px 10px 10px 0;
 	padding-left: var(--indent);
 	padding-top: 0;
-	border: 1px solid #A4C7F5;
+	border: 1px solid var(--border-color);
 }
 #good_services {
 	clear: both;
@@ -1022,12 +1031,12 @@ label {
 	padding-top: 5px;
 	padding-bottom: 3px;
 	color: var(--blue-color);
-	border-bottom: 1px solid #A4C7F5;
+	border-bottom: 1px solid var(--border-color);
 	width: 93%;
 	margin-bottom: 5px;
 }
 .desc, .res_time {
-	color: #999;
+	color: var(--color-grey);
 }
 .desc {
 	height: 20px;
@@ -1340,7 +1349,6 @@ label {
 	background-color: rgb(93, 156, 235) !important;
 }
 .switcher_table_metric {
-	margin-left: 99%;
 	color: var(--green-color);
 	cursor: pointer;
 }

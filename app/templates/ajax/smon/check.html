@@ -1,6 +1,6 @@
 {% import 'languages/'+lang|default('en')+'.html' as lang %}
-<script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" data-auto-replace-svg="nest"></script>
-<script>FontAwesomeConfig = { searchPseudoElements: true, observeMutations: false };</script>
+{#<script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" data-auto-replace-svg="nest"></script>#}
+{#<script>FontAwesomeConfig = { searchPseudoElements: true, observeMutations: false };</script>#}
 {%- for s in smon -%}
     {% if s.smon_id.en == 1 %}
         {% if s.smon_id.status == 1 and s.smon_id.body_status == 1 %}

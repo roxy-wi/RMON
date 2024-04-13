@@ -1,74 +1,140 @@
 {% extends "base.html" %}
-{% block title %}{{ lang.menu_links.monitoring.smon.agent }}{% endblock %}
-{% block h2 %}{{ lang.menu_links.monitoring.smon.agent }}{% endblock %}
+{% block title %}{{ lang.words.overview|title() }} {{ lang.menu_links.monitoring.smon.agent }}{% endblock %}
+{% block h2 %}{{ lang.words.overview|title() }} {{ lang.menu_links.monitoring.smon.agent }}{% endblock %}
 {% block content %}
 {% from 'include/input_macros.html' import input, select %}
+<script src="{{ url_for('static', filename='js/overview.js') }}"></script>
+<link href="{{ url_for('static', filename='css/chart.min.css') }}" rel="stylesheet">
+<script src="{{ url_for('static', filename='js/metrics.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chart.min-4.3.0.js') }}"></script>
 <script src="{{ url_for('static', filename='js/smon.js') }}"></script>
 <script src="{{ url_for('static', filename='js/jquery.timeago.js') }}" type="text/javascript"></script>
 <link href="{{ url_for('static', filename='css/servers.css') }}" rel="stylesheet"/>
 <link href="{{ url_for('static', filename='css/smon.css') }}" rel="stylesheet"/>
 <link href="{{ url_for('static', filename='css/ha.css') }}" rel="stylesheet">
-{% if smon_status in ('failed', 'inactive', 'ERROR') %}
-<div style="text-align: center;">
-	<br />
-	<h3>{{lang.smon_page.desc.smon_is_not_run}}</h3>
-	<img src="{{ url_for('static', filename='images/no_servers.png')}}" alt="There is no server">
-	<h4>{{lang.smon_page.desc.run_smon}} <a href="/users/services" title="RMON services" target="_blank">{{lang.words.here}}</a> {{lang.smon_page.desc.before_use}}</h4>
-</div>
-{% else %}
-{% if g.user_params['role'] <= 2 %}
-<div class="add-button add-button-big" title="{{lang.smon_page.desc.add_agent}}" onclick="addAgentDialog();">+ {{lang.smon_page.desc.add_agent}}</div>
-{% endif %}
-<div class="up-pannel" class="sortable">
+<div class="up-pannel" style="padding-top: 10px;">
     {% for agent in agents %}
     <div id="agent-{{agent.id}}" class="div-server-hapwi animated-background"></div>
     {% endfor %}
+    <div class="server-info" style="padding-top: 7px;">
+        <div class="server-name">
+            {{lang.words.server_status|title()}}
+            <span class="update-icon">
+                <a onclick="showOverviewServer('{{id}}')" title="{{lang.words.refresh|title()}}">
+                    <span class="service-reload"></span>
+                </a>
+            </span>
+        </div>
+        <div class="top-info" style="width: 770px;">
+            <div id="cpu_div" style="height: 120px;width: 50%;float: left; margin:0; padding:0;">
+                <canvas id="cpu" role="img"></canvas>
+            </div>
+            <div id="ram_div" style="height: 120px;width: 50%;float: right;margin:0; padding:0;">
+                <canvas id="ram" role="img"></canvas>
+            </div>
+        </div>
+    </div>
 </div>
-    <div id="add-agent-page" style="display: none;">
-        <table class="overview" id="add-agent-page-overview"
-               title="{{lang.words.create|title()}} {{lang.words.w_a}} {{lang.words.new2}} {{lang.words.agent}}"
-               data-edit="{{lang.words.edit|title()}} {{lang.words.agent}}">
-            {% include 'include/tr_validate_tips.html' %}
-            <tr>
-                <td class="padding20">
-                    {{lang.words.server|title()}}
-                    <span class="need-field">*</span>
-                </td>
-                <td>
-                    <select name="new-agent-server-id" id="new-agent-server-id">
-                        <option value="------" disabled selected>------</option>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td class="padding20" style="width: 50%">
-                    {{lang.words.name|title()}}
-                    <span class="need-field">*</span>
-                </td>
-                <td>
-                    {{ input('new-agent-name', autofocus='autofocus') }}
-                </td>
-            </tr>
-            <tr>
-                <td class="padding20">{{lang.words.enable|title()}}</td>
-                <td>
-                    {{ checkbox('new-agent-enabled', checked='checked') }}
-                </td>
-            </tr>
-            <tr>
-                <td class="padding20" style="width: 50%">
-                    {{lang.words.desc|title()}}
-                </td>
-                <td>
-                    {{ input('new-agent-desc', autofocus='autofocus') }}
-                </td>
-            </tr>
-        </table>
+<div id="add-agent-page" style="display: none;">
+    <table class="overview" id="add-agent-page-overview"
+           title="{{lang.words.create|title()}} {{lang.words.w_a}} {{lang.words.new2}} {{lang.words.agent}}"
+           data-edit="{{lang.words.edit|title()}} {{lang.words.agent}}">
+        {% include 'include/tr_validate_tips.html' %}
+        <tr>
+            <td class="padding20">
+                {{lang.words.server|title()}}
+                <span class="need-field">*</span>
+            </td>
+            <td>
+                <select name="new-agent-server-id" id="new-agent-server-id">
+                    <option value="------" disabled selected>------</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td class="padding20" style="width: 50%">
+                {{lang.words.name|title()}}
+                <span class="need-field">*</span>
+            </td>
+            <td>
+                {{ input('new-agent-name', autofocus='autofocus') }}
+            </td>
+        </tr>
+        <tr>
+            <td class="padding20">{{lang.words.enable|title()}}</td>
+            <td>
+                {{ checkbox('new-agent-enabled', checked='checked') }}
+            </td>
+        </tr>
+        <tr>
+            <td class="padding20" style="width: 50%">
+                {{lang.words.desc|title()}}
+            </td>
+            <td>
+                {{ input('new-agent-desc', autofocus='autofocus') }}
+            </td>
+        </tr>
+    </table>
+</div>
+    <div class="overview-checks">
+        <div class="overview-checks-type">
+        <div class="server-name">{{ lang.words.checks|title() }} {{ lang.words.on }} {{ lang.words.the }} {{ lang.words.agent }}</div>
+        {% if http_checks %}
+            <div class="overview-check-type">HTTP:</div>
+            <div class="overview-checks-div">
+            {% for check in http_checks %}
+                <div class="overview-check" id="check-{{ check.id }}">
+                    <span class="overview-check-name"><b>{{ lang.words.name|title() }}:</b> {{ check.name }}</span>
+                    <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
+                    <span class="overview-check-hostname"><b>URL:</b> <a href="{{ check.url }}" target="_blank">{{ check.url }}</a></span>
+                    <span class="overview-check-col"><b>{{ lang.words.method|title() }}:</b> {{ check.method|upper() }}</span>
+                </div>
+            {% endfor %}
+            </div>
+        {% endif %}
+        {% if tcp_checks %}
+            <div class="overview-check-type">TCP:</div>
+            <div class="overview-checks-div">
+            {% for check in tcp_checks %}
+                <div class="overview-check" id="check-{{ check.id }}">
+                    <span class="overview-check-name"><b>{{ lang.words.name|title() }}:</b> {{ check.name }}</span>
+                    <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
+                    <span class="overview-check-col"><b>{{ lang.words.port|title() }}:</b> {{ check.port }}</span>
+                </div>
+            {% endfor %}
+            </div>
+        {% endif %}
+        {% if dns_checks %}
+            <div class="overview-check-type">DNS:</div>
+            <div class="overview-checks-div">
+                {% for check in dns_checks %}
+                    <div class="overview-check" id="check-{{ check.id }}">
+                        <span class="overview-check-name"><b>{{ lang.words.name|title() }}:</b> {{ check.name }}</span>
+                        <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
+                        <span class="overview-check-hostname"><b>{{ lang.words.record|title() }}:</b> {{ check.ip }}</span>
+                        <span class="overview-check-col"><b>Resolver:</b> {{ check.resolver }}</span>
+                        <span class="overview-check-col"><b>{{ lang.words.record_type|title() }}:</b> {{ check.record_type|upper() }}</span>
+                        <span class="overview-check-col"><b>{{ lang.words.port|title() }}:</b> {{ check.port }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% if ping_checks %}
+            <div class="overview-check-type">Ping:</div>
+            {% for check in ping_checks %}
+                <div class="overview-check" id="check-{{ check.id }}">
+                    <span class="overview-check-name"><b>{{ lang.words.name|title() }}:</b> {{ check.name }}</span>
+                    <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
+                    <span class="overview-check-hostname"><b>{{ lang.words.Hostname }}:</b> {{ check.ip }} </span>
+                    <span class="overview-check-col"><b>{{ lang.smon_page.desc.packet_size }}:</b> {{ check.packet_size }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+        </div>
     </div>
-    <div id="dialog-confirm" style="display: none;">
-        <p><span class="ui-icon ui-icon-alert" style="float:left; margin:3px 12px 20px 0;"></span>{{lang.phrases.are_you_sure}}</p>
-    </div>
-{% endif %}
+<div id="dialog-confirm" style="display: none;">
+    <p><span class="ui-icon ui-icon-alert" style="float:left; margin:3px 12px 20px 0;"></span>{{lang.phrases.are_you_sure}}</p>
+</div>
 <script>
     {% for agent in agents %}
         getAgent('{{agent.id}}');

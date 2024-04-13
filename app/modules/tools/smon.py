@@ -46,7 +46,14 @@ def create_smon(json_data, user_group, show_new=1) -> bool:
         if int(packet_size) < 16:
             raise Exception('RMON error: a packet size cannot be less than 16')
 
-    last_id = smon_sql.insert_smon(name, enable, group, desc, telegram, slack, pd, user_group, check_type)
+    if group:
+        smon_group_id = smon_sql.get_smon_group_by_name(user_group, group)
+        if not smon_group_id:
+            smon_group_id = smon_sql.add_smon_group(user_group, group)
+    else:
+        smon_group_id = None
+
+    last_id = smon_sql.insert_smon(name, enable, smon_group_id, desc, telegram, slack, pd, user_group, check_type)
 
     if check_type == 'ping':
         smon_sql.insert_smon_ping(last_id, hostname, packet_size, interval, agent_id)
@@ -166,13 +173,6 @@ def create_check_json(json_data: dict) -> dict:
         check_json.setdefault('record_type', json_data['record_type'])
 
     return check_json
-
-
-def show_smon(sort: str) -> str:
-    user_group = roxywi_common.get_user_group(id=1)
-    lang = roxywi_common.get_user_lang_for_flask()
-
-    return render_template('ajax/smon/smon_dashboard.html', smon=smon_sql.smon_list(user_group), sort=sort, lang=lang, update=1)
 
 
 def delete_smon(smon_id, user_group) -> str:
@@ -313,3 +313,8 @@ def check_checks_limit():
         raise Exception('error: You have reached limit for Home plan')
     elif user_subscription['user_plan'] == 'enterprise' and count_checks >= 100:
         raise Exception('error: You have reached limit for Enterprise plan')
+
+
+def get_check_id_by_name(name: str) -> int:
+    checking_types = {'tcp': '1', 'http': '2', 'ping': '4', 'dns': '5'}
+    return checking_types[name]
