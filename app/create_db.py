@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
+import distro
+
 from modules.db.db_model import *
 
 
 def default_values():
+	if distro.id() == 'ubuntu':
+		apache_dir = 'apache2'
+	else:
+		apache_dir = 'httpd'
 	data_source = [
 		{'param': 'time_zone', 'value': 'UTC', 'section': 'main', 'desc': 'Time Zone', 'group': '1'},
 		{'param': 'license', 'value': '', 'section': 'main', 'desc': 'License key', 'group': '1'},
@@ -45,6 +51,8 @@ def default_values():
 		{'param': 'mail_smtp_port', 'value': '25', 'section': 'mail', 'desc': 'SMTP server port', 'group': '1'},
 		{'param': 'mail_smtp_user', 'value': '', 'section': 'mail', 'desc': 'User for auth', 'group': '1'},
 		{'param': 'mail_smtp_password', 'value': '', 'section': 'mail', 'desc': 'Password for auth', 'group': '1'},
+		{'param': 'log_time_storage', 'value': '14', 'section': 'logs', 'desc': 'Retention period for user activity logs (in days)', 'group': '1'},
+		{'param': 'apache_log_path', 'value': f'/var/log/{apache_dir}/', 'section': 'logs', 'desc': 'Path to Apache logs. Apache service for RMON', 'group': '1'},
 	]
 	try:
 		Setting.insert_many(data_source).on_conflict_ignore().execute()
@@ -102,7 +110,6 @@ def default_values():
 
 	data_source = [
 		{'name': 'rmon-socket', 'current_version': '1.0', 'new_version': '0', 'is_roxy': 1, 'desc': ''},
-		# {'name': 'roxy-wi-prometheus-exporter', 'current_version': '1.0', 'new_version': '0', 'is_roxy': 1, 'desc': ''},
 		{'name': 'rmon-server', 'current_version': '1.0', 'new_version': '0', 'is_roxy': 1, 'desc': ''},
 		{'name': 'fail2ban', 'current_version': '1.0', 'new_version': '1.0', 'is_roxy': 0, 'desc': 'Fail2ban service'},
 		{'name': 'rabbitmq-server', 'current_version': '1.0', 'new_version': '1.0', 'is_roxy': 0, 'desc': 'Rabbitmq service'},
@@ -124,7 +131,7 @@ def update_db_v_3_4_5_22():
 
 def update_ver():
 	try:
-		Version.update(version='1.0.1').execute()
+		Version.update(version='1.0.2').execute()
 	except Exception:
 		print('Cannot update version')
 

@@ -36,8 +36,9 @@ def smon_main_dashboard():
         'smon_groups': smon_sql.select_smon_groups(group_id),
         'smon_status': tools_common.is_tool_active('rmon-server'),
         'telegrams': channel_sql.get_user_telegram_by_group(group_id),
-        'slacks': channel_sql.get_user_pd_by_group(group_id),
-        'pds': channel_sql.get_user_slack_by_group(group_id),
+        'slacks': channel_sql.get_user_slack_by_group(group_id),
+        'pds': channel_sql.get_user_pd_by_group(group_id),
+        'mms': channel_sql.get_user_mm_by_group(group_id),
         'sort': request.args.get('sort', None)
     }
 
@@ -138,8 +139,8 @@ def get_checks_count():
 @login_required
 def smon_add():
     json_data = request.get_json()
+    user_group = roxywi_common.get_user_group(id=1)
     if request.method == "POST":
-        user_group = roxywi_common.get_user_group(id=1)
         try:
             smon_mod.check_checks_limit()
         except Exception as e:
@@ -154,13 +155,12 @@ def smon_add():
 
         if roxywi_common.check_user_group_for_flask():
             try:
-                status = smon_mod.update_smon(check_id, json_data)
+                status = smon_mod.update_smon(check_id, json_data, user_group)
             except Exception as e:
                 return f'{e}', 200
             else:
                 return status, 201
     elif request.method == "DELETE":
-        user_group = roxywi_common.get_user_group(id=1)
         check_id = json_data['check_id']
 
         if roxywi_common.check_user_group_for_flask():
@@ -192,6 +192,7 @@ def check(smon_id, check_type_id):
             'tg': s.smon_id.telegram_channel_id,
             'slack': s.smon_id.slack_channel_id,
             'pd': s.smon_id.pd_channel_id,
+            'mm': s.smon_id.mm_channel_id,
             'check_type': s.smon_id.check_type,
             'group': group_name,
         }

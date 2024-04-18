@@ -2,6 +2,7 @@ from flask import render_template, abort
 
 import app.modules.db.smon as smon_sql
 import app.modules.common.common as common
+import app.modules.server.server as server_mod
 import app.modules.tools.smon_agent as smon_agent
 import app.modules.roxywi.common as roxywi_common
 
@@ -19,6 +20,7 @@ def create_smon(json_data, user_group, show_new=1) -> bool:
         telegram = common.checkAjaxInput(json_data['tg'])
         slack = common.checkAjaxInput(json_data['slack'])
         pd = common.checkAjaxInput(json_data['pd'])
+        mm = common.checkAjaxInput(json_data['mm'])
         resolver = common.checkAjaxInput(json_data['resolver'])
         record_type = common.checkAjaxInput(json_data['record_type'])
         packet_size = common.checkAjaxInput(json_data['packet_size'])
@@ -53,7 +55,7 @@ def create_smon(json_data, user_group, show_new=1) -> bool:
     else:
         smon_group_id = None
 
-    last_id = smon_sql.insert_smon(name, enable, smon_group_id, desc, telegram, slack, pd, user_group, check_type)
+    last_id = smon_sql.insert_smon(name, enable, smon_group_id, desc, telegram, slack, pd, mm, user_group, check_type)
 
     if check_type == 'ping':
         smon_sql.insert_smon_ping(last_id, hostname, packet_size, interval, agent_id)
@@ -80,7 +82,7 @@ def create_smon(json_data, user_group, show_new=1) -> bool:
         return False
 
 
-def update_smon(smon_id, json_data) -> str:
+def update_smon(smon_id, json_data, user_group) -> str:
     name = common.checkAjaxInput(json_data['name'])
     hostname = common.checkAjaxInput(json_data['ip'])
     port = common.checkAjaxInput(json_data['port'])
@@ -92,6 +94,7 @@ def update_smon(smon_id, json_data) -> str:
     telegram = common.checkAjaxInput(json_data['tg'])
     slack = common.checkAjaxInput(json_data['slack'])
     pd = common.checkAjaxInput(json_data['pd'])
+    mm = common.checkAjaxInput(json_data['mm'])
     resolver = common.checkAjaxInput(json_data['resolver'])
     record_type = common.checkAjaxInput(json_data['record_type'])
     packet_size = common.checkAjaxInput(json_data['packet_size'])
@@ -123,8 +126,15 @@ def update_smon(smon_id, json_data) -> str:
     except Exception as e:
         return f'{e}'
 
+    if group:
+        smon_group_id = smon_sql.get_smon_group_by_name(user_group, group)
+        if not smon_group_id:
+            smon_group_id = smon_sql.add_smon_group(user_group, group)
+    else:
+        smon_group_id = None
+
     try:
-        if smon_sql.update_smon(smon_id, name, telegram, slack, pd, group, desc, enabled):
+        if smon_sql.update_smon(smon_id, name, telegram, slack, pd, mm, smon_group_id, desc, enabled):
             if check_type == 'http':
                 is_edited = smon_sql.update_smonHttp(smon_id, url, body, http_method, interval, agent_id)
             elif check_type == 'tcp':
@@ -318,3 +328,10 @@ def check_checks_limit():
 def get_check_id_by_name(name: str) -> int:
     checking_types = {'tcp': '1', 'http': '2', 'ping': '4', 'dns': '5'}
     return checking_types[name]
+
+
+def change_smon_port(new_port: int) -> None:
+    cmd = f"sudo sed -i 's/\(^ExecStart.*$\)/ExecStart=gunicorn --workers 5 --bind 0.0.0.0:{new_port} -m 007 smon:app/' /etc/systemd/system/rmon-server.service"
+    server_mod.subprocess_execute(cmd)
+    cmd = 'sudo systemctl daemon-reload && sudo systemctl restart rmon-server'
+    server_mod.subprocess_execute(cmd)

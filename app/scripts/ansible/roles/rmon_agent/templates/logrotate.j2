@@ -3,9 +3,8 @@
     rotate 10
     missingok
     notifempty
-	create 0644 apache apache
+	create 0644 root root
 	dateext
     sharedscripts
-    postrotate
-        /bin/kill -HUP `cat /var/run/rsyslogd.pid 2> /dev/null` 2> /dev/null || true
+    copytruncate
 }

@@ -43,7 +43,7 @@
                     {% else %}
                         {{ input(set.param, size='25', type='password', style='width: 210px;', placeholder='******') }}
                     {% endif %}
-                {% elif set.param in ('session_ttl', 'token_ttl', 'ldap_port', 'log_time_storage', 'keep_history_range',
+                {% elif set.param in ('session_ttl', 'token_ttl', 'ldap_port', 'log_time_storage', 'keep_history_range', 'master_port', 'master_port',
                     'mail_smtp_port', 'rabbitmq_port', 'ssl_expire_warning_alert', 'ssl_expire_critical_alert', 'action_keep_history_range') %}
                     {{ input(set.param, value=set.value, style='width: 210px;', type='number') }}
                 {% elif set.param == 'time_zone' %}

@@ -102,10 +102,10 @@ def update_settings(param):
     if sql.update_setting(param, val, user_group):
         roxywi_common.logging('RMON server', f'The {param} setting has been changed to: {val}', roxywi=1, login=1)
 
-        # if param == 'master_port':
-        #     try:
-        #         smon_mod.change_smon_port(val)
-        #     except Exception as e:
-        #         return f'{e}'
+        if param == 'master_port':
+            try:
+                smon_mod.change_smon_port(val)
+            except Exception as e:
+                return f'{e}'
 
         return 'Ok'

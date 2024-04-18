@@ -6,12 +6,14 @@ After=syslog.target network.target
 Type=simple
 EnvironmentFile=/etc/rmon/rmon-agent.cfg
 WorkingDirectory=/var/lib/rmon/rmon-agent
-ExecStart={{ gunicorn_bin }} --workers 1 --bind 0.0.0.0:${agent_port} -m 007 wsgi:app
+ExecStartPre=/usr/bin/rm -f /var/lib/rmon/rmon-agent/jobs
+ExecStart={{ gunicorn_bin }} --workers 1 --threads 1 --bind 0.0.0.0:${agent_port} -m 007 wsgi:app
 ExecStartPost=/usr/bin/python3 -c 'from rmon_checks import ask_for_checks; ask_for_checks()'
 
 StandardOutput=syslog
 StandardError=syslog
 SyslogIdentifier=rmon-agent
+TimeoutSec=900
 
 RestartSec=30s
 Restart=on-failure

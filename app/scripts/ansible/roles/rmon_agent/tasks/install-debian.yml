@@ -1,3 +1,8 @@
+- name: Install Pycurl
+  ansible.builtin.apt:
+    name: python3-pycurl
+    state: present
+
 - name: Upgrade pip3
   pip:
     name: pip

@@ -1,4 +1,4 @@
-var awesome = "/static/css/fontawesome.min.js";
+var awesome = "/static/js/fontawesome.min.js";
 var add_word = $('#translate').attr('data-add');
 var delete_word = $('#translate').attr('data-delete');
 var cancel_word = $('#translate').attr('data-cancel');
@@ -13,6 +13,9 @@ $( function() {
 	});
 	$('#add-pd-button').click(function() {
 		addPDDialog.dialog('open');
+	});
+	$('#add-mm-button').click(function() {
+		addMMDialog.dialog('open');
 	});
 	var telegram_tabel_title = $( "#telegram-add-table-overview" ).attr('title');
 	var addTelegramDialog = $( "#telegram-add-table" ).dialog({
@@ -92,6 +95,35 @@ $( function() {
 			text: add_word,
 			click: function () {
 				addRecevier(this, 'pd');
+			}
+		}, {
+			text: cancel_word,
+			click: function () {
+				$(this).dialog("close");
+				clearTips();
+			}
+		}]
+	});
+	var mm_tabel_title = $( "#mm-add-table-overview" ).attr('title');
+	var addMMDialog = $( "#mm-add-table" ).dialog({
+		autoOpen: false,
+		resizable: false,
+		height: "auto",
+		width: 600,
+		modal: true,
+		title: mm_tabel_title,
+		show: {
+			effect: "fade",
+			duration: 200
+		},
+		hide: {
+			effect: "fade",
+			duration: 200
+		},
+		buttons: [{
+			text: add_word,
+			click: function () {
+				addRecevier(this, 'mm');
 			}
 		}, {
 			text: cancel_word,

@@ -17,7 +17,8 @@ def check_login():
     ):
         try:
             user_params = roxywi_common.get_users_params()
-        except Exception:
+        except Exception as e:
+            print(e)
             return redirect(login_url('login_page', next_url=request.url))
 
         if not user_sql.is_user_active(user_params['user_id']):

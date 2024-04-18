@@ -1,6 +1,7 @@
 import json
 
 import pika
+import requests
 from flask import render_template, request, abort
 
 import app.modules.db.sql as sql
@@ -262,6 +263,58 @@ def pd_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, 
 		raise Exception(f'error: {e}')
 
 
+def mm_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, **kwargs):
+	print('send mess to mm', kwargs.get('channel_id'))
+	token = ''
+
+	if kwargs.get('channel_id') == 0:
+		return
+
+	if kwargs.get('channel_id'):
+		try:
+			mms = channel_sql.get_mm_by_id(kwargs.get('channel_id'))
+		except Exception as e:
+			print(e)
+	else:
+		try:
+			mms = channel_sql.get_mm_by_ip(kwargs.get('ip'))
+		except Exception as e:
+			print(e)
+
+	for pd in mms:
+		token = pd.token
+		channel = pd.chanel_name
+
+	headers = {'Content-Type': 'application/json'}
+	if level == "info":
+		color = "51A347"
+	else:
+		color = "c20707"
+	attach = {
+		"fallback": f"{alert_type}",
+		"color": f"#{color}",
+		"text": f"{mess}",
+		"author_name": "RMON",
+		"title": f"{level} alert",
+		"fields": [
+			{
+				"short": "true",
+				"title": "Level",
+				"value": f"{level}",
+			}
+		]
+	}
+	attach = str(json.dumps(attach))
+	values = f'{{"channel": "{channel}", "username": "RMON", "attachments": [{attach}]}}'
+	proxy_dict = common.return_proxy_dict()
+	try:
+		requests.post(token, headers=headers, data=str(values))
+		return 'ok'
+	except Exception as e:
+		roxywi_common.logging('RMON server', str(e), roxywi=1, proxies=proxy_dict)
+		raise Exception(f'error: {e}')
+
+
 def check_rabbit_alert() -> str:
 	try:
 		user_group_id = request.cookies.get('group')
@@ -330,10 +383,22 @@ def add_pd_channel(token: str, channel: str, group: str, page: str) -> str:
 	else:
 		if channel_sql.insert_new_pd(token, channel, group):
 			lang = roxywi_common.get_user_lang_for_flask()
-			channels = channel_sql.select_slack(token=token)
+			channels = channel_sql.select_pd(token=token)
 			groups = group_sql.select_groups()
 			roxywi_common.logging('RMON server', f'A new PagerDuty channel {channel} has been created ', roxywi=1, login=1)
 			return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channels=channels, page=page, receiver='pd')
+
+
+def add_mm_channel(token: str, channel: str, group: str, page: str) -> str:
+	if token is None or channel is None or group is None:
+		return error_mess
+	else:
+		if channel_sql.insert_new_mm(token, channel, group):
+			lang = roxywi_common.get_user_lang_for_flask()
+			channels = channel_sql.select_mm(token=token)
+			groups = group_sql.select_groups()
+			roxywi_common.logging('RMON server', f'A new Mattermost channel {channel} has been created ', roxywi=1, login=1)
+			return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channels=channels, page=page, receiver='mm')
 
 
 def delete_telegram_channel(channel_id) -> str:
@@ -366,6 +431,16 @@ def delete_pd_channel(channel_id) -> str:
 		return 'ok'
 
 
+def delete_mm_channel(channel_id) -> str:
+	pd = channel_sql.select_mm(id=channel_id)
+	channel_name = ''
+	for t in pd:
+		channel_name = t.chanel_name
+	if channel_sql.delete_mm(channel_id):
+		roxywi_common.logging('RMON server', f'The Mattermost channel {channel_name} has been deleted ', roxywi=1, login=1)
+		return 'ok'
+
+
 def update_telegram(token: str, channel: str, group: str, user_id: int) -> str:
 	channel_sql.update_telegram(token, channel, group, user_id)
 	roxywi_common.logging('group ' + group, f'The Telegram token has been updated for channel: {channel}', roxywi=1, login=1)
@@ -384,11 +459,18 @@ def update_pd(token: str, channel: str, group: str, user_id: int) -> str:
 	return 'ok'
 
 
+def update_mm(token: str, channel: str, group: str, user_id: int) -> str:
+	channel_sql.update_mm(token, channel, group, user_id)
+	roxywi_common.logging(f'group {group}', f'The Mattermost token has been updated for channel: {channel}', roxywi=1, login=1)
+	return 'ok'
+
+
 def delete_receiver_channel(channel_id: int, receiver_name: str) -> None:
 	delete_functions = {
 		"telegram": delete_telegram_channel,
 		"slack": delete_slack_channel,
 		"pd": delete_pd_channel,
+		"mm": delete_mm_channel,
 	}
 	return delete_functions[receiver_name](channel_id)
 
@@ -398,6 +480,7 @@ def add_receiver_channel(receiver_name: str, token: str, channel: str, group: id
 		"telegram": add_telegram_channel,
 		"slack": add_slack_channel,
 		"pd": add_pd_channel,
+		"mm": add_mm_channel,
 	}
 
 	try:
@@ -411,6 +494,7 @@ def update_receiver_channel(receiver_name: str, token: str, channel: str, group:
 		"telegram": update_telegram,
 		"slack": update_slack,
 		"pd": update_pd,
+		"mm": update_mm,
 	}
 	return update_functions[receiver_name](token, channel, group, user_id)
 
@@ -420,6 +504,7 @@ def check_receiver(channel_id: int, receiver_name: str) -> str:
 		"telegram": telegram_send_mess,
 		"slack": slack_send_mess,
 		"pd": pd_send_mess,
+		"mm": mm_send_mess,
 	}
 	mess = 'Test message from RMON'
 
@@ -448,6 +533,7 @@ def load_channels():
 	user_group = roxywi_common.get_user_group(id=1)
 	kwargs.setdefault('telegrams', channel_sql.get_user_telegram_by_group(user_group))
 	kwargs.setdefault('pds', channel_sql.get_user_pd_by_group(user_group))
+	kwargs.setdefault('mms', channel_sql.get_user_mm_by_group(user_group))
 	kwargs.setdefault('groups', group_sql.select_groups())
 	kwargs.setdefault('slacks', channel_sql.get_user_slack_by_group(user_group))
 	kwargs.setdefault('user_params', user_params)

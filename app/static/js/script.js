@@ -1048,7 +1048,7 @@ function common_ajax_action_after_success(dialog_id, new_group, ajax_append_id, 
 	$("#"+ajax_append_id).append(data);
 	$( "."+new_group ).addClass( "update", 1000);
 	$.getScript(awesome);
-	$.getScript('/inc/users.js');
+	$.getScript('/static/js/users.js');
 	clearTips();
 	$( dialog_id ).dialog("close" );
 	setTimeout(function() {

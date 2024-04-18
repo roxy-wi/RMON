@@ -104,6 +104,16 @@ class Slack(BaseModel):
         table_name = 'slack'
 
 
+class MM(BaseModel):
+    id = AutoField()
+    token = CharField()
+    chanel_name = CharField()
+    groups = IntegerField()
+
+    class Meta:
+        table_name = 'mattermost'
+
+
 class PD(BaseModel):
     id = AutoField()
     token = CharField()
@@ -422,5 +432,5 @@ def create_tables():
         conn.create_tables(
             [User, Server, Role, Telegram, Slack, UUID, Token, ApiToken, Groups, UserGroups, Setting, Cred, Version, ActionHistory,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
-             SmonStatusPage, SmonStatusPageCheck, SMON, Alerts, SmonGroup]
+             SmonStatusPage, SmonStatusPageCheck, SMON, Alerts, SmonGroup, MM]
         )
