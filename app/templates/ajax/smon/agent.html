@@ -27,11 +27,13 @@
     </div>
     <div class="server-desc">
         <div>
-        <b>{{ lang.words.server|title() }}</b>: {{ copy_to_clipboard(value=agent.hostname) }}
-        <b>{{ lang.words.server|title() }} IP</b>: {{ copy_to_clipboard(value=agent.ip) }}
+            <b>{{ lang.words.server|title() }}</b>: {{ copy_to_clipboard(value=agent.hostname) }}
+            <b>{{ lang.words.server|title() }} IP</b>: {{ copy_to_clipboard(value=agent.ip) }}
         </div>
         <div>
-        <b>{{ lang.words.version|title() }}</b>: <span id="agent-version-{{ agent.id }}"></span>
+            <b>{{ lang.words.version|title() }}</b>:
+            <span id="agent-version-{{ agent.id }}"></span>
+            <span id="agent-update-{{ agent.id }}" class="tooltip" style="color: var(--red-color); cursor: help; display: none;" title="Need to update">!</span>
         </div>
         <div>
             <b>{{lang.smon_page.desc.total_checks}}</b>:
@@ -50,6 +52,23 @@
         getAgentStatus('{{ agent.ip }}', '{{ agent.id }}');
         getAgentTotalChecks('{{ agent.ip }}', '{{ agent.id }}');
         getAgentUptime('{{ agent.ip }}', '{{ agent.id }}');
+        $( function() {
+            $('.copyToClipboard').hover(function () {
+                $.getScript("/static/js/fontawesome.min.js");
+            });
+            $('.copyToClipboard').click(function () {
+                let str = $(this).attr('data-copy');
+                const el = document.createElement('textarea');
+                el.value = str;
+                el.setAttribute('readonly', '');
+                el.style.position = 'absolute';
+                el.style.left = '-9999px';
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+            });
+        })
         showOverviewServer('{{ agent.id }}');
     </script>
 {% endfor %}

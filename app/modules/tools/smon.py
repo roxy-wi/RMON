@@ -31,22 +31,12 @@ def create_smon(json_data, user_group, show_new=1) -> bool:
     except Exception as e:
         roxywi_common.handle_exceptions(e, 'RMON server', 'Cannot parse check parameters')
 
-    if agent_id == '':
-        raise Exception('warning: Select an Agent first')
-    else:
-        agent_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
+    try:
+        _validate_smon_check(json_data)
+    except Exception as e:
+        raise Exception(f'{e}')
 
-    if check_type == 'tcp':
-        try:
-            port = int(port)
-        except Exception:
-            raise Exception('RMON error: port must be a number')
-        if port > 65535 or port < 0:
-            raise Exception('RMON error: port must be 0-65535')
-
-    if check_type == 'ping':
-        if int(packet_size) < 16:
-            raise Exception('RMON error: a packet size cannot be less than 16')
+    agent_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
 
     if group:
         smon_group_id = smon_sql.get_smon_group_by_name(user_group, group)
@@ -104,20 +94,10 @@ def update_smon(smon_id, json_data, user_group) -> str:
     check_type = common.checkAjaxInput(json_data['check_type'])
     is_edited = False
 
-    if agent_id == '':
-        raise Exception('warning: Select an Agent first')
-
-    if check_type == 'tcp':
-        try:
-            port = int(port)
-        except Exception:
-            raise Exception('error: port must number')
-        if port > 65535 or port < 0:
-            raise Exception('error: port must be 0-65535')
-
-    if check_type == 'ping':
-        if int(packet_size) < 16:
-            raise Exception('error: a packet size cannot be less than 16')
+    try:
+        _validate_smon_check(json_data)
+    except Exception as e:
+        raise Exception(f'{e}')
 
     try:
         agent_id_old = smon_sql.get_agent_id_by_check_id(smon_id)
@@ -159,6 +139,33 @@ def update_smon(smon_id, json_data, user_group) -> str:
                 return "Ok"
     except Exception as e:
         raise Exception(f'error: Cannot update the server: {e}')
+
+
+def _validate_smon_check(json_data):
+    port = common.checkAjaxInput(json_data['port'])
+    url = common.checkAjaxInput(json_data['url'])
+    packet_size = common.checkAjaxInput(json_data['packet_size'])
+    agent_id = common.checkAjaxInput(json_data['agent_id'])
+    check_type = common.checkAjaxInput(json_data['check_type'])
+
+    if agent_id == '':
+        raise Exception('warning: Select an Agent first')
+
+    if check_type == 'tcp':
+        try:
+            port = int(port)
+        except Exception:
+            raise Exception('error: port must be a number')
+        if port > 65535 or port < 0:
+            raise Exception('error: port must be 0-65535')
+
+    if check_type == 'ping':
+        if int(packet_size) < 16:
+            raise Exception('error: a packet size cannot be less than 16')
+
+    if check_type == 'http':
+        if url.find('http://') == -1 and url.find('https://') == -1:
+            raise Exception('error: URL must start with http:// or https://')
 
 
 def create_check_json(json_data: dict) -> dict:
@@ -295,7 +302,10 @@ def show_status_page(slug: str) -> str:
             desc = s.desc
             check_type = s.check_type
             en = s.en
-            group = s.group if s.group else 'No group'
+            if s.group_id:
+                group = smon_sql.get_smon_group_name_by_id(s.group_id)
+            else:
+                group = 'No group'
 
         checks_status[check_id] = {'uptime': uptime, 'name': name, 'desc': desc, 'group': group, 'check_type': check_type, 'en': en}
 

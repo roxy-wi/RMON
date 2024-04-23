@@ -1,3 +1,5 @@
+import json
+
 from flask import render_template, request, jsonify, g
 from flask_login import login_required
 
@@ -135,10 +137,14 @@ def get_agent_settings(agent_id):
 @login_required
 def get_agent_version(server_ip):
     agent_id = int(request.args.get('agent_id'))
+    last_agent_version = '0.2'
 
     try:
         req = smon_agent.send_get_request_to_agent(agent_id, server_ip, 'version')
-        return req
+        j_resp = json.loads(req)
+        if float(j_resp['version']) < float(last_agent_version):
+            j_resp['update'] = "1"
+        return jsonify(j_resp)
     except Exception as e:
         return f'{e}'
 

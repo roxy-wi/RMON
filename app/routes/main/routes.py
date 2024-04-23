@@ -80,7 +80,6 @@ def make_session_permanent():
 
 @app.route('/favicon.ico')
 def favicon():
-    print(app.root_path, 'static')
     return send_from_directory(os.path.join(app.root_path, 'static'),
                                'images/favicon/favicon.ico', mimetype='image/vnd.microsoft.icon')
 

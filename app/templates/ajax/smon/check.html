@@ -19,7 +19,9 @@
     {% endif %}
 <div class="smon_services {{additional_classes}}" id="smon-{{ s.smon_id.id }}">
 <div class="ip server-name">
-    <a href="/rmon/dashboard/{{s.smon_id.id}}/{{check_type_id}}" title="{{lang.words.view|title()}} {{lang.words.history}} {{lang.words.for}} {{s.smon_id.name}} {{lang.words.host}}" class="link" id="smon-name-{{ s.smon_id.id }}">{{s.smon_id.name.strip("'")}}</a>
+    <span class="check-name-tile">
+        <a href="/rmon/dashboard/{{s.smon_id.id}}/{{check_type_id}}" title="{{lang.words.view|title()}} {{lang.words.history}} {{lang.words.for}} {{s.smon_id.name}} {{lang.words.host}}" class="link" id="smon-name-{{ s.smon_id.id }}">{{s.smon_id.name.strip("'")}}</a>
+    </span>
     {% set agent_exist = [] %}
     {% for a in agents %}
         {% if a.id|string() == s.agent_id|string() %}
@@ -67,7 +69,7 @@
     <b>{{lang.words.agent|title()}}:</b>
         {% for a in agents %}
         {% if a.id|string() == s.agent_id|string() %}
-        {{ a.name }}
+        <a href="/rmon/agent/{{ a.id }}" title="{{ lang.words.agent|title() }} {{ lang.words.overview }}">{{ a.name }}</a>
         {% endif %}
         {% endfor %}
 </div>

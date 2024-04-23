@@ -113,7 +113,8 @@ def send_get_request_to_agent(agent_id: int, server_ip: str, api_path: str) -> b
         req = requests.get(f'http://{server_ip}:{agent_port}/{api_path}', headers=headers, timeout=5)
         return req.content
     except Exception as e:
-        raise Exception(f'error: Cannot get agent status: {e}')
+        roxywi_common.logging(server_ip, f'error: Cannot get agent status: {e}')
+        raise Exception('error: Cannot get agent status')
 
 
 def send_post_request_to_agent(agent_id: int, server_ip: str, api_path: str, json_data: object) -> bytes:

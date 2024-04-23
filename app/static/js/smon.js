@@ -340,7 +340,7 @@ function show_statuses(dashboard_id, check_id, id_for_history_replace) {
 				toastr.error(data);
 			} else {
 				toastr.clear();
-
+				$("#cur_status").html(data);
 			}
 		}
 	});
@@ -874,7 +874,9 @@ function getAgentVersion(server_ip, agent_id){
 		data: {agent_id: agent_id},
 		success: function (data){
 			try {
-				data = JSON.parse(data);
+				if (data['update']) {
+					$('#agent-update-' + agent_id).show();
+				}
 				$('#agent-version-' + agent_id).text(data['version'])
 			} catch (e) {
 				console.log(e)
