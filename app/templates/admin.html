@@ -9,17 +9,31 @@
 <div id="tabs">
 	<ul id="admin-tabs">
 		<li><a href="#users" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} {{lang.words.users}} - RMON">{{lang.words.users|title()}}</a></li>
-		<li><a href="#groups" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} {{lang.words.groups}} - RMON">{{lang.words.groups|title()}}</a></li>
 		<li><a href="#servers" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} {{lang.words.servers}} - RMON">{{lang.words.servers|title()}}</a></li>
 		<li><a href="#ssh" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} SSH {{lang.words.creds}} - RMON">SSH {{lang.words.creds}}</a></li>
 		<li><a href="#settings" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} RMON {{lang.words.settings}} - RMON">{{lang.words.settings|title()}}</a></li>
+        {% if g.user_params['role'] <= 2 %}
+        <li><a href="#groups" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} {{lang.words.groups}} - RMON">{{lang.words.groups|title()}}</a></li>
 		<li><a href="#tools" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} RMON {{lang.words.tools}} - RMON">{{lang.words.tools|title()}}</a></li>
 		<li><a href="#updatehapwi" title="{{lang.words.admin_area|title()}}: {{lang.words.w_update|title()}} RMON - RMON">{{lang.words.w_update|title()}}</a></li>
+        {% endif %}
 	</ul>
 	<div id="users">
 		{% include 'include/admin_users.html' %}
 	</div>
 
+	<div id="servers">
+		{% include 'include/admin_servers.html' %}
+	</div>
+
+	<div id="ssh">
+		{% include 'include/admin_ssh.html' %}
+	</div>
+
+	<div id="settings">
+		{% include 'include/admin_settings.html' %}
+	</div>
+	{% if g.user_params['role'] <= 2 %}
 	<div id="groups">
 		<table class="overview" id="ajax-group">
 			<thead>
@@ -65,18 +79,7 @@
 			{{lang.words.and}} {{lang.words.this2}} <a href="https://rmon.io/howto/setup" title="How to setup servers, group and SSH credentials" target="_blank">{{lang.words.article}}</a>
 		</div>
 	</div>
-	<div id="servers">
-		{% include 'include/admin_servers.html' %}
-	</div>
-
-	<div id="ssh">
-		{% include 'include/admin_ssh.html' %}
-	</div>
-
-	<div id="settings">
-		{% include 'include/admin_settings.html' %}
-	</div>
-	
+    {% endif %}
 	<div id="tools">
 		<table id="services_table" class="overview">
 			<thead>

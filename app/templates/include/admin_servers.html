@@ -6,7 +6,7 @@
 			<th class="padding10 first-collumn" id="server-name-th">{{lang.words.name|title()}}</th>
 			<th class="ip-field" style="width: 10% " id="server-ip-th">IP</th>
 			<th style="width: 5%" class="help_cursor"><span title="SSH port">{{lang.words.port|title()}}</span></th>
-			{% if page != "servers.py" %}
+			{% if g.user_params['role'] <= 1 %}
 			<th style="width: 10%">{{lang.words.group|title()}}</th>
 			{% endif %}
 			<th class="checkbox-head" style="min-width: 70px;">{{lang.words.enabled|title()}}</th>
@@ -38,7 +38,7 @@
 				{% set id = 'port-' + server.0|string() %}
 				{{ input(id, value=server.7, type='number', style='width: 50px;') }}
 			</td>
-			{% if page != "servers.py" %}
+			{% if g.user_params['role'] <= 1 %}
 			<td>
 				<select id="servergroup-{{server.0}}" name="servergroup-{{server.0}}">
 					<option disabled selected>------</option>
@@ -94,7 +94,7 @@
 				<a href="/history/server/{{server.2}}" title="{{lang.words.view|title}} {{lang.words.history}} {{lang.words.for}} {{lang.words.this}} {{lang.words.server}}" class="history"></a>
 			</td>
 			<td style="min-width: 17px;">
-				<a class="info" onclick="showServerInfo('{{server.0}}', '{{server.2}}')" id="server_info_link-{{server.0}}" title="{{lang.words.show|title()}} {{lang.words.server}} {{lang.words.info}}" style="cursor: pointer; color: var(--green-color)"></a>
+				<a class="info" onclick="showServerInfo('{{server.0}}', '{{server.2}}')" id="server_info_link-{{server.0}}" title="{{lang.words.show|title()}} {{lang.words.server}} {{lang.words.info}}" style="cursor: pointer; color: var(--color-blue)"></a>
 			</td>
 			<td>
 				<a class="add" onclick="cloneServer({{server.0}})" id="clone-{{server.0}}" title="{{lang.words.copy|title()}} {{lang.words.settings}} {{server.1}}" style="cursor: pointer;"></a>

@@ -23,7 +23,6 @@ def before_request():
 @get_user_params()
 def index():
     kwargs = {
-        'autorefresh': 1,
         'roles': sql.select_roles(),
         'groups': group_sql.select_groups(),
         'lang': g.user_params['lang']

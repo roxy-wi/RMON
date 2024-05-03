@@ -3,6 +3,8 @@ import distro
 
 from modules.db.db_model import *
 
+migrator = connect(get_migrator=1)
+
 
 def default_values():
 	if distro.id() == 'ubuntu':
@@ -121,7 +123,7 @@ def default_values():
 		print(str(e))
 
 
-# Needs for insert version in first time
+# Needs for an insert version in first time
 def update_db_v_3_4_5_22():
 	try:
 		Version.insert(version='1.0').execute()
@@ -131,9 +133,46 @@ def update_db_v_3_4_5_22():
 
 def update_ver():
 	try:
-		Version.update(version='1.0.2').execute()
+		Version.update(version='1.0.3').execute()
 	except Exception:
 		print('Cannot update version')
+
+
+def update_db_v_1_0_3():
+	try:
+		migrate(
+			migrator.add_column('smon_history', 'name_lookup', IntegerField(default=0)),
+			migrator.add_column('smon_history', 'connect', IntegerField(default=0)),
+			migrator.add_column('smon_history', 'app_connect', IntegerField(default=0)),
+			migrator.add_column('smon_history', 'pre_transfer', IntegerField(default=0)),
+			migrator.add_column('smon_history', 'redirect', IntegerField(default=0)),
+			migrator.add_column('smon_history', 'start_transfer', IntegerField(default=0)),
+			migrator.add_column('smon_history', 'download', IntegerField(default=0)),
+			migrator.add_column_default('smon_history', 'name_lookup', 0),
+			migrator.add_column_default('smon_history', 'connect', 0),
+			migrator.add_column_default('smon_history', 'app_connect', 0),
+			migrator.add_column_default('smon_history', 'pre_transfer', 0),
+			migrator.add_column_default('smon_history', 'redirect', 0),
+			migrator.add_column_default('smon_history', 'start_transfer', 0),
+			migrator.add_column_default('smon_history', 'download', 0),
+		)
+	except Exception as e:
+		if e.args[0] == 'duplicate column name: name_lookup' or str(e) == '(1060, "Duplicate column name \'name_lookup\'")':
+			print('Updating... DB has been updated to version 1.0.3')
+		else:
+			print("An error occurred:", e)
+	try:
+		migrate(
+			migrator.drop_column('smon_http_check', 'name_lookup', cascade=False),
+			migrator.drop_column('smon_http_check', 'connect', cascade=False),
+			migrator.drop_column('smon_http_check', 'app_connect', cascade=False),
+			migrator.drop_column('smon_http_check', 'pre_transfer', cascade=False),
+			migrator.drop_column('smon_http_check', 'redirect', cascade=False),
+			migrator.drop_column('smon_http_check', 'start_transfer', cascade=False),
+			migrator.drop_column('smon_http_check', 'download', cascade=False),
+		)
+	except Exception:
+		pass
 
 
 def check_ver():
@@ -149,6 +188,7 @@ def update_all():
 	if check_ver() is None:
 		update_db_v_3_4_5_22()
 	update_ver()
+	update_db_v_1_0_3()
 
 
 if __name__ == "__main__":

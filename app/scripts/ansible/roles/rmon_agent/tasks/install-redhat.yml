@@ -1,4 +1,4 @@
-- name: Install EPEL
+- name: Install Dependencies
   yum:
     name: "{{ item }}"
     state: present

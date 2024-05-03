@@ -12,9 +12,9 @@
             {% else %}
             <span
             {% if s.Status|int() == 1 %}
-                style="color: var(--green-color); font-weight: bold">{{lang.words.active|title()}}
+                style="color: var(--color-blue); font-weight: bold">{{lang.words.active|title()}}
             {% else %}
-                style="color: var(--red-color); font-weight: bold">Blocked
+                style="color: var(--color-blue-dark); font-weight: bold">Blocked
              {% endif %}
             </span>
             {% endif %}

@@ -146,24 +146,15 @@
 	font-family: "Font Awesome 5 Solid";
 	content: "\f1da";
 }
-.tools::before,
 .services::before {
 	display: none;
 	font-family: "Font Awesome 5 Regular";
 	content: "\f144";
 }
-.upload::before {
-	display: none;
-	font-family: "Font Awesome 5 Solid";
-	content: "\f093";
-}
 .delete::before, .deleteVer::before {
 	display: none;
 	font-family: "Font Awesome 5 Regular";
 	content: "\f2ed";
-}
-.delete .fa-trash-alt {
-	color: var(--red-color) !important;
 }
 .info::before {
 	display: none;
@@ -185,25 +176,10 @@
 	font-family: "Font Awesome 5 Solid";
 	content: "\f21b";
 }
-.users::before {
-	display: none;
-	font-family: "Font Awesome 5 Solid";
-	content: "\f234";
-}
-.group::before {
-	display: none;
-	font-family: "Font Awesome 5 Solid";
-	content: "\f039";
-}
 .role::before {
 	display: none;
 	font-family: "Font Awesome 5 Regular";
 	content: "\f2b9";
-}
-.settings::before {
-	display: none;
-	font-family: "Font Awesome 5 Solid";
-	content: "\f0ad";
 }
 .add-admin::before {
 	display: none;
@@ -255,7 +231,7 @@
 }
 .fa-play, .fa-stop, .fa-sync-alt {
 	width: 3px;
-	color: var(--green-color) !important;
+	color: var(--color-blue) !important;
 	cursor: pointer;
 	margin-bottom: 3px;
 }
@@ -265,7 +241,7 @@
 	content: "\f04d";	
 }
 .fa-stop {
-	color: red !important;
+	color: var(--color-blue-dark);
 }
 .disabled-button > .fa-stop, .disabled-button > .fa-play {
 	color: gray !important;

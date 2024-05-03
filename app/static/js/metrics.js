@@ -28,18 +28,18 @@ function renderChartHapWiRam(data) {
     var myChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['total','used','free','shared','buff','available'],
+            labels: ['used','free','shared','buff','available','total'],
             datasets: [
                 {
                     normalized: true,
                     data: data,
                     backgroundColor: [
-                        '#36a2eb',
                         '#ff6384',
                         '#33ff26',
                         '#ff9f40',
                         '#ffcd56',
                         '#4bc0c0',
+                        '#36a2eb',
                     ]
                 }
             ]
@@ -101,7 +101,7 @@ function renderChartHapWiCpu(data) {
     var myChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['user','sys','nice','idle','wait','hi','si','steal'],
+            labels: ['user','sys','nice','idle','wait','hi','si','steal', 'total'],
             datasets: [
                 {
                     normalized: true,
@@ -114,6 +114,7 @@ function renderChartHapWiCpu(data) {
 						'#4bc0c0',
 						'#5d9ceb',
 						'#2c6969',
+						'#5e1313',
 					]
                 }
             ]

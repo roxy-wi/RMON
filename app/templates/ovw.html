@@ -21,64 +21,38 @@
 <style>
 	.fa-sync-alt { margin-bottom: -1px; }
 </style>
-<table class="overview-wi" id="overview-roxy-wi">
-	<tr class="overviewHead">
-		<td class="padding10 first-collumn-wi">
+<table class="overview-wi overview-small-table" id="overview-roxy-wi">
+    <thead class="overviewHead">
+    <tr>
+		<th class="padding10 first-collumn-wi">
 			{% if g.user_params['role'] <= 2 %}
 				<a href="servers#servers" title="{{lang.words.manage|title()}} {{lang.words.servers}}">{{lang.words.servers|title()}}</a>
 			{% else %}
 				{{lang.words.servers|title()}}
 			{% endif %}
-		</td>
-		<td class="padding10 third-collumn-wi" style="width: 20%;">
-			<a href="/rmon/agent" title="HAProxy {{lang.words.servers}} {{lang.words.overview}}" class="logs_link">
-				{{ lang.words.agent|title() }}
+		</th>
+		<th class="padding10">
+			<a href="/rmon/agent" title="{{lang.words.agent|title()}} {{lang.words.servers}} {{lang.words.overview}}">
+				{{ lang.words.status|title() }}
 			</a>
-		</td>
-		<td class="padding10">
+		</th>
+		<th  class="padding10">
 			<a onclick="showOverview(ip, hostnamea)" title="{{lang.words.refresh|title()}}" style="float: right;">
 				<span class="refresh"></span>
 			</a>
-		</td>
-	</tr>
+		</th>
+    </tr>
+    </thead>
 	{% for s in g.user_params['servers'] %}
 		<tr class="{{ loop.cycle('odd', 'even') }}" id="{{s[2]}}"></tr>
 	{% endfor %}
 </table>
-<table class="overview-wi" id="overview-load">
-	<tr class="overviewHead" style="height: 30px;">
-		<td class="padding10 first-collumn-wi" colspan="2">
-			{% if g.user_params['role'] <= 1 %}
-				<a href="/app/logs/internal" title="{{lang.words.view|title()}} RMON {{lang.words.logs}}" class="logs_link">
-					RMON {{lang.words.server_status}}
-				</a>
-			{% else %}
-				RMON {{lang.words.server_status}}
-			{% endif %}
-		</td> 
-		<td>
-			<a onclick="showOverviewHapWI()" title="{{lang.words.refresh|title()}}" style="float: right; margin-right: 15px;">
-				<span class="refresh"></span>
-			</a>
-		</td>
-	</tr>		
-	<tr>
-		<td style="width:100%" colspan="3">
-			<div id="cpu_div" style="height: 122px;width: 50%;float: left; margin:0; padding:0;">
-				<canvas id="cpu" role="img"></canvas>
-			</div>
-			<div id="ram_div" style="height: 122px;width: 50%;float: right;margin:0; padding:0;">
-				<canvas id="ram" role="img"></canvas>
-			</div>		
-		</td>
-	</tr>
-</table>
-<table class="overview-wi" id="overview-services">
+<table class="overview-wi overview-small-table" id="overview-services">
 	<thead>
 		<tr class="overviewHead">
-			<td class="padding10 first-collumn-wi" colspan=2>
+			<td class="padding10 first-collumn-wi">
 				{% if g.user_params['role'] <= 1 %}
-					<a href="admin#tools" title="{{lang.words.view|title()}} {{lang.words.services}} {{lang.words.status}}" class="logs_link">
+					<a href="admin#tools" title="{{lang.words.view|title()}} {{lang.words.services}} {{lang.words.status}}">
 						RMON {{lang.words.services_status}}
 					</a>
 				{% else %}
@@ -94,6 +68,34 @@
 	</thead>
 	<tbody id="services_ovw"></tbody>
 </table>
+<table class="overview-wi" id="overview-load">
+	<tr class="overviewHead" style="height: 30px;">
+		<td class="padding10 first-collumn-wi" colspan="2">
+			{% if g.user_params['role'] <= 1 %}
+				<a href="/app/logs/internal" title="{{lang.words.view|title()}} RMON {{lang.words.logs}}">
+					RMON {{lang.words.monitoring}}
+				</a>
+			{% else %}
+				RMON {{lang.words.server_status}}
+			{% endif %}
+		</td>
+		<td>
+			<a onclick="showOverviewHapWI()" title="{{lang.words.refresh|title()}}" style="float: right; margin-right: 15px;">
+				<span class="refresh"></span>
+			</a>
+		</td>
+	</tr>
+	<tr>
+		<td style="width:100%" colspan="3">
+			<div id="cpu_div" style="height: 122px;width: 50%;float: left; margin:0; padding:0;">
+				<canvas id="cpu" role="img"></canvas>
+			</div>
+			<div id="ram_div" style="height: 122px;width: 50%;float: right;margin:0; padding:0;">
+				<canvas id="ram" role="img"></canvas>
+			</div>
+		</td>
+	</tr>
+</table>
 {% if g.user_params['role'] <= 2 %}
 	{% if g.user_params['role'] == 2 %}
 		{% set admin_uri = 'servers' %}
@@ -104,7 +106,7 @@
 		<thead>
 			<tr class="overviewHead" style="height: 30px;">
 				<td class="padding10 first-collumn-wi">
-					<a href="{{admin_uri}}#users" title="{{lang.words.manage|title()}} {{lang.words.users2}}" class="logs_link">{{lang.words.login|title()}}</a>
+					<a href="{{admin_uri}}#users" title="{{lang.words.manage|title()}} {{lang.words.users2}}">{{lang.words.login|title()}}</a>
 				</td>
 				<td class="second-collumn">{{lang.words.groups|title()}}</td>
 				<td>{{lang.words.role|title()}}</td>
@@ -132,7 +134,7 @@
 	<table class="overview-wi" id="overview-groups">
 		<tr class="overviewHead">
 			<td class="padding10 first-collumn-wi">
-				<a href="/app/users#groups" title="{{lang.words.manage|title()}} {{lang.words.groups3}}" class="logs_link">{{lang.words.groups|title()}}</a>
+				<a href="/app/users#groups" title="{{lang.words.manage|title()}} {{lang.words.groups3}}">{{lang.words.groups|title()}}</a>
 			</td>
 			<td class="second-collumn" style="width: 40%">{{lang.words.desc|title()}}</td>
 			<td>
@@ -192,7 +194,7 @@
 	<table class="overview-wi" id="overview-subs">
 		<tr class="overviewHead" style="height: 30px;">
 			<td class="padding10 first-collumn-wi" colspan="2">
-				<a href="https://rmon.io/cabinet" title="{{lang.words.personal|title()}} {{lang.words.cabinet}}" class="logs_link" target="_blank">{{lang.words.subs|title()}}</a>
+				<a href="https://rmon.io/cabinet" title="{{lang.words.personal|title()}} {{lang.words.cabinet}}" target="_blank">{{lang.words.subs|title()}}</a>
 			</td>
 			<td style="padding-right: 10px;">
 				<a onclick="showSubOverview()" title="{{lang.words.refresh|title()}}" style="float: right;">

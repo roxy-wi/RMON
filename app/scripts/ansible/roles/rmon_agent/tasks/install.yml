@@ -14,7 +14,7 @@
     owner: "{{ansible_user}}"
     group: "{{ansible_user}}"
     mode: '0644'
-  with_items: ["rmon_agent.py", "rmon_agent_common.py", "rmon_checks.py", "wsgi.py", "requirements.txt"]
+  with_items: ["rmon_agent.py", "rmon_agent_common.py", "rmon_checks.py", "http_check.py", "wsgi.py", "requirements.txt"]
 
 - name: Copy RMON Agent service file
   template:
@@ -46,4 +46,4 @@
     enabled: true
     masked: no
     daemon_reload: true
-    state: started
+    state: restarted

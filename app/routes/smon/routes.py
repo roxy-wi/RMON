@@ -1,7 +1,8 @@
 import json
-from flask import render_template, request, jsonify, g
+import time
+
+from flask import render_template, request, jsonify, g, Response, stream_with_context
 from flask_login import login_required
-from datetime import datetime
 
 from app.routes.smon import bp
 from app.middleware import get_user_params
@@ -28,10 +29,9 @@ def smon_main_dashboard():
     group_id = g.user_params['group_id']
 
     kwargs = {
-        'autorefresh': 1,
         'lang': g.user_params['lang'],
         'smon': smon_sql.smon_list(group_id),
-        'agents': smon_sql.get_agents(group_id),
+        'agents': smon_sql.get_enabled_agents(group_id),
         'group': group_id,
         'smon_groups': smon_sql.select_smon_groups(group_id),
         'smon_status': tools_common.is_tool_active('rmon-server'),
@@ -71,13 +71,12 @@ def smon_dashboard(smon_id, check_id):
     * response time is set to 0.
     7. Iterates over the retrieved RMON object and checks if the SSL expiration date is not None. If it is not None, calculates the difference in days between the expiration date and the
     * present date using the `datetime.strptime()` function and assigns it to `cert_day_diff`.
-    8. Constructs a dictionary (`kwargs`) containing various parameters required for rendering the template, including `autorefresh`, `lang`, `smon`, `group`, `user_subscription`, `check
+    8. Constructs a dictionary (`kwargs`) containing various parameters required for rendering the template, including `lang`, `smon`, `group`, `user_subscription`, `check
     *_interval`, `uptime`, `avg_res_time`, `smon_name`, `cert_day_diff`, `check_id`, `dashboard_id`, and `last_resp_time`.
     9. Renders the RMON history template ('include/smon/smon_history.html') using the `render_template` function from Flask, passing the `kwargs` dictionary as keyword arguments.
     """
     roxywi_common.check_user_group_for_flask()
     smon = smon_sql.select_one_smon(smon_id, check_id)
-    present = common.get_present_time()
     cert_day_diff = 'N/A'
 
     try:
@@ -91,11 +90,9 @@ def smon_dashboard(smon_id, check_id):
 
     for s in smon:
         if s.smon_id.ssl_expire_date is not None:
-            ssl_expire_date = datetime.strptime(s.smon_id.ssl_expire_date, '%Y-%m-%d %H:%M:%S')
-            cert_day_diff = (ssl_expire_date - present).days
+            cert_day_diff = smon_mod.get_ssl_expire_date(s.smon_id.ssl_expire_date)
 
     kwargs = {
-        'autorefresh': 1,
         'lang': g.user_params['lang'],
         'smon': smon,
         'group': g.user_params['group_id'],
@@ -179,7 +176,10 @@ def check(smon_id, check_type_id):
     smon = smon_sql.select_one_smon(smon_id, check_type_id)
     settings = {}
     for s in smon:
-        group_name = smon_sql.get_smon_group_name_by_id(s.smon_id.group_id)
+        try:
+            group_name = smon_sql.get_smon_group_name_by_id(s.smon_id.group_id)
+        except Exception:
+            group_name = ''
         settings = {
             'id': s.smon_id.id,
             'name': s.smon_id.name,
@@ -205,6 +205,10 @@ def check(smon_id, check_type_id):
             settings.setdefault('url', s.url)
             settings.setdefault('method', s.method)
             settings.setdefault('body', s.body)
+            if s.body_req:
+                settings.setdefault('body_req', json.loads(s.body_req))
+            else:
+                settings.setdefault('body_req', '')
         elif check_type_id == 4:
             settings.setdefault('packet_size', s.packet_size)
         elif check_type_id == 5:
@@ -390,9 +394,69 @@ def smon_host_history(server_ip):
     return render_template('smon/history.html', **kwargs)
 
 
-@bp.route('/history/metric/<int:dashboard_id>')
-def smon_history_metric(dashboard_id):
-    return jsonify(smon_mod.history_metrics(dashboard_id))
+@bp.route('/history/metric/<int:check_id>/<int:check_type_id>')
+def smon_history_metric(check_id, check_type_id):
+    return jsonify(smon_mod.history_metrics(check_id, check_type_id))
+
+
+@bp.route('/history/metrics/stream/<int:check_id>/<int:check_type_id>')
+@get_user_params()
+def smon_history_metric_chart(check_id, check_type_id):
+    def get_chart_data():
+        interval = 120
+        while True:
+            json_metric = {}
+            chart_metrics = smon_sql.select_smon_history(check_id, 1)
+            uptime = smon_mod.check_uptime(check_id)
+            avg_res_time = round(smon_sql.get_avg_resp_time(check_id, check_type_id), 2)
+            smon = smon_sql.select_one_smon(check_id, check_type_id)
+            agents = smon_sql.get_agents(g.user_params['group_id'])
+
+            for s in smon:
+                json_metric['updated_at'] = common.get_time_zoned_date(s.smon_id.updated_at)
+                json_metric['name'] = str(s.smon_id.name)
+                interval = s.interval
+                if s.smon_id.ssl_expire_date is not None:
+                    json_metric['ssl_expire_date'] = smon_mod.get_ssl_expire_date(s.smon_id.ssl_expire_date)
+                else:
+                    json_metric['ssl_expire_date'] = 'N/A'
+
+                for agent in agents:
+                    if agent.id == s.agent_id:
+                        json_metric['agent'] = agent.name
+                        break
+                else:
+                    json_metric['agent'] = 'None'
+
+            for i in chart_metrics:
+                json_metric['time'] = common.get_time_zoned_date(i.date, '%H:%M:%S')
+                json_metric['value'] = str(i.response_time)
+                json_metric['status'] = str(i.status)
+                json_metric['mes'] = str(i.mes)
+                json_metric['uptime'] = uptime
+                json_metric['avg_res_time'] = avg_res_time
+                json_metric['interval'] = interval
+                if check_type_id == 2:
+                    json_metric['name_lookup'] = str(i.name_lookup)
+                    json_metric['connect'] = str(i.connect)
+                    json_metric['app_connect'] = str(i.app_connect)
+                    json_metric['pre_transfer'] = str(i.pre_transfer)
+                    if float(i.redirect) <= 0:
+                        json_metric['redirect'] = '0'
+                    else:
+                        json_metric['redirect'] = str(i.redirect)
+                    if float(i.start_transfer) <= 0:
+                        json_metric['start_transfer'] = '0'
+                    else:
+                        json_metric['start_transfer'] = str(i.start_transfer)
+                    json_metric['download'] = str(i.download)
+            yield f"data:{json.dumps(json_metric)}\n\n"
+            time.sleep(interval)
+
+    response = Response(stream_with_context(get_chart_data()), mimetype="text/event-stream")
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["X-Accel-Buffering"] = "no"
+    return response
 
 
 @bp.route('/history/statuses/<int:dashboard_id>')

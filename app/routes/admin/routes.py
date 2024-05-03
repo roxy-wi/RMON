@@ -27,18 +27,31 @@ def before_request():
 @bp.route('')
 @get_user_params()
 def admin():
-    roxywi_auth.page_for_admin()
+    roxywi_auth.page_for_admin(level=2)
+    user_group = roxywi_common.get_user_group(id=1)
+    if g.user_params['role'] == 1:
+        users = user_sql.select_users()
+        servers = server_sql.select_servers(full=1)
+        sshs = cred_sql.select_ssh()
+    else:
+        users = user_sql.select_users(group=user_group)
+        servers = roxywi_common.get_dick_permit(virt=1, disable=0, only_group=1)
+        sshs = cred_sql.select_ssh(group=user_group)
 
     kwargs = {
         'lang': g.user_params['lang'],
-        'users': user_sql.select_users(),
+        'users': users,
         'groups': group_sql.select_groups(),
-        'sshs': cred_sql.select_ssh(),
-        'servers': server_sql.select_servers(full=1),
+        'group': roxywi_common.get_user_group(id=1),
+        'sshs': sshs,
+        'servers': servers,
         'roles': sql.select_roles(),
         'timezones': pytz.all_timezones,
         'settings': sql.get_setting('', all=1),
-        'ldap_enable': sql.get_setting('ldap_enable')
+        'ldap_enable': sql.get_setting('ldap_enable'),
+        'guide_me': 1,
+        'user_subscription': roxywi_common.return_user_subscription(),
+        'user_roles': user_sql.select_user_roles_by_group(user_group),
     }
 
     return render_template('admin.html', **kwargs)

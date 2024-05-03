@@ -1,3 +1,6 @@
+import json
+from datetime import datetime
+
 from flask import render_template, abort
 
 import app.modules.db.smon as smon_sql
@@ -28,6 +31,7 @@ def create_smon(json_data, user_group, show_new=1) -> bool:
         interval = common.checkAjaxInput(json_data['interval'])
         agent_id = common.checkAjaxInput(json_data['agent_id'])
         check_type = common.checkAjaxInput(json_data['check_type'])
+        body_req = common.checkAjaxInput(json_data['body_req'])
     except Exception as e:
         roxywi_common.handle_exceptions(e, 'RMON server', 'Cannot parse check parameters')
 
@@ -52,7 +56,7 @@ def create_smon(json_data, user_group, show_new=1) -> bool:
     elif check_type == 'tcp':
         smon_sql.insert_smon_tcp(last_id, hostname, port, interval, agent_id)
     elif check_type == 'http':
-        smon_sql.insert_smon_http(last_id, url, body, http_method, interval, agent_id)
+        smon_sql.insert_smon_http(last_id, url, body, http_method, interval, agent_id, body_req)
     elif check_type == 'dns':
         smon_sql.insert_smon_dns(last_id, hostname, port, resolver, record_type, interval, agent_id)
 
@@ -92,6 +96,7 @@ def update_smon(smon_id, json_data, user_group) -> str:
     interval = common.checkAjaxInput(json_data['interval'])
     agent_id = common.checkAjaxInput(json_data['agent_id'])
     check_type = common.checkAjaxInput(json_data['check_type'])
+    body_req = json.dumps(json_data['body_req'])
     is_edited = False
 
     try:
@@ -116,7 +121,7 @@ def update_smon(smon_id, json_data, user_group) -> str:
     try:
         if smon_sql.update_smon(smon_id, name, telegram, slack, pd, mm, smon_group_id, desc, enabled):
             if check_type == 'http':
-                is_edited = smon_sql.update_smonHttp(smon_id, url, body, http_method, interval, agent_id)
+                is_edited = smon_sql.update_smonHttp(smon_id, url, body, http_method, interval, agent_id, body_req)
             elif check_type == 'tcp':
                 is_edited = smon_sql.update_smonTcp(smon_id, hostname, port, interval, agent_id)
             elif check_type == 'ping':
@@ -184,11 +189,11 @@ def create_check_json(json_data: dict) -> dict:
         check_json.setdefault('url', json_data['url'])
         check_json.setdefault('body', json_data['body'])
         check_json.setdefault('http_method', json_data['http_method'])
+        check_json.setdefault('body_req', json_data['body_req'])
     elif check_type == 'dns':
         check_json.setdefault('port', json_data['port'])
         check_json.setdefault('resolver', json_data['resolver'])
         check_json.setdefault('record_type', json_data['record_type'])
-
     return check_json
 
 
@@ -198,7 +203,7 @@ def delete_smon(smon_id, user_group) -> str:
         server_ip = smon_sql.get_agent_ip_by_id(agent_id)
         smon_agent.delete_check(agent_id, server_ip, smon_id)
     except Exception as e:
-        roxywi_common.handle_exceptions(e, 'Roxy-WI server', 'Cannot delete check', login=1)
+        roxywi_common.handle_exceptions(e, 'RMON', 'Cannot delete check', login=1)
     try:
         if smon_sql.delete_smon(smon_id, user_group):
             roxywi_common.logging('RMON', ' The server from RMON has been delete ', login=1)
@@ -207,21 +212,50 @@ def delete_smon(smon_id, user_group) -> str:
         raise Exception(f'error: Cannot delete the server {e}')
 
 
-def history_metrics(server_id: int) -> dict:
+def history_metrics(server_id: int, check_type_id: int) -> dict:
     metric = smon_sql.select_smon_history(server_id)
 
     metrics = {'chartData': {}}
     metrics['chartData']['labels'] = {}
     labels = ''
     curr_con = ''
+    name_lookup = ''
+    connect = ''
+    app_connect = ''
+    pre_transfer = ''
+    redirect = ''
+    start_transfer = ''
+    download = ''
 
     for i in reversed(metric):
         date_time = common.get_time_zoned_date(i.date, '%H:%M:%S')
         labels += f'{date_time},'
         curr_con += f'{i.response_time},'
+        if check_type_id == 2:
+            name_lookup += f'{i.name_lookup},'
+            connect += f'{i.connect},'
+            app_connect += f'{i.app_connect},'
+            pre_transfer += f'{i.pre_transfer},'
+            if float(i.redirect) <= 0:
+                redirect += f'0,'
+            else:
+                redirect += f'{i.redirect},'
+            if float(i.start_transfer) <= 0:
+                start_transfer += f'0,'
+            else:
+                start_transfer += f'{i.start_transfer},'
+            download += f'{i.download},'
 
     metrics['chartData']['labels'] = labels
     metrics['chartData']['curr_con'] = curr_con
+    if check_type_id == 2:
+        metrics['chartData']['name_lookup'] = name_lookup
+        metrics['chartData']['connect'] = connect
+        metrics['chartData']['app_connect'] = app_connect
+        metrics['chartData']['pre_transfer'] = pre_transfer
+        metrics['chartData']['redirect'] = redirect
+        metrics['chartData']['start_transfer'] = start_transfer
+        metrics['chartData']['download'] = download
 
     return metrics
 
@@ -307,7 +341,8 @@ def show_status_page(slug: str) -> str:
             else:
                 group = 'No group'
 
-        checks_status[check_id] = {'uptime': uptime, 'name': name, 'desc': desc, 'group': group, 'check_type': check_type, 'en': en}
+        checks_status[check_id] = {'uptime': uptime, 'name': name, 'desc': desc, 'group': group,
+                                   'check_type': check_type, 'en': en}
 
     return render_template('smon/status_page.html', page=page, checks_status=checks_status)
 
@@ -345,3 +380,14 @@ def change_smon_port(new_port: int) -> None:
     server_mod.subprocess_execute(cmd)
     cmd = 'sudo systemctl daemon-reload && sudo systemctl restart rmon-server'
     server_mod.subprocess_execute(cmd)
+
+
+def get_ssl_expire_date(date: int) -> int:
+    present = common.get_present_time()
+    ssl_expire_date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
+    return (ssl_expire_date - present).days
+
+
+def return_check_name_by_id(check_id: int) -> str:
+    check_types = {1: 'tcp', 2: 'http', 4: 'ping', 5: 'dns'}
+    return check_types[check_id]

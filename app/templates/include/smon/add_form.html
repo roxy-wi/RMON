@@ -88,15 +88,23 @@
 			<td>{{ input('new-smon-url', value='https://', title='proto://url[:port]/', placeholder='proto://url[:port]/', style="width: 240px;") }}</td>
 		</tr>
 		<tr class="smon_http_check">
-			<td class="padding20">{{lang.words.body|title()}}</td>
+			<td class="padding20">{{lang.words.body|title()}} {{lang.words.response}}</td>
 			<td>{{ input('new-smon-body', style="width: 240px;") }}</td>
 		</tr>
 		<tr class="smon_http_check">
 			<td class="padding20">HTTP {{lang.words.method}}</td>
 			<td>
-				{% set http_methods = {'get': 'GET', 'post': 'POST', 'put': 'PUT', 'patch': 'PATCH', 'delete': 'DELETE',
-				'head': 'HEAD', 'options': 'OPTIONS'} %}
+				{% set http_methods = {'get': 'GET', 'post': 'POST', 'put': 'PUT', 'head': 'HEAD'} %}
 				{{ select('new-smon-method', values=http_methods, selected='get') }}
+			</td>
+		</tr>
+		<tr class="smon_http_check">
+			<td class="padding20">{{lang.words.body|title()}} {{lang.words.request}}</td>
+			<td>
+				<textarea id="new-smon-body-req" cols="50" rows="5" class="form-control" title="JSON only" placeholder="Example:
+{
+    &quot;key&quot;: &quot;value&quot;
+}"></textarea>
 			</td>
 		</tr>
 		<tr>

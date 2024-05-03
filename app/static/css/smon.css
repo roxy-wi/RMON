@@ -147,10 +147,10 @@ h4 {
     margin: 0 25px 10px 0;
 }
 .status-page-icon-ok {
-    color: var(--green-color);
+    color: var(--color-blue);
 }
 .status-page-icon-not-ok {
-    color: var(--red-color);
+    color: var(--color-blue-dark);
 }
 .status_page-edit {
     float: right;

@@ -13,9 +13,9 @@
 			  data-empty_name="{{lang.errors.empty_name}}" data-edit="{{lang.words.edit|title()}}" data-close="{{lang.words.close|title()}}" data-server_info="{{lang.phrases.server_info}}"
 			  data-stop="{{lang.words.stop|title()}}" data-reload="{{lang.words.reload|title()}}" data-user_groups="{{lang.phrases.user_groups}}" data-settings="{{lang.words.settings|title()}}"
 			  data-for="{{lang.words.for}}" data-show="{{lang.words.show|title()}}" data-hide="{{lang.words.hide|title()}}" data-logs="{{lang.words.logs}}" data-name="{{lang.words.name}}"
-			  data-value="{{lang.words.value}}" data-if-title="{{lang.words.if|title()}}" data-then="{{lang.words.then}}" data-autorefresh="{{lang.words.auto|title()}}-{{lang.words.refresh}}"
+			  data-value="{{lang.words.value}}" data-if-title="{{lang.words.if|title()}}" data-then="{{lang.words.then}}" data-reconfigure="{{lang.words.reconfigure|title()}}"
 			  data-raw="{{lang.words.raw|title()}}" data-resp_time="{{lang.smon_page.desc.resp_time}}" data-next="{{lang.words.next|title()}}" data-back="{{lang.words.back|title()}}"
-			  data-installing="{{lang.words.installing|title()}}" data-apply="{{lang.words.apply|title()}}" data-reconfigure="{{lang.words.reconfigure|title()}}" />
+			  data-installing="{{lang.words.installing|title()}}" data-apply="{{lang.words.apply|title()}}" data-history_of="{{lang.menu_links.monitoring.smon.history}}" />
         {% include 'include/main_head.html' %}
 	</head>
 	<body>
@@ -27,24 +27,7 @@
 			<h2>
 				{% block h2 %}{% endblock %}
 				{% include 'include/login.html' %}
-				{% if autorefresh %}
-				<span class="auto-refresh">
-					<a onclick="pauseAutoRefresh()" class="auto-refresh-pause" style="display: none; margin-top: 3px; position: absolute;"></a>
-					<a onclick="pauseAutoResume()" class="auto-refresh-resume" style="display: none; margin-top: 4px; position: absolute;"></a>
-					<span id="0" class="auto-refresh-span">
-						<span class="auto-refresh-reload auto-refresh-reload-icon"></span>
-						{{lang.words.auto|title()}}-{{lang.words.refresh}}
-					</span>
-					<span id="1" style="display: none;" class="auto-refresh-span">
-						<span class="auto-refresh-reload auto-refresh-reload-icon"></span>
-						{{lang.words.auto|title()}}-{{lang.words.refresh}}
-					</span>
-				</span>
-				{% endif %}
 			</h2>
-			{% if autorefresh %}
-				{% include 'include/autorefresh_submenu.html' %}
-			{% endif %}
 			<ul id='browse_history'></ul>
 			{% if g.user_params['role'] %}
 				{% if g.user_params['role'] <= 2 %}
@@ -108,6 +91,13 @@
 					</td>
 				</tr>
 				<tr id="show-user-settings-group"></tr>
+				<tr id="show-user-settings-them">
+                    <td class="padding20">{{lang.words.theme|title()}}</td>
+					<td>
+                        {% set themes = {'dark': lang.words.dark|title(), 'light': lang.words.light|title()} %}
+						{{ select('theme_select', values=themes) }}
+					</td>
+                </tr>
 			</table>
 		</div>
 		<div id="statistic" style="display: none;">

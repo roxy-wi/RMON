@@ -91,7 +91,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'check_type': check_type,
 		'interval': $('#new-smon-interval').val(),
 		'agent_id': $('#new-smon-agent-id').val(),
-		'token': $('#token').val()
+		'body_req': $('#new-smon-body-req').val()
 	}
 	let method = "post";
 	if (edit) {
@@ -233,6 +233,11 @@ function getCheckSettings(smon_id, check_type) {
 			} catch (e) {
 				$('#new-smon-body').val(data['body']);
 			}
+			try {
+				$('#new-smon-body-req').val(data['body_req'].replaceAll("'", ""));
+			} catch (e) {
+				$('#new-smon-body-req').val(data['body_req']);
+			}
 			$('#new-smon-agent-id').val(data['agent_id']).change()
 			$('#new-smon-telegram').val(data['tg']).change()
 			$('#new-smon-slack').val(data['slack']).change()
@@ -324,11 +329,10 @@ function check_and_clear_check_type(check_type) {
 	}
 }
 function clear_check_vals() {
-	$('#new-smon-url').val('');
-	$('#new-smon-body').val('');
-	$('#new-smon-port').val('');
-	$('#new-smon-packet_size').val('');
-	$('#new-smon-ip').val('');
+	const inputs_for_clean = ['url', 'body', 'body-req', 'port', 'packet_size', 'ip']
+	for (let i of inputs_for_clean) {
+		$('#new-smon-' + i).val('');
+	}
 }
 function show_statuses(dashboard_id, check_id, id_for_history_replace) {
 	show_smon_history_statuses(dashboard_id, id_for_history_replace);
@@ -705,7 +709,6 @@ function addAgentDialog(agent_id=0, edit=false) {
 			{
 				text: reconfigure_word,
 				click: function () {
-					console.log('reconfigure');
 					addAgent($(this), agent_id, true, true);
 				}
 			}, {
@@ -815,7 +818,7 @@ function getAgentSettings(agent_id) {
 			$('#new-agent-server-id').attr('disabled', 'disabled');
 			$('#new-agent-desc').val(data['desc']);
 			$('#new-agent-enabled').checkboxradio("refresh");
-			if (data['enabled']) {
+			if (data['enabled'] == '1') {
 				$('#new-agent-enabled').prop('checked', true)
 			} else {
 				$('#new-agent-enabled').prop('checked', false)
@@ -1060,20 +1063,183 @@ function isSmonGroupShowed(group_id) {
 		showSmonGroup(group_id);
 	}
 }
-function getSmonHistoryCheckData(server) {
+function getSmonHistoryCheckData(check_id, check_type_id) {
     $.ajax({
-        url: "/rmon/history/metric/" + server,
+        url: "/rmon/history/metric/" + check_id + "/" + check_type_id,
         success: function (result) {
             let data = [];
             data.push(result.chartData.curr_con);
             let labels = result.chartData.labels;
-            renderSMONChart(data[0], labels, '3');
+			if (check_type_id == 2) {
+				renderSMONChartHttp(result, labels, check_id, check_type_id);
+			} else {
+				renderSMONChart(data[0], labels, check_id, check_type_id);
+			}
         }
     });
 }
-function renderSMONChart(data, labels, server) {
+function renderSMONChartHttp(result, labels, check_id, check_type_id) {
+	const resp_time_word = $('#translate').attr('data-resp_time');
+    const ctx = document.getElementById('metrics_' + check_id);
+
+    // Преобразование данных в массивы
+    const labelArray = labels.split(',');
+    const name_lookup = result.chartData.name_lookup.split(',');
+    const connect = result.chartData.connect.split(',');
+    const app_connect = result.chartData.app_connect.split(',');
+    const pre_transfer = result.chartData.pre_transfer.split(',');
+    const redirect = result.chartData.redirect.split(',');
+    const start_transfer = result.chartData.start_transfer.split(',');
+    const download = result.chartData.download.split(',');
+    const curr_con = result.chartData.curr_con.split(',');
+
+    // Удаление последнего пустого элемента в каждом массиве
+    labelArray.pop();
+    name_lookup.pop();
+    connect.pop();
+    app_connect.pop();
+    pre_transfer.pop();
+    redirect.pop();
+    start_transfer.pop();
+    download.pop();
+    curr_con.pop();
+
+    // Создание объекта dataset
+    const dataset = [{
+        label: resp_time_word + ' (ms)',
+        data: curr_con,
+        borderColor: 'rgba(41, 115, 147, 0.5)',
+        backgroundColor: 'rgba(49, 175, 225, 0.5)',
+        tension: 0.4,
+        pointRadius: 3,
+        borderWidth: 1,
+        fill: true
+    }, {
+		label: 'Name lookup (ms)',
+        data: name_lookup,
+        borderColor: 'rgba(41,147,78,0.5)',
+        backgroundColor: 'rgba(49,225,84,0.5)',
+        tension: 0.4,
+        pointRadius: 3,
+        borderWidth: 1,
+        fill: true
+	}, {
+		label: 'Connect (ms)',
+        data: connect,
+        borderColor: 'rgba(140,147,41,0.5)',
+        backgroundColor: 'rgba(225,210,49,0.5)',
+        tension: 0.4,
+        pointRadius: 3,
+        borderWidth: 1,
+        fill: true
+	}, {
+		label: 'App connect (ms)',
+        data: app_connect,
+        borderColor: 'rgba(147,126,41,0.5)',
+        backgroundColor: 'rgba(225,175,49,0.5)',
+        tension: 0.4,
+        pointRadius: 3,
+        borderWidth: 1,
+        fill: true
+	}, {
+		label: 'Pre transfer (ms)',
+        data: pre_transfer,
+        borderColor: 'rgba(147,101,41,0.5)',
+        backgroundColor: 'rgba(225,143,49,0.5)',
+        tension: 0.4,
+        pointRadius: 3,
+        borderWidth: 1,
+        fill: true
+	}, {
+		label: 'Redirect (ms)',
+        data: redirect,
+        borderColor: 'rgba(147,89,41,0.5)',
+        backgroundColor: 'rgba(225,122,49,0.5)',
+        tension: 0.4,
+        pointRadius: 3,
+        borderWidth: 1,
+        fill: true
+	}, {
+		label: 'Start transfer (ms)',
+        data: start_transfer,
+        borderColor: 'rgba(147,73,41,0.5)',
+        backgroundColor: 'rgba(225,96,49,0.5)',
+        tension: 0.4,
+        pointRadius: 3,
+        borderWidth: 1,
+        fill: true
+	}, {
+		label: 'Download (ms)',
+        data: download,
+        borderColor: 'rgba(140,41,147,0.5)',
+        backgroundColor: 'rgba(134,49,225,0.5)',
+        tension: 0.4,
+        pointRadius: 3,
+        borderWidth: 1,
+        fill: true
+	}];
+
+    const config = {
+        type: 'line',
+        data: {
+            labels: labelArray,
+            datasets: dataset
+        },
+        options: {
+            animation: true,
+			maintainAspectRatio: false,
+			plugins: {
+				title: {
+					display: true,
+					font: { size: 15 },
+					padding: { top: 10 }
+				},
+				legend: {
+					display: true,
+					position: 'bottom',
+					align: 'left',
+					labels: {
+						color: 'rgb(255, 99, 132)',
+						font: { size: 10, family: 'BlinkMacSystemFont' },
+						boxWidth: 13,
+						// padding: 5
+					},
+				}
+			},
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Time'
+                    },
+                    ticks: {
+                        source: 'data',
+                        autoSkip: true,
+                        autoSkipPadding: 45,
+                        maxRotation: 0
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: resp_time_word + ' (ms)'
+                    },
+                    ticks: {
+                        font: {
+                            size: 10
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    const myChart = new Chart(ctx, config);
+	stream_chart(myChart, check_id, check_type_id);
+}
+function renderSMONChart(data, labels, check_id, check_type_id) {
     const resp_time_word = $('#translate').attr('data-resp_time');
-    const ctx = document.getElementById('metrics_' + server);
+    const ctx = document.getElementById('metrics_' + check_id);
 
     // Преобразование данных в массивы
     const labelArray = labels.split(',');
@@ -1087,8 +1253,8 @@ function renderSMONChart(data, labels, server) {
     const dataset = {
         label: resp_time_word + ' (ms)',
         data: dataArray,
-        borderColor: 'rgba(92, 184, 92, 1)',
-        backgroundColor: 'rgba(92, 184, 92, 0.2)',
+        borderColor: 'rgba(41, 115, 147, 0.5)',
+        backgroundColor: 'rgba(49, 175, 225, 0.5)',
         tension: 0.4,
         pointRadius: 3,
         borderWidth: 1,
@@ -1151,5 +1317,70 @@ function renderSMONChart(data, labels, server) {
     };
 
     const myChart = new Chart(ctx, config);
-    charts.push(myChart);
+	stream_chart(myChart, check_id, check_type_id);
+}
+function stream_chart(chart_id, check_id, check_type_id) {
+    const source = new EventSource(`/rmon/history/metrics/stream/${check_id}/${check_type_id}`);
+    source.onmessage = function (event) {
+        const data = JSON.parse(event.data);
+        if (chart_id.data.labels.length >= 40) {
+            chart_id.data.labels.shift();
+            chart_id.data.datasets[0].data.shift();
+        }
+        chart_id.data.labels.push(data.time);
+        chart_id.data.datasets[0].data.push(data.value);
+        if (check_type_id == 2) {
+            chart_id.data.datasets[1].data.push(data.name_lookup);
+            chart_id.data.datasets[2].data.push(data.connect);
+            chart_id.data.datasets[3].data.push(data.app_connect);
+            chart_id.data.datasets[4].data.push(data.pre_transfer);
+            chart_id.data.datasets[5].data.push(data.redirect);
+            chart_id.data.datasets[6].data.push(data.download);
+        }
+		if (data.status === "1") {
+			chart_id.data.datasets[0].fillColor = 'rgba(255, 99, 132)';
+		}
+        chart_id.update();
+		update_cur_statues(check_id, data);
+    }
+}
+function update_cur_statues(check_id, data) {
+	let status = data.status;
+	let last_resp_time = data.value;
+	let time = data.time;
+	let mes = data.mes;
+	let add_class = 'serverUp';
+	let cur_status = 'UP';
+	if (status === "0") {
+		add_class = 'serverDown'
+		cur_status = 'DOWN'
+	}
+	if (last_resp_time.length === 0) {
+		last_resp_time = 'N/A'
+	} else {
+		last_resp_time = last_resp_time + ' ms'
+	}
+	let title_text = `${$('#translate').attr('data-history_of')} ${data.name}`
+	let div_cur_status = '<span class="' + add_class + ' cur_status" style="font-size: 30px; border-radius: 50rem!important;min-width: 62px;">' + cur_status + '</span>'
+	let div_server_statuses = '<div class="smon_server_statuses ' + add_class + '" title="" data-help="' + time + ' ' + mes + '" style="margin-left: 4px;"></div>'
+	$('#cur_status').html(div_cur_status);
+	$('#last_resp_time').html(last_resp_time);
+	$('#uptime').html(data.uptime + '%');
+	$('#avg_res_time').html(data.avg_res_time + 'ms');
+	$('#interval').text(data.interval);
+	$('#updated_at').text(data.updated_at);
+	$('#agent').text(data.agent);
+	$('title').text(title_text);
+	$('h2').text(title_text);
+	$('#ssl_expire_date').text(data.ssl_expire_date);
+	if ($('#smon_history_statuses').children().length == 40) {
+		$('#smon_history_statuses').find('div:first').remove()
+	}
+	$('#smon_history_statuses').append(div_server_statuses);
+	$("[title]").tooltip({
+		"content": function () {
+			return $(this).attr("data-help");
+		},
+		show: {"delay": 1000}
+	});
 }

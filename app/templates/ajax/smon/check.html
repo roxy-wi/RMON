@@ -1,25 +1,23 @@
 {% import 'languages/'+lang|default('en')+'.html' as lang %}
-{#<script src="https://use.fontawesome.com/releases/v5.15.4/js/all.js" data-auto-replace-svg="nest"></script>#}
-{#<script>FontAwesomeConfig = { searchPseudoElements: true, observeMutations: false };</script>#}
 {%- for s in smon -%}
     {% if s.smon_id.en == 1 %}
         {% if s.smon_id.status == 1 and s.smon_id.body_status == 1 %}
             {% set additional_classes = 'good div-server-head-up' %}
-            {% set uptime_desc = lang.words.uptime + ': <time class="timeago" datetime="'+s.smon_id.time_state|string()+'">'+s.smon_id.time_state|string()+'</time>' %}
+            {% set uptime_desc = '<b>' +lang.words.uptime + '</b>: <time class="timeago" datetime="'+s.smon_id.time_state|string()+'">'+s.smon_id.time_state|string()+'</time>' %}
         {% elif s.smon_id.status == 0 or s.smon_id.body_status == 0 %}
             {% set additional_classes = 'err div-server-head-down' %}
-            {% set uptime_desc = lang.words.downtime + ': <time class="timeago" datetime="'+s.smon_id.time_state|string()+'">'+s.smon_id.time_state|string()+'</time>' %}
+            {% set uptime_desc = '<b>'+lang.words.downtime + '</b>: <time class="timeago" datetime="'+s.smon_id.time_state|string()+'">'+s.smon_id.time_state|string()+'</time>' %}
         {% else %}
             {% set additional_classes = 'err div-server-head-unknown' %}
-            {% set uptime_desc = lang.words.uptime + ': N/A' %}
+            {% set uptime_desc = '<b>'+lang.words.uptime + '</b>: N/A' %}
         {% endif %}
     {% else %}
         {% set additional_classes = 'dis div-server-head-dis' %}
-        {% set uptime_desc = lang.words.uptime + ': N/A' %}
+        {% set uptime_desc = '<b>'+lang.words.uptime + '</b>: N/A' %}
     {% endif %}
-<div class="smon_services {{additional_classes}}" id="smon-{{ s.smon_id.id }}">
+<div class="smon_services" id="smon-{{ s.smon_id.id }}">
 <div class="ip server-name">
-    <span class="check-name-tile">
+    <span class="check-name-tile overflow">
         <a href="/rmon/dashboard/{{s.smon_id.id}}/{{check_type_id}}" title="{{lang.words.view|title()}} {{lang.words.history}} {{lang.words.for}} {{s.smon_id.name}} {{lang.words.host}}" class="link" id="smon-name-{{ s.smon_id.id }}">{{s.smon_id.name.strip("'")}}</a>
     </span>
     {% set agent_exist = [] %}
@@ -46,14 +44,14 @@
     {% endif %}
 </div>
 <div class="desc">
-    <b>{{uptime_desc|safe}}</b>
+    {{uptime_desc|safe}}
 </div>
 <div class="desc">
     {% if s.smon_id.en == 1 %}
         {% if s.smon_id.status == 1 %}
-            {{lang.smon_page.desc.resp_time}}:
+            <b>{{lang.smon_page.desc.resp_time}}</b>:
         {% else %}
-            {{lang.smon_page.desc.last_resp_time}}:
+            <b>{{lang.smon_page.desc.last_resp_time}}</b>:
         {% endif %}
         {% if s.smon_id.response_time %}
             <span title="{{s.smon_id.response_time}} ms">{{s.smon_id.response_time|truncate(9)}} ms</span>
@@ -108,6 +106,7 @@
     $(document).ready(function() {
         $("time.timeago").timeago();
     })
+    setInterval(getSmonCheck, 60000, '{{ s.smon_id.id }}', '{{ check_type_id }}')
 </script>
 </div>
 {%- endfor -%}

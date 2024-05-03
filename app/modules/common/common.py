@@ -147,19 +147,6 @@ def return_nice_path(return_path: str, is_service=1) -> str:
 	return return_path
 
 
-# def check_is_conf(config_path: str) -> bool:
-# 	"""
-# 	Check if the config_path is a service folder and contains either 'conf' or 'cfg'.
-# 	Raise an exception if the check fails.
-#
-# 	:param config_path: Path string to be checked.
-# 	:return: True if the path passes the checks, otherwise an exception is raised.
-# 	"""
-# 	if check_is_service_folder(config_path) and ('conf' in config_path or 'cfg' in config_path):
-# 		return True
-# 	raise ValueError(f'error: The provided path "{config_path}" is not a service folder or does not contain "conf" or "cfg"')
-
-
 def get_key(item):
 	return item[0]
 
@@ -170,7 +157,7 @@ def is_tool(name):
 	return True if is_tool_installed is not None else False
 
 
-def wrap_line(content: str, css_class: str="line") -> str:
+def wrap_line(content: str, css_class: str = "line") -> str:
 	"""
 	Wraps the provided content into a div HTML element with the given CSS class.
 	"""

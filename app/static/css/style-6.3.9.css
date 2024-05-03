@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+
 :root {
 	--green-color: #5CB85C;
 	--red-color: #be2424;
@@ -13,27 +15,36 @@
 	--border-radius: 3px;
 	--border-color: #A4C7F5;
 	--indent: 15px;
+	--color-white: #F7F7F7;
+    --color-blue: #31AFE1;
+    --color-black: #171717;
+    --color-blue-dark: #00243E;
+    --color-blue-light: #004373;
+    --color-gray: #F0F0F0;
+    --color-gray2: #fbfbfb;
+    --color-dark-gray: #4A4A4A;
+    --big-border-radius: 15px;
 }
 html {
   font-size: 10px;
 }
 body {
-  font-family: "Manrope", sans-serif;
-  font-size: 1.2em;
-  line-height: 1.42857143;
-  color: #000;
-  background-color: #fff;
-  margin: 0;
-  padding: 0;
-  overflow: auto;
-  height:100%
+	font-family: "Roboto", sans-serif;
+	font-size: 1.2em;
+	line-height: 1.42857143;
+	color: #000;
+	background-color: var(--color-white);
+	margin: 0;
+	padding: 0;
+	overflow: auto;
+	height: 100%;
+	position: relative;
 }
 h2 {
 	font-size: 1.5em;
-    background: var(--blue-color);
-    border: 1px solid var(--blue-color);
-    padding: 2px 3px 3px 15px;
-    color: #fff;
+	background-color: var(--color-white);
+	padding: 6px 3px 0 15px;
+    color: var(--color-blue);
     margin-top: 0;
     margin-bottom: 0;
     height: 27px;
@@ -49,10 +60,8 @@ h3 {
 ul#browse_history {
     padding-left: 12px;
     display: block;
-    margin-top: 3px;
 	margin-bottom: -1px;
 	list-style: none;
-	border-bottom: 1px solid #D9D9D9;
 	padding-bottom: 5px;
 	clear: both;
 }
@@ -108,7 +117,7 @@ pre {
 	right: 0;
 	left: 0;
 	display: block;
-	background-color: var(--menu-color);
+    background-color: var(--color-blue-dark);
 	font-size: 12px;
 	z-index: 99;
 }
@@ -123,7 +132,6 @@ pre {
 	font-style: italic;
 	font-weight: bold;
 	height: 32px;
-	border-bottom: 1px solid aliceblue;
 	padding-left: 20px;
 	padding-top: 2px;
 }
@@ -141,7 +149,7 @@ pre {
 	height: auto;
 	max-width: 100%;
 	min-width: 40%;
-	background-color: #fff;
+    background-color: var(--color-white);
 	margin-left: 207px;
 	padding-bottom: 10px;
 }
@@ -151,7 +159,7 @@ pre {
 	left: 0;
 	max-width: 91%;
 	min-width: 40%;
-	background-color: #fff;
+    background-color: var(--color-white);
 	margin-left: 207px;
 	margin-right: 20px;
 	border-top: 1px solid #ddd;
@@ -162,6 +170,9 @@ pre {
 	padding: 10px 20px 20px;
 	font-size: 14.5px;
     font-weight: bold;
+}
+#version a {
+	color: black;
 }
 #logo_footer {
     float: left;
@@ -195,7 +206,7 @@ pre {
 	margin-top: 3px;
 	margin-left: 14px;
 	margin-right: 50px;
-	color: #fff !important;
+    color: var(--color-blue);
 	font-size: 15px;
 	cursor: pointer;
 }
@@ -206,7 +217,11 @@ pre {
 	margin-right: 5px;
 }
 .auto-refresh-span, .auto-refresh a {
-	color: #fff !important;
+    margin-left: auto;
+    float: right;
+    margin-top: 3.7px;
+    margin-right: 5px;
+    color: var(--color-blue);
 	cursor: pointer;
 	font-size: 15px;
 }
@@ -263,6 +278,9 @@ pre {
 	display: block;
 	float: left;
 	margin-right: 5px;
+}
+.auto-refresh-reload > .fa-sync-alt, .auto-refresh-resume > .fa-play {
+    color: var(--color-blue) !important;
 }
 .configShow, .diff {
 	overflow: auto;
@@ -382,9 +400,7 @@ pre {
     max-width: 50%;
 	min-height: 160px;
 	float: left;
-	margin: 0 20px 20px 7px;
-	border-bottom: 1px solid #D9D9D9;
-    border-top: 1px solid #D9D9D9;
+    margin: 0 20px 20px var(--indent);
 }
 .overviewHead {
 	border-radius: 5px;
@@ -392,7 +408,8 @@ pre {
 	font-weight: bold;
 }
 .overview-wi .overviewHead {
-	border-bottom: 1px solid var(--border-color);
+	height: 25px;
+    background-color: #F0F0F0;
 	height: 25px;
 }
 .overview tr{
@@ -429,7 +446,7 @@ pre {
 	font-weight: bold;
 }
 .serverUp {
-	background-color: var(--green-color);
+	background-color: var(--color-blue);
 }
 .serverWarn {
 	background-color: var(--yellow-color);
@@ -466,7 +483,7 @@ pre {
 	color: var(--right-menu-blue-color);
 }
 .serverDown {
-	background-color: var(--red-color);
+	background-color: var(--color-blue-dark);
 }
 .padding10 {
 	padding: 10px 10px 10px var(--indent);
@@ -484,6 +501,7 @@ pre {
 	width: 20%;
 }
 .first-collumn-wi {
+	border-radius: 5px;
 	width: 40%;
 }
 .second-collumn {
@@ -518,18 +536,18 @@ ul{
 	font-size: 1.1em;
 }
 .menu a {
-	background: var(--menu-color);
-	color: #fff;
+    background-color: var(--color-blue-dark);
+    color: var(--color-white);
 	padding: 10px;
 	display: block;
-	border-bottom: 1px solid #666;
 	transition: 0.5s all;
 	cursor: pointer;
 }
 .menu a:hover {
-	background: #48505A;
+	background-color: var(--color-blue-light);
+	border-bottom: none;
 	padding: 10px 0 10px 20px;
-	color: #fff;
+	color: var(--color-white);
 	border-left: 4px solid var(--blue-color);
 }
 .menu li:first-child a, .menu li .v_menu li:first-child a{
@@ -552,7 +570,7 @@ ul{
 	transition: 0.5s opacity;
 }
 .v_menu a {
-	background-color: #48505A;
+    background-color: var(--color-blue-light);
 }
 .p_menu:hover .v_menu{
 	opacity: 1;
@@ -622,6 +640,9 @@ ul{
 #tabs.ui-widget.ui-widget-content {
 	border: none !important;
 }
+.ui-widget-content {
+    background-color: var(--color-white) !important;
+}
 #tabs.ui-tabs {
 	padding: 0 !important;
 }
@@ -629,7 +650,7 @@ ul{
 	border: none !important;
 }
 #tabs.ui-corner-all {
-	border-radius: none !important;
+	border-radius: 0 !important;
 }
 ul.ui-autocomplete {
     z-index: 1100 !important;
@@ -694,7 +715,7 @@ a, a:visited {
     text-decoration: underline;
   }
 a {
-	color: var(--link-dark-blue);
+    color: var(--color-blue);
 	text-decoration: none;
 	background-color: transparent;
 }
@@ -707,18 +728,15 @@ a:focus {
   outline-offset: -2px;
 }
 .logs_link, .accordion-link, .link {
-	color: var(--blue-color) !important;
+    color: var(--color-blue);
 	cursor: pointer;
 }
 .logs_link {
-	color: var(--link-dark-blue) !important;
+    color: var(--color-blue);
 }
 table {
-  	border-spacing: 0;
   	border-collapse: collapse;
   	background-color: transparent;
-	border-top: 1px solid #ddd;
-	border-radius: var(--border-radius);
   	width: 100%;
 	font-size: 1.1em;
 }
@@ -735,7 +753,7 @@ td,th {
   min-width: 25px;
 }
 .odd:hover, .even:hover {
-    background-color: var(--light-blue-color);
+    background-color: var(--color-white);
 }
 .row {
   margin-right: -15px;
@@ -811,10 +829,10 @@ label {
   padding-right: 10px;
 }
 .odd {
-	background-color: white;
+	background-color: var(--color-white);
 }
 .even {
-	background-color: #f3f8fb;
+    background-color: var(--color-gray);
 }
 #up-pannel {
 	margin-top: var(--indent);
@@ -822,11 +840,11 @@ label {
 .div-server, .div-server-hapwi, .bin_bout {
 	background-color: #fbfbfb;
 	border: 1px solid var(--border-color);
-	border-radius: var(--border-radius);
+	border-radius: var(--big-border-radius);
 	height: 165px;
-	width: 400px;
+	width: 300px;
 	padding: 10px 15px 20px;
-	margin: 0 5px 20px 20px;
+	margin: 0 5px 20px var(--indent);
 	display: block;
 	float: left;
 }
@@ -834,13 +852,13 @@ label {
 	height: 95px;
 }
 .div-server-head-up {
-	border-top: 3px solid var(--green-color) !important;
+	border-top: 3px solid var(--color-blue) !important;
 }
 .div-server-head-down {
-	border-top: 3px solid var(--red-color) !important;
+	border-top: 3px solid var(--color-blue-dark) !important;
 }
 .div-server-head-dis {
-	border-top: 3px solid #aaa !important;
+	border-top: 3px solid var(--color-dark-gray) !important;
 }
 .div-server-head-pause {
 	border-top: 3px solid orange !important;
@@ -850,6 +868,12 @@ label {
 }
 .div-server-head-up, .div-server-head-down, .div-server-head-dis, .div-server-head-pause, .div-server-head-unknown {
 	padding-top: 7px;
+}
+.overflow {
+	overflow: hidden;
+    display: inline-block;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .add-proxy-listen-head {
 	border-top: 3px solid #02869b;
@@ -934,6 +958,14 @@ label {
     padding-left: var(--indent);
     margin-left: var(--indent);
 }
+.overview-checks, .server-info {
+    background-color: var(--color-gray2);
+	border-radius: var(--big-border-radius);
+}
+.overview-small-table {
+    width: 22.5%;
+    min-width: 300px;
+}
 .top-info {
 	display: inline-block;
     width: 350px;
@@ -975,7 +1007,7 @@ label {
 	width: 330px;
 }
 #logo_sign {
-	margin-left: 38%;
+	margin-left: 37%;
     font-size: 25px;
     color: #fff;
     font-family: Roboto Bold;
@@ -1004,19 +1036,30 @@ label {
 	clear: both;
 }
 .group_name {
-	font-size: 18px;
-	padding: 10px 20px 0 0;
-	margin-bottom: var(--indent);
+    font-size: 18px;
+    padding: 10px 20px 15px 0;
+    margin-bottom: var(--indent);
+    border-bottom: 1px solid;
+    width: 90%;
 }
 .smon_services {
-	width: 360px;
-	height: 185px;
-	float: left;
-	background-color: #fbfbfb;;
-	margin: 10px 10px 10px 0;
-	padding-left: var(--indent);
-	padding-top: 0;
-	border: 1px solid var(--border-color);
+    width: 270px;
+    height: 180px;
+    float: left;
+    background-color: #F0F0F0;
+    margin: 10px 10px 10px 0;
+    padding-left: var(--indent);
+    padding-top: 0;
+    border: 1px solid var(--border-color);
+    border-radius: var(--big-border-radius);
+}
+.check-name-tile {
+    width: 165px;
+    overflow: hidden;
+    display: inline-block;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: -5px;
 }
 #good_services {
 	clear: both;
@@ -1045,33 +1088,41 @@ label {
 	height: 25px;
 }
 .up, .down, .disable, .unknown {
-	height: 45px;
+	height: 40px;
 	width: 96%;
-	font-size: 30px;
+	font-size: 25px;
 	color: #fff;
 	text-align: center;
-}
-.up {
-	color: #3c763d;
-	background-color: #dff0d8;
-	border-color: #d6e9c6;
+	border-radius: var(--big-border-radius);
+    padding-top: 4px;
 }
 .down {
-	color: var(--red-color);
-	background-color: #f2dede;
-	border-color: #ebccd1;
+    background-color: var(--color-blue-dark);
 }
-.unknown {
-	color: #856404;
-	background-color: #fff3cd;
-	border-color: #ffeeba;
+.up {
+    background-color: var(--color-blue);
 }
 .disable {
-	background-color: grey;
-	color: #aaa;
+    background-color: var(--color-dark-gray);
+}
+.unknown {
+	background-color: #939393;
 }
 .minus-style {
 	cursor: pointer;
+}
+.smon_group_switcher {
+    font-size: 15px;
+    margin-top: 6px;
+    display: block;
+    margin-left: 100%;
+    margin-bottom: -10px;
+}
+.add .fa-clone {
+    color: var(--color-blue);
+}
+.delete .fa-trash-alt {
+    color: var(--color-blue-dark);
 }
 @media (max-width: 1920px) {
   #logo_span {
@@ -1378,11 +1429,6 @@ label {
 	float: left;
 	width: 250px;
 	cursor: pointer;
-}
-.overflow {
-	overflow: hidden !important;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 .left-space {
 	margin-left: var(--indent) !important;

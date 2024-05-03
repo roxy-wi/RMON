@@ -6,7 +6,7 @@
         <span id="agent-name-{{agent.id}}">
             <a href="/rmon/agent/{{ agent.id }}" title="{{ lang.words.more|title }} {{ lang.words.info }}">{{agent.name.replace("'","")}}</a>
         </span>
-        <span id="agent-desc-{{agent.id}}">{% if agent.desc != '' %} ({{agent.desc.replace("'", "")}}) {% endif %}</span>
+        <span id="agent-desc-{{agent.id}}" class="overflow">{% if agent.desc != '' %} ({{agent.desc.replace("'", "")}}) {% endif %}</span>
         <span class="server-action">
             {% if g.user_params['role'] <= 3 %}
             <a id="start-{{ agent.id }}" class="start" title="{{lang.words.start|title()}}">
@@ -51,6 +51,8 @@
         getAgentVersion('{{ agent.ip }}', '{{ agent.id }}');
         getAgentStatus('{{ agent.ip }}', '{{ agent.id }}');
         getAgentTotalChecks('{{ agent.ip }}', '{{ agent.id }}');
+        setInterval(getAgentStatus, 60000, '{{agent.ip}}', '{{agent.id}}');
+        setInterval(getAgentTotalChecks, 60000, '{{agent.ip}}', '{{agent.id}}');
         getAgentUptime('{{ agent.ip }}', '{{ agent.id }}');
         $( function() {
             $('.copyToClipboard').hover(function () {

@@ -242,11 +242,11 @@ table.dataTable td {
       text-decoration: none !important;
       cursor: pointer;
       *cursor: hand;
-      color: #333333 !important;
+      color: #333333;
       border: 1px solid transparent;
       border-radius: 2px; }
       .dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
-        color: #333333 !important;
+        color: #333333;
         border: 1px solid #bbb;
         background-color: white;
         background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #f3f8fb));

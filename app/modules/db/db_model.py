@@ -312,6 +312,13 @@ class SmonHistory(BaseModel):
     status = IntegerField()
     mes = CharField()
     date = DateTimeField(default=datetime.now)
+    name_lookup = CharField(null=True)
+    connect = CharField(null=True)
+    app_connect = CharField(null=True)
+    pre_transfer = CharField(null=True)
+    redirect = CharField(null=True)
+    start_transfer = CharField(null=True)
+    download = CharField(null=True)
 
     class Meta:
         table_name = 'smon_history'
@@ -353,13 +360,6 @@ class SmonHttpCheck(BaseModel):
     agent_id = IntegerField(constraints=[SQL('DEFAULT 1')])
     headers = CharField(null=True)
     body_req = CharField(null=True)
-    name_lookup = CharField(null=True)
-    connect = CharField(null=True)
-    app_connect = CharField(null=True)
-    pre_transfer = CharField(null=True)
-    redirect = CharField(null=True)
-    start_transfer = CharField(null=True)
-    download = CharField(null=True)
 
     class Meta:
         table_name = 'smon_http_check'

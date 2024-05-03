@@ -1,8 +1,7 @@
 {% import 'languages/'+lang|default('en')+'.html' as lang %}
-<tr class="odd">
-</tr>
-<tr class="even">
-	<td class="padding10 first-collumn-wi">
+<tr class="odd"></tr>
+<tr>
+	<td class="padding10 first-collumn-wi" style="width: 100%;">
 		{% if roxy_tools_status['rmon-server'] == 'active' %}
 			<span class="serverUp server-status-small" title="RMON-server {{lang.words.started}}"></span>
 			<a href="{{ url_for('smon.smon_main_dashboard') }}" title="RMON Dashboard" class="logs_link">
@@ -22,6 +21,7 @@
 			{% endif %}
 		{% endif %}
 	</td>
+    <td></td>
 </tr>
 <tr class="odd">
 	<td class="padding10 first-collumn-wi">
@@ -48,4 +48,5 @@
 			{% endif %}
 		{% endif %}
 	</td>
+    <td></td>
 </tr>

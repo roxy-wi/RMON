@@ -1,4 +1,6 @@
+import logging
 import uuid
+import json
 
 import requests
 import app.modules.db.sql as sql
@@ -76,9 +78,18 @@ def delete_agent(agent_id: int):
 def update_agent(json_data):
     agent_id = int(json_data.get("agent_id"))
     name = common.checkAjaxInput(json_data.get("name"))
-    desc = common.checkAjaxInput(json_data.get("desc"))
-    enabled = int(json_data.get("enabled"))
-    reconfigure = int(json_data.get("reconfigure"))
+    try:
+        desc = common.checkAjaxInput(json_data.get("desc"))
+    except Exception as e:
+        raise Exception(f'error: Invalid description value: {e}')
+    try:
+        enabled = int(json_data.get("enabled"))
+    except Exception as e:
+        raise Exception(f'error: Invalid enabled value: {e}')
+    try:
+        reconfigure = int(json_data.get("reconfigure"))
+    except Exception:
+        reconfigure = 0
 
     try:
         smon_sql.update_agent(agent_id, name, desc, enabled)
@@ -157,7 +168,7 @@ def send_tcp_checks(agent_id: int, server_ip: str) -> None:
         try:
             send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
         except Exception as e:
-            raise Exception(f'{e}')
+            roxywi_common.handle_exceptions(e, 'RMON', 'Cannot send TCP check')
 
 
 def send_ping_checks(agent_id: int, server_ip: str) -> None:
@@ -174,7 +185,7 @@ def send_ping_checks(agent_id: int, server_ip: str) -> None:
         try:
             send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
         except Exception as e:
-            raise Exception(f'{e}')
+            roxywi_common.handle_exceptions(e, 'RMON', 'Cannot send PING check')
 
 
 def send_dns_checks(agent_id: int, server_ip: str) -> None:
@@ -193,7 +204,7 @@ def send_dns_checks(agent_id: int, server_ip: str) -> None:
         try:
             send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
         except Exception as e:
-            raise Exception(f'{e}')
+            roxywi_common.handle_exceptions(e, 'RMON', 'Cannot send DNS check')
 
 
 def send_http_checks(agent_id: int, server_ip: str) -> None:
@@ -207,11 +218,15 @@ def send_http_checks(agent_id: int, server_ip: str) -> None:
             'body': check.body,
             'interval': check.interval
         }
+        if check.body_req:
+            json_data['body_req'] = json.loads(check.body_req)
+        else:
+            json_data['body_req'] = ''
         api_path = f'check/{check.smon_id}'
         try:
             send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
         except Exception as e:
-            raise Exception(f'{e}')
+            roxywi_common.handle_exceptions(e, 'RMON', 'Cannot send HTTP check')
 
 
 def send_checks(agent_id: int) -> None:

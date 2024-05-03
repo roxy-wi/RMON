@@ -17,6 +17,16 @@ def get_agents(group_id: int):
 		out_error(e)
 
 
+def get_enabled_agents(group_id: int):
+	try:
+		return SmonAgent.select(SmonAgent, Server).join(Server).where(
+			(Server.groups == group_id) &
+			(SmonAgent.enabled == True)
+		).objects().execute()
+	except Exception as e:
+		out_error(e)
+
+
 def get_free_servers_for_agent(group_id: int):
 	try:
 		query = Server.select().where(
@@ -187,11 +197,25 @@ def add_sec_to_state_time(time, smon_id):
 		out_error(e)
 
 
-def insert_smon_history(smon_id: int, resp_time: float, status: int, check_id: int, mes='') -> None:
+def insert_smon_history(smon_id: int, resp_time: float, status: int, check_id: int, mes='') -> datetime:
 	get_date = roxy_wi_tools.GetDate()
 	cur_date = get_date.return_date('regular')
 	try:
 		SmonHistory.insert(smon_id=smon_id, response_time=resp_time, status=status, date=cur_date, check_id=check_id, mes=mes).execute()
+	except Exception as e:
+		out_error(e)
+	return cur_date
+
+
+def insert_smon_history_http_metrics(date, **kwargs) -> None:
+	print(date, kwargs)
+	try:
+		query = (SmonHistory.update(kwargs).where(
+			(SmonHistory.date == date) &
+			(SmonHistory.smon_id == kwargs.get('check_id'))
+		))
+		print(query)
+		query.execute()
 	except Exception as e:
 		out_error(e)
 
@@ -248,9 +272,11 @@ def insert_smon_dns(smon_id: int, hostname: str, port: int, resolver: str, recor
 		out_error(e)
 
 
-def insert_smon_http(smon_id, url, body, http_method, interval, agent_id):
+def insert_smon_http(smon_id, url, body, http_method, interval, agent_id, body_req):
 	try:
-		SmonHttpCheck.insert(smon_id=smon_id, url=url, body=body, method=http_method, interval=interval, agent_id=agent_id).execute()
+		SmonHttpCheck.insert(
+			smon_id=smon_id, url=url, body=body, method=http_method, interval=interval, agent_id=agent_id, body_req=body_req
+		).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -293,23 +319,6 @@ def select_smon_dns():
 
 def select_smon_by_id(last_id):
 	query = SMON.select().where(SMON.id == last_id)
-	try:
-		query_res = query.execute()
-	except Exception as e:
-		out_error(e)
-	else:
-		return query_res
-
-
-def select_smon_check_by_id(last_id, check_type):
-	if check_type == 'ping':
-		query = SmonPingCheck.select().where(SmonPingCheck.smon_id == last_id)
-	elif check_type == 'tcp':
-		query = SmonTcpCheck.select().where(SmonTcpCheck.smon_id == last_id)
-	elif check_type == 'dns':
-		query = SmonDnsCheck.select().where(SmonDnsCheck.smon_id == last_id)
-	else:
-		query = SmonHttpCheck.select().where(SmonHttpCheck.smon_id == last_id)
 	try:
 		query_res = query.execute()
 	except Exception as e:
@@ -502,10 +511,10 @@ def get_smon_service_name_by_id(smon_id: int) -> str:
 			return ''
 
 
-def select_smon_history(smon_id: int) -> object:
+def select_smon_history(smon_id: int, limit: int = 40) -> object:
 	query = SmonHistory.select().where(
 		SmonHistory.smon_id == smon_id
-	).limit(40).order_by(SmonHistory.date.desc())
+	).limit(limit).order_by(SmonHistory.date.desc())
 	try:
 		query_res = query.execute()
 	except Exception as e:
@@ -526,9 +535,11 @@ def update_smon(smon_id, name, telegram, slack, pd, mm, group_id, desc, en):
 		return False
 
 
-def update_smonHttp(smon_id, url, body, method, interval, agent_id):
+def update_smonHttp(smon_id, url, body, method, interval, agent_id, body_req):
 	try:
-		SmonHttpCheck.update(url=url, body=body, method=method, interval=interval, agent_id=agent_id).where(SmonHttpCheck.smon_id == smon_id).execute()
+		SmonHttpCheck.update(
+			url=url, body=body, method=method, interval=interval, agent_id=agent_id, body_req=body_req
+		).where(SmonHttpCheck.smon_id == smon_id).execute()
 		return True
 	except Exception as e:
 		out_error(e)

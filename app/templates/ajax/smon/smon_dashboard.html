@@ -12,7 +12,7 @@
             // без отступов
             rootMargin: '0px',
             // процент пересечения - половина изображения
-            threshold: 0.5
+            threshold: 0.1
         }
 
         // создаем наблюдатель
@@ -40,7 +40,7 @@
     }
 </script>
 <div class="sort_menu">
-    <div style="margin-bottom: 15px">
+    <div style="margin-bottom: 15px;font-size: 15px;">
 		{% set down = [] %}
 		{% set up = [] %}
 		{% set dis = [] %}
@@ -55,7 +55,10 @@
 				{% if dis.append(s.group) %} {% endif %}
 			{% endif %}
 		{% endfor %}
-		<b>{{lang.smon_page.desc.status_summary}}: {{lang.smon_page.desc.UP}}: {{up|length}}, {{lang.smon_page.desc.DOWN}}: {{down|length}}, {{lang.words.disabled|title()}}: {{dis|length}}</b>
+		{{lang.smon_page.desc.status_summary}}:
+        <i class="fas fa-arrow-up" style="color: var(--color-blue);"></i> {{lang.smon_page.desc.UP}}: {{up|length}},
+        <i class="fas fa-arrow-down" style="color: var(--color-blue-dark);"></i> {{lang.smon_page.desc.DOWN}}: {{down|length}},
+        <i class="fas fa-times" style="color: var(--color-dark-gray)"></i> {{lang.words.disabled|title()}}: {{dis|length}}
     </div>
     <a title="{{lang.smon_page.desc.do_not_sort_by_status}}" style="cursor: pointer" onclick="showSmon('not_sort')">{{lang.smon_page.desc.do_not_sort}}</a> |
     <a id="sort_by_status" title="{{lang.smon_page.desc.sort_status}}" style="cursor: pointer" onclick="sort_by_status()">{{lang.smon_page.desc.sort_status}}</a> |

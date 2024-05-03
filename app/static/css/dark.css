@@ -1,0 +1,70 @@
+:root {
+    --color-white: #00243E;
+    --color-grey: #002F51;
+    --color-grey2: #002F51;
+    --color-blue-dark: #002F51;
+}
+body {
+    color: #fff;
+}
+.menu a, .menu a:hover, .menu a:visited, .desc, .res_time, #version a, .server-desc, .overview-check, .form-control, h3, .ui-widget-content a, .alert-info {
+    color: #fff !important;
+}
+.smon_services, .div-server, .div-server-hapwi, .bin_bout, .overview-checks, .server-info {
+    background-color: var(--color-grey);
+}
+.delete .fa-trash-alt {
+    color: var(--color-blue);
+}
+table.dataTable.stripe tbody tr.odd, table.dataTable.display tbody tr.odd {
+    background-color: var(--color-grey) !important;
+}
+table.dataTable tbody tr {
+    background-color: var(--color-blue-) !important;
+}
+.overviewHead, .even, .odd:hover, .even:hover, h3 {
+    background-color: var(--color-blue-light);
+}
+.overview-wi .overviewHead {
+    background-color: var(--color-blue-dark);
+}
+.dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_processing, .dataTables_wrapper .dataTables_paginate {
+    color: #fff !important;
+}
+table.dataTable.display tbody tr.odd > .sorting_1, table.dataTable.order-column.stripe tbody tr.odd > .sorting_1 {
+    background-color: var(--color-blue-light) !important;
+}
+table.dataTable.display tbody tr.even > .sorting_1, table.dataTable.order-column.stripe tbody tr.even > .sorting_1 {
+    background-color: var(--color-blue-light) !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.current, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    background: var(--color-blue-dark) !important;
+    color: #fff !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    color: #fff !important;
+}
+.page_div {
+    background-color: var(--color-blue-light);
+}
+.page_div:hover {
+    background-color: var(--color-blue) !important;
+}
+.page_link {
+    color: #fff !important;
+}
+.ui-state-default a, .ui-state-default a:link, .ui-state-default a:visited, a.ui-button, a:link.ui-button, a:visited.ui-button, .ui-button {
+    color: #fff !important;
+}
+.ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default, .ui-button, html .ui-button.ui-state-disabled:hover, html .ui-button.ui-state-disabled:active {
+    background: var(--color-blue-dark) !important;
+}
+.addName {
+    background-color: unset;
+}
+.disable {
+    background-color: #11212C;
+}
+.down {
+    background-color: #00243E;
+}
