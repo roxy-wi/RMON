@@ -106,7 +106,6 @@
     $(document).ready(function() {
         $("time.timeago").timeago();
     })
-    setInterval(getSmonCheck, 60000, '{{ s.smon_id.id }}', '{{ check_type_id }}')
 </script>
 </div>
 {%- endfor -%}

@@ -269,23 +269,26 @@ function cloneSmom(id, check_type) {
 	getCheckSettings(id, check_type);
 	openSmonDialog(check_type);
 }
-function getSmonCheck(smon_id, check_id, dialog_id, new_check=false) {
+function getSmonCheck(smon_id, check_id, dialog_id, new_check=false, intervaled=false) {
 	$.ajax({
 		url: "/rmon/check/" + smon_id + "/" + check_id,
 		type: "get",
 		success: function (data) {
 			if (new_check) {
-				if ( !$( "#dashboards" ).length ) {
+				if (!$("#dashboards").length) {
 					location.reload();
+					$(dialog_id).dialog("close");
 				}
 				$('#dashboards').prepend(data);
 			} else {
 				$('#smon-' + smon_id).replaceWith(data);
 			}
-			$(dialog_id).dialog("close");
 			$.getScript("/static/js/fontawesome.min.js");
 		}
 	});
+	if (!intervaled) {
+		setInterval(getSmonCheck, 60000, smon_id, check_id, '', false, true);
+	}
 }
 function check_and_clear_check_type(check_type) {
 	if (check_type === 'http') {
