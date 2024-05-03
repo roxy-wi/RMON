@@ -14,6 +14,7 @@ import app.modules.roxywi.common as roxywi_common
 import app.modules.server.ssh as ssh_mod
 import app.modules.server.server as server_mod
 import app.modules.tools.smon as smon_mod
+from app.middleware import get_user_params
 
 error_mess = roxywi_common.return_error_message()
 
@@ -52,7 +53,8 @@ def show_if(server_ip):
     return server_mod.ssh_command(server_ip, command)
 
 
-@bp.route('/create', methods=['POST'])
+@bp.post('/create')
+@get_user_params()
 def create_server():
     roxywi_auth.page_for_admin(level=2)
     hostname = common.checkAjaxInput(request.form.get('servername'))
