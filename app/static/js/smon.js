@@ -282,6 +282,7 @@ function getSmonCheck(smon_id, check_id, dialog_id, new_check=false, intervaled=
 				$('#dashboards').prepend(data);
 			} else {
 				$('#smon-' + smon_id).replaceWith(data);
+				$(dialog_id).dialog("close");
 			}
 			$.getScript("/static/js/fontawesome.min.js");
 		}
