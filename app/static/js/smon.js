@@ -277,18 +277,17 @@ function getSmonCheck(smon_id, check_id, dialog_id, new_check=false, intervaled=
 			if (new_check) {
 				if (!$("#dashboards").length) {
 					location.reload();
-					$(dialog_id).dialog("close");
 				}
 				$('#dashboards').prepend(data);
 			} else {
 				$('#smon-' + smon_id).replaceWith(data);
-				$(dialog_id).dialog("close");
 			}
 			$.getScript("/static/js/fontawesome.min.js");
 		}
 	});
 	if (!intervaled) {
 		setInterval(getSmonCheck, 60000, smon_id, check_id, '', false, true);
+		$(dialog_id).dialog("close");
 	}
 }
 function check_and_clear_check_type(check_type) {
