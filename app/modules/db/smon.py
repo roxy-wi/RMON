@@ -208,13 +208,11 @@ def insert_smon_history(smon_id: int, resp_time: float, status: int, check_id: i
 
 
 def insert_smon_history_http_metrics(date, **kwargs) -> None:
-	print(date, kwargs)
 	try:
 		query = (SmonHistory.update(kwargs).where(
 			(SmonHistory.date == date) &
-			(SmonHistory.smon_id == kwargs.get('check_id'))
+			(SmonHistory.smon_id == kwargs.get('smon_id'))
 		))
-		print(query)
 		query.execute()
 	except Exception as e:
 		out_error(e)

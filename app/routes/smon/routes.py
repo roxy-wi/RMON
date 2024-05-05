@@ -408,9 +408,14 @@ def smon_history_metric_chart(check_id, check_type_id):
             json_metric = {}
             chart_metrics = smon_sql.select_smon_history(check_id, 1)
             uptime = smon_mod.check_uptime(check_id)
-            avg_res_time = round(smon_sql.get_avg_resp_time(check_id, check_type_id), 2)
             smon = smon_sql.select_one_smon(check_id, check_type_id)
             agents = smon_sql.get_agents(g.user_params['group_id'])
+
+            try:
+                avg_res_time = round(smon_sql.get_avg_resp_time(check_id, check_type_id), 2)
+            except Exception as e:
+                avg_res_time = 0
+                roxywi_common.logging('RMON', f'Failed to get avg resp time: {e}')
 
             for s in smon:
                 json_metric['updated_at'] = common.get_time_zoned_date(s.smon_id.updated_at)

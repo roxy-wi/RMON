@@ -1329,10 +1329,18 @@ function stream_chart(chart_id, check_id, check_type_id) {
         if (chart_id.data.labels.length >= 40) {
             chart_id.data.labels.shift();
             chart_id.data.datasets[0].data.shift();
+			if (check_type_id === '2') {
+				chart_id.data.datasets[1].data.shift();
+				chart_id.data.datasets[2].data.shift();
+				chart_id.data.datasets[3].data.shift();
+				chart_id.data.datasets[4].data.shift();
+				chart_id.data.datasets[5].data.shift();
+				chart_id.data.datasets[6].data.shift();
+			}
         }
         chart_id.data.labels.push(data.time);
         chart_id.data.datasets[0].data.push(data.value);
-        if (check_type_id == 2) {
+        if (check_type_id === '2') {
             chart_id.data.datasets[1].data.push(data.name_lookup);
             chart_id.data.datasets[2].data.push(data.connect);
             chart_id.data.datasets[3].data.push(data.app_connect);
@@ -1340,8 +1348,9 @@ function stream_chart(chart_id, check_id, check_type_id) {
             chart_id.data.datasets[5].data.push(data.redirect);
             chart_id.data.datasets[6].data.push(data.download);
         }
-		if (data.status === "1") {
-			chart_id.data.datasets[0].fillColor = 'rgba(255, 99, 132)';
+		if (data.status === "0") {
+			chart_id.data.datasets[0].fillColor = 'rgb(239,5,59)';
+			chart_id.data.datasets[1].fillColor = 'rgb(239,5,59)';
 		}
         chart_id.update();
 		update_cur_statues(check_id, data);
