@@ -50,7 +50,7 @@ def create_smon(json_data, user_group, show_new=1) -> bool:
     else:
         smon_group_id = None
 
-    last_id = smon_sql.insert_smon(name, enable, smon_group_id, desc, telegram, slack, pd, mm, user_group, check_type)
+    last_id = smon_sql.insert_smon(name, enable, smon_group_id, desc, telegram, slack, pd, mm, user_group, check_type, timeout)
 
     if check_type == 'ping':
         smon_sql.insert_smon_ping(last_id, hostname, packet_size, interval, agent_id)
