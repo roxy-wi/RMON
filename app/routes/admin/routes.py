@@ -105,7 +105,7 @@ def update_tools(service):
     try:
         return tools_common.update_roxy_wi(service)
     except Exception as e:
-        return f'error: {e}'
+        return f'{e}'
 
 
 @bp.route('/tools/action/<service>/<action>')

@@ -29,7 +29,7 @@ def update_roxy_wi(service: str) -> str:
     restart_service = ''
     services = roxy_sql.get_roxy_tools()
 
-    if service not in services:
+    if service not in services and service != 'rmon':
         raise Exception(f'error: {service} is not part of RMON')
 
     if service != 'rmon':

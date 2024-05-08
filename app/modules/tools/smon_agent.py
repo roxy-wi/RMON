@@ -52,7 +52,7 @@ def add_agent(data) -> int:
         'server_id': server_id,
         'desc': common.checkAjaxInput(data.get("desc")),
         'enabled': int(data.get("enabled")),
-        'agent_uuid': agent_uuid,
+        'uuid': agent_uuid,
         'shared': int(data.get("shared"))
     }
 
