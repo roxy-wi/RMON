@@ -11,7 +11,7 @@ import app.modules.roxywi.common as roxywi_common
 from app.modules.service.installation import run_ansible
 
 
-def generate_agent_inc(server_ip: str, action: str, agent_uuid: uuid) -> object:
+def generate_agent_inv(server_ip: str, action: str, agent_uuid: uuid) -> object:
     agent_port = sql.get_setting('agent_port')
     master_port = sql.get_setting('master_port')
     master_ip = sql.get_setting('master_ip')
@@ -43,33 +43,38 @@ def check_agent_limit():
 
 
 def add_agent(data) -> int:
-    name = common.checkAjaxInput(data.get("name"))
     server_id = int(data.get("server_id"))
     server_ip = server_sql.select_server_ip_by_id(server_id)
-    desc = common.checkAjaxInput(data.get("desc"))
-    enabled = int(data.get("enabled"))
     agent_uuid = str(uuid.uuid4())
     check_agent_limit()
+    agent_kwargs = {
+        'name': common.checkAjaxInput(data.get("name")),
+        'server_id': server_id,
+        'desc': common.checkAjaxInput(data.get("desc")),
+        'enabled': int(data.get("enabled")),
+        'agent_uuid': agent_uuid,
+        'shared': int(data.get("shared"))
+    }
 
     try:
-        inv, server_ips = generate_agent_inc(server_ip, 'install', agent_uuid)
+        inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid)
         run_ansible(inv, server_ips, 'rmon_agent')
     except Exception as e:
-        roxywi_common.handle_exceptions(e, server_ip, 'Cannot install RMON agent', roxywi=1, login=1)
+        roxywi_common.handle_exceptions(e, server_ip, 'Cannot install RMON agent', login=1)
 
     try:
-        last_id = smon_sql.add_agent(name, server_id, desc, enabled, agent_uuid)
-        roxywi_common.logging(server_ip, 'A new RMON agent has been created', roxywi=1, login=1, keep_history=1, service='RMON')
+        last_id = smon_sql.add_agent(**agent_kwargs)
+        roxywi_common.logging(server_ip, 'A new RMON agent has been created', login=1, keep_history=1, service='RMON')
         return last_id
     except Exception as e:
-        roxywi_common.handle_exceptions(e, 'RMON server', 'Cannot create Agent', roxywi=1, login=1)
+        roxywi_common.handle_exceptions(e, 'RMON server', 'Cannot create Agent', login=1)
 
 
 def delete_agent(agent_id: int):
     server_ip = smon_sql.get_agent_ip_by_id(agent_id)
     agent_uuid = ''
     try:
-        inv, server_ips = generate_agent_inc(server_ip, 'uninstall', agent_uuid)
+        inv, server_ips = generate_agent_inv(server_ip, 'uninstall', agent_uuid)
         run_ansible(inv, server_ips, 'rmon_agent')
     except Exception as e:
         roxywi_common.handle_exceptions(e, server_ip, 'Cannot uninstall RMON agent', roxywi=1, login=1)
@@ -87,12 +92,16 @@ def update_agent(json_data):
     except Exception as e:
         raise Exception(f'error: Invalid enabled value: {e}')
     try:
+        shared = int(json_data.get("shared"))
+    except Exception as e:
+        raise Exception(f'error: Invalid shared value: {e}')
+    try:
         reconfigure = int(json_data.get("reconfigure"))
     except Exception:
         reconfigure = 0
 
     try:
-        smon_sql.update_agent(agent_id, name, desc, enabled)
+        smon_sql.update_agent(agent_id, name, desc, enabled, shared)
     except Exception as e:
         roxywi_common.handle_exceptions(e, 'RMON server', f'Cannot update RMON agent: {agent_id}', roxywi=1, login=1)
 
@@ -100,7 +109,7 @@ def update_agent(json_data):
         agent_uuid = smon_sql.get_agent_uuid(agent_id)
         server_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
         try:
-            inv, server_ips = generate_agent_inc(server_ip, 'install', agent_uuid)
+            inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid)
             run_ansible(inv, server_ips, 'rmon_agent')
         except Exception as e:
             roxywi_common.handle_exceptions(e, server_ip, 'Cannot reconfigure RMON agent', roxywi=1, login=1)
@@ -162,7 +171,8 @@ def send_tcp_checks(agent_id: int, server_ip: str) -> None:
             'name': check.smon_id.name,
             'server_ip': check.ip,
             'port': check.port,
-            'interval': check.interval
+            'interval': check.interval,
+            'timeout': check.smon_id.check_timeout
         }
         api_path = f'check/{check.smon_id}'
         try:
@@ -179,7 +189,8 @@ def send_ping_checks(agent_id: int, server_ip: str) -> None:
             'name': check.smon_id.name,
             'server_ip': check.ip,
             'packet_size': check.packet_size,
-            'interval': check.interval
+            'interval': check.interval,
+            'timeout': check.smon_id.check_timeout
         }
         api_path = f'check/{check.smon_id}'
         try:
@@ -198,7 +209,8 @@ def send_dns_checks(agent_id: int, server_ip: str) -> None:
             'port': check.port,
             'record_type': check.record_type,
             'resolver': check.resolver,
-            'interval': check.interval
+            'interval': check.interval,
+            'timeout': check.smon_id.check_timeout
         }
         api_path = f'check/{check.smon_id}'
         try:
@@ -216,7 +228,8 @@ def send_http_checks(agent_id: int, server_ip: str) -> None:
             'url': check.url,
             'http_method': check.method,
             'body': check.body,
-            'interval': check.interval
+            'interval': check.interval,
+            'timeout': check.smon_id.check_timeout
         }
         if check.body_req:
             json_data['body_req'] = json.loads(check.body_req)

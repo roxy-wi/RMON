@@ -32,6 +32,7 @@ def create_smon(json_data, user_group, show_new=1) -> bool:
         agent_id = common.checkAjaxInput(json_data['agent_id'])
         check_type = common.checkAjaxInput(json_data['check_type'])
         body_req = common.checkAjaxInput(json_data['body_req'])
+        timeout = int(json_data['timeout'])
     except Exception as e:
         roxywi_common.handle_exceptions(e, 'RMON server', 'Cannot parse check parameters')
 
@@ -97,6 +98,7 @@ def update_smon(smon_id, json_data, user_group) -> str:
     agent_id = common.checkAjaxInput(json_data['agent_id'])
     check_type = common.checkAjaxInput(json_data['check_type'])
     body_req = json.dumps(json_data['body_req'])
+    timeout = int(json_data['timeout'])
     is_edited = False
 
     try:
@@ -119,7 +121,7 @@ def update_smon(smon_id, json_data, user_group) -> str:
         smon_group_id = None
 
     try:
-        if smon_sql.update_smon(smon_id, name, telegram, slack, pd, mm, smon_group_id, desc, enabled):
+        if smon_sql.update_smon(smon_id, name, telegram, slack, pd, mm, smon_group_id, desc, enabled, timeout):
             if check_type == 'http':
                 is_edited = smon_sql.update_smonHttp(smon_id, url, body, http_method, interval, agent_id, body_req)
             elif check_type == 'tcp':
@@ -152,9 +154,17 @@ def _validate_smon_check(json_data):
     packet_size = common.checkAjaxInput(json_data['packet_size'])
     agent_id = common.checkAjaxInput(json_data['agent_id'])
     check_type = common.checkAjaxInput(json_data['check_type'])
+    timeout = int(json_data['timeout'])
 
     if agent_id == '':
         raise Exception('warning: Select an Agent first')
+
+    if timeout < 1:
+        raise Exception('warning: Timeout cannot be less than 1 second')
+    elif timeout > 59:
+        raise Exception('warning: Timeout cannot be more than 59 seconds')
+    elif timeout >= int(json_data['interval']):
+        raise Exception('warning: Timeout cannot be greater than or equal to interval')
 
     if check_type == 'tcp':
         try:
@@ -391,3 +401,21 @@ def get_ssl_expire_date(date: int) -> int:
 def return_check_name_by_id(check_id: int) -> str:
     check_types = {1: 'tcp', 2: 'http', 4: 'ping', 5: 'dns'}
     return check_types[check_id]
+
+
+def get_average_response_time(check_id: int, check_type_id: int) -> float:
+    """
+    Get the average response time for a given check ID and check type ID.
+
+    Parameters:
+    - check_id (int): The ID of the check.
+    - check_type_id (int): The ID of the check type.
+
+    Returns:
+    - float: The average response time in seconds.
+    """
+    try:
+        return round(smon_sql.get_avg_resp_time(check_id, check_type_id), 2)
+    except Exception as e:
+        roxywi_common.logging('RMON', f'Failed to get avg resp time: {e}')
+        return 0

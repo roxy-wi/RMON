@@ -7,23 +7,25 @@
             <a href="/rmon/agent/{{ agent.id }}" title="{{ lang.words.more|title }} {{ lang.words.info }}">{{agent.name.replace("'","")}}</a>
         </span>
         <span id="agent-desc-{{agent.id}}" class="overflow">{% if agent.desc != '' %} ({{agent.desc.replace("'", "")}}) {% endif %}</span>
+    {% if g.user_params['group_id']|string() == agent.groups|string() or g.user_params['role'] == 1 %}
         <span class="server-action">
             {% if g.user_params['role'] <= 3 %}
-            <a id="start-{{ agent.id }}" class="start" title="{{lang.words.start|title()}}">
-                <span class="service-start" onclick="confirmAjaxAction('start', '{{agent.id}}', '{{ agent.ip }}')"></span>
-            </a>
-            <a id="reload-{{ agent.id }}" class="reload" title="{{lang.words.restart|title()}}">
-                <span class="service-reload" onclick="confirmAjaxAction('restart', '{{agent.id}}', '{{ agent.ip }}')"></span>
-            </a>
-            <a id="stop-{{ agent.id }}" class="stop" title="{{lang.words.stop|title()}}">
-                <span class="service-stop" onclick="confirmAjaxAction('stop', '{{agent.id}}', '{{ agent.ip }}', '{{ agent.ip }}')"></span>
-            </a>
+                <a id="start-{{ agent.id }}" class="start" title="{{lang.words.start|title()}}">
+                    <span class="service-start" onclick="confirmAjaxAction('start', '{{agent.id}}', '{{ agent.ip }}')"></span>
+                </a>
+                <a id="reload-{{ agent.id }}" class="reload" title="{{lang.words.restart|title()}}">
+                    <span class="service-reload" onclick="confirmAjaxAction('restart', '{{agent.id}}', '{{ agent.ip }}')"></span>
+                </a>
+                <a id="stop-{{ agent.id }}" class="stop" title="{{lang.words.stop|title()}}">
+                    <span class="service-stop" onclick="confirmAjaxAction('stop', '{{agent.id}}', '{{ agent.ip }}', '{{ agent.ip }}')"></span>
+                </a>
             {% endif %}
             {% if g.user_params['role'] <= 2 %}
             <a class="edit" onclick="addAgentDialog('{{agent.id}}', true)"></a>
             <a class="delete" onclick="confirmDeleteAgent('{{agent.id}}')"></a>
             {% endif %}
         </span>
+    {% endif %}
     </div>
     <div class="server-desc">
         <div>
@@ -44,6 +46,9 @@
         </div>
         <div>
             <b>{{ lang.words.agent|title() }} ID</b>: {{ agent.id }}
+        </div>
+        <div>
+            <b>{{ lang.words.shared|title() }}</b>: {% if agent.shared %} {{ lang.words.yes|title() }} {% else %} {{ lang.words.no|title() }} {% endif %}
         </div>
     </div>
 </div>

@@ -6,6 +6,7 @@ from flask_login import login_required
 from app.routes.smon import bp
 from app.middleware import get_user_params
 import app.modules.db.smon as smon_sql
+import app.modules.db.server as server_sql
 import app.modules.common.common as common
 import app.modules.tools.smon_agent as smon_agent
 import app.modules.tools.common as tools_common
@@ -129,6 +130,7 @@ def get_agent_settings(agent_id):
         settings.setdefault('hostname', a.hostname)
         settings.setdefault('desc', a.desc)
         settings.setdefault('enabled', str(a.enabled))
+        settings.setdefault('shared', str(a.shared))
 
     return jsonify(settings)
 
@@ -187,15 +189,20 @@ def get_agent_checks(server_ip):
 
 @bp.post('/agent/action/<action>')
 @login_required
+@get_user_params()
 def agent_action(action):
     server_ip = common.is_ip_or_dns(request.form.get('server_ip'))
+    server_group_id = server_sql.get_server_group(server_ip)
 
     if action not in ('start', 'stop', 'restart'):
         return 'error: Wrong action'
 
+    if g.user_params['group_id'] != server_group_id and g.user_params['role'] > 1:
+        return 'error: Not authorized'
+
     try:
-        command = [f'sudo systemctl {action} rmon-agent']
-        server_mod.ssh_command(server_ip, command)
+        command = f'sudo systemctl {action} rmon-agent'
+        server_mod.ssh_command(server_ip, command, timeout=30)
     except Exception as e:
         return f'{e}'
     return 'ok'

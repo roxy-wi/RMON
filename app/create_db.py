@@ -133,7 +133,7 @@ def update_db_v_3_4_5_22():
 
 def update_ver():
 	try:
-		Version.update(version='1.0.3').execute()
+		Version.update(version='1.0.4').execute()
 	except Exception:
 		print('Cannot update version')
 
@@ -175,6 +175,19 @@ def update_db_v_1_0_3():
 		pass
 
 
+def update_db_v_1_0_4():
+	try:
+		migrate(
+			migrator.add_column('smon', 'check_timeout', IntegerField(default=2)),
+			migrator.add_column_default('smon', 'check_timeout', 2),
+		)
+	except Exception as e:
+		if e.args[0] == 'duplicate column name: check_timeout' or str(e) == '(1060, "Duplicate column name \'check_timeout\'")':
+			print('Updating... DB has been updated to version 1.0.4')
+		else:
+			print("An error occurred:", e)
+
+
 def check_ver():
 	try:
 		ver = Version.get()
@@ -189,6 +202,7 @@ def update_all():
 		update_db_v_3_4_5_22()
 	update_ver()
 	update_db_v_1_0_3()
+	update_db_v_1_0_4()
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@
 {% block content %}
 {% from 'include/input_macros.html' import input, select %}
 <script src="{{ url_for('static', filename='js/smon.js') }}"></script>
+<script src="{{ url_for('static', filename='js/agent.js') }}"></script>
 <script src="{{ url_for('static', filename='js/jquery.timeago.js') }}" type="text/javascript"></script>
 <link href="{{ url_for('static', filename='css/servers.css') }}" rel="stylesheet"/>
 <link href="{{ url_for('static', filename='css/smon.css') }}" rel="stylesheet"/>
@@ -53,6 +54,12 @@
                 <td class="padding20">{{lang.words.enable|title()}}</td>
                 <td>
                     {{ checkbox('new-agent-enabled', checked='checked') }}
+                </td>
+            </tr>
+            <tr>
+                <td class="padding20">{{lang.words.shared|title()}}</td>
+                <td>
+                    {{ checkbox('new-agent-shared') }}
                 </td>
             </tr>
             <tr>

@@ -29,17 +29,6 @@ def check_login(user_uuid, token) -> str:
     return 'login_page'
 
 
-# def is_access_permit_to_service(service: str) -> bool:
-#     service_id = service_sql.select_service_id_by_slug(service)
-#     user_uuid = request.cookies.get('uuid')
-#     user_id = user_sql.get_user_id_by_uuid(user_uuid)
-#     user_services = user_sql.select_user_services(user_id)
-#     if str(service_id) in user_services:
-#         return True
-#     else:
-#         return False
-
-
 def is_admin(level=1, **kwargs):
     if kwargs.get('role_id'):
         role = kwargs.get('role_id')

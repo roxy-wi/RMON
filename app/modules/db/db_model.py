@@ -245,6 +245,7 @@ class SMON(BaseModel):
     check_type = CharField(constraints=[SQL('DEFAULT "tcp"')])
     created_at = DateTimeField(default=datetime.now)
     updated_at = DateTimeField(default=datetime.now)
+    check_timeout = IntegerField(constraints=[SQL('DEFAULT 2')])
 
     class Meta:
         table_name = 'smon'

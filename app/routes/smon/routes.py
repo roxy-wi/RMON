@@ -78,11 +78,8 @@ def smon_dashboard(smon_id, check_id):
     roxywi_common.check_user_group_for_flask()
     smon = smon_sql.select_one_smon(smon_id, check_id)
     cert_day_diff = 'N/A'
+    avg_res_time = smon_mod.get_average_response_time(smon_id, check_id)
 
-    try:
-        avg_res_time = round(smon_sql.get_avg_resp_time(smon_id, check_id), 2)
-    except Exception:
-        avg_res_time = 0
     try:
         last_resp_time = round(smon_sql.get_last_smon_res_time_by_check(smon_id, check_id), 2)
     except Exception:
@@ -194,6 +191,7 @@ def check(smon_id, check_type_id):
             'pd': s.smon_id.pd_channel_id,
             'mm': s.smon_id.mm_channel_id,
             'check_type': s.smon_id.check_type,
+            'timeout': s.smon_id.check_timeout,
             'group': group_name,
         }
         if check_type_id in (1, 5):
@@ -402,7 +400,27 @@ def smon_history_metric(check_id, check_type_id):
 @bp.route('/history/metrics/stream/<int:check_id>/<int:check_type_id>')
 @get_user_params()
 def smon_history_metric_chart(check_id, check_type_id):
+    """
+    This method generates a streaming event chart for the history of a metric associated with a given check ID and check type ID.
+
+    Parameters:
+    - check_id (int): The ID of the check for which to generate the metric history chart.
+    - check_type_id (int): The ID of the check type for the given check.
+
+    Returns:
+    - A Flask Response object with the streaming event chart.
+    """
     def get_chart_data():
+        """
+        Return a generator that continuously yields chart data in JSON format for the specified check ID and check type ID.
+
+        Parameters:
+        - check_id (int): The ID of the check.
+        - check_type_id (int): The ID of the check type.
+
+        Returns:
+        A generator that yields chart data in the format of a JSON string.
+        """
         interval = 120
         while True:
             json_metric = {}
@@ -410,12 +428,7 @@ def smon_history_metric_chart(check_id, check_type_id):
             uptime = smon_mod.check_uptime(check_id)
             smon = smon_sql.select_one_smon(check_id, check_type_id)
             agents = smon_sql.get_agents(g.user_params['group_id'])
-
-            try:
-                avg_res_time = round(smon_sql.get_avg_resp_time(check_id, check_type_id), 2)
-            except Exception as e:
-                avg_res_time = 0
-                roxywi_common.logging('RMON', f'Failed to get avg resp time: {e}')
+            avg_res_time = smon_mod.get_average_response_time(check_id, check_type_id)
 
             for s in smon:
                 json_metric['updated_at'] = common.get_time_zoned_date(s.smon_id.updated_at)
@@ -435,7 +448,7 @@ def smon_history_metric_chart(check_id, check_type_id):
 
             for i in chart_metrics:
                 json_metric['time'] = common.get_time_zoned_date(i.date, '%H:%M:%S')
-                json_metric['value'] = str(i.response_time)
+                json_metric['value'] = "{:.3f}".format(i.response_time)
                 json_metric['status'] = str(i.status)
                 json_metric['mes'] = str(i.mes)
                 json_metric['uptime'] = uptime

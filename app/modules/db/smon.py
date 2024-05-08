@@ -12,7 +12,10 @@ import app.modules.roxy_wi_tools as roxy_wi_tools
 
 def get_agents(group_id: int):
 	try:
-		return SmonAgent.select(SmonAgent, Server).join(Server).where(Server.groups == group_id).objects().execute()
+		return SmonAgent.select(SmonAgent, Server).join(Server).where(
+			(Server.groups == group_id) |
+			(SmonAgent.shared == 1)
+		).objects().execute()
 	except Exception as e:
 		out_error(e)
 
@@ -21,7 +24,8 @@ def get_enabled_agents(group_id: int):
 	try:
 		return SmonAgent.select(SmonAgent, Server).join(Server).where(
 			(Server.groups == group_id) &
-			(SmonAgent.enabled == True)
+			(SmonAgent.enabled == True) |
+			(SmonAgent.shared == 1)
 		).objects().execute()
 	except Exception as e:
 		out_error(e)
@@ -58,9 +62,9 @@ def get_agent_id_by_check_id(check_id: int):
 	return query
 
 
-def add_agent(name: str, server_id: int, desc: str, enabled: int, agent_uuid: str) -> int:
+def add_agent(**kwargs) -> int:
 	try:
-		last_id = SmonAgent.insert(name=name, server_id=server_id, desc=desc, enabled=enabled, uuid=agent_uuid).execute()
+		last_id = SmonAgent.insert(kwargs).execute()
 		return last_id
 	except Exception as e:
 		out_error(e)
@@ -73,9 +77,9 @@ def delete_agent(agent_id: int):
 		out_error(e)
 
 
-def update_agent(agent_id: int, name: str, desc: str, enabled: int):
+def update_agent(agent_id: int, name: str, desc: str, enabled: int, shared: int):
 	try:
-		SmonAgent.update(name=name, desc=desc, enabled=enabled).where(SmonAgent.id == agent_id).execute()
+		SmonAgent.update(name=name, desc=desc, enabled=enabled, shared=shared).where(SmonAgent.id == agent_id).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -84,7 +88,7 @@ def get_agent_uuid(agent_id: int) -> uuid:
 	try:
 		return SmonAgent.get(SmonAgent.id == agent_id).uuid
 	except SmonAgent.DoesNotExist:
-		raise Exception('agent not found')
+		raise Exception('Agent not found')
 	except Exception as e:
 		out_error(e)
 
@@ -236,11 +240,11 @@ def select_one_smon(smon_id: int, check_id: int) -> tuple:
 		return query_res
 
 
-def insert_smon(name, enable, group_id, desc, telegram, slack, pd, mm, user_group, check_type):
+def insert_smon(name, enable, group_id, desc, telegram, slack, pd, mm, user_group, check_type, timeout):
 	try:
 		last_id = SMON.insert(
 			name=name, en=enable, desc=desc, group_id=group_id, telegram_channel_id=telegram, slack_channel_id=slack,
-			pd_channel_id=pd, mm_channel_id=mm, user_group=user_group, status='3', check_type=check_type
+			pd_channel_id=pd, mm_channel_id=mm, user_group=user_group, status='3', check_type=check_type, check_timeout=timeout
 		).execute()
 	except Exception as e:
 		out_error(e)
@@ -521,9 +525,10 @@ def select_smon_history(smon_id: int, limit: int = 40) -> object:
 		return query_res
 
 
-def update_smon(smon_id, name, telegram, slack, pd, mm, group_id, desc, en):
+def update_smon(smon_id, name, telegram, slack, pd, mm, group_id, desc, en, timeout):
 	query = (SMON.update(
-		name=name, telegram_channel_id=telegram, slack_channel_id=slack, pd_channel_id=pd, mm_channel_id=mm, group_id=group_id, desc=desc, en=en, updated_at=datetime.now()
+		name=name, telegram_channel_id=telegram, slack_channel_id=slack, pd_channel_id=pd, mm_channel_id=mm,
+		group_id=group_id, desc=desc, en=en, updated_at=datetime.now(), check_timeout=timeout
 	).where(SMON.id == smon_id))
 	try:
 		query.execute()

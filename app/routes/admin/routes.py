@@ -27,6 +27,11 @@ def before_request():
 @bp.route('')
 @get_user_params()
 def admin():
+    """
+    Renders the admin page with appropriate data.
+
+    :return: The rendered template for the admin page.
+    """
     roxywi_auth.page_for_admin(level=2)
     user_group = roxywi_common.get_user_group(id=1)
     if g.user_params['role'] == 1:
@@ -59,6 +64,20 @@ def admin():
 
 @bp.route('/tools')
 def show_tools():
+    """
+    Request handler for /tools route.
+
+    This method is responsible for rendering the tools page for superAdmin users.
+    It retrieves the user's preferred language and gets the status of services
+    from the tools_common module. The services status is then rendered using
+    the 'ajax/load_services.html' template.
+
+    Returns:
+        str: The rendered template.
+
+    Raises:
+        Exception: If an error occurs while retrieving the services status.
+    """
     roxywi_auth.page_for_admin()
     lang = roxywi_common.get_user_lang_for_flask()
     try:
@@ -71,6 +90,16 @@ def show_tools():
 
 @bp.route('/tools/update/<service>')
 def update_tools(service):
+    """
+    Updates the tools for the specified service.
+
+    Parameters:
+    - service: A string representing the service for which the tools need to be updated.
+
+    Returns:
+    - If the update is successful, the method returns the result of the update.
+    - If an error occurs during the update, the method returns an error message.
+    """
     roxywi_auth.page_for_admin()
 
     try:
@@ -81,6 +110,19 @@ def update_tools(service):
 
 @bp.route('/tools/action/<service>/<action>')
 def action_tools(service, action):
+    """
+    Perform an action on a service.
+
+    Parameters:
+    - service (str): The name of the service to perform the action on.
+    - action (str): The action to be performed on the service. It must be one of 'start', 'stop', or 'restart'.
+
+    Returns:
+    - The result of the action performed on the service.
+    Note:
+    - The 'roxywi_auth.page_for_admin()' function is called before performing the action to ensure that only superAdmin can access this endpoint.
+    - If the provided action is not one of 'start', 'stop', or 'restart', an error message will be returned.
+    """
     roxywi_auth.page_for_admin()
     if action not in ('start', 'stop', 'restart'):
         return 'error: wrong action'
@@ -90,6 +132,13 @@ def action_tools(service, action):
 
 @bp.route('/update')
 def update_roxywi():
+    """
+    This method is used to update the RMON platform. It retrieves the list of versions available for update, the status
+    of services running, and the user's preferred language for the Flask framework. It then renders the 'ajax/load_updateroxywi.html' template with the retrieved data.
+
+    Returns:
+        The rendered template with the services, versions, and language information.
+    """
     roxywi_auth.page_for_admin()
     versions = roxy.versions()
     services = tools_common.get_services_status()
@@ -102,6 +151,17 @@ def update_roxywi():
 
 @bp.route('/update/check')
 def check_update():
+    """
+    This method is responsible for checking the update of the system.
+    It performs the following steps:
+
+    1. Authenticates the user as an supeAadmin using the roxywi_auth.page_for_admin() method.
+    2. Runs the "check_new_version" job using the scheduler.run_job() method.
+    3. Returns the string 'ok' to indicate successful completion.
+
+    Returns:
+        str: A string 'ok' indicating successful completion.
+    """
     roxywi_auth.page_for_admin()
     scheduler.run_job('check_new_version')
     return 'ok'
@@ -109,6 +169,15 @@ def check_update():
 
 @bp.post('/setting/<param>')
 def update_settings(param):
+    """
+    Updates the specified setting with the given parameter value.
+
+    Parameters:
+    - param (str): The name of the setting to be updated.
+
+    Returns:
+    - str: A string indicating the success of the update.
+    """
     roxywi_auth.page_for_admin(level=2)
     val = request.form.get('val').replace('92', '/')
     user_group = roxywi_common.get_user_group(id=1)

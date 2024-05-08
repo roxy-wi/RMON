@@ -80,6 +80,15 @@
 				{{ input('new-smon-port', type='number', style="width: 240px;") }}
 			</td>
 		</tr>
+		<tr>
+			<td class="padding20">
+				{{lang.words.timeout|title()}}
+				<span class="need-field">*</span>
+			</td>
+			<td>
+				{{ input('new-smon-timeout', type='number', style="width: 240px;", value=2) }}
+			</td>
+		</tr>
 		<tr class="smon_http_check">
 			<td class="padding20">
 				URL
