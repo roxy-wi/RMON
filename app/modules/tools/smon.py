@@ -190,6 +190,7 @@ def create_check_json(json_data: dict) -> dict:
         'name': json_data['name'],
         'server_ip': json_data['ip'],
         'interval': json_data['interval'],
+        'timeout': json_data['timeout'],
     }
     if check_type == 'ping':
         check_json.setdefault('packet_size', json_data['packet_size'])
