@@ -4,7 +4,7 @@
     owner: "{{ansible_user}}"
     group: "{{ansible_user}}"
     state: directory
-  with_items:  ["/etc/rmon", "/var/lib/rmon", "/var/lib/rmon/rmon-agent", "/var/log/rmon"]
+  with_items:  ["/etc/rmon", "/var/lib/rmon", "/var/lib/rmon/rmon-agent", "/var/log/rmon", "/etc/pki/tls/certs"]
   ignore_errors: yes
 
 - name: Copy RMON Agent files
@@ -27,7 +27,6 @@
     - {file: "rsyslog.conf.j2", path: "/etc/rsyslog.d/rmon-agent.conf"}
   notify:
     - Restart rsyslog
-    - Restart RMON agent
 
 - name: Install requirements
   ansible.builtin.include_tasks: "{{ role_path }}/tasks/install-{{ ansible_facts['os_family'] | lower }}.yml"
@@ -37,8 +36,21 @@
     src: rmon-agent.cfg.j2
     dest: /etc/rmon/rmon-agent.cfg
     mode: 0644
-  notify:
-    - Restart RMON agent
+
+- name: Try to upgrade pip3
+  pip:
+    name: pycurl
+    executable: pip3
+    state: latest
+    extra_args: --upgrade
+  ignore_errors: yes
+
+- name: Try to copy ca cert
+  ansible.builtin.copy:
+    src: /etc/ssl/certs/ca-certificates.crt
+    dest: /etc/pki/tls/certs/ca-bundle.crt
+    remote_src: yes
+  ignore_errors: yes
 
 - name: Start and enable RMON Agent
   ansible.builtin.systemd:

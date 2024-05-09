@@ -27,15 +27,15 @@ def ssh_command(server_ip: str, commands: str, **kwargs):
 				stdin, stdout, stderr = ssh.run_command(command, timeout=timeout)
 				stdin.close()
 			except Exception as e:
-				roxywi_common.handle_exceptions(e, server_ip, 'Something wrong with SSH connection. Probably sudo with password', roxywi=1)
+				roxywi_common.handle_exceptions(e, server_ip, 'Something wrong with SSH connection. Probably sudo with password')
 
 			if stderr:
 				for line in stderr.readlines():
 					if line:
-						roxywi_common.handle_exceptions(line, server_ip, line, roxywi=1)
+						roxywi_common.handle_exceptions(line, server_ip, line)
 
 			if stdout.channel.recv_exit_status() and kwargs.get('rc'):
-				roxywi_common.handle_exceptions(stdout.read().decode('utf-8'), server_ip, f'Cannot perform SSH command: {command} ', roxywi=1)
+				roxywi_common.handle_exceptions(stdout.read().decode('utf-8'), server_ip, f'Cannot perform SSH command: {command} ')
 
 			if kwargs.get('raw'):
 				return stdout.readlines()
@@ -45,7 +45,7 @@ def ssh_command(server_ip: str, commands: str, **kwargs):
 			else:
 				return stdout.read().decode(encoding='UTF-8')
 	except Exception as e:
-		roxywi_common.handle_exceptions(e, server_ip, '', roxywi=1)
+		roxywi_common.handle_exceptions(e, server_ip, '')
 
 
 def subprocess_execute(cmd):
@@ -430,7 +430,7 @@ def delete_server(server_id: int) -> str:
 	if server_sql.delete_server(server_id):
 		history_sql.delete_action_history(server_id)
 		server_sql.delete_system_info(server_id)
-		roxywi_common.logging(server_ip, f'The server {hostname} has been deleted', roxywi=1, login=1)
+		roxywi_common.logging(server_ip, f'The server {hostname} has been deleted', login=1)
 		return 'Ok'
 
 

@@ -50,7 +50,7 @@ def versions():
 	except Exception as e:
 		new_ver = "Cannot get a new version"
 		new_ver_without_dots = 0
-		roxywi_common.logging('RMON server', f' {e}', roxywi=1)
+		roxywi_common.logging('RMON server', f' {e}')
 
 	return current_ver, new_ver, current_ver_without_dots, new_ver_without_dots
 
@@ -67,7 +67,7 @@ def check_new_version(service):
 
 		res = response.content.decode(encoding='UTF-8')
 	except requests.exceptions.RequestException as e:
-		roxywi_common.logging('RMON server', f' {e}', roxywi=1)
+		roxywi_common.logging('RMON server', f' {e}')
 
 	return res
 
@@ -89,7 +89,7 @@ def update_user_status() -> None:
 		status = roxy_wi_get_plan.json()
 		roxy_sql.update_user_status(status['status'], status['plan'], status['method'])
 	except Exception as e:
-		roxywi_common.logging('RMON server', f'error: Cannot get user status {e}', roxywi=1)
+		roxywi_common.logging('RMON server', f'error: Cannot get user status {e}')
 
 
 def action_service(action: str, service: str) -> str:
@@ -100,7 +100,7 @@ def action_service(action: str, service: str) -> str:
 	if is_in_docker:
 		cmd = f"sudo supervisorctl {action} {service}"
 	os.system(cmd)
-	roxywi_common.logging('RMON server', f' The service {service} has been {action}ed', roxywi=1, login=1)
+	roxywi_common.logging('RMON server', f' The service {service} has been {action}ed', login=1)
 	return 'ok'
 
 
