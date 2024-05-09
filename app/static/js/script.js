@@ -759,7 +759,10 @@ socket.onmessage = function(event) {
 	if (cur_url != 'login' && localStorage.getItem('disabled_alert') === null) {
 		data = event.data.split(";");
 		for (i = 0; i < data.length; i++) {
-			if (data[i].indexOf('error:') != '-1' || data[i].indexOf('alert') != '-1' || data[i].indexOf('FAILED') != '-1') {
+			if (data[i].indexOf('warning: ') != '-1') {
+				toastr.warning(data[i]);
+				ion.sound.play("bell_ring");
+			} else if (data[i].indexOf('error:') != '-1' || data[i].indexOf('alert') != '-1' || data[i].indexOf('FAILED') != '-1') {
 				if (data[i].indexOf('error: database is locked') == '-1') {
 					toastr.error(data[i]);
 					ion.sound.play("bell_ring");
@@ -770,9 +773,6 @@ socket.onmessage = function(event) {
 			} else if (data[i].indexOf('success: ') != '-1') {
 				toastr.success(data[i]);
 				ion.sound.play("glass");
-			} else if (data[i].indexOf('warning: ') != '-1') {
-				toastr.warning(data[i]);
-				ion.sound.play("bell_ring");
 			} else if (data[i].indexOf('critical: ') != '-1') {
 				toastr.error(data[i]);
 				ion.sound.play("bell_ring");
