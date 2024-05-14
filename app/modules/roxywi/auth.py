@@ -107,6 +107,9 @@ def do_login(user_uuid: str, user_group: str, user: str, next_url: str):
     except Exception:
         session_ttl = 5
 
+    if not session_ttl:
+        session_ttl = 5
+
     if next_url:
         redirect_to = f'https://{request.host}{next_url}'
     else:
