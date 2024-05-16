@@ -37,10 +37,9 @@ def create_user():
 
     if not roxywi_common.check_user_group_for_flask(token=token):
         return 'error: Wrong group'
-    if page == 'servers':
-        if roxywi_auth.is_admin(level=2, role_id=role):
-            roxywi_common.logging(new_user, ' tried to privilege escalation: user creation', roxywi=1, login=1)
-            return 'error: Wrong role'
+    if roxywi_auth.is_admin(level=2, role_id=role):
+        roxywi_common.logging(new_user, ' tried to privilege escalation: user creation', login=1)
+        return 'error: Wrong role'
     try:
         roxywi_user.create_user(new_user, email, password, role, activeuser, group)
     except Exception as e:
@@ -67,14 +66,14 @@ def update_user():
             if roxywi_auth.is_admin(level=role_id):
                 roxywi_user.update_user(email, new_user, user_id, enabled, group_id, role_id)
             else:
-                roxywi_common.logging(new_user, ' tried to privilege escalation', roxywi=1, login=1)
+                roxywi_common.logging(new_user, ' tried to privilege escalation', login=1)
                 return 'error: dalsd'
         else:
             try:
                 user_sql.update_user_from_admin_area(new_user, email, user_id, enabled)
             except Exception as e:
                 return f'error: Cannot update user: {e}'
-            roxywi_common.logging(new_user, ' has been updated user ', roxywi=1, login=1)
+            roxywi_common.logging(new_user, ' has been updated user ', login=1)
 
         return 'ok'
 
@@ -104,20 +103,17 @@ def update_password():
     return roxywi_user.update_user_password(password, uuid, user_id_from_get)
 
 
-@bp.route('/group/current')
+@bp.route('/group', methods=['GET', 'PUT'])
 def get_current_group():
-    uuid = request.cookies.get('uuid')
-    group = request.cookies.get('group')
+    if request.method == 'GET':
+        uuid = common.checkAjaxInput(request.cookies.get('uuid'))
+        group = common.checkAjaxInput(request.cookies.get('group'))
+        return roxywi_user.get_user_active_group(uuid, group)
+    elif request.method == 'PUT':
+        group_id = common.checkAjaxInput(request.form.get('group'))
+        user_uuid = common.checkAjaxInput(request.form.get('uuid'))
 
-    return roxywi_user.get_user_active_group(uuid, group)
-
-
-@bp.post('/group/change')
-def change_current_group():
-    group_id = common.checkAjaxInput(request.form.get('changeUserCurrentGroupId'))
-    user_uuid = common.checkAjaxInput(request.form.get('changeUserGroupsUser'))
-
-    return roxywi_user.change_user_active_group(group_id, user_uuid)
+        return roxywi_user.change_user_active_group(group_id, user_uuid)
 
 
 @bp.route('/groups/<int:user_id>')
