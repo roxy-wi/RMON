@@ -229,12 +229,18 @@ def send_http_checks(agent_id: int, server_ip: str) -> None:
             'http_method': check.method,
             'body': check.body,
             'interval': check.interval,
-            'timeout': check.smon_id.check_timeout
+            'timeout': check.smon_id.check_timeout,
+            'status_code': check.accepted_status_codes
         }
         if check.body_req:
             json_data['body_req'] = json.loads(check.body_req)
         else:
             json_data['body_req'] = ''
+        if check.headers:
+            json_data['header_req'] = json.dumps(check.headers)
+        else:
+            json_data['header_req'] = ''
+        print(json_data)
         api_path = f'check/{check.smon_id}'
         try:
             send_post_request_to_agent(agent_id, server_ip, api_path, json_data)

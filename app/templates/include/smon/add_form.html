@@ -116,6 +116,24 @@
 }"></textarea>
 			</td>
 		</tr>
+		<tr class="smon_http_check">
+			<td class="padding20">{{lang.words.headers|title()}} {{lang.words.request}}</td>
+			<td>
+				<textarea id="new-smon-header-req" cols="50" rows="5" class="form-control" title="JSON only" placeholder="Example:
+{
+    &quot;Header&quot;: &quot;Value&quot;
+}"></textarea>
+			</td>
+		</tr>
+		<tr class="smon_http_check">
+			<td class="padding20">
+				{{lang.phrases.accepted_status_code|title()}}
+				<span class="need-field">*</span>
+			</td>
+			<td>
+				{{ input('new-smon-status-code', type='number', style="width: 240px;", value=200) }}
+			</td>
+		</tr>
 		<tr>
 			<td class="padding20">{{lang.words.enable|title()}}</td>
 			<td>

@@ -93,6 +93,8 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'interval': $('#new-smon-interval').val(),
 		'agent_id': $('#new-smon-agent-id').val(),
 		'body_req': $('#new-smon-body-req').val(),
+		'header_req': $('#new-smon-header-req').val(),
+		'status-code': $('#new-smon-status-code').val(),
 		'timeout': $('#new-smon-timeout').val()
 	}
 	let method = "post";
@@ -243,10 +245,16 @@ function getCheckSettings(smon_id, check_type) {
 			} catch (e) {
 				$('#new-smon-body-req').val(data['body_req']);
 			}
-			$('#new-smon-agent-id').val(data['agent_id']).change()
-			$('#new-smon-telegram').val(data['tg']).change()
-			$('#new-smon-slack').val(data['slack']).change()
-			$('#new-smon-pd').val(data['pd']).change()
+			try {
+				$('#new-smon-header-req').val(data['header_req'].replaceAll("'", ""));
+			} catch (e) {
+				$('#new-smon-header-req').val(data['header_req']);
+			}
+			$('#new-smon-status-code').val(data['status_code']);
+			$('#new-smon-agent-id').val(data['agent_id']).change();
+			$('#new-smon-telegram').val(data['tg']).change();
+			$('#new-smon-slack').val(data['slack']).change();
+			$('#new-smon-pd').val(data['pd']).change();
 			$('#new-smon-telegram').selectmenu("refresh");
 			$('#new-smon-slack').selectmenu("refresh");
 			if (data['mm']) {
@@ -337,7 +345,7 @@ function check_and_clear_check_type(check_type) {
 	}
 }
 function clear_check_vals() {
-	const inputs_for_clean = ['url', 'body', 'body-req', 'port', 'packet_size', 'ip']
+	const inputs_for_clean = ['url', 'body', 'body-req', 'port', 'packet_size', 'ip', 'header-req']
 	for (let i of inputs_for_clean) {
 		$('#new-smon-' + i).val('');
 	}

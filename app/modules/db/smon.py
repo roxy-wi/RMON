@@ -274,10 +274,10 @@ def insert_smon_dns(smon_id: int, hostname: str, port: int, resolver: str, recor
 		out_error(e)
 
 
-def insert_smon_http(smon_id, url, body, http_method, interval, agent_id, body_req):
+def insert_smon_http(smon_id, url, body, http_method, interval, agent_id, body_req, header_req, status_code):
 	try:
 		SmonHttpCheck.insert(
-			smon_id=smon_id, url=url, body=body, method=http_method, interval=interval, agent_id=agent_id, body_req=body_req
+			smon_id=smon_id, url=url, body=body, method=http_method, interval=interval, agent_id=agent_id, body_req=body_req, headers=header_req, accepted_status_codes=status_code
 		).execute()
 	except Exception as e:
 		out_error(e)
@@ -538,10 +538,10 @@ def update_smon(smon_id, name, telegram, slack, pd, mm, group_id, desc, en, time
 		return False
 
 
-def update_smonHttp(smon_id, url, body, method, interval, agent_id, body_req):
+def update_smonHttp(smon_id, url, body, method, interval, agent_id, body_req, header_req, status_code):
 	try:
 		SmonHttpCheck.update(
-			url=url, body=body, method=method, interval=interval, agent_id=agent_id, body_req=body_req
+			url=url, body=body, method=method, interval=interval, agent_id=agent_id, body_req=body_req, headers=header_req, accepted_status_codes=status_code
 		).where(SmonHttpCheck.smon_id == smon_id).execute()
 		return True
 	except Exception as e:

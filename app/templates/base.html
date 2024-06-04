@@ -20,7 +20,6 @@
 	</head>
 	<body>
 		{% if g.user_params['user'] %}
-		<input type="hidden" id="token" value="{{ g.user_params['token'] }}">
 		<script>show_version();</script>
 		{% include 'include/main_menu.html' %}
 		<div class="container">

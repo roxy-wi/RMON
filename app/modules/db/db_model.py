@@ -134,16 +134,6 @@ class UUID(BaseModel):
         primary_key = False
 
 
-class Token(BaseModel):
-    user_id = IntegerField()
-    token = CharField()
-    exp = DateTimeField(default=datetime.now)
-
-    class Meta:
-        table_name = 'token'
-        primary_key = False
-
-
 class ApiToken(BaseModel):
     token = CharField()
     user_name = CharField()
@@ -431,7 +421,7 @@ def create_tables():
     conn = connect()
     with conn:
         conn.create_tables(
-            [User, Server, Role, Telegram, Slack, UUID, Token, ApiToken, Groups, UserGroups, Setting, Cred, Version, ActionHistory,
+            [User, Server, Role, Telegram, Slack, UUID, ApiToken, Groups, UserGroups, Setting, Cred, Version, ActionHistory,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
              SmonStatusPage, SmonStatusPageCheck, SMON, Alerts, SmonGroup, MM]
         )

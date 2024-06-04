@@ -77,14 +77,13 @@ def update_user_status() -> None:
 	proxy_dict = common.return_proxy_dict()
 	retry_strategy = Retry(
 		total=3,
-		status_forcelist=[429, 500, 502, 503, 504],
-		method_whitelist=["HEAD", "GET", "OPTIONS"]
+		status_forcelist=[429, 500, 502, 503, 504]
 	)
 	adapter = HTTPAdapter(max_retries=retry_strategy)
 	roxy_wi_get_plan = requests.Session()
 	roxy_wi_get_plan.mount("https://", adapter)
 	json_body = {'license': user_license}
-	roxy_wi_get_plan = requests.post(f'https://rmon.io/user/license', timeout=1, proxies=proxy_dict, json=json_body)
+	roxy_wi_get_plan = requests.post(f'https://rmon.io/user/license', timeout=5, proxies=proxy_dict, json=json_body)
 	try:
 		status = roxy_wi_get_plan.json()
 		roxy_sql.update_user_status(status['status'], status['plan'], status['method'])

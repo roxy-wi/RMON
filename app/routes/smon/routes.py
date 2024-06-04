@@ -203,10 +203,15 @@ def check(smon_id, check_type_id):
             settings.setdefault('url', s.url)
             settings.setdefault('method', s.method)
             settings.setdefault('body', s.body)
+            settings.setdefault('status_code', s.accepted_status_codes)
             if s.body_req:
                 settings.setdefault('body_req', json.loads(s.body_req))
             else:
                 settings.setdefault('body_req', '')
+            if s.headers:
+                settings.setdefault('header_req', str(s.headers))
+            else:
+                settings.setdefault('header_req', '')
         elif check_type_id == 4:
             settings.setdefault('packet_size', s.packet_size)
         elif check_type_id == 5:

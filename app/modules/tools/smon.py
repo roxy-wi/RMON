@@ -31,7 +31,9 @@ def create_smon(json_data, user_group, show_new=1) -> bool:
         interval = common.checkAjaxInput(json_data['interval'])
         agent_id = common.checkAjaxInput(json_data['agent_id'])
         check_type = common.checkAjaxInput(json_data['check_type'])
+        header_req = common.checkAjaxInput(json_data['header_req'].replace('\'', '"'))
         body_req = common.checkAjaxInput(json_data['body_req'])
+        status_code = int(json_data['status-code'])
         timeout = int(json_data['timeout'])
     except Exception as e:
         roxywi_common.handle_exceptions(e, 'RMON server', 'Cannot parse check parameters')
@@ -57,7 +59,7 @@ def create_smon(json_data, user_group, show_new=1) -> bool:
     elif check_type == 'tcp':
         smon_sql.insert_smon_tcp(last_id, hostname, port, interval, agent_id)
     elif check_type == 'http':
-        smon_sql.insert_smon_http(last_id, url, body, http_method, interval, agent_id, body_req)
+        smon_sql.insert_smon_http(last_id, url, body, http_method, interval, agent_id, body_req, header_req, status_code)
     elif check_type == 'dns':
         smon_sql.insert_smon_dns(last_id, hostname, port, resolver, record_type, interval, agent_id)
 
@@ -98,7 +100,10 @@ def update_smon(smon_id, json_data, user_group) -> str:
     agent_id = common.checkAjaxInput(json_data['agent_id'])
     check_type = common.checkAjaxInput(json_data['check_type'])
     body_req = json.dumps(json_data['body_req'])
+    header_req = json_data['header_req']
+    header_req = header_req.replace('\'', '"')
     timeout = int(json_data['timeout'])
+    status_code = json_data['status-code']
     is_edited = False
 
     try:
@@ -123,7 +128,7 @@ def update_smon(smon_id, json_data, user_group) -> str:
     try:
         if smon_sql.update_smon(smon_id, name, telegram, slack, pd, mm, smon_group_id, desc, enabled, timeout):
             if check_type == 'http':
-                is_edited = smon_sql.update_smonHttp(smon_id, url, body, http_method, interval, agent_id, body_req)
+                is_edited = smon_sql.update_smonHttp(smon_id, url, body, http_method, interval, agent_id, body_req, header_req, status_code)
             elif check_type == 'tcp':
                 is_edited = smon_sql.update_smonTcp(smon_id, hostname, port, interval, agent_id)
             elif check_type == 'ping':
@@ -141,7 +146,8 @@ def update_smon(smon_id, json_data, user_group) -> str:
                     server_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
                     smon_agent.send_post_request_to_agent(agent_id, server_ip, api_path, check_json)
                 except Exception as e:
-                    roxywi_common.logging('RMON', f'error: Cannot add check to the agent {agent_ip}: {e}', login=1)
+                    # roxywi_common.logging('RMON', f'error: Cannot add check to the agent {agent_ip}: {e}', login=1)
+                    roxywi_common.handle_exceptions(e, 'RMON', f'Cannot add check to the agent {agent_ip}', loggin=1)
 
                 return "Ok"
     except Exception as e:
@@ -181,6 +187,19 @@ def _validate_smon_check(json_data):
     if check_type == 'http':
         if url.find('http://') == -1 and url.find('https://') == -1:
             raise Exception('error: URL must start with http:// or https://')
+        try:
+            status_code = int(json_data['status-code'])
+        except Exception:
+            raise Exception('error: Status code must be a number')
+        if status_code > 599 or status_code < 99:
+            raise Exception('error: Status code must be 100-599')
+        if json_data['header_req']:
+            try:
+                headers = eval(json_data['header_req'].replace('\'', '"'))
+                for k, v in headers.items():
+                    _ = f'{k}: {v}'
+            except Exception as e:
+                raise Exception(f'errCannot parse headers: {e}')
 
 
 def create_check_json(json_data: dict) -> dict:
@@ -201,6 +220,9 @@ def create_check_json(json_data: dict) -> dict:
         check_json.setdefault('body', json_data['body'])
         check_json.setdefault('http_method', json_data['http_method'])
         check_json.setdefault('body_req', json_data['body_req'])
+        check_json.setdefault('status_code', json_data['status-code'])
+        if json_data['header_req']:
+            check_json.setdefault('header_req', json.dumps(json_data['header_req'].replace('\'', '"')))
     elif check_type == 'dns':
         check_json.setdefault('port', json_data['port'])
         check_json.setdefault('resolver', json_data['resolver'])
@@ -247,14 +269,20 @@ def history_metrics(server_id: int, check_type_id: int) -> dict:
             connect += f'{i.connect},'
             app_connect += f'{i.app_connect},'
             pre_transfer += f'{i.pre_transfer},'
-            if float(i.redirect) <= 0:
+            try:
+                if float(i.redirect) <= 0:
+                    redirect += f'0,'
+                else:
+                    redirect += f'{i.redirect},'
+            except Exception:
                 redirect += f'0,'
-            else:
-                redirect += f'{i.redirect},'
-            if float(i.start_transfer) <= 0:
+            try:
+                if float(i.start_transfer) <= 0:
+                    start_transfer += f'0,'
+                else:
+                    start_transfer += f'{i.start_transfer},'
+            except Exception:
                 start_transfer += f'0,'
-            else:
-                start_transfer += f'{i.start_transfer},'
             download += f'{i.download},'
 
     metrics['chartData']['labels'] = labels

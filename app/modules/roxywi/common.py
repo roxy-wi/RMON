@@ -226,11 +226,6 @@ def get_users_params(**kwargs):
 	except Exception as e:
 		raise Exception(f'error: Cannot get user services {e}')
 
-	try:
-		token = user_sql.get_token(user_uuid)
-	except Exception as e:
-		raise Exception(f'error: Cannot get user token {e}')
-
 	if kwargs.get('disable'):
 		servers = get_dick_permit(disable=0)
 	else:
@@ -242,7 +237,6 @@ def get_users_params(**kwargs):
 		'user': user,
 		'user_uuid': user_uuid,
 		'role': role,
-		'token': token,
 		'servers': servers,
 		'user_services': user_services,
 		'lang': user_lang,
