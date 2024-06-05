@@ -271,18 +271,18 @@ def history_metrics(server_id: int, check_type_id: int) -> dict:
             pre_transfer += f'{i.pre_transfer},'
             try:
                 if float(i.redirect) <= 0:
-                    redirect += f'0,'
+                    redirect += '0,'
                 else:
                     redirect += f'{i.redirect},'
             except Exception:
-                redirect += f'0,'
+                redirect += '0,'
             try:
                 if float(i.start_transfer) <= 0:
-                    start_transfer += f'0,'
+                    start_transfer += '0,'
                 else:
                     start_transfer += f'{i.start_transfer},'
             except Exception:
-                start_transfer += f'0,'
+                start_transfer += '0,'
             download += f'{i.download},'
 
     metrics['chartData']['labels'] = labels

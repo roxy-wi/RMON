@@ -692,7 +692,7 @@ def select_checks_for_agent(agent_id: int, check_type: str) -> dict:
 def get_smon_group_by_name(user_group: int, name: str) -> int:
 	try:
 		return SmonGroup.select().where((SmonGroup.name == name) & (SmonGroup.user_group == user_group)).get().id
-	except Exception as e:
+	except Exception:
 		return 0
 
 

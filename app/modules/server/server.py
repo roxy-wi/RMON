@@ -1,4 +1,5 @@
 import json
+import subprocess
 
 from flask import render_template
 
@@ -49,7 +50,6 @@ def ssh_command(server_ip: str, commands: str, **kwargs):
 
 
 def subprocess_execute(cmd):
-	import subprocess
 	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, universal_newlines=True)
 	stdout, stderr = p.communicate()
 	output = stdout.splitlines()
@@ -58,15 +58,12 @@ def subprocess_execute(cmd):
 
 
 def subprocess_execute_stream(cmd):
-	import subprocess
 	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True, universal_newlines=True)
 	for line in iter(p.stdout.readline, ''):
 		yield line
 
 
 def subprocess_execute_with_rc(cmd):
-	import subprocess
-
 	p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, universal_newlines=True)
 	stdout, stderr = p.communicate()
 	output = stdout.splitlines()

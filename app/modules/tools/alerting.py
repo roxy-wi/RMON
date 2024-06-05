@@ -42,70 +42,70 @@ def send_message_to_rabbit(message: str, **kwargs) -> None:
 	connection.close()
 
 
-def alert_routing(
-	server_ip: str, service_id: int, group_id: int, level: str, mes: str, alert_type: str
-) -> None:
-	subject: str = level + ': ' + mes
-	server_id: int = server_sql.select_server_id_by_ip(server_ip)
-	checker_settings = checker_sql.select_checker_settings_for_server(service_id, server_id)
-
-	try:
-		json_for_sending = {"user_group": group_id, "message": subject}
-		send_message_to_rabbit(json.dumps(json_for_sending))
-	except Exception as e:
-		roxywi_common.logging('RMON server', f'error: unable to send message: {e}', roxywi=1)
-
-	for setting in checker_settings:
-		if alert_type == 'service' and setting.service_alert:
-			try:
-				telegram_send_mess(mes, level, channel_id=setting.telegram_id)
-			except Exception as e:
-				roxywi_common.logging('RMON server', f'error: unable to send message to Telegram: {e}', roxywi=1)
-			try:
-				slack_send_mess(mes, level, channel_id=setting.slack_id)
-			except Exception as e:
-				roxywi_common.logging('RMON server', f'error: unable to send message to Slack: {e}', roxywi=1)
-			try:
-				pd_send_mess(mes, level, server_ip, service_id, alert_type, channel_id=setting.pd_id)
-			except Exception as e:
-				roxywi_common.logging('RMON server', f'error: unable to send message to PagerDuty: {e}', roxywi=1)
-
-			if setting.email:
-				send_email_to_server_group(subject, mes, level, group_id)
-
-		if alert_type == 'backend' and setting.backend_alert:
-			try:
-				telegram_send_mess(mes, level, channel_id=setting.telegram_id)
-			except Exception as e:
-				roxywi_common.logging('RMON server', f'error: unable to send message to Telegram: {e}', roxywi=1)
-			try:
-				slack_send_mess(mes, level, channel_id=setting.slack_id)
-			except Exception as e:
-				roxywi_common.logging('RMON server', f'error: unable to send message to Slack: {e}', roxywi=1)
-			try:
-				pd_send_mess(mes, level, server_ip, service_id, alert_type, channel_id=setting.pd_id)
-			except Exception as e:
-				roxywi_common.logging('RMON server', f'error: unable to send message to PagerDuty: {e}', roxywi=1)
-
-			if setting.email:
-				send_email_to_server_group(subject, mes, level, group_id)
-
-		if alert_type == 'maxconn' and setting.maxconn_alert:
-			try:
-				telegram_send_mess(mes, level, channel_id=setting.telegram_id)
-			except Exception as e:
-				roxywi_common.logging('RMON server', f'error: unable to send message to Telegram: {e}', roxywi=1)
-			try:
-				slack_send_mess(mes, level, channel_id=setting.slack_id)
-			except Exception as e:
-				roxywi_common.logging('RMON server', f'error: unable to send message to Slack: {e}', roxywi=1)
-			try:
-				pd_send_mess(mes, level, server_ip, service_id, alert_type, channel_id=setting.pd_id)
-			except Exception as e:
-				roxywi_common.logging('RMON server', f'error: unable to send message to PagerDuty: {e}', roxywi=1)
-
-			if setting.email:
-				send_email_to_server_group(subject, mes, level, group_id)
+# def alert_routing(
+# 	server_ip: str, service_id: int, group_id: int, level: str, mes: str, alert_type: str
+# ) -> None:
+# 	subject: str = level + ': ' + mes
+# 	server_id: int = server_sql.select_server_id_by_ip(server_ip)
+# 	# checker_settings = checker_sql.select_checker_settings_for_server(service_id, server_id)
+#
+# 	try:
+# 		json_for_sending = {"user_group": group_id, "message": subject}
+# 		send_message_to_rabbit(json.dumps(json_for_sending))
+# 	except Exception as e:
+# 		roxywi_common.logging('RMON server', f'error: unable to send message: {e}', roxywi=1)
+#
+# 	for setting in checker_settings:
+# 		if alert_type == 'service' and setting.service_alert:
+# 			try:
+# 				telegram_send_mess(mes, level, channel_id=setting.telegram_id)
+# 			except Exception as e:
+# 				roxywi_common.logging('RMON server', f'error: unable to send message to Telegram: {e}', roxywi=1)
+# 			try:
+# 				slack_send_mess(mes, level, channel_id=setting.slack_id)
+# 			except Exception as e:
+# 				roxywi_common.logging('RMON server', f'error: unable to send message to Slack: {e}', roxywi=1)
+# 			try:
+# 				pd_send_mess(mes, level, server_ip, service_id, alert_type, channel_id=setting.pd_id)
+# 			except Exception as e:
+# 				roxywi_common.logging('RMON server', f'error: unable to send message to PagerDuty: {e}', roxywi=1)
+#
+# 			if setting.email:
+# 				send_email_to_server_group(subject, mes, level, group_id)
+#
+# 		if alert_type == 'backend' and setting.backend_alert:
+# 			try:
+# 				telegram_send_mess(mes, level, channel_id=setting.telegram_id)
+# 			except Exception as e:
+# 				roxywi_common.logging('RMON server', f'error: unable to send message to Telegram: {e}', roxywi=1)
+# 			try:
+# 				slack_send_mess(mes, level, channel_id=setting.slack_id)
+# 			except Exception as e:
+# 				roxywi_common.logging('RMON server', f'error: unable to send message to Slack: {e}', roxywi=1)
+# 			try:
+# 				pd_send_mess(mes, level, server_ip, service_id, alert_type, channel_id=setting.pd_id)
+# 			except Exception as e:
+# 				roxywi_common.logging('RMON server', f'error: unable to send message to PagerDuty: {e}', roxywi=1)
+#
+# 			if setting.email:
+# 				send_email_to_server_group(subject, mes, level, group_id)
+#
+# 		if alert_type == 'maxconn' and setting.maxconn_alert:
+# 			try:
+# 				telegram_send_mess(mes, level, channel_id=setting.telegram_id)
+# 			except Exception as e:
+# 				roxywi_common.logging('RMON server', f'error: unable to send message to Telegram: {e}', roxywi=1)
+# 			try:
+# 				slack_send_mess(mes, level, channel_id=setting.slack_id)
+# 			except Exception as e:
+# 				roxywi_common.logging('RMON server', f'error: unable to send message to Slack: {e}', roxywi=1)
+# 			try:
+# 				pd_send_mess(mes, level, server_ip, service_id, alert_type, channel_id=setting.pd_id)
+# 			except Exception as e:
+# 				roxywi_common.logging('RMON server', f'error: unable to send message to PagerDuty: {e}', roxywi=1)
+#
+# 			if setting.email:
+# 				send_email_to_server_group(subject, mes, level, group_id)
 
 
 def send_email_to_server_group(subject: str, mes: str, level: str, group_id: int) -> None:
