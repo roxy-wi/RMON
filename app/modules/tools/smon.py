@@ -421,7 +421,7 @@ def change_smon_port(new_port: int) -> None:
     server_mod.subprocess_execute(cmd)
 
 
-def get_ssl_expire_date(date: int) -> int:
+def get_ssl_expire_date(date: str) -> int:
     present = common.get_present_time()
     ssl_expire_date = datetime.strptime(date, '%Y-%m-%d %H:%M:%S')
     return (ssl_expire_date - present).days

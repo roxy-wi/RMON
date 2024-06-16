@@ -4,7 +4,7 @@
     owner: "{{ansible_user}}"
     group: "{{ansible_user}}"
     state: directory
-  with_items:  ["/etc/rmon", "/var/lib/rmon", "/var/lib/rmon/rmon-agent", "/var/log/rmon", "/etc/pki/tls/certs"]
+  with_items:  ["/etc/rmon", "/var/lib/rmon/rmon-agent/modules/db", "/var/log/rmon", "/etc/pki/tls/certs"]
   ignore_errors: yes
 
 - name: Copy RMON Agent files
@@ -14,7 +14,7 @@
     owner: "{{ansible_user}}"
     group: "{{ansible_user}}"
     mode: '0644'
-  with_items: ["rmon_agent.py", "rmon_agent_common.py", "rmon_checks.py", "http_check.py", "wsgi.py", "requirements.txt"]
+  with_items: ["rmon_agent.py", "rmon_agent_common.py", "rmon_checks.py", "http_check.py", "wsgi.py", "requirements.txt", "modules/db/check_result.py", "modules/db/db_models.py"]
 
 - name: Copy RMON Agent service file
   template:

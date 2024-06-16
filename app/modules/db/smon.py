@@ -201,14 +201,11 @@ def add_sec_to_state_time(time, smon_id):
 		out_error(e)
 
 
-def insert_smon_history(smon_id: int, resp_time: float, status: int, check_id: int, mes='') -> datetime:
-	get_date = roxy_wi_tools.GetDate()
-	cur_date = get_date.return_date('regular')
+def insert_smon_history(smon_id: int, resp_time: float, status: int, check_id: int, mes: str, now_utc: datetime):
 	try:
-		SmonHistory.insert(smon_id=smon_id, response_time=resp_time, status=status, date=cur_date, check_id=check_id, mes=mes).execute()
+		SmonHistory.insert(smon_id=smon_id, response_time=resp_time, status=status, date=now_utc, check_id=check_id, mes=mes).execute()
 	except Exception as e:
 		out_error(e)
-	return cur_date
 
 
 def insert_smon_history_http_metrics(date, **kwargs) -> None:

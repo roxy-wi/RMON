@@ -114,7 +114,8 @@ def get_groups():
     groups = smon_sql.select_smon_groups(g.user_params['group_id'])
     smon_groups = ''
     for group in groups:
-        smon_groups += f'{group.name}\n'
+        group_name = group.name.replace("'", "")
+        smon_groups += f'{group_name}\n'
     return smon_groups
 
 
@@ -415,6 +416,7 @@ def smon_history_metric_chart(check_id, check_type_id):
     Returns:
     - A Flask Response object with the streaming event chart.
     """
+
     def get_chart_data():
         """
         Return a generator that continuously yields chart data in JSON format for the specified check ID and check type ID.
@@ -429,6 +431,7 @@ def smon_history_metric_chart(check_id, check_type_id):
         interval = 120
         while True:
             json_metric = {}
+            is_enabled = 1
             chart_metrics = smon_sql.select_smon_history(check_id, 1)
             uptime = smon_mod.check_uptime(check_id)
             smon = smon_sql.select_one_smon(check_id, check_type_id)
@@ -439,6 +442,7 @@ def smon_history_metric_chart(check_id, check_type_id):
                 json_metric['updated_at'] = common.get_time_zoned_date(s.smon_id.updated_at)
                 json_metric['name'] = str(s.smon_id.name)
                 interval = s.interval
+                is_enabled = s.smon_id.en
                 if s.smon_id.ssl_expire_date is not None:
                     json_metric['ssl_expire_date'] = smon_mod.get_ssl_expire_date(s.smon_id.ssl_expire_date)
                 else:
@@ -454,11 +458,11 @@ def smon_history_metric_chart(check_id, check_type_id):
             for i in chart_metrics:
                 json_metric['time'] = common.get_time_zoned_date(i.date, '%H:%M:%S')
                 json_metric['value'] = "{:.3f}".format(i.response_time)
-                json_metric['status'] = str(i.status)
                 json_metric['mes'] = str(i.mes)
                 json_metric['uptime'] = uptime
                 json_metric['avg_res_time'] = avg_res_time
                 json_metric['interval'] = interval
+                json_metric['status'] = str(i.status) if is_enabled else 4
                 if check_type_id == 2:
                     json_metric['name_lookup'] = str(i.name_lookup)
                     json_metric['connect'] = str(i.connect)

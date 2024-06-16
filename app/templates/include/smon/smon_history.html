@@ -49,6 +49,20 @@
         <p class="smon_stats">({{lang.words.type|title()}})</p>
         <span class="smon_value" title="{{last_resp_time}}">{{checking_types[check_id|string()]}}</span>
     </div>
+    {% if check_id == 2 %}
+    <div class="col">
+        <h4>{{lang.words.method|title()}}</h4>
+        <p class="smon_stats">HTTP</p>
+        <span class="smon_value" title="HTTP {{lang.words.method}}">{{s.method.upper()}}</span>
+    </div>
+    {% endif %}
+    {% if check_id == 5 %}
+    <div class="col">
+        <h4>Resolver</h4>
+        <p class="smon_stats">DNS {{ lang.words.server }}</p>
+        <span class="smon_value" title="DNS {{ lang.words.server }}">{{s.resolver}}</span>
+    </div>
+    {% endif %}
     <div class="col">
         <h4>{{lang.words.response|title()}}</h4>
         <p class="smon_stats">({{lang.words.current|title()}})</p>

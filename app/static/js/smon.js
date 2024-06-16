@@ -261,6 +261,10 @@ function getCheckSettings(smon_id, check_type) {
 				$('#new-smon-mm').val(data['mm']).change();
 				$('#new-smon-mm').selectmenu("refresh");
 			}
+			if (data['method']) {
+				$('#new-smon-method').val(data['method']).change();
+				$('#new-smon-method').selectmenu("refresh");
+			}
 			$('#new-smon-agent-id').selectmenu("refresh");
 			if (data['enabled']) {
 				$('#new-smon-enable').prop('checked', true)
@@ -1025,6 +1029,9 @@ function stream_chart(chart_id, check_id, check_type_id) {
     }
 }
 function update_cur_statues(check_id, data) {
+	if (status == "4") {
+		return false;
+	}
 	let status = data.status;
 	let last_resp_time = data.value;
 	let time = data.time;
@@ -1032,11 +1039,14 @@ function update_cur_statues(check_id, data) {
 	let add_class = 'serverUp';
 	let cur_status = 'UP';
 	if (status === "0") {
-		add_class = 'serverDown'
-		cur_status = 'DOWN'
+		add_class = 'serverDown';
+		cur_status = 'DOWN';
+	} else if (status == "4") {
+		add_class = 'serverNone';
+		cur_status = 'DISABLED';
 	}
 	if (last_resp_time.length === 0) {
-		last_resp_time = 'N/A'
+		last_resp_time = 'N/A';
 	} else {
 		last_resp_time = last_resp_time + 'ms'
 	}

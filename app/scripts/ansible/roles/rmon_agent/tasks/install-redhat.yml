@@ -16,7 +16,7 @@
     name: pip
     executable: pip3
     state: latest
-    extra_args: --upgrade
+    extra_args: --upgrade --ignore-installed
 
 - name: Install RMON Agent python requirements
   ansible.builtin.pip:

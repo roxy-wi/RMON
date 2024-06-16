@@ -103,7 +103,7 @@
 		<tr class="smon_http_check">
 			<td class="padding20">HTTP {{lang.words.method}}</td>
 			<td>
-				{% set http_methods = {'get': 'GET', 'post': 'POST', 'put': 'PUT', 'head': 'HEAD'} %}
+				{% set http_methods = {'get': 'GET', 'post': 'POST', 'put': 'PUT', 'head': 'HEAD', 'patch': 'PATCH', 'delete': 'DELETE', 'options': 'OPTIONS'} %}
 				{{ select('new-smon-method', values=http_methods, selected='get') }}
 			</td>
 		</tr>

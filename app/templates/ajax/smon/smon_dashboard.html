@@ -68,7 +68,7 @@
 {% for group in smon_groups %}
     <div class="smon_group">
         <div class="group_name">
-            <span class="smon_group_name">{{ group.name }}</span>
+            <span class="smon_group_name">{{ group.name.replace("'", "") }}</span>
             <span id="show-smon-group-{{ group.id }}" class="plus switcher_table_metric smon_group_switcher" onclick="showSmonGroup('{{ group.id }}')" title="{{lang.words.open|title()}} {{lang.words.group}}"></span>
             <span id="hide-smon-group-{{ group.id }}" class="minus switcher_table_metric smon_group_switcher" onclick="hideSmonGroup('{{ group.id }}')" style="display: none;" title="{{lang.words.hide}}"></span>
         </div>

@@ -239,7 +239,6 @@ def send_http_checks(agent_id: int, server_ip: str) -> None:
             json_data['header_req'] = json.dumps(check.headers)
         else:
             json_data['header_req'] = ''
-        print(json_data)
         api_path = f'check/{check.smon_id}'
         try:
             send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
