@@ -842,7 +842,7 @@ label {
 	border: 1px solid var(--border-color);
 	border-radius: var(--big-border-radius);
 	height: 165px;
-	width: 300px;
+	width: 325px;
 	padding: 10px 15px 20px;
 	margin: 0 5px 20px var(--indent);
 	display: block;
@@ -867,7 +867,7 @@ label {
 	border-top: 3px solid #efdb9d !important;
 }
 .div-server-head-up, .div-server-head-down, .div-server-head-dis, .div-server-head-pause, .div-server-head-unknown {
-	padding-top: 7px;
+	padding-top: 3px;
 }
 .overflow {
 	overflow: hidden;

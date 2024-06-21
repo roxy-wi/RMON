@@ -49,6 +49,13 @@ def get_agent(agent_id: int):
 		out_error(e)
 
 
+def get_agent_data(agent_id: int) -> SmonAgent:
+	try:
+		return SmonAgent.get(SmonAgent.id == agent_id)
+	except Exception as e:
+		out_error(e)
+
+
 def get_agent_id_by_check_id(check_id: int):
 	check_type = SMON.get(SMON.id == check_id).check_type
 	if check_type == 'tcp':
@@ -77,9 +84,9 @@ def delete_agent(agent_id: int):
 		out_error(e)
 
 
-def update_agent(agent_id: int, name: str, desc: str, enabled: int, shared: int):
+def update_agent(agent_id: int, **kwargs) -> None:
 	try:
-		SmonAgent.update(name=name, desc=desc, enabled=enabled, shared=shared).where(SmonAgent.id == agent_id).execute()
+		SmonAgent.update(**kwargs).where(SmonAgent.id == agent_id).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -522,7 +529,7 @@ def select_smon_history(smon_id: int, limit: int = 40) -> object:
 		return query_res
 
 
-def update_smon(smon_id, name, telegram, slack, pd, mm, group_id, desc, en, timeout):
+def update_check(smon_id, name, telegram, slack, pd, mm, group_id, desc, en, timeout):
 	query = (SMON.update(
 		name=name, telegram_channel_id=telegram, slack_channel_id=slack, pd_channel_id=pd, mm_channel_id=mm,
 		group_id=group_id, desc=desc, en=en, updated_at=datetime.now(), check_timeout=timeout
@@ -535,7 +542,20 @@ def update_smon(smon_id, name, telegram, slack, pd, mm, group_id, desc, en, time
 		return False
 
 
-def update_smonHttp(smon_id, url, body, method, interval, agent_id, body_req, header_req, status_code):
+def update_check_agent(smon_id: int, agent_id: int, check_type: str) -> None:
+	select_query = {
+		'http': SmonHttpCheck.update(agent_id=agent_id).where(SmonHttpCheck.smon_id == smon_id),
+		'tcp': SmonTcpCheck.update(agent_id=agent_id).where(SmonTcpCheck.smon_id == smon_id),
+		'dns': SmonDnsCheck.update(agent_id=agent_id).where(SmonDnsCheck.smon_id == smon_id),
+		'ping': SmonPingCheck.update(agent_id=agent_id).where(SmonPingCheck.smon_id == smon_id)
+	}
+	try:
+		return select_query[check_type].execute()
+	except Exception as e:
+		out_error(e)
+
+
+def update_check_http(smon_id, url, body, method, interval, agent_id, body_req, header_req, status_code):
 	try:
 		SmonHttpCheck.update(
 			url=url, body=body, method=method, interval=interval, agent_id=agent_id, body_req=body_req, headers=header_req, accepted_status_codes=status_code
@@ -546,7 +566,7 @@ def update_smonHttp(smon_id, url, body, method, interval, agent_id, body_req, he
 		return False
 
 
-def update_smonTcp(smon_id, ip, port, interval, agent_id):
+def update_check_tcp(smon_id, ip, port, interval, agent_id):
 	try:
 		SmonTcpCheck.update(ip=ip, port=port, interval=interval, agent_id=agent_id).where(SmonTcpCheck.smon_id == smon_id).execute()
 		return True
@@ -555,7 +575,7 @@ def update_smonTcp(smon_id, ip, port, interval, agent_id):
 		return False
 
 
-def update_smonPing(smon_id, ip, packet_size, interval, agent_id):
+def update_check_ping(smon_id, ip, packet_size, interval, agent_id):
 	try:
 		SmonPingCheck.update(ip=ip, packet_size=packet_size, interval=interval, agent_id=agent_id).where(SmonPingCheck.smon_id == smon_id).execute()
 		return True
@@ -564,7 +584,7 @@ def update_smonPing(smon_id, ip, packet_size, interval, agent_id):
 		return False
 
 
-def update_smonDns(smon_id: int, ip: str, port: int, resolver: str, record_type: str, interval: int, agent_id: int):
+def update_check_dns(smon_id: int, ip: str, port: int, resolver: str, record_type: str, interval: int, agent_id: int):
 	try:
 		SmonDnsCheck.update(ip=ip, port=port, resolver=resolver, record_type=record_type, interval=interval,
 							agent_id=agent_id).where(SmonDnsCheck.smon_id == smon_id).execute()

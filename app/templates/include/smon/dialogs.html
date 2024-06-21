@@ -1,0 +1,17 @@
+<div id="dialog-move" style="display: none;">
+    <table class="overview" id="dialog-move-overview"
+           title="{{lang.words.create|title()}} {{lang.words.w_a}} {{lang.words.new2}} {{lang.words.agent}}">
+        {% include 'include/tr_validate_tips.html' %}
+        <tr>
+            <td class="padding20">
+                {{lang.words.new|title()}} {{lang.words.agent|title()}}
+                <span class="need-field">*</span>
+            </td>
+            <td>
+                <select name="dest-agent" id="dest-agent">
+                    <option value="------" disabled selected>------</option>
+                </select>
+            </td>
+        </tr>
+    </table>
+</div>

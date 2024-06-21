@@ -294,3 +294,8 @@ def handle_exceptions(ex: Exception, server_ip: str, message: str, **kwargs: Any
 	"""
 	logging(server_ip, f'error: {message}: {ex}', **kwargs)
 	raise Exception(f'error: {message}: {ex}')
+
+
+def handle_json_exceptions(ex: Exception, message: str, server_ip='RMON server') -> dict:
+	logging(server_ip, f'error: {message}: {ex}', login=1)
+	return {'status': 'failed', 'error': f'{message}: {ex}'}

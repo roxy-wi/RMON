@@ -39,7 +39,6 @@ def default_values():
 		{'param': 'ssl_expire_critical_alert', 'value': '7', 'section': 'smon', 'desc': 'Critical alert about a SSL certificate expiration (in days)', 'group': '1'},
 		{'param': 'master_ip', 'value': '', 'section': 'smon', 'desc': '', 'group': '1'},
 		{'param': 'master_port', 'value': '5100', 'section': 'smon', 'desc': '', 'group': '1'},
-		{'param': 'agent_port', 'value': '5101', 'section': 'smon', 'desc': '', 'group': '1'},
 		{'param': 'rabbitmq_host', 'value': '127.0.0.1', 'section': 'rabbitmq', 'desc': 'RabbitMQ-server host', 'group': '1'},
 		{'param': 'rabbitmq_port', 'value': '5672', 'section': 'rabbitmq', 'desc': 'RabbitMQ-server port', 'group': '1'},
 		{'param': 'rabbitmq_port', 'value': '5672', 'section': 'rabbitmq', 'desc': 'RabbitMQ-server port', 'group': '1'},
@@ -188,6 +187,28 @@ def update_db_v_1_0_4():
 			print("An error occurred:", e)
 
 
+def update_db_v_1_0_7():
+	try:
+		migrate(
+			migrator.add_column('smon_agents', 'port', IntegerField(default=5101)),
+			migrator.add_column_default('smon_agents', 'port', 5101),
+		)
+	except Exception as e:
+		if e.args[0] == 'duplicate column name: port' or str(e) == '(1060, "Duplicate column name \'port\'")':
+			print('Updating... DB has been updated to version 1.0.7')
+		else:
+			print("An error occurred:", e)
+
+
+def update_db_v_1_0_7_1():
+	try:
+		Setting.delete().where(Setting.param == 'agent_port').execute()
+	except Exception as e:
+		print("An error occurred:", e)
+	else:
+		print("Updating... DB has been updated to version 1.0.7-1")
+
+
 def check_ver():
 	try:
 		ver = Version.get()
@@ -203,6 +224,8 @@ def update_all():
 	update_ver()
 	update_db_v_1_0_3()
 	update_db_v_1_0_4()
+	update_db_v_1_0_7()
+	update_db_v_1_0_7_1()
 
 
 if __name__ == "__main__":

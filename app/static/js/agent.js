@@ -82,17 +82,20 @@ function addAgentDialog(agent_id=0, edit=false) {
 }
 function addAgent(dialog_id, agent_id=0, edit=false, reconfigure=false) {
 	let valid = true;
-	allFields = $([]).add($('#new-agent-name'));
-	allFields.removeClass("ui-state-error");
-	valid = valid && checkLength($('#new-agent-name'), "Name", 1);
-	let agent_name = $('#new-agent-name').val();
-    let agent_server_id = $('#new-agent-server-id').val();
+	let agent_name = $('#new-agent-name');
+	let agent_port = $('#new-agent-port');
+    let agent_server_id = $('#new-agent-server-id');
     let agent_desc = $('#new-agent-desc').val();
+	let allFields = $([]).add(agent_name).add(agent_port);
+	allFields.removeClass("ui-state-error");
+	valid = valid && checkLength(agent_name, "Name", 1);
+	valid = valid && checkLength(agent_port, "Port", 1);
     let agent_enabled = $('#new-agent-enabled').is(':checked') ? 1 : 0;
     let agent_shared = $('#new-agent-shared').is(':checked') ? 1 : 0;
     let agent_data = {
-        'name': agent_name,
-        'server_id': agent_server_id,
+        'name': agent_name.val(),
+        'server_id': agent_server_id.val(),
+        'port': agent_port.val(),
         'desc': agent_desc,
         'enabled': agent_enabled,
         'shared': agent_shared
@@ -134,6 +137,7 @@ function getAgentSettings(agent_id) {
 		async: false,
 		success: function (data) {
 			$('#new-agent-name').val(data['name']);
+			$('#new-agent-port').val(data['port']);
 			$('#new-agent-server-id').append('<option value="' + data['server_id'] + '" selected="selected">' + data['hostname'] + '</option>');
 			$('#new-agent-server-id').attr('disabled', 'disabled');
 			$('#new-agent-desc').val(data['desc']);
@@ -347,6 +351,74 @@ function agentAction(action, id, server_ip, dialog_id) {
 				toastr.clear();
 				$(dialog_id).dialog("close");
 				getAgent(id, false);
+			}
+		}
+	});
+}
+function getAgents(select_id) {
+	$.ajax({
+		url: "/rmon/agent/list",
+		type: "get",
+		contentType: "application/json; charset=UTF-8",
+		async: false,
+		success: function (data) {
+			if (data.status === 'failed') {
+				toastr.error(data.error);
+			} else {
+				toastr.clear();
+				$(select_id).find('option').remove();
+				for (k in data.agents) {
+					$(select_id).append('<option value="' + k + '">' + data.agents[k] + '</option>')
+						.val(data.agents[k]);
+				}
+				$(select_id).append('<option value="" selected disabled>------</option>');
+				$(select_id).selectmenu('refresh');
+			}
+		}
+	});
+}
+function moveChecksDialog(agent_id, agent_ip) {
+	let transfer_word = $('#translate').attr('data-transfer');
+	let checks_word = $('#translate').attr('data-checks');
+	getAgents('#dest-agent');
+	$( "#dialog-move" ).dialog({
+		resizable: false,
+		height: "auto",
+		width: 400,
+		modal: true,
+		title: transfer_word+" " + checks_word + "?",
+		buttons: [{
+			text: transfer_word,
+			click: function () {
+				moveChecks(agent_id, agent_ip, $(this));
+			}
+		}, {
+			text: cancel_word,
+			click: function() {
+				$( this ).dialog( "close" );
+			}
+		}]
+	});
+}
+function moveChecks(agent_id, agent_ip, dialog_id) {
+	let new_agent = $('#dest-agent option:selected').val();
+	if (new_agent === '------') {
+		toastr.warning('Select a new Agent');
+		return false;
+	}
+	$.ajax({
+		url: "/rmon/checks/move",
+		type: "post",
+		data: JSON.stringify({"old_agent": agent_id, "new_agent": new_agent}),
+		contentType: "application/json; charset=UTF-8",
+		success: function (data) {
+			if (data.status === 'failed') {
+				toastr.error(data.error);
+			} else {
+				toastr.clear();
+				$(dialog_id).dialog("close");
+				getAgentTotalChecks(agent_ip, agent_id);
+				getAgent(new_agent);
 			}
 		}
 	});

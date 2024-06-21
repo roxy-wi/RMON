@@ -324,6 +324,7 @@ class SmonAgent(BaseModel):
     enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
     desc = CharField()
     shared = IntegerField(constraints=[SQL('DEFAULT 0')])
+    port = IntegerField(constraints=[SQL('DEFAULT 5701')])
 
     class Meta:
         table_name = 'smon_agents'

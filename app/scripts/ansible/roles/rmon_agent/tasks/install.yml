@@ -37,12 +37,12 @@
     dest: /etc/rmon/rmon-agent.cfg
     mode: 0644
 
-- name: Try to upgrade pip3
+- name: Try to upgrade pycurl
   pip:
     name: pycurl
     executable: pip3
     state: latest
-    extra_args: --upgrade
+    extra_args: --upgrade --ignore-installed
   ignore_errors: yes
 
 - name: Try to copy ca cert

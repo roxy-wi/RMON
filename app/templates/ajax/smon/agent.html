@@ -3,10 +3,12 @@
 {% for agent in agents %}
 <div id="agent-{{agent.id}}" class="div-server-hapwi">
     <div class="server-name">
-        <span id="agent-name-{{agent.id}}">
-            <a href="/rmon/agent/{{ agent.id }}" title="{{ lang.words.more|title }} {{ lang.words.info }}">{{agent.name.replace("'","")}}</a>
+        <span class="overflow" style="width: 192px;">
+            <span id="agent-name-{{agent.id}}" style="margin-top: 4px;display: inline-block;">
+                <a href="/rmon/agent/{{ agent.id }}" title="{{ lang.words.more|title }} {{ lang.words.info }}">{{agent.name.replace("'","")}}</a>
+            </span>
+            <span id="agent-desc-{{agent.id}}">{% if agent.desc != '' %} ({{agent.desc.replace("'", "")}}) {% endif %}</span>
         </span>
-        <span id="agent-desc-{{agent.id}}" class="overflow">{% if agent.desc != '' %} ({{agent.desc.replace("'", "")}}) {% endif %}</span>
     {% if g.user_params['group_id']|string() == agent.groups|string() or g.user_params['role'] == 1 %}
         <span class="server-action">
             {% if g.user_params['role'] <= 3 %}
@@ -23,6 +25,7 @@
             {% if g.user_params['role'] <= 2 %}
             <a class="edit" onclick="addAgentDialog('{{agent.id}}', true)"></a>
             <a class="delete" onclick="confirmDeleteAgent('{{agent.id}}')"></a>
+            <a class="move" onclick="moveChecksDialog('{{ agent.id }}', '{{ agent.ip }}')" title="{{ lang.smon_page.desc.move_checks }}"></a>
             {% endif %}
         </span>
     {% endif %}

@@ -447,3 +447,8 @@
 	font-family: "Font Awesome 5 Regular";
 	content: "\f086";
 }
+.move::before {
+	display: none;
+	font-family: "Font Awesome 5 Solid";
+	content: "\f101";
+}

@@ -131,6 +131,7 @@ def get_agent_settings(agent_id):
         settings.setdefault('desc', a.desc)
         settings.setdefault('enabled', str(a.enabled))
         settings.setdefault('shared', str(a.shared))
+        settings.setdefault('port', str(a.port))
 
     return jsonify(settings)
 
@@ -206,3 +207,17 @@ def agent_action(action):
     except Exception as e:
         return f'{e}'
     return 'ok'
+
+
+@bp.get('/agent/list')
+@login_required
+@get_user_params()
+def get_agent_list():
+    agents_list = {}
+    try:
+        agents = smon_sql.get_enabled_agents(g.user_params['group_id'])
+        for a in agents:
+            agents_list[a.id] = a.name
+        return jsonify({'status': 'ok', 'agents': agents_list})
+    except Exception as e:
+        return roxywi_common.handle_json_exceptions(e, 'Cannot get enabled agents')

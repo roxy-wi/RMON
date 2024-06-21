@@ -181,6 +181,7 @@ function openSmonDialog(check_type, smon_id=0, edit=false) {
 		$('#check_type').selectmenu("refresh");
 		$('#new-smon-name').val('');
 	}
+	getAgents('#new-smon-agent-id');
 	let addSmonServer = $("#smon-add-table").dialog({
 		autoOpen: false,
 		resizable: false,
@@ -1029,10 +1030,10 @@ function stream_chart(chart_id, check_id, check_type_id) {
     }
 }
 function update_cur_statues(check_id, data) {
+	let status = data.status;
 	if (status == "4") {
 		return false;
 	}
-	let status = data.status;
 	let last_resp_time = data.value;
 	let time = data.time;
 	let mes = data.mes;

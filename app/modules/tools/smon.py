@@ -126,15 +126,15 @@ def update_smon(smon_id, json_data, user_group) -> str:
         smon_group_id = None
 
     try:
-        if smon_sql.update_smon(smon_id, name, telegram, slack, pd, mm, smon_group_id, desc, enabled, timeout):
+        if smon_sql.update_check(smon_id, name, telegram, slack, pd, mm, smon_group_id, desc, enabled, timeout):
             if check_type == 'http':
-                is_edited = smon_sql.update_smonHttp(smon_id, url, body, http_method, interval, agent_id, body_req, header_req, status_code)
+                is_edited = smon_sql.update_check_http(smon_id, url, body, http_method, interval, agent_id, body_req, header_req, status_code)
             elif check_type == 'tcp':
-                is_edited = smon_sql.update_smonTcp(smon_id, hostname, port, interval, agent_id)
+                is_edited = smon_sql.update_check_tcp(smon_id, hostname, port, interval, agent_id)
             elif check_type == 'ping':
-                is_edited = smon_sql.update_smonPing(smon_id, hostname, packet_size, interval, agent_id)
+                is_edited = smon_sql.update_check_ping(smon_id, hostname, packet_size, interval, agent_id)
             elif check_type == 'dns':
-                is_edited = smon_sql.update_smonDns(smon_id, hostname, port, resolver, record_type, interval, agent_id)
+                is_edited = smon_sql.update_check_dns(smon_id, hostname, port, resolver, record_type, interval, agent_id)
 
             if is_edited:
                 roxywi_common.logging('RMON', f'The check {name} has been update', login=1)
@@ -146,7 +146,6 @@ def update_smon(smon_id, json_data, user_group) -> str:
                     server_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
                     smon_agent.send_post_request_to_agent(agent_id, server_ip, api_path, check_json)
                 except Exception as e:
-                    # roxywi_common.logging('RMON', f'error: Cannot add check to the agent {agent_ip}: {e}', login=1)
                     roxywi_common.handle_exceptions(e, 'RMON', f'Cannot add check to the agent {agent_ip}', loggin=1)
 
                 return "Ok"
@@ -177,8 +176,8 @@ def _validate_smon_check(json_data):
             port = int(port)
         except Exception:
             raise Exception('error: port must be a number')
-        if port > 65535 or port < 0:
-            raise Exception('error: port must be 0-65535')
+        if port > 65535 or port < 1:
+            raise Exception('error: port must be 1-65535')
 
     if check_type == 'ping':
         if int(packet_size) < 16:

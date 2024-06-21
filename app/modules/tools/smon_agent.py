@@ -10,8 +10,8 @@ import app.modules.roxywi.common as roxywi_common
 from app.modules.service.installation import run_ansible
 
 
-def generate_agent_inv(server_ip: str, action: str, agent_uuid: uuid) -> object:
-    agent_port = sql.get_setting('agent_port')
+def generate_agent_inv(server_ip: str, action: str, agent_uuid: uuid, agent_port=5101) -> object:
+    # agent_port = sql.get_setting('agent_port')
     master_port = sql.get_setting('master_port')
     master_ip = sql.get_setting('master_ip')
     if not master_ip: raise Exception('error: Master IP cannot be empty')
@@ -24,7 +24,7 @@ def generate_agent_inv(server_ip: str, action: str, agent_uuid: uuid) -> object:
         'agent_port': agent_port,
         'agent_uuid': agent_uuid,
         'master_ip': master_ip,
-        'master_port': master_port
+        'master_port': master_port,
     }
 
     return inv, server_ips
@@ -46,17 +46,12 @@ def add_agent(data) -> int:
     server_ip = server_sql.select_server_ip_by_id(server_id)
     agent_uuid = str(uuid.uuid4())
     check_agent_limit()
-    agent_kwargs = {
-        'name': common.checkAjaxInput(data.get("name")),
-        'server_id': server_id,
-        'desc': common.checkAjaxInput(data.get("desc")),
-        'enabled': int(data.get("enabled")),
-        'uuid': agent_uuid,
-        'shared': int(data.get("shared"))
-    }
+    agent_kwargs = _validate_agent_json(data)
+    agent_kwargs['server_id'] = server_id
+    agent_kwargs['uuid'] = agent_uuid
 
     try:
-        inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid)
+        inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid, agent_kwargs['port'])
         run_ansible(inv, server_ips, 'rmon_agent')
     except Exception as e:
         roxywi_common.handle_exceptions(e, server_ip, 'Cannot install RMON agent', login=1)
@@ -80,27 +75,16 @@ def delete_agent(agent_id: int):
 
 
 def update_agent(json_data):
-    agent_id = int(json_data.get("agent_id"))
-    name = common.checkAjaxInput(json_data.get("name"))
+    agent_id = int(json_data.pop("agent_id"))
+    json_data = _validate_agent_json(json_data)
+
     try:
-        desc = common.checkAjaxInput(json_data.get("desc"))
-    except Exception as e:
-        raise Exception(f'error: Invalid description value: {e}')
-    try:
-        enabled = int(json_data.get("enabled"))
-    except Exception as e:
-        raise Exception(f'error: Invalid enabled value: {e}')
-    try:
-        shared = int(json_data.get("shared"))
-    except Exception as e:
-        raise Exception(f'error: Invalid shared value: {e}')
-    try:
-        reconfigure = int(json_data.get("reconfigure"))
+        reconfigure = int(json_data.pop("reconfigure"))
     except Exception:
         reconfigure = 0
 
     try:
-        smon_sql.update_agent(agent_id, name, desc, enabled, shared)
+        smon_sql.update_agent(agent_id, **json_data)
     except Exception as e:
         roxywi_common.handle_exceptions(e, 'RMON server', f'Cannot update RMON agent: {agent_id}', roxywi=1, login=1)
 
@@ -108,10 +92,38 @@ def update_agent(json_data):
         agent_uuid = smon_sql.get_agent_uuid(agent_id)
         server_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
         try:
-            inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid)
+            inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid, json_data['port'])
             run_ansible(inv, server_ips, 'rmon_agent')
         except Exception as e:
             roxywi_common.handle_exceptions(e, server_ip, 'Cannot reconfigure RMON agent', roxywi=1, login=1)
+
+
+def _validate_agent_json(json_data: json) -> json:
+    try:
+        json_data['name'] = common.checkAjaxInput(json_data.get("name"))
+    except Exception:
+        raise Exception(f'error: Invalid name value')
+    try:
+        json_data['desc'] = common.checkAjaxInput(json_data.get("desc"))
+    except Exception:
+        raise Exception(f'error: Invalid description value')
+    try:
+        json_data['enabled'] = int(json_data.get("enabled"))
+    except Exception as e:
+        raise Exception(f'error: Invalid enabled value: {e}')
+    try:
+        json_data['shared'] = int(json_data.get("shared"))
+    except Exception as e:
+        raise Exception(f'error: Invalid shared value: {e}')
+    try:
+        json_data['port'] = int(json_data.get("port"))
+    except Exception as e:
+        raise Exception(f'error: Invalid port value: {e}')
+
+    if json_data['port'] > 65535 or json_data['port'] < 1:
+        raise Exception('error: port must be 1-65535')
+
+    return json_data
 
 
 def get_agent_headers(agent_id: int) -> dict:
@@ -127,9 +139,9 @@ def get_agent_headers(agent_id: int) -> dict:
 
 def send_get_request_to_agent(agent_id: int, server_ip: str, api_path: str) -> bytes:
     headers = get_agent_headers(agent_id)
-    agent_port = sql.get_setting('agent_port')
+    agent = smon_sql.get_agent_data(agent_id)
     try:
-        req = requests.get(f'http://{server_ip}:{agent_port}/{api_path}', headers=headers, timeout=5)
+        req = requests.get(f'http://{server_ip}:{agent.port}/{api_path}', headers=headers, timeout=5)
         return req.content
     except Exception as e:
         roxywi_common.logging(server_ip, f'error: Cannot get agent status: {e}')
@@ -138,9 +150,9 @@ def send_get_request_to_agent(agent_id: int, server_ip: str, api_path: str) -> b
 
 def send_post_request_to_agent(agent_id: int, server_ip: str, api_path: str, json_data: object) -> bytes:
     headers = get_agent_headers(agent_id)
-    agent_port = sql.get_setting('agent_port')
+    agent = smon_sql.get_agent_data(agent_id)
     try:
-        req = requests.post(f'http://{server_ip}:{agent_port}/{api_path}', headers=headers, json=json_data, timeout=5)
+        req = requests.post(f'http://{server_ip}:{agent.port}/{api_path}', headers=headers, json=json_data, timeout=5)
         return req.content
     except Exception as e:
         raise Exception(f'error: Cannot get agent status: {e}')
@@ -148,9 +160,9 @@ def send_post_request_to_agent(agent_id: int, server_ip: str, api_path: str, jso
 
 def delete_check(agent_id: int, server_ip: str, check_id: int) -> bytes:
     headers = get_agent_headers(agent_id)
-    agent_port = sql.get_setting('agent_port')
+    agent = smon_sql.get_agent_data(agent_id)
     try:
-        req = requests.delete(f'http://{server_ip}:{agent_port}/check/{check_id}', headers=headers, timeout=5)
+        req = requests.delete(f'http://{server_ip}:{agent.port}/check/{check_id}', headers=headers, timeout=5)
         return req.content
     except requests.exceptions.HTTPError as e:
         roxywi_common.logging(server_ip, f'error: Cannot delete check from agent: http error {e}', roxywi=1, login=1)
