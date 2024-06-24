@@ -1,9 +1,5 @@
-var awesome = "/static/js/fontawesome.min.js"
 var cur_url = window.location.href.split('/').pop();
 cur_url = cur_url.split('/');
-var add_word = $('#translate').attr('data-add');
-var delete_word = $('#translate').attr('data-delete');
-var cancel_word = $('#translate').attr('data-cancel');
 $( function() {
 	$('#add-group-button').click(function() {
 		addGroupDialog.dialog('open');
@@ -238,39 +234,44 @@ window.onload = function() {
 	}
 }
 function addUser(dialog_id) {
-	var valid = true;
 	toastr.clear();
-	allFields = $([]).add($('#new-username')).add($('#new-password')).add($('#new-email'))
+	let valid = true;
+	let new_username_div = $('#new-username');
+	let password_div = $('#new-password');
+	let email_div = $('#new-email');
+	let allFields = $([]).add(new_username_div).add(password_div).add(email_div)
 	allFields.removeClass("ui-state-error");
-	valid = valid && checkLength($('#new-username'), "user name", 1);
-	valid = valid && checkLength($('#new-password'), "password", 1);
-	valid = valid && checkLength($('#new-email'), "Email", 1);
-	var activeuser = 0;
+	valid = valid && checkLength(new_username_div, "user name", 1);
+	valid = valid && checkLength(password_div, "password", 1);
+	valid = valid && checkLength(email_div, "Email", 1);
+	let enabled = 0;
 	if ($('#activeuser').is(':checked')) {
-		activeuser = '1';
+		enabled = '1';
+	}
+	let user_group = $('#new-group').val();
+	if (user_group === undefined || user_group === null) {
+		user_group = $('#new-sshgroup').val();
 	}
 	if (valid) {
+		let jsonData = {
+			"username": new_username_div.val(),
+			"password": password_div.val(),
+			"email": email_div.val(),
+			"role": $('#new-role').val(),
+			"enabled": enabled,
+			"user_group": user_group,
+		}
 		$.ajax({
-			url: "/user/create",
-			data: {
-				newusername: $('#new-username').val(),
-				newpassword: $('#new-password').val(),
-				newemail: $('#new-email').val(),
-				newrole: $('#new-role').val(),
-				activeuser: activeuser,
-				page: cur_url[0].split('#')[0],
-				newgroupuser: $('#new-group').val(),
-				token: $('#token').val()
-			},
+			url: "/user",
 			type: "POST",
+			data: JSON.stringify(jsonData),
+			contentType: "application/json; charset=utf-8",
 			success: function (data) {
-				data = data.replace(/\s+/g, ' ');
-				if (data.indexOf('error:') != '-1') {
-					toastr.error(data);
+				if (data.status === 'failed') {
+					toastr.error(data.error);
 				} else {
-					var getId = new RegExp('[0-9]+');
-					var id = data.match(getId);
-					common_ajax_action_after_success(dialog_id, 'user-' + id, 'ajax-users', data);
+					let user_id = data.id;
+					common_ajax_action_after_success(dialog_id, 'user-' + user_id, 'ajax-users', data.data);
 				}
 			}
 		});
@@ -305,71 +306,68 @@ function addGroup(dialog_id) {
 	}
 }
 function addServer(dialog_id) {
-	toastr.clear()
-	var valid = true;
-	var servername = $('#new-server-add').val();
-	var newip = $('#new-ip').val();
-	var newservergroup = $('#new-server-group-add').val();
-	var cred = $('#credentials').val();
-	var enable = 0;
-	var firewall = 0;
-	var add_to_smon = 0;
-	if ($('#enable').is(':checked')) {
-		enable = '1';
+    toastr.clear()
+    let valid = true;
+    let servername = $('#new-server-add').val();
+    let ip = $('#new-ip').val();
+    let server_group = $('#new-server-group-add').val();
+    let cred = $('#credentials').val();
+    let scan_server = 0;
+    let enable = 0;
+    let add_to_smon = 0;
+    if ($('#scan_server').is(':checked')) {
+        scan_server = '1';
+    }
+    if ($('#add_to_smon').is(':checked')) {
+        add_to_smon = '1';
+    }
+    let allFields = $([]).add($('#new-server-add')).add($('#new-ip')).add($('#new-port'))
+    allFields.removeClass("ui-state-error");
+    valid = valid && checkLength($('#new-server-add'), "Hostname", 1);
+    valid = valid && checkLength($('#new-ip'), "IP", 1);
+    valid = valid && checkLength($('#new-port'), "Port", 1);
+    if (cred == null) {
+        toastr.error('First select credentials');
+        return false;
+    }
+    if (server_group === '------') {
+        toastr.error('First select a group');
+        return false;
+    }
+	if (server_group === undefined || server_group === null) {
+		server_group = $('#new-sshgroup').val();
 	}
-	if ($('#firewall').is(':checked')) {
-		firewall = '1';
-	}
-	if ($('#add_to_smon').is(':checked')) {
-		add_to_smon = '1';
-	}
-	allFields = $([]).add($('#new-server-add')).add($('#new-ip')).add($('#new-port'))
-	allFields.removeClass("ui-state-error");
-	valid = valid && checkLength($('#new-server-add'), "Hostname", 1);
-	valid = valid && checkLength($('#new-ip'), "IP", 1);
-	valid = valid && checkLength($('#new-port'), "Port", 1);
-	if (cred == null) {
-		toastr.error('First select credentials');
-		return false;
-	}
-	if (newservergroup == null) {
-		toastr.error('First select a group');
-		return false;
-	}
-	if (valid) {
-		$.ajax({
-			url: "/server/create",
-			data: {
-				servername: servername,
-				newip: newip,
-				newport: $('#new-port').val(),
-				newservergroup: newservergroup,
-				firewall: firewall,
-				add_to_smon: add_to_smon,
-				enable: enable,
-				cred: cred,
-				page: cur_url[0].split('#')[0],
-				desc: $('#desc').val(),
-				token: $('#token').val()
-			},
-			type: "POST",
-			success: function (data) {
-				data = data.replace(/\s+/g, ' ');
-				if (data.indexOf('error:') != '-1') {
-					toastr.error(data);
-				} else {
-					common_ajax_action_after_success(dialog_id, 'newserver', 'ajax-servers', data);
-					$("input[type=submit], button").button();
-					$("input[type=checkbox]").checkboxradio();
-					$(".controlgroup").controlgroup();
-					$("select").selectmenu();
-					var getId = new RegExp('server-[0-9]+');
-					var id = data.match(getId) + '';
-					after_server_creating(servername, newip);
-				}
-			}
-		});
-	}
+    if (valid) {
+        let json_data = {
+            "name": servername,
+            "ip": ip,
+            "port": $('#new-port').val(),
+            "group": server_group,
+            "add_to_smon": add_to_smon,
+            "enable": enable,
+            "cred": cred,
+            "desc": $('#desc').val(),
+        }
+        $.ajax({
+            url: "/server",
+            type: "POST",
+            data: JSON.stringify(json_data),
+            contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                if (data.status === 'failed') {
+                    toastr.error(data.error);
+                } else {
+                    common_ajax_action_after_success(dialog_id, 'newserver', 'ajax-servers', data.data);
+                    $("input[type=submit], button").button();
+                    $("input[type=checkbox]").checkboxradio();
+                    $(".controlgroup").controlgroup();
+                    $("select").selectmenu();
+                    let id = data.id;
+                    after_server_creating(servername, ip, scan_server);
+                }
+            }
+        });
+    }
 }
 function after_server_creating(servername, newip) {
 	$.ajax({
@@ -410,9 +408,7 @@ function addCreds(dialog_id) {
 				new_group: $('#new-sshgroup').val(),
 				ssh_user: $('#ssh_user').val(),
 				ssh_pass: $('#ssh_pass').val(),
-				ssh_enable: ssh_enable,
-				page: cur_url[0].split('#')[0],
-				token: $('#token').val()
+				ssh_enable: ssh_enable
 			},
 			type: "POST",
 			success: function (data) {
@@ -574,17 +570,15 @@ function cloneServer(id) {
 function removeUser(id) {
 	$("#user-" + id).css("background-color", "#f2dede");
 	$.ajax({
-		url: "/user/delete/" + id,
-		// data: {
-		// 	token: $('#token').val()
-		// },
-		// type: "POST",
+		url: "/user",
+		data: JSON.stringify({'user_id': id}),
+		contentType: "application/json; charset=utf-8",
+		type: "DELETE",
 		success: function (data) {
-			data = data.replace(/\s+/g, ' ');
-			if (data == "ok") {
+			if (data.status === 'failed') {
+				toastr.error(data.error);
+			} else {
 				$("#user-" + id).remove();
-			} else if (data.indexOf('error:') != '-1' || data.indexOf('unique') != '-1') {
-				toastr.error(data);
 			}
 		}
 	});
@@ -593,10 +587,6 @@ function removeServer(id) {
 	$("#server-" + id).css("background-color", "#f2dede");
 	$.ajax({
 		url: "/server/delete/" + id,
-		// data: {
-		// 	token: $('#token').val()
-		// },
-		// type: "POST",
 		success: function (data) {
 			data = data.replace(/\s+/g, ' ');
 			if (data == "Ok") {
@@ -672,8 +662,7 @@ function updateUser(id) {
 			role: role,
 			usergroup: usergroup,
 			activeuser: activeuser,
-			id: id,
-			token: $('#token').val()
+			id: id
 		},
 		type: "POST",
 		success: function (data) {
@@ -973,10 +962,6 @@ function confirmAjaxServiceAction(action, service) {
 function ajaxActionServices(action, service) {
 	$.ajax( {
 		url: "/admin/tools/action/" + service + "/" + action,
-		// data: {
-		// 	token: $('#token').val()
-		// },
-		// type: "POST",
 		success: function( data ) {
 			if (data.indexOf('error:') != '-1' || data.indexOf('Failed') != '-1') {
 				toastr.error(data);
@@ -998,10 +983,6 @@ function updateService(service, action='update') {
 	$("#ajax-update").html(wait_mess);
 	$.ajax({
 		url: "/admin/tools/update/" + service,
-		// data: {
-		// 	token: $('#token').val()
-		// },
-		// type: "POST",
 		success: function (data) {
 			data = data.replace(/\s+/g, ' ');
 			if (data.indexOf('Complete!') != '-1' || data.indexOf('Unpacking') != '-1') {

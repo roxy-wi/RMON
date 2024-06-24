@@ -139,7 +139,7 @@ def return_nice_path(return_path: str, is_service=1) -> str:
 
 	"""
 	if not check_is_service_folder(return_path) and is_service:
-		return 'error: The path must contain the name of the service. Check it in Roxy-WI settings'
+		return 'error: The path must contain the name of the service. Check it in RMON settings'
 
 	if return_path[-1] != '/':
 		return_path += '/'

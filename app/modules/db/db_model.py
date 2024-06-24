@@ -4,7 +4,7 @@ from flask_login import UserMixin
 from playhouse.shortcuts import ReconnectMixin
 from playhouse.sqlite_ext import SqliteExtDatabase
 
-import modules.roxy_wi_tools as roxy_wi_tools
+import app.modules.roxy_wi_tools as roxy_wi_tools
 
 get_config = roxy_wi_tools.GetConfigVar()
 mysql_enable = get_config.get_config_var('mysql', 'enable')

@@ -1,13 +1,15 @@
 import uuid
 
-from flask import request, abort, make_response, url_for
-from flask_login import login_user
-from datetime import datetime, timedelta
+from flask import request, abort, url_for, jsonify
+from flask_jwt_extended import create_access_token, set_access_cookies
+from flask_jwt_extended import get_jwt
+from flask_jwt_extended import verify_jwt_in_request
 
 import app.modules.db.sql as sql
 import app.modules.db.user as user_sql
 import app.modules.db.group as group_sql
 import app.modules.roxywi.common as roxywi_common
+import app.modules.roxy_wi_tools as roxy_wi_tools
 
 
 def check_login(user_uuid) -> str:
@@ -33,8 +35,10 @@ def is_admin(level=1, **kwargs):
     if kwargs.get('role_id'):
         role = kwargs.get('role_id')
     else:
-        user_id = request.cookies.get('uuid')
-        group_id = request.cookies.get('group')
+        verify_jwt_in_request()
+        claims = get_jwt()
+        user_id = claims['uuid']
+        group_id = claims['group']
 
         try:
             role = user_sql.get_user_role_by_uuid(user_id, group_id)
@@ -100,25 +104,23 @@ def create_uuid_and_token(login: str):
 
 
 def do_login(user_uuid: str, user_group: str, user: str, next_url: str):
-    try:
-        session_ttl = sql.get_setting('session_ttl')
-    except Exception:
-        session_ttl = 5
-
-    if not session_ttl:
-        session_ttl = 5
+    # try:
+    #     session_ttl = sql.get_setting('session_ttl')
+    # except Exception:
+    #     session_ttl = 5
+    #
+    # if not session_ttl:
+    #     session_ttl = 5
 
     if next_url:
         redirect_to = f'https://{request.host}{next_url}'
     else:
         redirect_to = f"https://{request.host}{url_for('overview.index')}"
 
-    expires = datetime.utcnow() + timedelta(days=session_ttl)
-
-    login_user(user)
-    resp = make_response(redirect_to)
-    resp.set_cookie('uuid', user_uuid, secure=True, expires=expires.strftime("%a, %d %b %Y %H:%M:%S GMT"), samesite='Strict')
-    resp.set_cookie('group', str(user_group), expires=expires.strftime("%a, %d %b %Y %H:%M:%S GMT"), samesite='Strict')
+    response = jsonify({"status": "done", "next_url": redirect_to})
+    additional_claims = {'uuid': user_uuid, 'group': str(user_group)}
+    access_token = create_access_token(str(user), additional_claims=additional_claims)
+    set_access_cookies(response, access_token)
 
     try:
         user_group_name = group_sql.get_group_name_by_id(user_group)
@@ -127,8 +129,33 @@ def do_login(user_uuid: str, user_group: str, user: str, next_url: str):
 
     try:
         user_name = user_sql.get_user_name_by_uuid(user_uuid)
-        roxywi_common.logging('Roxy-WI server', f' user: {user_name}, group: {user_group_name} login', roxywi=1)
+        roxywi_common.logging('RMON server', f' user: {user_name}, group: {user_group_name} login', roxywi=1)
     except Exception as e:
         print(f'error: {e}')
 
-    return resp
+    return response
+
+
+def check_user_password(login: str, password: str) -> dict:
+    if login and password:
+        users = user_sql.select_users(user=login)
+
+        for user in users:
+            if user.activeuser == 0:
+                raise Exception('Your login is disabled')
+            if user.ldap_user == 1:
+                if login in user.username:
+                    if check_in_ldap(login, password):
+                        user_uuid = create_uuid_and_token(login)
+                        return {'uuid': user_uuid, 'group': str(user.groups), 'user': user}
+            else:
+                hashed_password = roxy_wi_tools.Tools.get_hash(password)
+                if login in user.username and hashed_password == user.password:
+                    user_uuid = create_uuid_and_token(login)
+                    return {'uuid': user_uuid, 'group': str(user.groups), 'user': user}
+                else:
+                    raise Exception('ban')
+        else:
+            raise Exception('ban')
+    else:
+        raise Exception('There is no login or password')

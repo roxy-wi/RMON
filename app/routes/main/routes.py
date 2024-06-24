@@ -1,11 +1,8 @@
 import os
-import sys
 import pytz
 
 from flask import render_template, request, session, g, abort, send_from_directory, jsonify
-from flask_login import login_required
-
-sys.path.insert(0, "/var/www/rmon/app")
+from flask_jwt_extended import jwt_required
 
 from app import app, cache
 from app.routes.main import bp
@@ -32,6 +29,8 @@ def _jinja2_filter_datetime(date, fmt=None):
 @app.errorhandler(403)
 @get_user_params()
 def page_is_forbidden(e):
+    if 'api' in request.url:
+        return jsonify({'error': str(e)}), 403
     kwargs = {
         'user_params': g.user_params,
         'title': e,
@@ -43,6 +42,8 @@ def page_is_forbidden(e):
 @app.errorhandler(404)
 @get_user_params()
 def page_not_found(e):
+    if 'api' in request.url:
+        return jsonify({'error': str(e)}), 404
     kwargs = {
         'user_params': g.user_params,
         'title': e,
@@ -54,6 +55,8 @@ def page_not_found(e):
 @app.errorhandler(405)
 @get_user_params()
 def method_not_allowed(e):
+    if 'api' in request.url:
+        return jsonify({'error': str(e)}), 405
     kwargs = {
         'user_params': g.user_params,
         'title': e,
@@ -65,6 +68,8 @@ def method_not_allowed(e):
 @app.errorhandler(500)
 @get_user_params()
 def internal_error(e):
+    if 'api' in request.url:
+        return jsonify({'error': str(e)}), 500
     kwargs = {
         'user_params': g.user_params,
         'title': e,
@@ -75,7 +80,10 @@ def internal_error(e):
 
 @app.before_request
 def make_session_permanent():
-    session.permanent = True
+    if 'api' in request.url:
+        session.permanent = False
+    else:
+        session.permanent = True
 
 
 @app.route('/favicon.ico')
@@ -85,14 +93,14 @@ def favicon():
 
 
 @bp.route('/nettools')
-@login_required
+@jwt_required()
 @get_user_params(1)
 def nettools():
     return render_template('nettools.html', lang=g.user_params['lang'])
 
 
 @bp.post('/nettools/<check>')
-@login_required
+@jwt_required()
 def nettools_check(check):
     server_from = common.checkAjaxInput(request.form.get('server_from'))
     server_to = common.is_ip_or_dns(request.form.get('server_to'))
@@ -128,7 +136,7 @@ def nettools_check(check):
 
 
 @bp.route('/history/<service>/<server_ip>')
-@login_required
+@jwt_required()
 @get_user_params()
 def service_history(service, server_ip):
     history = ''
@@ -155,7 +163,7 @@ def service_history(service, server_ip):
 
 
 @bp.route('/servers')
-@login_required
+@jwt_required()
 @get_user_params()
 def servers():
     roxywi_auth.page_for_admin(level=2)
@@ -212,6 +220,7 @@ def scan_port(server_id, server_ip):
 
 
 @bp.route('/cpu-ram-metrics/<server_id>')
+@jwt_required()
 @get_user_params()
 def cpu_ram_metrics(server_id):
     kwargs = {

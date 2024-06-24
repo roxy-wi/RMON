@@ -1,5 +1,5 @@
 from flask import render_template, request
-from flask_login import login_required
+from flask_jwt_extended import jwt_required
 
 from app.routes.server import bp
 import app.modules.db.cred as cred_sql
@@ -18,7 +18,7 @@ error_mess = roxywi_common.return_error_message()
 
 
 @bp.before_request
-@login_required
+@jwt_required()
 def before_request():
     """ Protect all the admin endpoints. """
     pass

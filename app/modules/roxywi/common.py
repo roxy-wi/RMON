@@ -3,6 +3,8 @@ import glob
 from typing import Any
 
 from flask import request
+from flask_jwt_extended import get_jwt
+from flask_jwt_extended import verify_jwt_in_request
 
 from app.modules.db.sql import get_setting
 import app.modules.db.roxy as roxy_sql
@@ -23,7 +25,9 @@ def get_user_group(**kwargs) -> int:
 	user_group = ''
 
 	try:
-		user_group_id = request.cookies.get('group')
+		verify_jwt_in_request()
+		claims = get_jwt()
+		user_group_id = claims['group']
 		groups = group_sql.select_groups(id=user_group_id)
 		for g in groups:
 			if g.group_id == int(user_group_id):
@@ -36,36 +40,18 @@ def get_user_group(**kwargs) -> int:
 	return user_group
 
 
-def check_user_group_for_flask(**kwargs):
-	if kwargs.get('token') is not None:
-		return True
-
-	if kwargs.get('user_uuid'):
-		group_id = kwargs.get('user_group_id')
-		user_uuid = kwargs.get('user_uuid')
-		user_id = user_sql.get_user_id_by_uuid(user_uuid)
-	else:
-		user_uuid = request.cookies.get('uuid')
-		group_id = request.cookies.get('group')
-		user_id = user_sql.get_user_id_by_uuid(user_uuid)
+def check_user_group_for_flask():
+	verify_jwt_in_request()
+	claims = get_jwt()
+	user_uuid = claims['uuid']
+	group_id = claims['group']
+	user_id = user_sql.get_user_id_by_uuid(user_uuid)
 
 	if user_sql.check_user_group(user_id, group_id):
 		return True
 	else:
 		logging('RMON server', ' has tried to actions in not his group ', roxywi=1, login=1)
 		return False
-
-
-def get_user_id(**kwargs):
-	if kwargs.get('login'):
-		return user_sql.get_user_id_by_username(kwargs.get('login'))
-
-	user_uuid = request.cookies.get('uuid')
-
-	if user_uuid is not None:
-		user_id = user_sql.get_user_id_by_uuid(user_uuid)
-
-		return user_id
 
 
 def check_is_server_in_group(server_ip: str) -> bool:
@@ -151,7 +137,8 @@ def logging(server_ip: str, action: str, **kwargs) -> None:
 
 def keep_action_history(service: str, action: str, server_ip: str, login: str, user_ip: str):
 	if login != '':
-		user_id = user_sql.get_user_id_by_username(login)
+		user = user_sql.get_user_by_username(login)
+		user_id = user.user_id
 	else:
 		user_id = 0
 	if user_ip == '':
@@ -167,11 +154,6 @@ def keep_action_history(service: str, action: str, server_ip: str, login: str, u
 
 
 def get_dick_permit(**kwargs):
-	if kwargs.get('token'):
-		token = kwargs.get('token')
-	else:
-		token = ''
-
 	if not kwargs.get('group_id'):
 		try:
 			group_id = get_user_group(id=1)
@@ -180,7 +162,7 @@ def get_dick_permit(**kwargs):
 	else:
 		group_id = kwargs.pop('group_id')
 
-	if check_user_group_for_flask(token=token):
+	if check_user_group_for_flask():
 		try:
 			servers = server_sql.get_dick_permit(group_id, **kwargs)
 		except Exception as e:
@@ -192,8 +174,11 @@ def get_dick_permit(**kwargs):
 
 
 def get_users_params(**kwargs):
+	verify_jwt_in_request()
+	user_data = get_jwt()
+
 	try:
-		user_uuid = request.cookies.get('uuid')
+		user_uuid = user_data['uuid']
 		user = user_sql.get_user_name_by_uuid(user_uuid)
 	except Exception:
 		raise Exception('error: Cannot get user UUID')
@@ -204,7 +189,7 @@ def get_users_params(**kwargs):
 		raise Exception(f'error: Cannot get user group: {e}')
 
 	try:
-		group_id_from_cookies = int(request.cookies.get('group'))
+		group_id_from_cookies = int(user_data['group'])
 	except Exception as e:
 		raise Exception(f'error: Cannot get group id from cookies: {e}')
 

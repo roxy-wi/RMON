@@ -5,7 +5,6 @@ function getChartDataHapWiRam(ip) {
 		data: {
 			metrics_hapwi_ram: '1',
 			ip: ip,
-			token: $('#token').val()
 		},
 		beforeSend: function() {
 			$('#ram').html('<img class="loading_hapwi_overview" src="/static/images/loading.gif" alt="loading..." />')
@@ -78,12 +77,12 @@ function renderChartHapWiRam(data) {
     charts.push(myChart);
 }
 function getChartDataHapWiCpu(ip) {
+    console.log(csrf_token)
     $.ajax({
         url: "/metrics/cpu",
 		data: {
 			metrics_hapwi_cpu: '1',
 			ip: ip,
-			token: $('#token').val()
 		},
 		type: "POST",
         success: function (result) {

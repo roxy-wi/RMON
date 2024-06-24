@@ -2,7 +2,7 @@ import json
 import time
 
 from flask import render_template, request, jsonify, g, Response, stream_with_context
-from flask_login import login_required
+from flask_jwt_extended import jwt_required
 
 from app.routes.smon import bp
 from app.middleware import get_user_params
@@ -16,7 +16,7 @@ import app.modules.tools.common as tools_common
 
 
 @bp.route('/dashboard')
-@login_required
+@jwt_required()
 @get_user_params()
 def smon_main_dashboard():
     """
@@ -45,7 +45,7 @@ def smon_main_dashboard():
 
 
 @bp.route('/dashboard/<int:smon_id>/<int:check_id>')
-@login_required
+@jwt_required()
 @get_user_params()
 def smon_dashboard(smon_id, check_id):
     """
@@ -107,7 +107,7 @@ def smon_dashboard(smon_id, check_id):
 
 
 @bp.get('/groups')
-@login_required
+@jwt_required()
 @get_user_params()
 def get_groups():
     groups = smon_sql.select_smon_groups(g.user_params['group_id'])
@@ -119,7 +119,7 @@ def get_groups():
 
 
 @bp.route('/status-page', methods=['GET', 'POST', 'DELETE', 'PUT'])
-@login_required
+@jwt_required()
 @get_user_params()
 def status_page():
     """
@@ -204,7 +204,7 @@ def status_page():
 
 
 @bp.route('/status/checks/<int:page_id>')
-@login_required
+@jwt_required()
 def get_checks(page_id):
     """
     :param page_id: The ID of the page for which to fetch the checks.
@@ -236,7 +236,7 @@ def smon_history_statuses_avg(page_id):
 
 
 @bp.route('/history')
-@login_required
+@jwt_required()
 @get_user_params()
 def smon_history():
     roxywi_common.check_user_group_for_flask()
@@ -253,7 +253,7 @@ def smon_history():
 
 
 @bp.route('/history/host/<server_ip>')
-@login_required
+@jwt_required()
 @get_user_params()
 def smon_host_history(server_ip):
     roxywi_common.check_user_group_for_flask()
@@ -368,6 +368,6 @@ def smon_history_statuses(dashboard_id):
 
 
 @bp.route('/history/cur_status/<int:dashboard_id>/<int:check_id>')
-@login_required
+@jwt_required()
 def smon_history_cur_status(dashboard_id, check_id):
     return smon_mod.history_cur_status(dashboard_id, check_id)

@@ -13,7 +13,6 @@ Werkzeug==2.0.3
 Flask==2.0.3
 Flask-APScheduler==1.12.4
 Flask-Caching==1.10.1
-Flask-Login==0.5.0
 ansible-core==2.11.12
 ansible-runner==2.3.1
 distro>=1.9.0
@@ -22,3 +21,4 @@ aio-pika>=7.1.0
 pika>=1.2.0
 websockets>=9.0
 python-whois>=0.8.0
+flask-jwt-extended>=0

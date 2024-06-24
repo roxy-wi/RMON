@@ -1,20 +1,20 @@
-from flask import render_template, request, redirect, url_for, make_response
-from flask_login import login_required, logout_user, current_user, login_url
+from flask import render_template, request, redirect, make_response
+from flask_login import login_url
+from flask_jwt_extended import unset_jwt_cookies, jwt_required
 
-from app import app, login_manager, cache
+from app import app
 import app.modules.db.user as user_sql
-import app.modules.roxywi.common as roxywi_common
-import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.roxy as roxy
-import app.modules.roxy_wi_tools as roxy_wi_tools
+import app.modules.roxywi.auth as roxywi_auth
+import app.modules.roxywi.common as roxywi_common
 
 
 @app.before_request
 def check_login():
     if request.endpoint not in (
             'login_page', 'static', 'main.show_roxywi_version', 'smon.show_smon_status_page', 'smon.smon_history_statuses_avg',
-            'smon.smon_history_statuses', 'smon.agent_get_checks', 'smon.get_check_status', 'smon.smon_history_metric'
-    ):
+            'smon.smon_history_statuses', 'smon.agent_get_checks', 'smon.get_check_status', 'smon.smon_history_metric', 'api'
+    ) and 'api' not in request.url:
         try:
             user_params = roxywi_common.get_users_params()
         except Exception as e:
@@ -30,75 +30,69 @@ def check_login():
             return redirect(login_url('login_page', next_url=request.url))
 
 
-@login_manager.user_loader
-def load_user(user_id):
-    user = f'user_{user_id}'
-    user_obj = cache.get(user)
-
-    if user_obj is None:
-        query = user_sql.get_user_id(user_id)
-        cache.set(user, query, timeout=360)
-        return query
-
-    return user_obj
+# @login_manager.user_loader
+# def load_user(user_id):
+#     user = f'user_{user_id}'
+#     user_obj = cache.get(user)
+#
+#     if user_obj is None:
+#         query = user_sql.get_user_id(user_id)
+#         cache.set(user, query, timeout=360)
+#         return query
+#
+#     return user_obj
 
 
 @app.after_request
 def redirect_to_login(response):
-    if response.status_code == 401:
-        return redirect(login_url('login_page', next_url=request.url))
-
+    if 'api' not in str(request.blueprint):
+        if response.status_code == 401:
+            return redirect(login_url('login_page', next_url=request.url))
     return response
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login_page():
-    try:
-        roxy.update_plan()
-    except Exception:
-        pass
-    next_url = request.args.get('next') or request.form.get('next')
-    login = request.form.get('login')
-    password = request.form.get('pass')
+    if request.method == 'GET':
+        try:
+            lang = roxywi_common.get_user_lang_for_flask()
+        except Exception:
+            lang = 'en'
 
-    if login and password:
-        users = user_sql.select_users(user=login)
+        return render_template('login.html', lang=lang)
+    elif request.method == 'POST':
+        next_url = request.args.get('next') or request.form.get('next')
+        login = request.json.get('login')
+        password = request.json.get('pass')
 
-        for user in users:
-            if user.activeuser == 0:
-                return 'Your login is disabled', 200
-            if user.ldap_user == 1:
-                if login in user.username:
-                    if roxywi_auth.check_in_ldap(login, password):
-                        user_uuid = roxywi_auth.create_uuid_and_token(login)
-                        return roxywi_auth.do_login(user_uuid, str(user.groups), user, next_url)
+        try:
+            roxy.update_plan()
+        except Exception:
+            pass
 
-            else:
-                hashed_password = roxy_wi_tools.Tools.get_hash(password)
-                if login in user.username and hashed_password == user.password:
-                    user_uuid = roxywi_auth.create_uuid_and_token(login)
-                    return roxywi_auth.do_login(user_uuid, str(user.groups), user, next_url)
-                else:
-                    return 'ban', 200
-        else:
-            return 'ban', 200
+        try:
+            user_params = roxywi_auth.check_user_password(login, password)
+        except Exception as e:
+            return roxywi_common.handle_json_exceptions(e, 'Cannot check login password'), 200
 
-    try:
-        lang = roxywi_common.get_user_lang_for_flask()
-    except Exception:
-        lang = 'en'
-
-    return render_template('login.html', lang=lang)
+        try:
+            return roxywi_auth.do_login(user_params['uuid'], user_params['group'], user_params['user'], next_url)
+        except Exception as e:
+            return roxywi_common.handle_json_exceptions(e, 'Cannot do login'), 200
 
 
 @app.route('/logout', methods=['GET', 'POST'])
-@login_required
+@jwt_required()
 def logout():
-    user = f'user_{current_user.id}'
-    cache.delete(user)
-    logout_user()
-    resp = make_response(redirect(url_for('login_page')))
-    resp.delete_cookie('uuid')
-    resp.delete_cookie('group')
-
+    # user = f'user_{current_user.id}'
+    # cache.delete(user)
+    # logout_user()
+    # resp = make_response(redirect(url_for('login_page')))
+    # resp.delete_cookie('uuid')
+    # resp.delete_cookie('group')
+    #
+    # return resp
+    # response = jsonify({"msg": "logout successful"})
+    resp = make_response(redirect('/', 302))
+    unset_jwt_cookies(resp)
     return resp

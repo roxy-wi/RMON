@@ -64,7 +64,7 @@
 					<option disabled selected>Select a role</option>
 					{% for r in roles %}
 						{% for user_role in user_roles %}
-							{% if r.role_id|int() != 1 and user.user_id == user_role.user_id %}
+							{% if r.role_id|int() != 1 and user.user_id|string() == user_role.user_id|string() %}
 								{% if user_role.user_role_id == r.role_id %}
 								<option value="{{ r.role_id }}" selected>{{ r.name }}</option>
 								{% else %}

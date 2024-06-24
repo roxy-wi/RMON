@@ -225,13 +225,11 @@ def get_user_id_by_uuid(uuid):
 			return user.user_id
 
 
-def get_user_id_by_username(username: str):
+def get_user_by_username(username: str) -> User:
 	try:
-		query = User.get(User.username == username).user_id
+		return User.get(User.username == username)
 	except Exception as e:
 		out_error(e)
-	else:
-		return query
 
 
 def get_user_role_by_uuid(uuid, group_id):
@@ -265,7 +263,8 @@ def get_user_current_group_by_uuid(uuid):
 
 def write_user_uuid(login, user_uuid):
 	session_ttl = get_setting('session_ttl')
-	user_id = get_user_id_by_username(login)
+	user = get_user_by_username(login)
+	user_id = user.user_id
 	get_date = roxy_wi_tools.GetDate()
 	cur_date = get_date.return_date('regular', timedelta=session_ttl)
 

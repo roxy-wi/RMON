@@ -1,6 +1,7 @@
 import os
 
-from flask import render_template, make_response
+from flask import render_template, make_response, jsonify
+from flask_jwt_extended import create_access_token, set_access_cookies
 
 import app.modules.db.sql as sql
 import app.modules.db.user as user_sql
@@ -8,27 +9,29 @@ import app.modules.roxywi.common as roxywi_common
 import app.modules.tools.alerting as alerting
 
 
-def create_user(new_user: str, email: str, password: str, role: int, activeuser: int, group: int) -> None:
+def create_user(new_user: str, email: str, password: str, role: int, activeuser: int, group: int) -> int:
     try:
         user_id = user_sql.add_user(new_user, email, password, role, activeuser, group)
         roxywi_common.logging(f'a new user {new_user}', 'has been created', login=1)
-        try:
-            user_sql.update_user_role(user_id, group, role)
-        except Exception as e:
-            raise Exception(f'error: cannot update user role {e}')
-        try:
-            if password == 'aduser':
-                password = 'your domain password'
-            message = f"A user has been created for you on RMON portal!\n\n" \
-                      f"Now you can login to https://{os.environ.get('HTTP_HOST', '')}\n\n" \
-                      f"Your credentials are:\n" \
-                      f"Login: {new_user}\n" \
-                      f"Password: {password}"
-            alerting.send_email(email, 'A user has been created for you', message)
-        except Exception as e:
-            roxywi_common.logging('error: Cannot send email for a new user', e, login=1)
     except Exception as e:
         roxywi_common.handle_exceptions(e, 'RMON server', 'Cannot create a new user', login=1)
+    try:
+        user_sql.update_user_role(user_id, group, role)
+    except Exception as e:
+        raise Exception(f'error: cannot update user role {e}')
+    try:
+        if password == 'aduser':
+            password = 'your domain password'
+        message = f"A user has been created for you on RMON portal!\n\n" \
+                  f"Now you can login to https://{os.environ.get('HTTP_HOST', '')}\n\n" \
+                  f"Your credentials are:\n" \
+                  f"Login: {new_user}\n" \
+                  f"Password: {password}"
+        alerting.send_email(email, 'A user has been created for you', message)
+    except Exception as e:
+        roxywi_common.logging('error: Cannot send email for a new user', e, login=1)
+
+    return user_id
 
 
 def delete_user(user_id: int) -> str:
@@ -70,15 +73,6 @@ def update_user_password(password, uuid, user_id_from_get):
     return 'ok'
 
 
-# def get_user_services(user_id: int) -> str:
-#     lang = roxywi_common.get_user_lang_for_flask()
-#     services = service_sql.select_services()
-#
-#     return render_template(
-#         'ajax/user_services.html', user_services=user_sql.select_user_services(user_id), id=user_id, services=services, lang=lang
-#     )
-
-
 def change_user_services(user: str, user_id: int, user_services: str) -> str:
     services = ''
 
@@ -94,10 +88,14 @@ def change_user_services(user: str, user_id: int, user_services: str) -> str:
     return 'ok'
 
 
-def change_user_active_group(group_id: int, user_uuid: str) -> str:
+def change_user_active_group(user: int, group_id: int, user_uuid: str):
+    additional_claims = {'uuid': user_uuid, 'group': str(group_id)}
+    response = jsonify({"status": "done"})
+    access_token = create_access_token(str(user), additional_claims=additional_claims)
+    set_access_cookies(response, access_token)
     try:
         user_sql.update_user_current_groups(group_id, user_uuid)
-        return 'Ok'
+        return response
     except Exception as e:
         roxywi_common.handle_exceptions(e, 'RMON', 'Cannot change the group', login=1)
 

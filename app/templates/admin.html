@@ -154,4 +154,7 @@
 	});
 </script>
 <link href="{{ url_for('static', filename='css/servers.css') }}" rel="stylesheet"/>
+{% if g.user_params['role'] == 2 %}
+    <input id="new-sshgroup" type="hidden" value="{{ g.user_params['group_id'] }}">
+{% endif %}
 {% endblock %}

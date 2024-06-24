@@ -1,4 +1,4 @@
-{% if page != "servers.py" %}
+{% if g.user_params['role'] == 1 %}
 <div id="user-add-table" style="display: none;">
     <table class="overview" id="user-add-table-overview" title="{{lang.words.add|title()}} {{lang.words.w_a}} {{lang.words.new2}} {{lang.words.user2}}">
         {% include 'include/tr_validate_tips.html' %}
@@ -64,7 +64,7 @@
                 <option disabled selected>{{lang.words.select|title()}} {{lang.words.w_a}} {{lang.words.role}}</option>
                 {% for role in roles %}
                 {% if role.name != "superAdmin" %}
-                <option value="{{ role.name }}">{{ role.name }}</option>
+                <option value="{{ role.role_id }}">{{ role.name }}</option>
                 {% endif %}
                 {% endfor %}
             </select>

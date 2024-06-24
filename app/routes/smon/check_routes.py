@@ -1,7 +1,7 @@
 import json
 
 from flask import render_template, request, jsonify, g
-from flask_login import login_required
+from flask_jwt_extended import jwt_required
 
 from app.routes.smon import bp
 from app.middleware import get_user_params
@@ -13,7 +13,7 @@ import app.modules.roxywi.common as roxywi_common
 
 
 @bp.route('/check', methods=['POST', 'PUT', 'DELETE'])
-@login_required
+@jwt_required()
 def smon_add():
     json_data = request.get_json()
     user_group = roxywi_common.get_user_group(id=1)
@@ -50,7 +50,7 @@ def smon_add():
 
 
 @bp.route('/check/settings/<int:smon_id>/<int:check_type_id>')
-@login_required
+@jwt_required()
 @get_user_params()
 def check(smon_id, check_type_id):
     smon = smon_sql.select_one_smon(smon_id, check_type_id)
@@ -105,7 +105,7 @@ def check(smon_id, check_type_id):
 
 
 @bp.route('/check/<int:smon_id>/<int:check_type_id>')
-@login_required
+@jwt_required()
 @get_user_params()
 def get_check(smon_id, check_type_id):
     """
@@ -125,7 +125,7 @@ def get_check(smon_id, check_type_id):
 
 
 @bp.get('/checks/count')
-@login_required
+@jwt_required()
 def get_checks_count():
     try:
         smon_mod.check_checks_limit()
@@ -136,7 +136,7 @@ def get_checks_count():
 
 
 @bp.post('/checks/move')
-@login_required
+@jwt_required()
 def move_checks():
     old_agent = int(request.json.get('old_agent'))
     new_agent = int(request.json.get('new_agent'))
