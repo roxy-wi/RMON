@@ -54,7 +54,6 @@ def get_current_group():
         user = claims['sub']
 
         group_id = int(request.json.get('group'))
-        # user_uuid = common.checkAjaxInput(request.form.get('uuid'))
         return roxywi_user.change_user_active_group(user, group_id, uuid)
 
 

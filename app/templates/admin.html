@@ -4,6 +4,8 @@
 {% block content %}
 {% from 'include/input_macros.html' import input, select, copy_to_clipboard, checkbox %}
 <script src="{{ url_for('static', filename='js/users.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin/server.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin/group.js') }}"></script>
 <script src="{{ url_for('static', filename='js/fontawesome.min.js') }}"></script>
 {% include 'include/del_confirm.html' %}
 <div id="tabs">
@@ -49,7 +51,7 @@
 				<td class="padding10" style="width: 0">{{group.group_id}}</td>
 			{% if group.name == "Default" %}
 				<td class="padding10 first-collumn">{{ group.name }}</td>
-				<td>{{ group.description }}</td>
+				<td>{{ group.description.replace("'", "") }}</td>
 				<td></td>
 			{% else %}
 				<td class="padding10 first-collumn">
@@ -59,7 +61,7 @@
 				<td>
 					{% set id = 'descript-' + group.group_id|string() %}
 					{% if group.description is not none %}
-						{{ input(id, value=group.description, size='60') }}
+						{{ input(id, value=group.description.replace("'", ""), size='60') }}
 					{% else %}
 						{{ input(id, value='', size='60') }}
 					{% endif %}

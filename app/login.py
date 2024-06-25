@@ -30,19 +30,6 @@ def check_login():
             return redirect(login_url('login_page', next_url=request.url))
 
 
-# @login_manager.user_loader
-# def load_user(user_id):
-#     user = f'user_{user_id}'
-#     user_obj = cache.get(user)
-#
-#     if user_obj is None:
-#         query = user_sql.get_user_id(user_id)
-#         cache.set(user, query, timeout=360)
-#         return query
-#
-#     return user_obj
-
-
 @app.after_request
 def redirect_to_login(response):
     if 'api' not in str(request.blueprint):
@@ -84,15 +71,6 @@ def login_page():
 @app.route('/logout', methods=['GET', 'POST'])
 @jwt_required()
 def logout():
-    # user = f'user_{current_user.id}'
-    # cache.delete(user)
-    # logout_user()
-    # resp = make_response(redirect(url_for('login_page')))
-    # resp.delete_cookie('uuid')
-    # resp.delete_cookie('group')
-    #
-    # return resp
-    # response = jsonify({"msg": "logout successful"})
     resp = make_response(redirect('/', 302))
     unset_jwt_cookies(resp)
     return resp

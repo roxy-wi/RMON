@@ -18,16 +18,15 @@ def select_groups(**kwargs):
 		return query_res
 
 
-def add_group(name, description):
+def add_group(name: str, description: str) -> int:
 	try:
 		last_insert = Groups.insert(name=name, description=description)
 		last_insert_id = last_insert.execute()
 	except Exception as e:
 		out_error(e)
-		return False
 	else:
 		add_setting_for_new_group(last_insert_id)
-		return True
+		return last_insert_id
 
 
 def add_setting_for_new_group(group_id):

@@ -5,7 +5,6 @@ from flask_jwt_extended import create_access_token
 
 from app import jwt
 from app.api.v1.routes.main import bp
-import app.modules.db.user as user_sql
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.common as roxywi_common
 
@@ -27,20 +26,16 @@ def hello():
 
 @bp.post('/login')
 def do_login():
-    print('12')
     try:
         login = request.json.get('login')
         password = request.json.get('password')
     except Exception:
         return roxywi_common.handle_json_exceptions('', 'There is no login or password')
-    print('321')
     try:
         user_params = roxywi_auth.check_user_password(login, password)
     except Exception as e:
         return roxywi_common.handle_json_exceptions(e, ''), 200
-    print('123',user_params)
     additional_claims = {'uuid': user_params['uuid'], 'group': user_params['group']}
-    print(user_params['user'])
     access_token = create_access_token(str(user_params['user']), additional_claims=additional_claims)
     return jsonify(access_token=access_token)
 

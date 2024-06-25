@@ -1,6 +1,5 @@
 from flask import Flask
 from flask_caching import Cache
-# from flask_login import LoginManager
 from flask_apscheduler import APScheduler
 from flask_jwt_extended import JWTManager
 
@@ -17,15 +16,14 @@ cache.init_app(app)
 scheduler = APScheduler()
 scheduler.init_app(app)
 scheduler.start()
-#
-# login_manager = LoginManager(app)
-# login_manager.login_view = 'login_page'
 
 from app.api.v1.routes.main import bp as main_api_bp
 from app.api.v1.routes.user import bp as user_api_bp
+from app.api.v1.routes.server import bp as server_api_bp
 
 app.register_blueprint(main_api_bp, url_prefix="/api/v1.0")
 app.register_blueprint(user_api_bp, url_prefix="/api/v1.0/user")
+app.register_blueprint(server_api_bp, url_prefix="/api/v1.0/server")
 
 from app.routes.main import bp as main_bp
 from app.routes.smon import bp as smon_bp

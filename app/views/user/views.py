@@ -1,6 +1,6 @@
 from flask.views import MethodView
-from flask import render_template, jsonify, request, g
 from flask_jwt_extended import jwt_required
+from flask import render_template, jsonify, request, g
 
 import app.modules.db.sql as sql
 import app.modules.db.user as user_sql
@@ -8,12 +8,12 @@ import app.modules.db.group as group_sql
 import app.modules.common.common as common
 import app.modules.roxywi.user as roxywi_user
 import app.modules.roxywi.common as roxywi_common
-from app.middleware import get_user_params
+from app.middleware import get_user_params, page_for_admin
 
 
 class UserView(MethodView):
     methods = ["POST", "PUT", "DELETE"]
-    decorators = [jwt_required(), get_user_params()]
+    decorators = [jwt_required(), get_user_params(), page_for_admin(level=2)]
 
     def __init__(self, is_api=False):
         self.json_data = request.get_json()
@@ -49,10 +49,13 @@ class UserView(MethodView):
                 )})
 
     def put(self):
-        user_id = int(self.json_data['user_id'])
-        user_name = common.checkAjaxInput(self.json_data['username'])
-        email = common.checkAjaxInput(self.json_data['email'])
-        enabled = int(self.json_data['enabled'])
+        try:
+            user_id = int(self.json_data['user_id'])
+            user_name = common.checkAjaxInput(self.json_data['username'])
+            email = common.checkAjaxInput(self.json_data['email'])
+            enabled = int(self.json_data['enabled'])
+        except Exception as e:
+            return roxywi_common.handle_json_exceptions(e, 'Cannot update user')
         if roxywi_common.check_user_group_for_flask():
             try:
                 user_sql.update_user_from_admin_area(user_name, email, user_id, enabled)
@@ -62,7 +65,10 @@ class UserView(MethodView):
             return jsonify({'status': 'updated'})
 
     def delete(self):
-        user_id = int(self.json_data['user_id'])
+        try:
+            user_id = int(self.json_data['user_id'])
+        except Exception as e:
+            return roxywi_common.handle_json_exceptions(e, 'Cannot delete user')
         try:
             roxywi_user.delete_user(user_id)
             return jsonify({'status': 'deleted'})
