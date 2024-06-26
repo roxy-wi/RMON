@@ -99,12 +99,3 @@ def get_group_name_by_id(group_id):
 		out_error(e)
 	else:
 		return group_name.name
-
-
-def get_group_id_by_name(group_name):
-	try:
-		group_id = Groups.get(Groups.name == group_name)
-	except Exception as e:
-		out_error(e)
-	else:
-		return group_id.group_id

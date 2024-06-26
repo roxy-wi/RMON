@@ -5,7 +5,10 @@
 {% from 'include/input_macros.html' import input, select, copy_to_clipboard, checkbox %}
 <script src="{{ url_for('static', filename='js/users.js') }}"></script>
 <script src="{{ url_for('static', filename='js/admin/server.js') }}"></script>
+{% if g.user_params['role'] == 1 %}
 <script src="{{ url_for('static', filename='js/admin/group.js') }}"></script>
+{% endif %}
+<script src="{{ url_for('static', filename='js/admin/cred.js') }}"></script>
 <script src="{{ url_for('static', filename='js/fontawesome.min.js') }}"></script>
 {% include 'include/del_confirm.html' %}
 <div id="tabs">
@@ -14,7 +17,7 @@
 		<li><a href="#servers" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} {{lang.words.servers}} - RMON">{{lang.words.servers|title()}}</a></li>
 		<li><a href="#ssh" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} SSH {{lang.words.creds}} - RMON">SSH {{lang.words.creds}}</a></li>
 		<li><a href="#settings" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} RMON {{lang.words.settings}} - RMON">{{lang.words.settings|title()}}</a></li>
-        {% if g.user_params['role'] <= 2 %}
+        {% if g.user_params['role'] <= 1 %}
         <li><a href="#groups" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} {{lang.words.groups}} - RMON">{{lang.words.groups|title()}}</a></li>
 		<li><a href="#tools" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} RMON {{lang.words.tools}} - RMON">{{lang.words.tools|title()}}</a></li>
 		<li><a href="#updatehapwi" title="{{lang.words.admin_area|title()}}: {{lang.words.w_update|title()}} RMON - RMON">{{lang.words.w_update|title()}}</a></li>
@@ -35,7 +38,7 @@
 	<div id="settings">
 		{% include 'include/admin_settings.html' %}
 	</div>
-	{% if g.user_params['role'] <= 2 %}
+	{% if g.user_params['role'] <= 1 %}
 	<div id="groups">
 		<table class="overview" id="ajax-group">
 			<thead>
@@ -81,7 +84,7 @@
 			{{lang.words.and}} {{lang.words.this2}} <a href="https://rmon.io/howto/setup" title="How to setup servers, group and SSH credentials" target="_blank">{{lang.words.article}}</a>
 		</div>
 	</div>
-    {% endif %}
+
 	<div id="tools">
 		<table id="services_table" class="overview">
 			<thead>
@@ -128,6 +131,7 @@
 		</div>
 		<div id="ajax-update"></div>
 	</div>
+    {% endif %}
 
 </div>
 {% include 'include/admins_dialogs.html' %}

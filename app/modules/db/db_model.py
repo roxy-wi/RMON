@@ -183,10 +183,10 @@ class UserGroups(BaseModel):
 class Cred(BaseModel):
     id = AutoField()
     name = CharField()
-    enable = IntegerField(constraints=[SQL('DEFAULT 1')])
+    key_enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
     username = CharField()
     password = CharField(null=True)
-    groups = IntegerField(constraints=[SQL('DEFAULT 1')])
+    group_id = IntegerField(constraints=[SQL('DEFAULT 1')])
     passphrase = CharField(null=True)
 
     class Meta:

@@ -2,7 +2,7 @@ import os
 import glob
 from typing import Any
 
-from flask import request
+from flask import request, g
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import verify_jwt_in_request
 
@@ -15,10 +15,6 @@ import app.modules.db.history as history_sql
 import app.modules.roxy_wi_tools as roxy_wi_tools
 
 get_config_var = roxy_wi_tools.GetConfigVar()
-
-
-def return_error_message():
-	return 'error: All fields must be completed'
 
 
 def get_user_group(**kwargs) -> int:
@@ -50,7 +46,7 @@ def check_user_group_for_flask():
 	if user_sql.check_user_group(user_id, group_id):
 		return True
 	else:
-		logging('RMON server', ' has tried to actions in not his group ', roxywi=1, login=1)
+		logging('RMON server', ' has tried to actions in not his group ', login=1)
 		return False
 
 
@@ -61,7 +57,7 @@ def check_is_server_in_group(server_ip: str) -> bool:
 		if (s[2] == server_ip and int(s[3]) == int(group_id)) or group_id == 1:
 			return True
 		else:
-			logging('RMON server', ' has tried to actions in not his group server ', roxywi=1, login=1)
+			logging('RMON server', ' has tried to actions in not his group server ', login=1)
 			return False
 
 
@@ -111,7 +107,9 @@ def logging(server_ip: str, action: str, **kwargs) -> None:
 		ip = ''
 
 	try:
-		user_uuid = request.cookies.get('uuid')
+		verify_jwt_in_request()
+		claims = get_jwt()
+		user_uuid = claims['uuid']
 		login = user_sql.get_user_name_by_uuid(user_uuid)
 	except Exception:
 		login = ''
@@ -284,3 +282,8 @@ def handle_exceptions(ex: Exception, server_ip: str, message: str, **kwargs: Any
 def handle_json_exceptions(ex: Exception, message: str, server_ip='RMON server') -> dict:
 	logging(server_ip, f'error: {message}: {ex}', login=1)
 	return {'status': 'failed', 'error': f'{message}: {ex}'}
+
+
+def is_user_has_access_to_group(user_id: int) -> None:
+	if not user_sql.check_user_group(user_id, g.user_params['group_id']) and g.user_params['role'] != 1:
+		raise Exception('User has no access to group')

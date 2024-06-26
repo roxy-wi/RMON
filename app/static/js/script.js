@@ -1,22 +1,4 @@
 var cur_url = window.location.href.split('/');
-function validateEmail(email) {
-	const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-	return re.test(email);
-}
-function ValidateIPaddress(ipaddress) {
-	if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ipaddress)) {
-		return (true)
-	}
-	return (false)
-}
-function escapeHtml(unsafe) {
-	return unsafe
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
-}
 var wait_mess_word = $('#translate').attr('data-wait_mess');
 var wait_mess = '<div class="alert alert-warning">'+wait_mess_word+'</div>'
 function show_current_page(id) {
@@ -164,19 +146,6 @@ function showRemoteLogFiles() {
 		}
 	} );
 
-}
-function clearAllAjaxFields() {
-	$("#ajax").empty();
-	$('.alert').remove();
-	try {
-		myCodeMirror.toTextArea();
-	} catch (e) {
-		console.log(e)
-	}
-	$("#saveconfig").remove();
-	$("h4").remove();
-	$("#ajax-compare").empty();
-	$("#config").empty();
 }
 function findGetParameter(parameterName) {
     var result = null,

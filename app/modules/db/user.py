@@ -97,6 +97,13 @@ def update_user_role(user_id: int, group_id: int, role_id: int) -> None:
 		out_error(e)
 
 
+def delete_user_from_group(group_id: int, user_id):
+	try:
+		UserGroups.delete().where((UserGroups.user_id == user_id) & (UserGroups.user_group_id == group_id)).execute()
+	except Exception as e:
+		out_error(e)
+
+
 def select_users(**kwargs):
 	if kwargs.get("user") is not None:
 		query = User.select().where(User.username == kwargs.get("user"))
@@ -172,7 +179,7 @@ def select_user_groups_with_names(user_id, **kwargs):
 		return query_res
 
 
-def select_user_roles_by_group(group_id: int):
+def select_user_roles_by_group(group_id: int) -> UserGroups:
 	try:
 		query_res = UserGroups.select().where(UserGroups.user_group_id == group_id).execute()
 	except Exception as e:
@@ -342,50 +349,6 @@ def is_user_super_admin(user_id: int) -> bool:
 			return False
 
 
-def get_api_token(token):
-	try:
-		user_token = ApiToken.get(ApiToken.token == token)
-	except Exception as e:
-		return str(e)
-	else:
-		return True if token == user_token.token else False
-
-
-def get_user_id_by_api_token(token):
-	query = (User.select(User.user_id).join(ApiToken, on=(
-		ApiToken.user_name == User.username
-	)).where(ApiToken.token == token))
-	try:
-		query_res = query.execute()
-	except Exception as e:
-		return str(e)
-	for i in query_res:
-		return i.user_id
-
-
-def write_api_token(user_token, group_id, user_role, user_name):
-	token_ttl = int(get_setting('token_ttl'))
-	get_date = roxy_wi_tools.GetDate()
-	cur_date = get_date.return_date('regular', timedelta=token_ttl)
-	cur_date_token_ttl = get_date.return_date('regular', timedelta=token_ttl)
-
-	try:
-		ApiToken.insert(
-			token=user_token, user_name=user_name, user_group_id=group_id, user_role=user_role,
-			create_date=cur_date, expire_date=cur_date_token_ttl).execute()
-	except Exception as e:
-		out_error(e)
-
-
-def get_username_group_id_from_api_token(token):
-	try:
-		user_name = ApiToken.get(ApiToken.token == token)
-	except Exception as e:
-		return str(e)
-	else:
-		return user_name.user_name, user_name.user_group_id, user_name.user_role
-
-
 def delete_old_uuid():
 	get_date = roxy_wi_tools.GetDate()
 	cur_date = get_date.return_date('regular')
@@ -404,8 +367,15 @@ def get_role_id(user_id: int, group_id: int) -> int:
 		return int(role_id.user_role_id)
 
 
-def get_user_id(user_id: int) -> int:
+def get_user_id(user_id: int) -> User:
 	try:
 		return User.get(User.user_id == user_id)
+	except Exception as e:
+		out_error(e)
+
+
+def get_users_in_group(group_id: int) -> User:
+	try:
+		return User.select().join(UserGroups, on=(User.user_id == UserGroups.user_id)).where(UserGroups.user_group_id == group_id).execute()
 	except Exception as e:
 		out_error(e)

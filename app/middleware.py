@@ -34,3 +34,14 @@ def page_for_admin(level=1):
                 return fn(*args, **kwargs)
         return decorated_views
     return inner_decorator
+
+
+def check_group():
+    def inner_decorator(fn):
+        @wraps(fn)
+        def decorated_views(*args, **kwargs):
+            if not roxywi_common.check_user_group_for_flask():
+                return roxywi_common.handle_json_exceptions('Wrong group', 'Cannot create user')
+            return fn(*args, **kwargs)
+        return decorated_views
+    return inner_decorator

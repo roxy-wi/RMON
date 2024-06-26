@@ -1,4 +1,8 @@
 $( function() {
+	$( "#ajax-group input" ).change(function() {
+		var id = $(this).attr('id').split('-');
+		updateGroup(id[1])
+	});
     $('#add-group-button').click(function () {
         addGroupDialog.dialog('open');
     });

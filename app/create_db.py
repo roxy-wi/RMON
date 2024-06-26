@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
+import os
+import sys
 import distro
 
-from modules.db.db_model import *
+sys.path.append(os.path.join(sys.path[0], '/var/www/rmon/'))
+from app.modules.db.db_model import *
 
 migrator = connect(get_migrator=1)
 
@@ -209,6 +212,19 @@ def update_db_v_1_0_7_1():
 		print("Updating... DB has been updated to version 1.0.7-1")
 
 
+def update_db_v_1_1():
+	try:
+		migrate(
+			migrator.rename_column('cred', 'enable', 'key_enabled'),
+			migrator.rename_column('cred', 'groups', 'group_id'),
+		)
+	except Exception as e:
+		if e.args[0] == 'no such column: "enable"' or str(e) == '(1060, no such column: "enable")':
+			print("Updating... DB has been updated to version 1.1")
+		else:
+			print("An error occurred:", e)
+
+
 def check_ver():
 	try:
 		ver = Version.get()
@@ -226,6 +242,7 @@ def update_all():
 	update_db_v_1_0_4()
 	update_db_v_1_0_7()
 	update_db_v_1_0_7_1()
+	update_db_v_1_1()
 
 
 if __name__ == "__main__":
