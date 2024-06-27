@@ -1,6 +1,6 @@
 import os
 import glob
-from typing import Any
+from typing import Any, Tuple
 
 from flask import request, g
 from flask_jwt_extended import get_jwt
@@ -13,6 +13,7 @@ import app.modules.db.group as group_sql
 import app.modules.db.server as server_sql
 import app.modules.db.history as history_sql
 import app.modules.roxy_wi_tools as roxy_wi_tools
+from app.modules.roxywi.exception import RoxywiResourceNotFound
 
 get_config_var = roxy_wi_tools.GetConfigVar()
 
@@ -25,12 +26,12 @@ def get_user_group(**kwargs) -> int:
 		claims = get_jwt()
 		user_group_id = claims['group']
 		groups = group_sql.select_groups(id=user_group_id)
-		for g in groups:
-			if g.group_id == int(user_group_id):
+		for group in groups:
+			if group.group_id == int(user_group_id):
 				if kwargs.get('id'):
-					user_group = g.group_id
+					user_group = group.group_id
 				else:
-					user_group = g.name
+					user_group = group.name
 	except Exception as e:
 		raise Exception(f'error: {e}')
 	return user_group
@@ -287,3 +288,14 @@ def handle_json_exceptions(ex: Exception, message: str, server_ip='RMON server')
 def is_user_has_access_to_group(user_id: int) -> None:
 	if not user_sql.check_user_group(user_id, g.user_params['group_id']) and g.user_params['role'] != 1:
 		raise Exception('User has no access to group')
+
+
+def handler_exceptions_for_json_data(ex: Exception, main_ex_mes: str) -> tuple[dict, int]:
+	if isinstance(ex, KeyError):
+		return handle_json_exceptions(ex, 'Missing key in JSON data'), 500
+	elif isinstance(ex, ValueError):
+		return handle_json_exceptions(ex, 'Wrong type or missing value in JSON data'), 500
+	elif isinstance(ex, RoxywiResourceNotFound):
+		return handle_json_exceptions(ex, 'Resource not found'), 404
+	else:
+		return handle_json_exceptions(ex, main_ex_mes), 500

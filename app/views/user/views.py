@@ -34,13 +34,9 @@ class UserView(MethodView):
             Exception: If there is an error retrieving the user or checking user access.
         """
         try:
-            user_id = int(self.json_data["user_id"])
-        except ValueError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a value')
-        except KeyError as e:
-            return roxywi_common.handle_json_exceptions(e, f'Missing key in JSON data')
+            user_id = int(self.json_data["id"])
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get user id')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user id')
         try:
             user = user_sql.get_user_id(user_id)
         except Exception as e:
@@ -96,12 +92,8 @@ class UserView(MethodView):
             new_user = common.checkAjaxInput(self.json_data['username'])
             enabled = int(self.json_data['enabled'])
             group_id = int(self.json_data['user_group'])
-        except ValueError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a value')
-        except KeyError as e:
-            return roxywi_common.handle_json_exceptions(e, f'Missing key in JSON data')
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot create user')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create user')
         lang = roxywi_common.get_user_lang_for_flask()
 
         if g.user_params['role'] > role:
@@ -148,16 +140,12 @@ class UserView(MethodView):
         - Finally, a JSON response with a status of "Ok" is returned.
         """
         try:
-            user_id = int(self.json_data['user_id'])
+            user_id = int(self.json_data['id'])
             user_name = common.checkAjaxInput(self.json_data['username'])
             email = common.checkAjaxInput(self.json_data['email'])
             enabled = int(self.json_data['enabled'])
-        except ValueError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a value')
-        except KeyError as e:
-            return roxywi_common.handle_json_exceptions(e, f'Missing key in JSON data')
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot update user')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot update user')
         try:
             user_sql.update_user_from_admin_area(user_name, email, user_id, enabled)
         except Exception as e:
@@ -167,13 +155,9 @@ class UserView(MethodView):
 
     def delete(self):
         try:
-            user_id = int(self.json_data['user_id'])
-        except ValueError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a value')
-        except KeyError as e:
-            return roxywi_common.handle_json_exceptions(e, f'Missing key in JSON data')
+            user_id = int(self.json_data['id'])
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot delete user')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot delete user')
 
         try:
             roxywi_common.is_user_has_access_to_group(user_id)
@@ -191,7 +175,7 @@ class UserView(MethodView):
             roxywi_user.delete_user(user_id)
             return jsonify({'status': 'Ok'}), 204
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, f'Cannot delete the user')
+            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot delete the user')
 
 
 class UserGroupView(MethodView):
@@ -225,12 +209,8 @@ class UserGroupView(MethodView):
         """
         try:
             group_id = int(self.json_data["group_id"])
-        except ValueError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a value')
-        except KeyError as e:
-            return roxywi_common.handle_json_exceptions(e, f'Missing key in JSON data')
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get group id')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
         try:
             users = user_sql.get_users_in_group(group_id)
         except Exception as e:
@@ -275,12 +255,8 @@ class UserGroupView(MethodView):
             group_id = int(self.json_data['group_id'])
             user_id = int(self.json_data['user_id'])
             role_id = int(self.json_data['role_id'])
-        except ValueError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a value')
-        except KeyError as e:
-            return roxywi_common.handle_json_exceptions(e, f'Missing key in JSON data')
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get user data')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user data')
         try:
             user_sql.update_user_role(user_id, group_id, role_id)
         except Exception as e:
@@ -307,12 +283,8 @@ class UserGroupView(MethodView):
         try:
             group_id = int(self.json_data['group_id'])
             user_id = int(self.json_data['user_id'])
-        except ValueError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a value')
-        except KeyError as e:
-            return roxywi_common.handle_json_exceptions(e, f'Missing key in JSON data')
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get user data')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user data')
 
         try:
             user_sql.delete_user_from_group(group_id, user_id)

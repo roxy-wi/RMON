@@ -1,6 +1,5 @@
 from playhouse.migrate import *
 from datetime import datetime
-from flask_login import UserMixin
 from playhouse.shortcuts import ReconnectMixin
 from playhouse.sqlite_ext import SqliteExtDatabase
 
@@ -42,7 +41,7 @@ class BaseModel(Model):
         database = connect()
 
 
-class User(BaseModel, UserMixin):
+class User(BaseModel):
     user_id = AutoField(column_name='id')
     username = CharField(constraints=[SQL('UNIQUE')])
     email = CharField(constraints=[SQL('UNIQUE')])

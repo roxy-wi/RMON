@@ -1,7 +1,7 @@
 import os
 import pytz
 
-from flask import render_template, request, session, g, abort, send_from_directory, jsonify
+from flask import render_template, request, session, g, abort, send_from_directory, jsonify, redirect, url_for
 from flask_jwt_extended import jwt_required
 
 from app import app, cache
@@ -24,6 +24,13 @@ import app.modules.server.server as server_mod
 @app.template_filter('strftime')
 def _jinja2_filter_datetime(date, fmt=None):
     return common.get_time_zoned_date(date, fmt)
+
+
+@app.errorhandler(401)
+def page_is_forbidden(e):
+    if 'api' in request.url:
+        return jsonify({'error': str(e)}), 401
+    return redirect(url_for('login_page'))
 
 
 @app.errorhandler(403)

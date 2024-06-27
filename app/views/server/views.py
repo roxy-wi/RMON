@@ -64,12 +64,8 @@ class ServerView(MethodView):
             desc = common.checkAjaxInput(self.json_data['desc'])
             add_to_smon = int(self.json_data['add_to_smon'])
             lang = roxywi_common.get_user_lang_for_flask()
-        except ValueError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a value')
-        except KeyError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a key')
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot parse server data')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse server data')
 
         try:
             last_id = server_mod.create_server(hostname, ip, group, enable, cred, port, desc)
@@ -172,12 +168,8 @@ class ServerView(MethodView):
         """
         try:
             server_id = int(self.json_data['id'])
-        except ValueError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a value')
-        except KeyError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a key')
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot parse server data')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse server data')
         try:
             server_mod.delete_server(server_id)
             return jsonify({'status': 'Ok'}), 204
@@ -208,12 +200,8 @@ class GroupView(MethodView):
         try:
             group = common.checkAjaxInput(self.json_data['name'])
             desc = common.checkAjaxInput(self.json_data['desc'])
-        except ValueError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a value')
-        except KeyError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a key')
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot parse group data')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse group data')
         try:
             last_id = group_sql.add_group(group, desc)
             roxywi_common.logging('RMON server', f'A new group {group} has been created', roxywi=1, login=1)
@@ -246,12 +234,8 @@ class GroupView(MethodView):
             name = common.checkAjaxInput(self.json_data['name'])
             desc = common.checkAjaxInput(self.json_data['desc'])
             group_id = int(self.json_data['group_id'])
-        except ValueError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a value')
-        except KeyError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a key')
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot parse group data')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse group data')
 
         try:
             group_mod.update_group(group_id, name, desc)
@@ -278,12 +262,8 @@ class GroupView(MethodView):
         """
         try:
             group_id = int(self.json_data['group_id'])
-        except ValueError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a value')
-        except KeyError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a key')
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot parse group data')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse group data')
         try:
             group_mod.delete_group(group_id)
             return jsonify({'status': 'Ok'}), 204
@@ -343,12 +323,8 @@ class CredsView(MethodView):
                 password = common.checkAjaxInput(self.json_data['password'])
             except KeyError:
                 password = ''
-        except ValueError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a value')
-        except KeyError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a key')
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot parse cred data')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse cred data')
 
         try:
             return ssh_mod.create_ssh_cred(name, password, group, username, enabled, self.is_api)
@@ -387,12 +363,8 @@ class CredsView(MethodView):
                 password = common.checkAjaxInput(self.json_data['password'])
             except KeyError:
                 password = ''
-        except ValueError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a value')
-        except KeyError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a key')
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot parse cred data')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse cred data')
 
         try:
             ssh_mod.update_ssh_key(ssh_id, name, password, key_enabled, username, group)
@@ -423,12 +395,8 @@ class CredsView(MethodView):
 
         try:
             ssh_id = int(self.json_data['id'])
-        except ValueError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a value')
-        except KeyError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a key')
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot parse cred data')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse cred data')
 
         try:
             ssh_mod.delete_ssh_key(ssh_id)
@@ -472,12 +440,8 @@ class CredsView(MethodView):
                 passphrase = common.checkAjaxInput(self.json_data['passphrase'])
             except KeyError:
                 passphrase = ''
-        except ValueError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a value')
-        except KeyError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a key')
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot parse cred data')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse cred data')
 
         try:
             ssh_mod.upload_ssh_key(ssh_id, key, passphrase)

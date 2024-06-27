@@ -44,7 +44,6 @@ def is_admin(level=1, **kwargs):
             role = user_sql.get_user_role_by_uuid(user_id, group_id)
         except Exception:
             role = 4
-            pass
     try:
         return True if int(role) <= int(level) else False
     except Exception:
@@ -103,32 +102,23 @@ def create_uuid_and_token(login: str):
     return user_uuid
 
 
-def do_login(user_uuid: str, user_group: str, user: str, next_url: str):
-    # try:
-    #     session_ttl = sql.get_setting('session_ttl')
-    # except Exception:
-    #     session_ttl = 5
-    #
-    # if not session_ttl:
-    #     session_ttl = 5
-
+def do_login(user_params: dict, next_url: str):
     if next_url:
         redirect_to = f'https://{request.host}{next_url}'
     else:
         redirect_to = f"https://{request.host}{url_for('overview.index')}"
 
     response = jsonify({"status": "done", "next_url": redirect_to})
-    additional_claims = {'uuid': user_uuid, 'group': str(user_group)}
-    access_token = create_access_token(str(user), additional_claims=additional_claims)
+    access_token = create_jwt_token(user_params)
     set_access_cookies(response, access_token)
 
     try:
-        user_group_name = group_sql.get_group_name_by_id(user_group)
+        user_group_name = group_sql.get_group_name_by_id(user_params['group'])
     except Exception:
         user_group_name = ''
 
     try:
-        user_name = user_sql.get_user_name_by_uuid(user_uuid)
+        user_name = user_sql.get_user_name_by_uuid(user_params['uuid'])
         roxywi_common.logging('RMON server', f' user: {user_name}, group: {user_group_name} login', roxywi=1)
     except Exception as e:
         print(f'error: {e}')
@@ -136,26 +126,32 @@ def do_login(user_uuid: str, user_group: str, user: str, next_url: str):
     return response
 
 
-def check_user_password(login: str, password: str) -> dict:
-    if login and password:
-        users = user_sql.select_users(user=login)
+def create_jwt_token(user_params: dict) -> str:
+    additional_claims = {'uuid': user_params['uuid'], 'group': str(user_params['group'])}
+    return create_access_token(str(user_params['user']), additional_claims=additional_claims)
 
-        for user in users:
-            if user.activeuser == 0:
-                raise Exception('Your login is disabled')
-            if user.ldap_user == 1:
-                if login in user.username:
-                    if check_in_ldap(login, password):
-                        user_uuid = create_uuid_and_token(login)
-                        return {'uuid': user_uuid, 'group': str(user.groups), 'user': user}
-            else:
-                hashed_password = roxy_wi_tools.Tools.get_hash(password)
-                if login in user.username and hashed_password == user.password:
-                    user_uuid = create_uuid_and_token(login)
-                    return {'uuid': user_uuid, 'group': str(user.groups), 'user': user}
-                else:
-                    raise Exception('ban')
+
+def check_user_password(login: str, password: str) -> dict:
+    if not login and not password:
+        raise Exception('There is no login or password')
+
+    try:
+        user = user_sql.get_user_by_username(login)
+    except Exception:
+        raise Exception('ban')
+
+    if user.activeuser == 0:
+        raise Exception('Your login is disabled')
+    if user.ldap_user == 1:
+        if login in user.username and check_in_ldap(login, password):
+            user_uuid = create_uuid_and_token(login)
+            return {'uuid': user_uuid, 'group': str(user.groups), 'user': user.user_id}
         else:
             raise Exception('ban')
     else:
-        raise Exception('There is no login or password')
+        hashed_password = roxy_wi_tools.Tools.get_hash(password)
+        if login in user.username and hashed_password == user.password:
+            user_uuid = create_uuid_and_token(login)
+            return {'uuid': user_uuid, 'group': str(user.groups), 'user': user.user_id}
+        else:
+            raise Exception('ban')

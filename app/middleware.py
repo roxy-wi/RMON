@@ -29,7 +29,7 @@ def page_for_admin(level=1):
         @wraps(fn)
         def decorated_views(*args, **kwargs):
             if not roxywi_auth.is_admin(level=level):
-                return abort(400, 'bad permission')
+                return abort(403, 'bad permission')
             else:
                 return fn(*args, **kwargs)
         return decorated_views

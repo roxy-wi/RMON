@@ -1,7 +1,6 @@
 from flask import jsonify, request
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import jwt_required
-from flask_jwt_extended import create_access_token
 
 from app import jwt
 from app.api.v1.routes.main import bp
@@ -34,9 +33,8 @@ def do_login():
     try:
         user_params = roxywi_auth.check_user_password(login, password)
     except Exception as e:
-        return roxywi_common.handle_json_exceptions(e, ''), 200
-    additional_claims = {'uuid': user_params['uuid'], 'group': user_params['group']}
-    access_token = create_access_token(str(user_params['user']), additional_claims=additional_claims)
+        return roxywi_common.handle_json_exceptions(e, ''), 401
+    access_token = roxywi_auth.create_jwt_token(user_params)
     return jsonify(access_token=access_token)
 
 

@@ -17,13 +17,13 @@ scheduler = APScheduler()
 scheduler.init_app(app)
 scheduler.start()
 
-from app.api.v1.routes.main import bp as main_api_bp
-from app.api.v1.routes.user import bp as user_api_bp
-from app.api.v1.routes.server import bp as server_api_bp
+from app.api.v1.routes.main import bp as main_api_v1_0_bp
+from app.api.v1.routes.user import bp as user_api_v1_0_bp
+from app.api.v1.routes.server import bp as server_api_v1_0_bp
 
-app.register_blueprint(main_api_bp, url_prefix="/api/v1.0")
-app.register_blueprint(user_api_bp, url_prefix="/api/v1.0/user")
-app.register_blueprint(server_api_bp, url_prefix="/api/v1.0/server")
+main_api_v1_0_bp.register_blueprint(user_api_v1_0_bp, url_prefix='/user')
+main_api_v1_0_bp.register_blueprint(server_api_v1_0_bp, url_prefix='/server')
+app.register_blueprint(main_api_v1_0_bp, url_prefix='/api/v1.0')
 
 from app.routes.main import bp as main_bp
 from app.routes.smon import bp as smon_bp

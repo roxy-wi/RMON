@@ -34,7 +34,7 @@ def create_user(new_user: str, email: str, password: str, role: int, activeuser:
     return user_id
 
 
-def delete_user(user_id: int) -> str:
+def delete_user(user_id: int) -> None:
     if user_sql.is_user_super_admin(user_id):
         count_super_admin_users = user_sql.get_super_admin_count()
         if count_super_admin_users < 2:
@@ -46,7 +46,6 @@ def delete_user(user_id: int) -> str:
     if user_sql.delete_user(user_id):
         user_sql.delete_user_groups(user_id)
         roxywi_common.logging(username, ' has been deleted user ', login=1)
-        return "ok"
 
 
 def update_user(email, new_user, user_id, enabled, group_id, role_id):

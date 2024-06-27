@@ -1,9 +1,10 @@
 from peewee import Case, JOIN
 
-from app.modules.db.db_model import User, UserGroups, Groups, UUID, ApiToken
+from app.modules.db.db_model import User, UserGroups, Groups, UUID
 from app.modules.db.sql import get_setting
 from app.modules.db.common import out_error
 import app.modules.roxy_wi_tools as roxy_wi_tools
+from app.modules.roxywi.exception import RoxywiResourceNotFound
 
 
 def add_user(user, email, password, role, activeuser, group):
@@ -83,6 +84,8 @@ def delete_user(user_id):
 		user_for_delete = User.delete().where(User.user_id == user_id)
 		user_for_delete.execute()
 		delete_user_groups(user_id)
+	except User.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 		return False
@@ -100,6 +103,8 @@ def update_user_role(user_id: int, group_id: int, role_id: int) -> None:
 def delete_user_from_group(group_id: int, user_id):
 	try:
 		UserGroups.delete().where((UserGroups.user_id == user_id) & (UserGroups.user_group_id == group_id)).execute()
+	except UserGroups.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 
