@@ -128,7 +128,7 @@ function removeServer(id) {
 	$("#server-" + id).css("background-color", "#f2dede");
 	$.ajax({
 		url: "/server",
-		data: JSON.stringify({'server_id': id}),
+		data: JSON.stringify({'id': id}),
 		type: "DELETE",
 		contentType: "application/json; charset=utf-8",
 		success: function (data) {
@@ -156,7 +156,7 @@ function updateServer(id) {
         "group": server_group,
         "enabled": enable,
         "creds_id": $('#credentials-' + id + ' option:selected').val(),
-        "server_id": id,
+        "id": id,
         "desc": $('#desc-' + id).val()
     }
     $.ajax({

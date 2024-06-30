@@ -8,5 +8,19 @@ class RoxywiGroupMismatch(Exception):
 class RoxywiResourceNotFound(Exception):
     """ This class represents an exception raised when a resource is not found. """
 
-    def __init__(self):
-        super(RoxywiResourceNotFound, self).__init__('Resource not found')
+    def __init__(self, message='Resource not found'):
+        super(RoxywiResourceNotFound, self).__init__(message)
+
+
+class RoxywiCheckLimits(Exception):
+    """ This class represents an exception raised when a check limit is exceeded. """
+
+    def __init__(self, message='You have reached limit for Free plan'):
+        super(RoxywiCheckLimits, self).__init__(message)
+
+
+class RoxywiValidationError(Exception):
+    """ This class represents an exception raised when a validation error occurs. """
+
+    def __init__(self, message='Validation error'):
+        super(RoxywiValidationError, self).__init__(message)

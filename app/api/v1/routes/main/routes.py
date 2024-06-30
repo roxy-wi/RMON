@@ -1,11 +1,15 @@
-from flask import jsonify, request
+from flask_swagger import swagger
+from flask import jsonify, request, render_template
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import jwt_required
 
-from app import jwt
+from app import app, jwt
 from app.api.v1.routes.main import bp
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.common as roxywi_common
+from app.views.server.views import ServerGroupView
+
+bp.add_url_rule('/group', view_func=ServerGroupView.as_view('group', True))
 
 
 @jwt.expired_token_loader
@@ -23,13 +27,26 @@ def hello():
     return jsonify({'hello': 'world'})
 
 
+@bp.route("/spec")
+def spec():
+    swag = swagger(app)
+    swag['info']['version'] = "1.0"
+    swag['info']['title'] = "RMON API"
+    return jsonify(swag)
+
+
+@bp.route("/swagger")
+def swagger_ui():
+    return render_template('swagger.html')
+
+
 @bp.post('/login')
 def do_login():
     try:
         login = request.json.get('login')
         password = request.json.get('password')
-    except Exception:
-        return roxywi_common.handle_json_exceptions('', 'There is no login or password')
+    except Exception as e:
+        return roxywi_common.handler_exceptions_for_json_data(e, 'There is no login or password')
     try:
         user_params = roxywi_auth.check_user_password(login, password)
     except Exception as e:

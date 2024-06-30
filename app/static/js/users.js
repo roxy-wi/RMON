@@ -114,7 +114,7 @@ function addUser(dialog_id) {
 	valid = valid && checkLength(password_div, "password", 1);
 	valid = valid && checkLength(email_div, "Email", 1);
 	let enabled = 0;
-	if ($('#activeuser').is(':checked')) {
+	if ($('#enabled').is(':checked')) {
 		enabled = '1';
 	}
 	let user_group = $('#new-group').val();
@@ -170,13 +170,15 @@ function confirmDeleteUser(id) {
 function removeUser(id) {
 	$("#user-" + id).css("background-color", "#f2dede");
 	$.ajax({
-		url: "/user",
-		data: JSON.stringify({'user_id': id}),
+		url: api_v_prefix + "/user/" + id,
 		contentType: "application/json; charset=utf-8",
+		data: JSON.stringify({}),
 		type: "DELETE",
 		success: function (data) {
-			if (data.status === 'failed') {
-				toastr.error(data.error);
+			if (data) {
+				if (data.status === 'failed') {
+					toastr.error(data.error);
+				}
 			} else {
 				$("#user-" + id).remove();
 			}
@@ -184,11 +186,10 @@ function removeUser(id) {
 	});
 }
 function updateUser(id) {
-	cur_url[0] = cur_url[0].split('#')[0]
 	let role = $('#role-' + id).val();
-	let activeuser = 0;
-	if ($('#activeuser-' + id).is(':checked')) {
-		activeuser = '1';
+	let enabled = 0;
+	if ($('#enabled-' + id).is(':checked')) {
+		enabled = '1';
 	}
 	if (role == null && role !== undefined) {
 		toastr.warning('You cannot edit superAdmin user');
@@ -198,11 +199,10 @@ function updateUser(id) {
 	let json_data = {
 		"username": $('#login-' + id).val(),
 		"email": $('#email-' + id).val(),
-		"enabled": activeuser,
-		"user_id": id
+		"enabled": enabled,
 	}
 	$.ajax({
-		url: "/user",
+		url: api_v_prefix + "/user/" + id,
 		data: JSON.stringify(json_data),
 		contentType: "application/json; charset=utf-8",
 		type: "PUT",
@@ -526,7 +526,7 @@ function saveGroupsAndRoles(user_id) {
 	});
 	for (const [key, value] of Object.entries(jsonData)) {
 		if (Object.keys(value).length === 0) {
-			toastr.error('error: User must have at least one group');
+			toastr.error('error: UserPost must have at least one group');
 			return false;
 		}
 	}

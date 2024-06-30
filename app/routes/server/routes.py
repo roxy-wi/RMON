@@ -4,7 +4,7 @@ from app.routes.server import bp
 import app.modules.common.common as common
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.server.server as server_mod
-from app.views.server.views import ServerView, GroupView, CredsView
+from app.views.server.views import ServerView, CredsView
 
 
 @bp.before_request
@@ -15,7 +15,6 @@ def before_request():
 
 
 bp.add_url_rule('', view_func=ServerView.as_view('server'))
-bp.add_url_rule('/group', view_func=GroupView.as_view('group'))
 bp.add_url_rule('/cred', view_func=CredsView.as_view('cred'))
 
 

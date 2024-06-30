@@ -11,7 +11,6 @@ from app.modules.service.installation import run_ansible
 
 
 def generate_agent_inv(server_ip: str, action: str, agent_uuid: uuid, agent_port=5101) -> object:
-    # agent_port = sql.get_setting('agent_port')
     master_port = sql.get_setting('master_port')
     master_ip = sql.get_setting('master_ip')
     if not master_ip: raise Exception('error: Master IP cannot be empty')
@@ -65,13 +64,16 @@ def add_agent(data) -> int:
 
 
 def delete_agent(agent_id: int):
-    server_ip = smon_sql.get_agent_ip_by_id(agent_id)
+    try:
+        server_ip = smon_sql.get_agent_ip_by_id(agent_id)
+    except Exception as e:
+        raise e
     agent_uuid = ''
     try:
         inv, server_ips = generate_agent_inv(server_ip, 'uninstall', agent_uuid)
         run_ansible(inv, server_ips, 'rmon_agent')
     except Exception as e:
-        roxywi_common.handle_exceptions(e, server_ip, 'Cannot uninstall RMON agent', roxywi=1, login=1)
+        raise e
 
 
 def update_agent(json_data):
@@ -86,7 +88,7 @@ def update_agent(json_data):
     try:
         smon_sql.update_agent(agent_id, **json_data)
     except Exception as e:
-        roxywi_common.handle_exceptions(e, 'RMON server', f'Cannot update RMON agent: {agent_id}', roxywi=1, login=1)
+        raise e
 
     if reconfigure:
         agent_uuid = smon_sql.get_agent_uuid(agent_id)
@@ -95,7 +97,7 @@ def update_agent(json_data):
             inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid, json_data['port'])
             run_ansible(inv, server_ips, 'rmon_agent')
         except Exception as e:
-            roxywi_common.handle_exceptions(e, server_ip, 'Cannot reconfigure RMON agent', roxywi=1, login=1)
+            raise e
 
 
 def _validate_agent_json(json_data: json) -> json:
@@ -153,6 +155,7 @@ def send_post_request_to_agent(agent_id: int, server_ip: str, api_path: str, jso
     agent = smon_sql.get_agent_data(agent_id)
     try:
         req = requests.post(f'http://{server_ip}:{agent.port}/{api_path}', headers=headers, json=json_data, timeout=5)
+        print(req)
         return req.content
     except Exception as e:
         raise Exception(f'error: Cannot get agent status: {e}')
@@ -174,8 +177,11 @@ def delete_check(agent_id: int, server_ip: str, check_id: int) -> bytes:
         raise Exception(f'error: Cannot delete check from Agent {server_ip}: {e}')
 
 
-def send_tcp_checks(agent_id: int, server_ip: str) -> None:
-    checks = smon_sql.select_en_smon_tcp(agent_id)
+def send_tcp_checks(agent_id: int, server_ip: str, check_id=None) -> None:
+    if check_id:
+        checks = smon_sql.select_one_smon(check_id, 1)
+    else:
+        checks = smon_sql.select_en_smon_tcp(agent_id)
     for check in checks:
         json_data = {
             'check_type': 'tcp',
@@ -192,8 +198,11 @@ def send_tcp_checks(agent_id: int, server_ip: str) -> None:
             roxywi_common.handle_exceptions(e, 'RMON', 'Cannot send TCP check')
 
 
-def send_ping_checks(agent_id: int, server_ip: str) -> None:
-    checks = smon_sql.select_en_smon_ping(agent_id)
+def send_ping_checks(agent_id: int, server_ip: str, check_id=None) -> None:
+    if check_id:
+        checks = smon_sql.select_one_smon(check_id, 4)
+    else:
+        checks = smon_sql.select_en_smon_ping(agent_id)
     for check in checks:
         json_data = {
             'check_type': 'ping',
@@ -210,8 +219,11 @@ def send_ping_checks(agent_id: int, server_ip: str) -> None:
             roxywi_common.handle_exceptions(e, 'RMON', 'Cannot send PING check')
 
 
-def send_dns_checks(agent_id: int, server_ip: str) -> None:
-    checks = smon_sql.select_en_smon_dns(agent_id)
+def send_dns_checks(agent_id: int, server_ip: str, check_id=None) -> None:
+    if check_id:
+        checks = smon_sql.select_one_smon(check_id, 5)
+    else:
+        checks = smon_sql.select_en_smon_dns(agent_id)
     for check in checks:
         json_data = {
             'check_type': 'dns',
@@ -230,8 +242,11 @@ def send_dns_checks(agent_id: int, server_ip: str) -> None:
             roxywi_common.handle_exceptions(e, 'RMON', 'Cannot send DNS check')
 
 
-def send_http_checks(agent_id: int, server_ip: str) -> None:
-    checks = smon_sql.select_en_smon_http(agent_id)
+def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
+    if check_id:
+        checks = smon_sql.select_one_smon(check_id, 2)
+    else:
+        checks = smon_sql.select_en_smon_http(agent_id)
     for check in checks:
         json_data = {
             'check_type': 'http',
@@ -241,7 +256,7 @@ def send_http_checks(agent_id: int, server_ip: str) -> None:
             'body': check.body,
             'interval': check.interval,
             'timeout': check.smon_id.check_timeout,
-            'status_code': check.accepted_status_codes
+            'accepted_status_codes': check.accepted_status_codes
         }
         if check.body_req:
             json_data['body_req'] = json.loads(check.body_req)
@@ -252,6 +267,7 @@ def send_http_checks(agent_id: int, server_ip: str) -> None:
         else:
             json_data['header_req'] = ''
         api_path = f'check/{check.smon_id}'
+        print('json_data',json_data)
         try:
             send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
         except Exception as e:

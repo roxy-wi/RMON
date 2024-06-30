@@ -22,34 +22,62 @@ class ServerView(MethodView):
     decorators = [jwt_required(), get_user_params(), page_for_admin(level=2), check_group()]
 
     def __init__(self, is_api=False):
+        """
+        Initialize ServerView instance
+        ---
+        parameters:
+          - name: is_api
+            in: path
+            type: boolean
+            description: is api
+        """
         self.json_data = request.get_json()
         self.is_api = is_api
 
     def post(self):
         """
-        POST method for creating a new server.
-
-        Parameters:
-        - None
-
-        Returns:
-        - If successful and called as an API, returns a JSON response with status 'Created' and the ID of the newly created server. HTTP status code 201.
-        - If successful and called from a web interface, returns a JSON response with status 'Created', the rendered HTML template for adding a new server, and the ID of the newly created server. HTTP status code 201.
-
-        Raises:
-        - ValueError: If there is an issue with parsing the input values (e.g. invalid integer format).
-        - KeyError: If a required key is missing in the input data.
-        - Exception: If there is an unexpected error while processing the server data.
-
-        Example Usage:
-        response = post()
-
-        Note:
-        - This method is specifically designed for internal use and does not include any authorization checks.
-        - The method performs various validations and creates a server based on the provided data.
-        - If the 'add_to_smon' flag is set, the method also attempts to create a corresponding SMON entry for monitoring the server.
-        - Additionally, the method logs the creation of the server and updates the server information.
-
+        Create a new server
+        ---
+        tags:
+          - Server
+        parameters:
+          - in: body
+            name: body
+            schema:
+              id: NewServer
+              required:
+                - name
+                - ip
+                - enabled
+                - creds_id
+                - port
+                - desc
+                - add_to_smon
+              properties:
+                name:
+                  type: string
+                  description: The server name
+                ip:
+                  type: string
+                  description: The server IP address
+                enabled:
+                  type: integer
+                  description: If server is enabled or not
+                creds_id:
+                  type: integer
+                  description: The ID of the credentials
+                port:
+                  type: integer
+                  description: The port number
+                desc:
+                  type: string
+                  description: The server description
+                add_to_smon:
+                  type: integer
+                  description: If server is to be added to SMON or not
+        responses:
+          201:
+            description: Server creation successful
         """
         try:
             if g.user_params['role'] == 1:
@@ -95,7 +123,7 @@ class ServerView(MethodView):
                     "agent_id": "1",
                     "interval": "120",
                 }
-                smon_mod.create_smon(json_data, user_group)
+                smon_mod.create_check(json_data, user_group, show_new=False)
             except Exception as e:
                 roxywi_common.logging(ip, f'error: Cannot add server {hostname} to SMON: {e}')
 
@@ -115,14 +143,45 @@ class ServerView(MethodView):
 
     def put(self):
         """
-        Updates the server information based on the provided JSON data.
-
-        Parameters:
-        self (object): The current object.
-
-        Returns:
-        tuple: A tuple containing the JSON response and the HTTP status code.
-        """
+        Update a server
+        ---
+        tags:
+          - Server
+        parameters:
+          - in: body
+            name: body
+            schema:
+              id: UpdateServer
+              required:
+                - name
+                - enabled
+                - id
+                - creds_id
+                - port
+                - desc
+              properties:
+                name:
+                  type: string
+                  description: The server name
+                enabled:
+                  type: integer
+                  description: If server is enabled or not
+                id:
+                  type: integer
+                  description: The server ID to be updated
+                creds_id:
+                  type: integer
+                  description: The ID of the credentials
+                port:
+                  type: integer
+                  description: The port number
+                desc:
+                  type: string
+                  description: The server description
+        responses:
+          201:
+            description: Server update successful
+       """
         try:
             if g.user_params['role'] == 1:
                 group = int(self.json_data['group'])
@@ -152,19 +211,24 @@ class ServerView(MethodView):
 
     def delete(self):
         """
-        Method: delete
-
-            This method deletes a server based on the ID provided in the JSON data.
-
-            Parameters:
-                self: The instance of the class containing the method.
-
-            Returns:
-                If successful, the method returns a JSON response with a status of 'Ok' and a status code of 204.
-                If any exceptions occur during the process, the method returns a JSON response with an error message.
-
-            Raises:
-                None.
+        Delete a server
+        ---
+        tags:
+          - Server
+        parameters:
+          - in: body
+            name: body
+            schema:
+              id: DeleteServer
+              required:
+                - id
+              properties:
+                id:
+                  type: integer
+                  description: The server ID to be deleted
+        responses:
+          204:
+            description: Server deletion successful
         """
         try:
             server_id = int(self.json_data['id'])
@@ -177,26 +241,48 @@ class ServerView(MethodView):
             return roxywi_common.handle_json_exceptions(e, 'Cannot delete server')
 
 
-class GroupView(MethodView):
+class ServerGroupView(MethodView):
     methods = ["POST", "PUT", "DELETE"]
     decorators = [jwt_required(), get_user_params(), page_for_admin()]
 
     def __init__(self, is_api=False):
+        """
+        Initialize ServerGroupView instance
+        ---
+        parameters:
+          - name: is_api
+            in: path
+            type: boolean
+            description: is api
+        """
         self.json_data = request.get_json()
         self.is_api = is_api
 
     def post(self):
         """
-        This method is used to create a new group with the given name and description. It handles input validation and error handling.
-
-        Parameters:
-        - self.json_data: A dictionary containing the name and description of the group.
-
-        Returns:
-        - If the group creation is successful:
-            - If the method is called as an API endpoint, it returns a JSON response with the status "Created" and the newly created group ID. HTTP status code 201.
-            - If the method is called from a non-API context, it returns a JSON response with the status "Created", the rendered HTML template for the new group, and the newly created group ID. HTTP status code 201.
-        - If there is a validation error or an exception occurs during the group creation process, it returns a JSON response with the appropriate error message and details."""
+        Create a new group
+        ---
+        tags:
+          - Group
+        parameters:
+          - in: body
+            name: body
+            schema:
+              id: NewGroup
+              required:
+                - name
+                - desc
+              properties:
+                name:
+                  type: string
+                  description: The group name
+                desc:
+                  type: string
+                  description: The group description
+        responses:
+          201:
+            description: Group creation successful
+        """
         try:
             group = common.checkAjaxInput(self.json_data['name'])
             desc = common.checkAjaxInput(self.json_data['desc'])
@@ -215,25 +301,37 @@ class GroupView(MethodView):
 
     def put(self):
         """
-        This method is used to update a group record with the provided data.
-
-        Parameters:
-        - self: The current instance of the class.
-        - json_data: A JSON object containing the following fields:
-            - name (str): The new name of the group.
-            - desc (str): The new description of the group.
-            - group_id (int): The ID of the group to be updated.
-
-        Returns:
-        - If the parameters are successfully parsed and the group is updated, a JSON response will be returned with
-            the status 'Created' and a status code of 201 (Created).
-        - If any errors occur during the parameter parsing or group update, an exception will be raised and handled by
-            the `handle_json_exceptions()` method, returning a JSON response with an error message.
-        """
+        Update a group
+        ---
+        tags:
+          - Group
+        parameters:
+          - in: body
+            name: body
+            schema:
+              id: UpdateGroup
+              required:
+                - name
+                - desc
+                - id
+              properties:
+                name:
+                  type: string
+                  description: The group name
+                desc:
+                  type: string
+                  description: The group description
+                id:
+                  type: integer
+                  description: The ID of the group to be updated
+        responses:
+          201:
+            description: Group update successful
+       """
         try:
             name = common.checkAjaxInput(self.json_data['name'])
             desc = common.checkAjaxInput(self.json_data['desc'])
-            group_id = int(self.json_data['group_id'])
+            group_id = int(self.json_data['id'])
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse group data')
 
@@ -245,23 +343,27 @@ class GroupView(MethodView):
 
     def delete(self):
         """
-        Method to delete a group.
-
-        Deletes a group based on the provided group_id. Returns a JSON response with the status 'Ok' and a status code of 204 if the deletion is successful.
-
-        Parameters:
-            - self: The current instance of the class.
-
-        Returns:
-            - tuple: A tuple containing the JSON response and the status code.
-
-        Exceptions:
-            - ValueError: If the group_id is not an integer.
-            - KeyError: If the group_id is not found in the json_data.
-            - Exception: If there is an error parsing the group data or deleting the group.
+        Delete a group
+        ---
+        tags:
+          - Group
+        parameters:
+          - in: body
+            name: body
+            schema:
+              id: DeleteGroup
+              required:
+                - id
+              properties:
+                id:
+                  type: integer
+                  description: The ID of the group to be deleted
+        responses:
+          204:
+            description: Group deletion successful
         """
         try:
-            group_id = int(self.json_data['group_id'])
+            group_id = int(self.json_data['id'])
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse group data')
         try:
@@ -276,17 +378,30 @@ class CredsView(MethodView):
     decorators = [jwt_required(), get_user_params(), page_for_admin(level=2), check_group()]
 
     def __init__(self, is_api=False):
+        """
+        Initialize CredsView instance
+        ---
+        parameters:
+          - name: is_api
+            in: path
+            type: boolean
+            description: is api
+        """
         self.json_data = request.get_json()
         self.is_api = is_api
 
     @staticmethod
     def get():
         """
-            Get method retrieves credentials based on the group ID stored in the user parameters.
-
-            Returns:
-                A JSON response containing the credentials and a status code of 200 if successful.
-                If an exception occurs, it returns a JSON response generated by the `handle_json_exceptions` method from the `roxywi_common` module.
+        Retrieve credentials based on the group ID
+        ---
+        tags:
+          - SSH credentials 
+        responses:
+          200:
+            description: Credentials retrieval successful
+            schema:
+              $ref: '#/definitions/Credential'
         """
         group_id = int(g.user_params['group_id'])
         try:
@@ -300,16 +415,40 @@ class CredsView(MethodView):
 
     def post(self):
         """
-        This method is used to create a new credential entry. It takes several parameters and returns a JSON response.
-
-        Parameters:
-        - None
-
-        Returns:
-        - A JSON response with status and id fields. The status field indicates the result of the operation (e.g., 'Created'),
-        and the id field contains the ID of the newly created credential entry.
-
-        Note: This method assumes the existence of the following variables/constants: g.user_params, self.json_data, common, roxywi_common, cred_sql, jsonify.
+        Create a new credential entry
+        ---
+        tags:
+          - SSH credentials 
+        parameters:
+          - in: body
+            name: body
+            schema:
+              id: AddCredentials
+              required:
+                - group
+                - name
+                - username
+                - key_enabled
+                - password
+              properties:
+                group:
+                  type: integer
+                  description: The group ID
+                name:
+                  type: string
+                  description: The credential name
+                username:
+                  type: string
+                  description: The username
+                key_enabled:
+                  type: integer
+                  description: If key is enabled or not
+                password:
+                  type: string
+                  description: The password
+        responses:
+          201:
+            description: Credential addition successful
         """
         try:
             if g.user_params['role'] == 1:
@@ -333,17 +472,44 @@ class CredsView(MethodView):
 
     def put(self):
         """
-        Updates the SSH credentials with the given parameters.
-
-        Parameters:
-            self: The object of the class.
-
-        Returns:
-            If the group is incorrect, returns the JSON response with a 404 status code.
-            If there is a ValueError or KeyError, returns the JSON response with an appropriate error message.
-            If there is an exception while parsing the credential data, returns the JSON response with a general error message.
-            If the SSH key update is successful, returns the JSON response with a 201 status code and the status 'Ok'.
-            If there is an exception while updating the SSH key, returns the JSON response with an appropriate error message.
+        Update a credential entry
+        ---
+        tags:
+          - SSH credentials 
+        parameters:
+          - in: body
+            name: body
+            schema:
+              id: UpdateCredentials
+              required:
+                - group
+                - name
+                - username
+                - key_enabled
+                - id
+                - password
+              properties:
+                group:
+                  type: integer
+                  description: The group ID
+                name:
+                  type: string
+                  description: The credential name
+                username:
+                  type: string
+                  description: The username
+                key_enabled:
+                  type: integer
+                  description: If key is enabled or not
+                id:
+                  type: integer
+                  description: The SSH ID
+                password:
+                  type: string
+                  description: The password
+        responses:
+          201:
+            description: Credential update successful
         """
         try:
             self._check_is_correct_group()
@@ -374,19 +540,24 @@ class CredsView(MethodView):
 
     def delete(self):
         """
-        The delete method is used to delete an SSH credentials from the system.
-
-        Parameters:
-          - None
-
-        Return type:
-          - Tuple: (JSON response, HTTP status code)
-
-        Exceptions:
-          - If the group is incorrect, a JSON exception is raised and a relevant error message is returned with a 404 status code.
-          - If the value of the 'id' key in the JSON data cannot be converted to an integer, a JSON exception is raised and a relevant error message is returned.
-          - If the 'id' key is missing in the JSON data, a JSON exception is raised and a relevant error message is returned.
-          - If there is any other exception during parsing the data, a JSON exception is raised and a generic error message is returned.
+        Delete a credential entry
+        ---
+        tags:
+          - SSH credentials 
+        parameters:
+          - in: body
+            name: body
+            schema:
+              id: DeleteCredentials
+              required:
+                - id
+              properties:
+                id:
+                  type: integer
+                  description: The SSH ID
+        responses:
+          204:
+            description: Credential deletion successful
         """
         try:
             self._check_is_correct_group()
@@ -406,27 +577,32 @@ class CredsView(MethodView):
 
     def patch(self):
         """
-        This method is used to upload an SSH private key.
-
-        Returns:
-            - If the check for correct group fails, it returns a 404 error.
-            - If the user's role is 1, it expects the following parameters in JSON data:
-                - 'group': An integer representing the group.
-            - If the user's role is not 1, it expects the 'group_id' parameter from the user's parameters.
-            - It also expects the following parameters in JSON data:
-                - 'private_key': A string representing the private key.
-                - 'name': A string representing the name.
-                - 'passphrase' (optional): A string representing the passphrase. If not provided, it defaults to an empty string.
-
-        Raises:
-            - If there is a value error, it returns a 400 error with a message.
-            - If there is a key error, it returns a 400 error with a message.
-            - If there are any other exceptions, it returns a 500 error with a message.
-
-        Note:
-            - This method uses the roxywi_common.handle_json_exceptions() and common.checkAjaxInput() methods from other modules.
-            - The ssh_mod.upload_ssh_key() method is used to upload the SSH key.
-            - The returned JSON data includes a 'status' field with the value 'Ok' if the patch was successful.
+        Upload an SSH private key
+        ---
+        tags:
+          - SSH credentials 
+        parameters:
+         - in: body
+           name: body
+           schema:
+             id: UploadSSHKey
+             required:
+               - private_key
+               - id
+               - passphrase
+             properties:
+               private_key:
+                 type: string
+                 description: The private key string
+               id:
+                 type: integer
+                 description: The SSH ID
+               passphrase:
+                 type: string
+                 description: The passphrase
+        responses:
+          201:
+            description: SSH key upload successful
         """
         try:
             self._check_is_correct_group()

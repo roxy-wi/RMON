@@ -45,7 +45,7 @@ function addGroup(dialog_id) {
             "desc": $('#new-desc').val()
         }
         $.ajax({
-            url: "/server/group",
+            url: "/group",
             data: JSON.stringify(json_data),
             contentType: "application/json; charset=utf-8",
             type: "POST",
@@ -100,7 +100,7 @@ function confirmDeleteGroup(id) {
 function removeGroup(id) {
 	$("#group-" + id).css("background-color", "#f2dede");
 	$.ajax({
-		url: "/server/group",
+		url: "/group",
         data: JSON.stringify({'group_id': id}),
         contentType: "application/json; charset=utf-8",
 		success: function (data) {
@@ -122,7 +122,7 @@ function updateGroup(id) {
         "group_id": id
     }
     $.ajax({
-        url: "/server/group/update",
+        url: "/group/update",
         data: JSON.stringify(json_data),
         contentType: "application/json; charset=utf-8",
         type: "PUT",

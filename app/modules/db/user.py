@@ -7,12 +7,12 @@ import app.modules.roxy_wi_tools as roxy_wi_tools
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 
 
-def add_user(user, email, password, role, activeuser, group):
+def add_user(user, email, password, role, enabled, group):
 	if password != 'aduser':
 		try:
 			hashed_pass = roxy_wi_tools.Tools.get_hash(password)
 			last_id = User.insert(
-				username=user, email=email, password=hashed_pass, role=role, activeuser=activeuser, groups=group
+				username=user, email=email, password=hashed_pass, role=role, enabled=enabled, groups=group
 			).execute()
 		except Exception as e:
 			out_error(e)
@@ -21,7 +21,7 @@ def add_user(user, email, password, role, activeuser, group):
 	else:
 		try:
 			last_id = User.insert(
-				username=user, email=email, role=role, ldap_user=1, activeuser=activeuser, groups=group
+				username=user, email=email, role=role, ldap_user=1, enabled=enabled, groups=group
 			).execute()
 		except Exception as e:
 			out_error(e)
@@ -29,16 +29,16 @@ def add_user(user, email, password, role, activeuser, group):
 			return last_id
 
 
-def update_user(user, email, role, user_id, active_user):
+def update_user(user, email, role, user_id, enabled):
 	try:
-		User.update(username=user, email=email, role=role, activeuser=active_user).where(User.user_id == user_id).execute()
+		User.update(username=user, email=email, role=role, enabled=enabled).where(User.user_id == user_id).execute()
 	except Exception as e:
 		out_error(e)
 
 
-def update_user_from_admin_area(user, email, user_id, active_user):
+def update_user_from_admin_area(user, email, user_id, enabled):
 	try:
-		User.update(username=user, email=email, activeuser=active_user).where(User.user_id == user_id).execute()
+		User.update(username=user, email=email, enabled=enabled).where(User.user_id == user_id).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -141,7 +141,7 @@ def select_users(**kwargs):
 
 def is_user_active(user_id: int) -> int:
 	try:
-		query = User.get(User.user_id == user_id).activeuser
+		query = User.get(User.user_id == user_id).enabled
 	except Exception as e:
 		out_error(e)
 	else:
@@ -375,6 +375,8 @@ def get_role_id(user_id: int, group_id: int) -> int:
 def get_user_id(user_id: int) -> User:
 	try:
 		return User.get(User.user_id == user_id)
+	except User.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 

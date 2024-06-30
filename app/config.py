@@ -9,3 +9,4 @@ class Configuration(object):
     JWT_SECRET_KEY = "very secret salt to protect your RMON jwt"
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=1)
     JWT_TOKEN_LOCATION = ["headers", "cookies"]
+    FLASK_PYDANTIC_VALIDATION_ERROR_RAISE = True

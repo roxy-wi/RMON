@@ -14,7 +14,7 @@ import app.modules.roxywi.common as roxywi_common
 import app.modules.server.server as server_mod
 
 
-@bp.route('/agent', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@bp.route('/agent', methods=['GET'])
 @jwt_required()
 @get_user_params()
 def agent():
@@ -27,28 +27,6 @@ def agent():
         }
 
         return render_template('smon/agents.html', **kwargs)
-    elif request.method == 'POST':
-        data = request.get_json()
-        try:
-            last_id = smon_agent.add_agent(data)
-            return str(last_id)
-        except Exception as e:
-            return f'{e}'
-    elif request.method == "PUT":
-        json_data = request.get_json()
-        try:
-            smon_agent.update_agent(json_data)
-        except Exception as e:
-            return f'{e}'
-        return 'ok', 201
-    elif request.method == 'DELETE':
-        agent_id = int(request.form.get('agent_id'))
-        try:
-            smon_agent.delete_agent(agent_id)
-            smon_sql.delete_agent(agent_id)
-        except Exception as e:
-            return f'{e}'
-        return 'ok'
 
 
 @bp.get('/agent/<int:agent_id>')

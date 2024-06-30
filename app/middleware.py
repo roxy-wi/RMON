@@ -14,9 +14,9 @@ def get_user_params(virt=0, disable=0):
                 user_params = roxywi_common.get_users_params(virt=virt, disable=disable)
                 g.user_params = user_params
             except Exception as e:
-                print(f'{e}')
+                print(f'123 {e}')
                 if 'api' in request.url:
-                    return jsonify({'error': str(e)})
+                    return jsonify({'error': str(e)}), 401
                 else:
                     return redirect(url_for('login_page'))
             return fn(*args, **kwargs)

@@ -140,7 +140,7 @@ def check_user_password(login: str, password: str) -> dict:
     except Exception:
         raise Exception('ban')
 
-    if user.activeuser == 0:
+    if user.enabled == 0:
         raise Exception('Your login is disabled')
     if user.ldap_user == 1:
         if login in user.username and check_in_ldap(login, password):

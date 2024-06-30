@@ -12,13 +12,13 @@ import app.modules.roxywi.common as roxywi_common
 def check_login():
     allowed_endpoints = (
         'login_page', 'static', 'main.show_roxywi_version', 'smon.show_smon_status_page', 'smon.smon_history_statuses_avg',
-        'smon.smon_history_statuses', 'smon.agent_get_checks', 'smon.get_check_status', 'smon.smon_history_metric', 'api'
+        'smon.smon_history_statuses', 'smon.agent_get_checks', 'smon.get_check_status', 'smon.smon_history_metric', 'api', 'favicon'
     )
     if 'api' not in request.url and request.endpoint not in allowed_endpoints:
         try:
             user_params = roxywi_common.get_users_params()
         except Exception as e:
-            print(e)
+            print(f'{e}')
             abort(401)
 
         if not user_sql.is_user_active(user_params['user_id']):

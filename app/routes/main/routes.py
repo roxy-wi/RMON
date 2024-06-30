@@ -1,8 +1,9 @@
 import os
 import pytz
 
-from flask import render_template, request, session, g, abort, send_from_directory, jsonify, redirect, url_for
+from flask import render_template, request, g, abort, send_from_directory, jsonify, redirect, url_for
 from flask_jwt_extended import jwt_required
+from flask_pydantic.exceptions import ValidationError
 
 from app import app, cache
 from app.routes.main import bp
@@ -19,11 +20,42 @@ import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.nettools as nettools_mod
 import app.modules.roxywi.common as roxywi_common
 import app.modules.server.server as server_mod
+from app.views.server.views import ServerGroupView
+from app.modules.roxywi.exception import RoxywiValidationError
+from app.modules.roxywi.class_models import ErrorResponse
+
+bp.add_url_rule('/group', view_func=ServerGroupView.as_view('group', True))
 
 
 @app.template_filter('strftime')
 def _jinja2_filter_datetime(date, fmt=None):
     return common.get_time_zoned_date(date, fmt)
+
+
+@app.errorhandler(RoxywiValidationError)
+def handle_pydantic_validation_errors(e):
+    return ErrorResponse(error=str(e)), 400
+
+
+@app.errorhandler(ValidationError)
+def handle_pydantic_validation_errors1(e):
+    errors = []
+    if e.body_params:
+        req_type = e.body_params
+    elif e.form_params:
+        req_type = e.form_params
+    elif e.path_params:
+        req_type = e.path_params
+    else:
+        req_type = e.query_params
+    for er in req_type:
+        errors.append(f'{er["loc"][0]}: {er["msg"]}')
+    return ErrorResponse(error=errors).model_dump(mode='json'), 400
+
+
+@app.errorhandler(400)
+def bad_request(e):
+    return jsonify({'error': str(e)}), 400
 
 
 @app.errorhandler(401)
@@ -72,6 +104,18 @@ def method_not_allowed(e):
     return render_template('error.html', **kwargs), 405
 
 
+@app.errorhandler(409)
+@get_user_params()
+def method_not_allowed(e):
+    return jsonify({'error': str(e)}), 409
+
+
+@app.errorhandler(415)
+@get_user_params()
+def unsupported_media_type(e):
+    return jsonify({'error': str(e)}), 415
+
+
 @app.errorhandler(500)
 @get_user_params()
 def internal_error(e):
@@ -83,14 +127,6 @@ def internal_error(e):
         'e': e
     }
     return render_template('error.html', **kwargs), 500
-
-
-@app.before_request
-def make_session_permanent():
-    if 'api' in request.url:
-        session.permanent = False
-    else:
-        session.permanent = True
 
 
 @app.route('/favicon.ico')

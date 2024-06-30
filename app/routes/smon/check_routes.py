@@ -12,23 +12,24 @@ import app.modules.tools.smon_agent as agent_mod
 import app.modules.roxywi.common as roxywi_common
 
 
-@bp.route('/check', methods=['POST', 'PUT', 'DELETE'])
+@bp.route('/check', methods=['PUT', 'DELETE'])
 @jwt_required()
 def smon_add():
     json_data = request.get_json()
     user_group = roxywi_common.get_user_group(id=1)
-    if request.method == "POST":
-        try:
-            smon_mod.check_checks_limit()
-        except Exception as e:
-            return f'{e}'
-        try:
-            last_id = smon_mod.create_smon(json_data, user_group)
-        except Exception as e:
-            return str(e), 200
-        return str(last_id)
-    elif request.method == "PUT":
-        check_id = json_data['check_id']
+    # if request.method == "POST":
+    #     try:
+    #         smon_mod.check_checks_limit()
+    #     except Exception as e:
+    #         return f'{e}'
+    #     try:
+    #         last_id = smon_mod.create_smon(data, user_group)
+    #     except Exception as e:
+    #         return str(e), 200
+    #     return str(last_id)
+    # elif request.method == "PUT":
+    if request.method == "PUT":
+        check_id = json_data['check_type_id']
 
         if roxywi_common.check_user_group_for_flask():
             try:
@@ -37,16 +38,6 @@ def smon_add():
                 return f'{e}', 200
             else:
                 return status, 201
-    elif request.method == "DELETE":
-        check_id = json_data['check_id']
-
-        if roxywi_common.check_user_group_for_flask():
-            try:
-                status = smon_mod.delete_smon(check_id, user_group)
-            except Exception as e:
-                return f'{e}', 200
-            else:
-                return status
 
 
 @bp.route('/check/settings/<int:smon_id>/<int:check_type_id>')
@@ -86,9 +77,9 @@ def check(smon_id, check_type_id):
             settings.setdefault('url', s.url)
             settings.setdefault('method', s.method)
             settings.setdefault('body', s.body)
-            settings.setdefault('status_code', s.accepted_status_codes)
+            settings.setdefault('accepted_status_codes', s.accepted_status_codes)
             if s.body_req:
-                settings.setdefault('body_req', json.loads(s.body_req))
+                settings.setdefault('body_req', str(s.body_req))
             else:
                 settings.setdefault('body_req', '')
             if s.headers:

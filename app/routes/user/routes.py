@@ -20,7 +20,7 @@ def before_request():
     pass
 
 
-bp.add_url_rule('', view_func=UserView.as_view('user'))
+bp.add_url_rule('', view_func=UserView.as_view('user'), methods=['POST'])
 
 
 @bp.route('/ldap/<username>')

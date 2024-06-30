@@ -49,7 +49,7 @@ class User(BaseModel):
     role = CharField()
     groups = CharField()
     ldap_user = IntegerField(constraints=[SQL('DEFAULT "0"')])
-    activeuser = IntegerField(constraints=[SQL('DEFAULT "1"')])
+    enabled = IntegerField(constraints=[SQL('DEFAULT "1"')])
     user_services = CharField(constraints=[SQL('DEFAULT "1 2 3 4 5"')])
     last_login_date = DateTimeField(constraints=[SQL('DEFAULT "0000-00-00 00:00:00"')])
     last_login_ip = CharField(null=True)

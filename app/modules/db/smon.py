@@ -8,6 +8,8 @@ from app.modules.db.db_model import (
 )
 from app.modules.db.common import out_error
 import app.modules.roxy_wi_tools as roxy_wi_tools
+import app.modules.tools.common as tool_common
+from app.modules.roxywi.exception import RoxywiResourceNotFound
 
 
 def get_agents(group_id: int):
@@ -49,6 +51,16 @@ def get_agent(agent_id: int):
 		out_error(e)
 
 
+def get_agent_with_group(agent_id: int, group_id: int):
+	try:
+		return SmonAgent.select(SmonAgent, Server).join(Server).where(
+			(SmonAgent.id == agent_id) *
+			(Server.groups == group_id)
+		).objects().execute()
+	except Exception as e:
+		out_error(e)
+
+
 def get_agent_data(agent_id: int) -> SmonAgent:
 	try:
 		return SmonAgent.get(SmonAgent.id == agent_id)
@@ -57,16 +69,17 @@ def get_agent_data(agent_id: int) -> SmonAgent:
 
 
 def get_agent_id_by_check_id(check_id: int):
-	check_type = SMON.get(SMON.id == check_id).check_type
-	if check_type == 'tcp':
-		query = SmonTcpCheck.get(SmonTcpCheck.smon_id == check_id).agent_id
-	elif check_type == 'http':
-		query = SmonHttpCheck.get(SmonHttpCheck.smon_id == check_id).agent_id
-	elif check_type == 'dns':
-		query = SmonDnsCheck.get(SmonDnsCheck.smon_id == check_id).agent_id
-	else:
-		query = SmonPingCheck.get(SmonPingCheck.smon_id == check_id).agent_id
-	return query
+	try:
+		check_type = SMON.get(SMON.id == check_id).check_type
+	except SMON.DoesNotExist:
+		raise RoxywiResourceNotFound(f'Id {check_id} not found')
+
+	correct_model = tool_common.get_model_for_check(check_type=check_type)
+
+	try:
+		return correct_model.get(correct_model.smon_id == check_id).agent_id
+	except correct_model.DoesNotExist:
+		raise RoxywiResourceNotFound(f'{check_type} not found with id {check_id}')
 
 
 def add_agent(**kwargs) -> int:
@@ -87,6 +100,8 @@ def delete_agent(agent_id: int):
 def update_agent(agent_id: int, **kwargs) -> None:
 	try:
 		SmonAgent.update(**kwargs).where(SmonAgent.id == agent_id).execute()
+	except SmonAgent.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 
@@ -95,7 +110,7 @@ def get_agent_uuid(agent_id: int) -> uuid:
 	try:
 		return SmonAgent.get(SmonAgent.id == agent_id).uuid
 	except SmonAgent.DoesNotExist:
-		raise Exception('Agent not found')
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 
@@ -104,11 +119,14 @@ def get_agent_ip_by_id(agent_id: int):
 	try:
 		query = SmonAgent.select(SmonAgent, Server).join(Server).where(SmonAgent.id == agent_id)
 		query_res = query.objects().execute()
+	except SmonAgent.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 	else:
 		for r in query_res:
 			return r.ip
+		raise RoxywiResourceNotFound
 
 
 def get_agent_id_by_uuid(agent_uuid: int) -> int:
@@ -137,6 +155,16 @@ def select_en_smon_tcp(agent_id) -> object:
 		return SmonTcpCheck.select(SmonTcpCheck, SMON).join_from(SmonTcpCheck, SMON).where((SMON.en == '1') & (SmonTcpCheck.agent_id == agent_id)).execute()
 	except Exception as e:
 		out_error(e)
+
+
+def select_en_smon_ping(agent_id) -> object:
+	query = SmonPingCheck.select(SmonPingCheck, SMON).join_from(SmonPingCheck, SMON).where((SMON.en == '1') & (SmonPingCheck.agent_id == agent_id))
+	try:
+		query_res = query.execute()
+	except Exception as e:
+		out_error(e)
+	else:
+		return query_res
 
 
 def select_en_smon_ping(agent_id) -> object:
@@ -226,22 +254,15 @@ def insert_smon_history_http_metrics(date, **kwargs) -> None:
 		out_error(e)
 
 
-def select_one_smon(smon_id: int, check_id: int) -> tuple:
-	if check_id == 1:
-		query = SmonTcpCheck.select(SmonTcpCheck, SMON).join_from(SmonTcpCheck, SMON).where(SMON.id == smon_id)
-	elif check_id == 2:
-		query = SmonHttpCheck.select(SmonHttpCheck, SMON).join_from(SmonHttpCheck, SMON).where(SMON.id == smon_id)
-	elif check_id == 5:
-		query = SmonDnsCheck.select(SmonDnsCheck, SMON).join_from(SmonDnsCheck, SMON).where(SMON.id == smon_id)
-	else:
-		query = SmonPingCheck.select(SmonPingCheck, SMON).join_from(SmonPingCheck, SMON).where(SMON.id == smon_id)
+def select_one_smon(smon_id: int, check_type_id: int) -> tuple:
+	correct_model = tool_common.get_model_for_check(check_type_id=check_type_id)
 
 	try:
-		query_res = query.execute()
+		return correct_model.select(correct_model, SMON).join_from(correct_model, SMON).where(SMON.id == smon_id).execute()
+	except correct_model.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
-	else:
-		return query_res
 
 
 def insert_smon(name, enable, group_id, desc, telegram, slack, pd, mm, user_group, check_type, timeout):
@@ -250,30 +271,32 @@ def insert_smon(name, enable, group_id, desc, telegram, slack, pd, mm, user_grou
 			name=name, en=enable, desc=desc, group_id=group_id, telegram_channel_id=telegram, slack_channel_id=slack,
 			pd_channel_id=pd, mm_channel_id=mm, user_group=user_group, status='3', check_type=check_type, check_timeout=timeout
 		).execute()
-	except Exception as e:
-		out_error(e)
-		return False
-	else:
 		return last_id
+	except Exception as e:
+		print('error')
+		out_error(e)
 
 
 def insert_smon_ping(smon_id, hostname, packet_size, interval, agent_id):
 	try:
-		SmonPingCheck.insert(smon_id=smon_id, ip=hostname, packet_size=packet_size, interval=interval, agent_id=agent_id).execute()
+		SmonPingCheck.insert(smon_id=smon_id, ip=hostname, packet_size=packet_size, interval=interval, agent_id=agent_id).on_conflict('replace').execute()
 	except Exception as e:
+		print('123')
 		out_error(e)
 
 
 def insert_smon_tcp(smon_id, hostname, port, interval, agent_id):
 	try:
-		SmonTcpCheck.insert(smon_id=smon_id, ip=hostname, port=port, interval=interval, agent_id=agent_id).execute()
+		SmonTcpCheck.insert(smon_id=smon_id, ip=hostname, port=port, interval=interval, agent_id=agent_id).on_conflict('replace').execute()
 	except Exception as e:
 		out_error(e)
 
 
 def insert_smon_dns(smon_id: int, hostname: str, port: int, resolver: str, record_type: str, interval: int, agent_id: int) -> None:
 	try:
-		SmonDnsCheck.insert(smon_id=smon_id, ip=hostname, port=port, resolver=resolver, record_type=record_type, interval=interval, agent_id=agent_id).execute()
+		SmonDnsCheck.insert(
+			smon_id=smon_id, ip=hostname, port=port, resolver=resolver, record_type=record_type, interval=interval, agent_id=agent_id
+		).on_conflict('replace').execute()
 	except Exception as e:
 		out_error(e)
 
@@ -282,45 +305,57 @@ def insert_smon_http(smon_id, url, body, http_method, interval, agent_id, body_r
 	try:
 		SmonHttpCheck.insert(
 			smon_id=smon_id, url=url, body=body, method=http_method, interval=interval, agent_id=agent_id, body_req=body_req, headers=header_req, accepted_status_codes=status_code
-		).execute()
+		).on_conflict('replace').execute()
 	except Exception as e:
 		out_error(e)
 
 
-def select_smon_ping():
+def select_smon_checks(check_type: str, group_id: int) -> tuple:
+	correct_model = tool_common.get_model_for_check(check_type=check_type)
 	try:
-		query_res = SmonPingCheck.select().execute()
+		query = correct_model.select().join(SMON).where(SMON.user_group == group_id)
+		print(query)
+		return query.execute()
+	except correct_model.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
-	else:
-		return query_res
 
 
-def select_smon_tcp():
-	try:
-		query_res = SmonTcpCheck.select().execute()
-	except Exception as e:
-		out_error(e)
-	else:
-		return query_res
-
-
-def select_smon_http():
-	try:
-		query_res = SmonHttpCheck.select().execute()
-	except Exception as e:
-		out_error(e)
-	else:
-		return query_res
-
-
-def select_smon_dns():
-	try:
-		query_res = SmonDnsCheck.select().execute()
-	except Exception as e:
-		out_error(e)
-	else:
-		return query_res
+# def select_smon_ping():
+# 	try:
+# 		query_res = SmonPingCheck.select().execute()
+# 	except Exception as e:
+# 		out_error(e)
+# 	else:
+# 		return query_res
+#
+#
+# def select_smon_tcp():
+# 	try:
+# 		query_res = SmonTcpCheck.select().execute()
+# 	except Exception as e:
+# 		out_error(e)
+# 	else:
+# 		return query_res
+#
+#
+# def select_smon_http():
+# 	try:
+# 		query_res = SmonHttpCheck.select().execute()
+# 	except Exception as e:
+# 		out_error(e)
+# 	else:
+# 		return query_res
+#
+#
+# def select_smon_dns():
+# 	try:
+# 		query_res = SmonDnsCheck.select().execute()
+# 	except Exception as e:
+# 		out_error(e)
+# 	else:
+# 		return query_res
 
 
 def select_smon_by_id(last_id):
@@ -334,9 +369,10 @@ def select_smon_by_id(last_id):
 
 
 def delete_smon(smon_id, user_group):
-	query = SMON.delete().where((SMON.id == smon_id) & (SMON.user_group == user_group))
 	try:
-		query.execute()
+		SMON.delete().where((SMON.id == smon_id) & (SMON.user_group == user_group)).execute()
+	except SMON.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 		return False
@@ -517,16 +553,11 @@ def get_smon_service_name_by_id(smon_id: int) -> str:
 			return ''
 
 
-def select_smon_history(smon_id: int, limit: int = 40) -> object:
-	query = SmonHistory.select().where(
-		SmonHistory.smon_id == smon_id
-	).limit(limit).order_by(SmonHistory.date.desc())
+def select_smon_history(smon_id: int, limit: int = 40) -> SmonHistory:
 	try:
-		query_res = query.execute()
+		return SmonHistory.select().where(SmonHistory.smon_id == smon_id).limit(limit).order_by(SmonHistory.date.desc()).execute()
 	except Exception as e:
 		out_error(e)
-	else:
-		return query_res
 
 
 def update_check(smon_id, name, telegram, slack, pd, mm, group_id, desc, en, timeout):
@@ -536,21 +567,20 @@ def update_check(smon_id, name, telegram, slack, pd, mm, group_id, desc, en, tim
 	).where(SMON.id == smon_id))
 	try:
 		query.execute()
-		return True
 	except Exception as e:
 		out_error(e)
-		return False
 
 
 def update_check_agent(smon_id: int, agent_id: int, check_type: str) -> None:
-	select_query = {
-		'http': SmonHttpCheck.update(agent_id=agent_id).where(SmonHttpCheck.smon_id == smon_id),
-		'tcp': SmonTcpCheck.update(agent_id=agent_id).where(SmonTcpCheck.smon_id == smon_id),
-		'dns': SmonDnsCheck.update(agent_id=agent_id).where(SmonDnsCheck.smon_id == smon_id),
-		'ping': SmonPingCheck.update(agent_id=agent_id).where(SmonPingCheck.smon_id == smon_id)
-	}
+	# select_query = {
+	# 	'http': SmonHttpCheck.update(agent_id=agent_id).where(SmonHttpCheck.smon_id == smon_id),
+	# 	'tcp': SmonTcpCheck.update(agent_id=agent_id).where(SmonTcpCheck.smon_id == smon_id),
+	# 	'dns': SmonDnsCheck.update(agent_id=agent_id).where(SmonDnsCheck.smon_id == smon_id),
+	# 	'ping': SmonPingCheck.update(agent_id=agent_id).where(SmonPingCheck.smon_id == smon_id)
+	# }
+	correct_model = tool_common.get_model_for_check(check_type=check_type)
 	try:
-		return select_query[check_type].execute()
+		return correct_model.update(agent_id=agent_id).where(correct_model.smon_id == smon_id).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -694,14 +724,15 @@ def delete_smon_history():
 
 
 def select_checks_for_agent(agent_id: int, check_type: str) -> dict:
-	select_query = {
-		'http': SmonHttpCheck.select(SmonHttpCheck, SMON).join(SMON).where(SmonHttpCheck.agent_id == agent_id).objects(),
-		'tcp': SmonTcpCheck.select(SmonTcpCheck, SMON).join(SMON).where(SmonTcpCheck.agent_id == agent_id).objects(),
-		'dns': SmonDnsCheck.select(SmonDnsCheck, SMON).join(SMON).where(SmonDnsCheck.agent_id == agent_id).objects(),
-		'ping': SmonPingCheck.select(SmonPingCheck, SMON).join(SMON).where(SmonPingCheck.agent_id == agent_id).objects()
-	}
+	# select_query = {
+	# 	'http': SmonHttpCheck.select(SmonHttpCheck, SMON).join(SMON).where(SmonHttpCheck.agent_id == agent_id).objects(),
+	# 	'tcp': SmonTcpCheck.select(SmonTcpCheck, SMON).join(SMON).where(SmonTcpCheck.agent_id == agent_id).objects(),
+	# 	'dns': SmonDnsCheck.select(SmonDnsCheck, SMON).join(SMON).where(SmonDnsCheck.agent_id == agent_id).objects(),
+	# 	'ping': SmonPingCheck.select(SmonPingCheck, SMON).join(SMON).where(SmonPingCheck.agent_id == agent_id).objects()
+	# }
+	correct_model = tool_common.get_model_for_check(check_type=check_type)
 	try:
-		return select_query[check_type].execute()
+		return correct_model.select(correct_model, SMON).join(SMON).where(correct_model.agent_id == agent_id).objects().execute()
 	except Exception as e:
 		out_error(e)
 

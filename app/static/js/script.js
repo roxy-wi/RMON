@@ -60,6 +60,9 @@ $( document ).ajaxComplete(function( event, request, settings ) {
 $.ajaxSetup({
 	headers: {"X-CSRF-TOKEN": csrf_token},
 });
+$(document).ajaxError(function myErrorHandler(event, xhr, ajaxOptions, thrownError) {
+  toastr.error(xhr.responseJSON.error);
+});
 function showLog() {
 	var waf = cur_url[2];
 	var file = $('#log_files').val();

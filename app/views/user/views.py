@@ -1,13 +1,19 @@
+from typing import Union
+
 from flask.views import MethodView
+from flask_pydantic import validate
 from flask_jwt_extended import jwt_required
 from flask import render_template, jsonify, request, g
+from playhouse.shortcuts import model_to_dict
 
 import app.modules.db.sql as sql
 import app.modules.db.user as user_sql
 import app.modules.db.group as group_sql
-import app.modules.common.common as common
 import app.modules.roxywi.user as roxywi_user
 import app.modules.roxywi.common as roxywi_common
+from app.modules.db.db_model import User as User_DB
+from app.modules.roxywi.exception import RoxywiResourceNotFound
+from app.modules.roxywi.class_models import UserPost, UserPut, IdResponse, IdDataResponse, BaseResponse, AddUserToGroup
 from app.middleware import get_user_params, page_for_admin, check_group
 
 
@@ -16,149 +22,222 @@ class UserView(MethodView):
     decorators = [jwt_required(), get_user_params(), page_for_admin(level=2), check_group()]
 
     def __init__(self, is_api=False):
+        """
+        Initialize UserView instance
+        ---
+        parameters:
+            - name: is_api
+              in: path
+              type: boolean
+              description: is api
+        """
         self.json_data = request.get_json()
         self.is_api = is_api
 
-    def get(self):
+    def get(self, user_id: int):
         """
-        Gets the user information based on the provided user ID.
-
-        Parameters:
-            None.
-
-        Returns:
-            A JSON response containing the user's information.
-
-        Raises:
-            ValueError: If the user ID is not provided or is not an integer.
-            Exception: If there is an error retrieving the user or checking user access.
+        Get User information by ID
+        ---
+        tags:
+        - 'User'
+        parameters:
+        - in: 'path'
+          name: 'user_id'
+          description: 'ID of the UserPost to retrieve'
+          required: true
+          schema:
+            type: 'integer'
+        responses:
+          '200':
+            description: 'Successful Operation'
+            schema:
+              id: 'UserPost'
+              properties:
+                id:
+                  type: 'integer'
+                  description: 'UserPost ID'
+                name:
+                  type: 'string'
+                  description: 'Username'
+                email:
+                  type: 'string'
+                  description: 'Email'
+                group:
+                  type: 'integer'
+                  description: 'Group ID'
+                enabled:
+                  type: 'boolean'
+                  description: 'UserPost account is active'
+                last_login_date:
+                  type: 'string'
+                  format: 'date-time'
+                  description: 'Last login date'
+                last_login_ip:
+                  type: 'string'
+                  description: 'Last login IP'
+          '404':
+            description: 'UserPost not found'
+            schema:
+              id: 'NotFound'
+              properties:
+                message:
+                  type: 'string'
+                  description: 'Error message'
         """
-        try:
-            user_id = int(self.json_data["id"])
-        except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user id')
         try:
             user = user_sql.get_user_id(user_id)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get user')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user')
 
         try:
             roxywi_common.is_user_has_access_to_group(user_id)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot find user'), 404
 
-        json_data = {
-            "id": user_id,
-            "name": user.username,
-            "email": user.email,
-            "group": g.user_params['group_id'],
-            "enabled": user.activeuser,
-            "ldap": user.ldap_user,
-            "last_login_date": user.last_login_date,
-            "last_login_ip": user.last_login_ip
-        }
+        return model_to_dict(user, exclude=[User_DB.password, User_DB.user_services])
 
-        return jsonify(json_data)
-
-    def post(self):
+    @validate(body=UserPost)
+    def post(self, body: UserPost) -> Union[dict, tuple]:
         """
-        This method is used to create a new user.
-
-        Parameters:
-        - email (str): The email of the user.
-        - password (str): The password of the user.
-        - role (int): The role of the user. Valid roles are:
-           - 1: Superadmin
-           - 2: Admin
-           - 3: User
-           - 4: Guest
-        - new_user (str): The username of the user.
-        - enabled (int): Determines if the user is enabled or disabled. 1 for enabled, 0 for disabled.
-        - group_id (int): The ID of the user's group.
-
-        Returns:
-        - If successful, returns a JSON response with the following keys:
-           - 'status': The status of the user creation ('Created').
-           - 'id': The ID of the created user.
-           - 'data': The rendered HTML template of the newly created user.
-        - If unsuccessful, returns a JSON response with the following keys:
-           - 'status': The status of the error.
-           - 'message': The error message.
+        Create UserPost
+        ---
+        tags:
+          - User
+        parameters:
+          - name: body
+            in: body
+            schema:
+              id: NewUser
+              required:
+                - email
+                - password
+                - role
+                - username
+                - enabled
+                - user_group
+              properties:
+                email:
+                  type: string
+                  description: The email of the user
+                password:
+                  type: string
+                  description: The password of the user
+                role:
+                  type: integer
+                  description: The role of the user
+                username:
+                  type: string
+                  description: The username of the user
+                enabled:
+                  type: integer
+                  description: 'Enable status (1 for enabled)'
+                group_id:
+                  type: integer
+                  description: The ID of the user's group
+        responses:
+          200:
+            description: UserPost created
+            schema:
+              id: CreateUserResponse
+              properties:
+                status:
+                  type: string
+                  description: The status of the user creation
+                id:
+                  type: integer
+                  description: The ID of the created user
         """
-        try:
-            email = common.checkAjaxInput(self.json_data['email'])
-            password = common.checkAjaxInput(self.json_data['password'])
-            role = int(self.json_data['role'])
-            new_user = common.checkAjaxInput(self.json_data['username'])
-            enabled = int(self.json_data['enabled'])
-            group_id = int(self.json_data['user_group'])
-        except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create user')
-        lang = roxywi_common.get_user_lang_for_flask()
-
-        if g.user_params['role'] > role:
+        if g.user_params['role'] > body.role:
             return roxywi_common.handle_json_exceptions('Wrong role', 'Cannot create user')
         try:
-            user_id = roxywi_user.create_user(new_user, email, password, role, enabled, group_id)
+            user_id = roxywi_user.create_user(body.username, body.email, body.password, body.role, body.enabled, body.user_group)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot create a new user')
         else:
             if self.is_api:
-                return jsonify({'status': 'Created', 'id': user_id}), 201
+                return IdResponse(id=user_id), 201
             else:
-                return jsonify({'status': 'created', 'id': user_id, 'data': render_template(
-                    'ajax/new_user.html', users=user_sql.select_users(user=new_user), groups=group_sql.select_groups(),
+                lang = roxywi_common.get_user_lang_for_flask()
+                data = render_template(
+                    'ajax/new_user.html', users=user_sql.select_users(user=body.username), groups=group_sql.select_groups(),
                     roles=sql.select_roles(), adding=1, lang=lang
-                )})
+                )
+                return IdDataResponse(id=user_id, data=data), 201
 
-    def put(self):
+    @validate(body=UserPut)
+    def put(self, user_id: int, body: UserPut) -> Union[dict, tuple]:
         """
-        Update user information.
-
-        This method takes in user information as parameters and updates the user's details in the database.
-
-        Parameters:
-        - None
-
-        Returns:
-        - None
-
-        Raises:
-        - None
-
-        Note:
-        - This method requires the following parameters in the 'json_data' dictionary:
-            - 'user_id' (int): The ID of the user to update.
-            - 'username' (str): The updated username.
-            - 'email' (str): The updated email address.
-            - 'enabled' (int): Whether the user is enabled or disabled (0 being disabled and 1 being enabled).
-
-        - If any of the required parameters are missing or if there are any exceptions during the process, an appropriate exception response is returned.
-
-        - The user's details are logged using the 'logging' method from the 'roxywi_common' module.
-
-        - Finally, a JSON response with a status of "Ok" is returned.
+        Update User Information
+        ---
+        tags:
+          - User
+        description: Update the information of a user based on the provided user ID.
+        parameters:
+          - in: 'path'
+            name: 'user_id'
+            description: 'ID of the UserPost to retrieve'
+            required: true
+            schema:
+              type: 'integer'
+          - in: body
+            name: body
+            schema:
+              id: UserUpdate
+              required:
+                - id
+                - username
+                - email
+                - enabled
+              properties:
+                email:
+                  type: string
+                  description: The email of the user
+                username:
+                  type: string
+                  description: The username of the user
+                enabled:
+                  type: integer
+                  description: 'Enable status (1 for enabled)'
+        responses:
+          400:
+            description: Invalid request
+          201:
+            description: UserPost information update successful
         """
         try:
-            user_id = int(self.json_data['id'])
-            user_name = common.checkAjaxInput(self.json_data['username'])
-            email = common.checkAjaxInput(self.json_data['email'])
-            enabled = int(self.json_data['enabled'])
+            user = user_sql.get_user_id(user_id)
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot update user')
+            return roxywi_common.handle_json_exceptions(e, 'Cannot get user'), 404
         try:
-            user_sql.update_user_from_admin_area(user_name, email, user_id, enabled)
+            user_sql.update_user_from_admin_area(body.username, body.email, user_id, body.enabled)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot update user')
-        roxywi_common.logging(user_name, ' has been updated user ', roxywi=1, login=1)
-        return jsonify({'status': 'Ok'}), 201
+        roxywi_common.logging(body.username, 'has been updated user', roxywi=1, login=1)
+        return BaseResponse(), 201
 
-    def delete(self):
-        try:
-            user_id = int(self.json_data['id'])
-        except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot delete user')
-
+    @validate()
+    def delete(self, user_id: int):
+        """
+        Delete a User
+        ---
+        tags:
+          - User
+        Description: Delete a user based on the provided user ID.
+        parameters:
+        - in: 'path'
+          name: 'user_id'
+          description: 'User ID to delete'
+          required: true
+          schema:
+            type: 'integer'
+        responses:
+          204:
+            description: UserPost deletion successful
+          400:
+            description: Invalid request
+          404:
+            description: UserPost not found
+        """
         try:
             roxywi_common.is_user_has_access_to_group(user_id)
         except Exception as e:
@@ -168,12 +247,12 @@ class UserView(MethodView):
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot get user'), 404
 
-        if g.user_params['role'] > user.role:
+        if g.user_params['role'] > int(user.role):
             return roxywi_common.handle_json_exceptions('Wrong role', 'Cannot delete user'), 404
 
         try:
             roxywi_user.delete_user(user_id)
-            return jsonify({'status': 'Ok'}), 204
+            return BaseResponse().model_dump(mode='json'), 204
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot delete the user')
 
@@ -182,35 +261,68 @@ class UserGroupView(MethodView):
     methods = ["GET", "POST", "PUT", "DELETE"]
     decorators = [jwt_required(), get_user_params(), page_for_admin(), check_group()]
 
-    def __init__(self, is_api=False):
+    def __init__(self, is_api: bool = False):
         self.json_data = request.get_json()
 
-    def get(self):
+    def get(self, group_id: int):
         """
-        Retrieve information for a group.
-
-        Parameters:
-            None
-
-        Returns:
-            A JSON object containing the following information for each user in the group:
-                - id: The user's ID
-                - username: The user's username
-                - email: The user's email address
-                - group: The group's ID
-                - enabled: Whether the user is active or not
-                - ldap: Whether the user is an LDAP user or not
-                - last_login_date: The date of the user's last login
-                - last_login_ip: The IP address of the user's last login
-                - role: The ID of the user's role in the group
-
-        Raises:
-            Exception: If there is an error retrieving the group ID or the group information
+        Fetch a specific User Group.
+        ---
+        tags:
+          - User group
+        parameters:
+        - in: 'path'
+          name: 'group_id'
+          description: 'Group ID to list'
+          required: true
+          schema:
+            type: 'integer'
+        responses:
+          200:
+            description: A list of users in the group
+            schema:
+              type: array
+              items:
+                id: UserPost
+                properties:
+                  email:
+                    type: string
+                    description: The user's email
+                    example: "admin@localhost1"
+                  enabled:
+                    type: integer
+                    description: Indicates whether the user is enabled or not
+                    example: 1
+                  group:
+                    type: integer
+                    description: The ID of the group
+                    example: 1
+                  id:
+                    type: integer
+                    description: The ID of the user
+                    example: 1
+                  last_login_date:
+                    type: string
+                    format: date-time
+                    description: The last login date of the user
+                    example: "Thu, 27 Jun 2024 18:47:51 GMT"
+                  last_login_ip:
+                    type: string
+                    description: The IP address from which the user last logged in
+                    example: "10.0.0.148"
+                  ldap:
+                    type: integer
+                    description: Indicates whether the user is an LDAP user or not
+                    example: 0
+                  role:
+                    type: integer
+                    description: The role of the user
+                    example: 1
+                  username:
+                    type: string
+                    description: The username of the user
+                    example: "admin"
         """
-        try:
-            group_id = int(self.json_data["group_id"])
-        except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
         try:
             users = user_sql.get_users_in_group(group_id)
         except Exception as e:
@@ -218,76 +330,99 @@ class UserGroupView(MethodView):
 
         json_data = []
         for user in users:
-            user_role = user_sql.get_role_id(user.user_id, group_id)
-            json_data.append({
-                "id": user.user_id,
-                "username": user.username,
-                "email": user.email,
-                "group": group_id,
-                "enabled": user.activeuser,
-                "ldap": user.ldap_user,
-                "last_login_date": user.last_login_date,
-                "last_login_ip": user.last_login_ip,
-                "role": user_role
-            })
+            json_data.append(model_to_dict(user, exclude=[User_DB.password, User_DB.user_services]))
 
         return jsonify(json_data)
 
-    def post(self):
+    @validate(body=AddUserToGroup)
+    def post(self, body: AddUserToGroup):
         """
-        Post Method
-
-        This method adds or updates a user into a group with a specific role.
-
-        Parameters:
-        - group_id (int): The ID of the group to add the user to.
-        - user_id (int): The ID of the user to be added to the group.
-        - role_id (int): The ID of the role for the user in the group.
-
-        Returns:
-        - JSON response: A JSON response with the status 'added' indicating that the user has been successfully added to the group.
-
-        Exceptions:
-        - JSON Exception: If there is an error parsing the input JSON data.
-        - JSON Exception: If there is an error updating the user role in the group.
+        Add or Update a User in a group
+        ---
+        tags:
+          - User group
+        parameters:
+          - in: body
+            name: body
+            schema:
+              id: AddUserGroup
+              required:
+                - group_id
+                - user_id
+                - role_id
+              properties:
+                group_id:
+                  type: integer
+                  description: The group ID
+                user_id:
+                  type: integer
+                  description: The user ID
+                role_id:
+                  type: integer
+                  description: The role ID
+        responses:
+          201:
+            description: UserPost addition to group successful
         """
         try:
-            group_id = int(self.json_data['group_id'])
-            user_id = int(self.json_data['user_id'])
-            role_id = int(self.json_data['role_id'])
+            _ = user_sql.get_user_id(body.user_id)
+            groups = group_sql.select_groups(id=body.group_id)
+            if len(groups) == 0:
+                raise RoxywiResourceNotFound
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user data')
+            return roxywi_common.handle_json_exceptions(e, 'Cannot get user or group'), 404
         try:
-            user_sql.update_user_role(user_id, group_id, role_id)
+            user_sql.update_user_role(body.user_id, body.group_id, body.role_id)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot add user to group')
+            return roxywi_common.handle_json_exceptions(e, 'Cannot add user to group'), 500
         else:
-            return jsonify({'status': 'Created'}), 201
+            return BaseResponse().model_dump(mode='json'), 201
 
     def delete(self):
         """
-        Delete method deletes a user from a group.
-
-        Parameters:
-            - None
-
-        Return:
-            - If the user is successfully deleted from the group, it returns a JSON response with a status code 204 (No Content).
-            - If there is an error, it returns a JSON response with an error message and a status code 500 (Internal Server Error).
-
-        Raises:
-            - ValueError: If the 'group_id' or 'user_id' parameters are not integers.
-            - KeyError: If the 'group_id' or 'user_id' parameters are missing from the JSON data.
-            - Exception: If there is an error getting user data or deleting the user from the group.
+        Remove a User from a group
+        ---
+        tags:
+          - User group
+        parameters:
+          - in: body
+            name: body
+            schema:
+              id: RemoveUserGroup
+              required:
+                - group_id
+                - user_id
+              properties:
+                group_id:
+                  type: integer
+                  description: The group ID
+                user_id:
+                  type: integer
+                  description: The user ID
+        responses:
+          204:
+            description: UserPost removal from group successful
+          400:
+            description: Invalid request
+          404:
+            description: UserPost not found
         """
         try:
             group_id = int(self.json_data['group_id'])
             user_id = int(self.json_data['user_id'])
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user data')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user data'), 400
+
+        try:
+            _ = user_sql.get_user_id(user_id)
+            groups = group_sql.select_groups(group_id)
+            if len(groups) == 0:
+                raise RoxywiResourceNotFound
+        except Exception as e:
+            return roxywi_common.handle_json_exceptions(e, 'Cannot get user or group'), 404
 
         try:
             user_sql.delete_user_from_group(group_id, user_id)
-            return jsonify({'status': 'Ok'}), 204
+            return BaseResponse().model_dump(mode='json'), 204
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot delete user')

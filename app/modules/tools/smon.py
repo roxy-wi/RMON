@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from typing import Union
 
 from flask import render_template, abort
 
@@ -8,42 +9,23 @@ import app.modules.common.common as common
 import app.modules.server.server as server_mod
 import app.modules.tools.smon_agent as smon_agent
 import app.modules.roxywi.common as roxywi_common
+from app.modules.roxywi.exception import RoxywiCheckLimits
+from app.modules.roxywi.class_models import IdResponse, IdDataResponse, HttpCheckRequest, DnsCheckRequest, PingCheckRequest, TcpCheckRequest
 
 
-def create_smon(json_data, user_group, show_new=1) -> bool:
+def create_check(json_data, user_group, check_type, show_new=1) -> Union[bool, tuple]:
     try:
-        name = common.checkAjaxInput(json_data['name'])
-        hostname = common.checkAjaxInput(json_data['ip'])
-        port = common.checkAjaxInput(json_data['port'])
-        enable = common.checkAjaxInput(json_data['enabled'])
-        url = common.checkAjaxInput(json_data['url'])
-        body = common.checkAjaxInput(json_data['body'])
-        group = common.checkAjaxInput(json_data['group'])
-        desc = common.checkAjaxInput(json_data['desc'])
-        telegram = common.checkAjaxInput(json_data['tg'])
-        slack = common.checkAjaxInput(json_data['slack'])
-        pd = common.checkAjaxInput(json_data['pd'])
-        mm = common.checkAjaxInput(json_data['mm'])
-        resolver = common.checkAjaxInput(json_data['resolver'])
-        record_type = common.checkAjaxInput(json_data['record_type'])
-        packet_size = common.checkAjaxInput(json_data['packet_size'])
-        http_method = common.checkAjaxInput(json_data['http_method'])
-        interval = common.checkAjaxInput(json_data['interval'])
-        agent_id = common.checkAjaxInput(json_data['agent_id'])
-        check_type = common.checkAjaxInput(json_data['check_type'])
-        header_req = common.checkAjaxInput(json_data['header_req'].replace('\'', '"'))
-        body_req = common.checkAjaxInput(json_data['body_req'])
-        status_code = int(json_data['status-code'])
-        timeout = int(json_data['timeout'])
+        name = json_data.name
+        enable = json_data.enabled
+        group = json_data.group
+        desc = json_data.desc
+        telegram = json_data.tg
+        slack = json_data.slack
+        pd = json_data.pd
+        mm = json_data.mm
+        timeout = json_data.timeout
     except Exception as e:
-        roxywi_common.handle_exceptions(e, 'RMON server', 'Cannot parse check parameters')
-
-    try:
-        _validate_smon_check(json_data)
-    except Exception as e:
-        raise Exception(f'{e}')
-
-    agent_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
+        raise e
 
     if group:
         smon_group_id = smon_sql.get_smon_group_by_name(user_group, group)
@@ -52,26 +34,14 @@ def create_smon(json_data, user_group, show_new=1) -> bool:
     else:
         smon_group_id = None
 
-    last_id = smon_sql.insert_smon(name, enable, smon_group_id, desc, telegram, slack, pd, mm, user_group, check_type, timeout)
-
-    if check_type == 'ping':
-        smon_sql.insert_smon_ping(last_id, hostname, packet_size, interval, agent_id)
-    elif check_type == 'tcp':
-        smon_sql.insert_smon_tcp(last_id, hostname, port, interval, agent_id)
-    elif check_type == 'http':
-        smon_sql.insert_smon_http(last_id, url, body, http_method, interval, agent_id, body_req, header_req, status_code)
-    elif check_type == 'dns':
-        smon_sql.insert_smon_dns(last_id, hostname, port, resolver, record_type, interval, agent_id)
+    try:
+        last_id = smon_sql.insert_smon(name, enable, smon_group_id, desc, telegram, slack, pd, mm, user_group, check_type, timeout)
+    except Exception as e:
+        print('error')
+        return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot create check: {name}')
 
     if last_id:
         roxywi_common.logging('RMON', f'A new server {name} to RMON has been add', login=1)
-
-    try:
-        api_path = f'check/{last_id}'
-        check_json = create_check_json(json_data)
-        smon_agent.send_post_request_to_agent(agent_id, agent_ip, api_path, check_json)
-    except Exception as e:
-        roxywi_common.logging('RMON', f'Cannot add check to the agent {agent_ip}: {e}', login=1)
 
     if last_id and show_new:
         return last_id
@@ -79,44 +49,69 @@ def create_smon(json_data, user_group, show_new=1) -> bool:
         return False
 
 
-def update_smon(smon_id, json_data, user_group) -> str:
-    name = common.checkAjaxInput(json_data['name'])
-    hostname = common.checkAjaxInput(json_data['ip'])
-    port = common.checkAjaxInput(json_data['port'])
-    enabled = common.checkAjaxInput(json_data['enabled'])
-    url = common.checkAjaxInput(json_data['url'])
-    body = common.checkAjaxInput(json_data['body'])
-    group = common.checkAjaxInput(json_data['group'])
-    desc = common.checkAjaxInput(json_data['desc'])
-    telegram = common.checkAjaxInput(json_data['tg'])
-    slack = common.checkAjaxInput(json_data['slack'])
-    pd = common.checkAjaxInput(json_data['pd'])
-    mm = common.checkAjaxInput(json_data['mm'])
-    resolver = common.checkAjaxInput(json_data['resolver'])
-    record_type = common.checkAjaxInput(json_data['record_type'])
-    packet_size = common.checkAjaxInput(json_data['packet_size'])
-    http_method = common.checkAjaxInput(json_data['http_method'])
-    interval = common.checkAjaxInput(json_data['interval'])
-    agent_id = common.checkAjaxInput(json_data['agent_id'])
-    check_type = common.checkAjaxInput(json_data['check_type'])
-    body_req = json.dumps(json_data['body_req'])
-    header_req = json_data['header_req']
-    header_req = header_req.replace('\'', '"')
-    timeout = int(json_data['timeout'])
-    status_code = json_data['status-code']
-    is_edited = False
+def send_new_check(last_id: int, data: Union[HttpCheckRequest, DnsCheckRequest, TcpCheckRequest, PingCheckRequest]) -> None:
+    agent_ip = smon_sql.select_server_ip_by_agent_id(data.agent_id)
+    if isinstance(data, HttpCheckRequest):
+        smon_agent.send_http_checks(data.agent_id, agent_ip, last_id)
+    elif isinstance(data, DnsCheckRequest):
+        smon_agent.send_dns_checks(data.agent_id, agent_ip, last_id)
+    elif isinstance(data, TcpCheckRequest):
+        smon_agent.send_tcp_checks(data.agent_id, agent_ip, last_id)
+    elif isinstance(data, PingCheckRequest):
+        smon_agent.send_ping_checks(data.agent_id, agent_ip, last_id)
 
+
+def create_http_check(data: HttpCheckRequest, check_id: int) -> tuple[dict, int]:
     try:
-        _validate_smon_check(json_data)
+        smon_sql.insert_smon_http(
+            check_id, data.url, data.body, data.http_method, data.interval, data.agent_id, data.body_req, data.header_req, data.accepted_status_codes
+        )
     except Exception as e:
-        raise Exception(f'{e}')
+        return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create HTTP check')
+
+
+def create_dns_check(data: DnsCheckRequest, last_id: int) -> tuple[dict, int]:
+    try:
+        smon_sql.insert_smon_dns(last_id, data.ip, data.port, data.resolver, data.record_type, data.interval, data.agent_id)
+    except Exception as e:
+        return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create DNS check')
+
+
+def create_ping_check(data: PingCheckRequest, last_id: int) -> tuple[dict, int]:
+    try:
+        smon_sql.insert_smon_ping(last_id, data.ip, data.packet_size, data.interval, data.agent_id)
+    except Exception as e:
+        return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create Ping check')
+
+
+def create_tcp_check(data: TcpCheckRequest, last_id: int) -> tuple[dict, int]:
+    try:
+        smon_sql.insert_smon_tcp(last_id, data.ip, data.port, data.interval, data.agent_id)
+    except Exception as e:
+        return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create TCP check')
+
+
+def update_smon(smon_id, json_data, user_group) -> None:
+    print(json_data)
+    try:
+        name = json_data.name
+        enabled = json_data.enabled
+        group = json_data.group
+        desc = json_data.desc
+        telegram = json_data.tg
+        slack = json_data.slack
+        pd = json_data.pd
+        mm = json_data.mm
+        timeout = json_data.timeout
+    except Exception as e:
+        raise e
 
     try:
         agent_id_old = smon_sql.get_agent_id_by_check_id(smon_id)
         agent_ip = smon_sql.get_agent_ip_by_id(agent_id_old)
         smon_agent.delete_check(agent_id_old, agent_ip, smon_id)
     except Exception as e:
-        return f'{e}'
+        raise e
 
     if group:
         smon_group_id = smon_sql.get_smon_group_by_name(user_group, group)
@@ -126,110 +121,34 @@ def update_smon(smon_id, json_data, user_group) -> str:
         smon_group_id = None
 
     try:
-        if smon_sql.update_check(smon_id, name, telegram, slack, pd, mm, smon_group_id, desc, enabled, timeout):
-            if check_type == 'http':
-                is_edited = smon_sql.update_check_http(smon_id, url, body, http_method, interval, agent_id, body_req, header_req, status_code)
-            elif check_type == 'tcp':
-                is_edited = smon_sql.update_check_tcp(smon_id, hostname, port, interval, agent_id)
-            elif check_type == 'ping':
-                is_edited = smon_sql.update_check_ping(smon_id, hostname, packet_size, interval, agent_id)
-            elif check_type == 'dns':
-                is_edited = smon_sql.update_check_dns(smon_id, hostname, port, resolver, record_type, interval, agent_id)
-
-            if is_edited:
-                roxywi_common.logging('RMON', f'The check {name} has been update', login=1)
-                if not enabled:
-                    return 'Ok'
-                try:
-                    api_path = f'check/{smon_id}'
-                    check_json = create_check_json(json_data)
-                    server_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
-                    smon_agent.send_post_request_to_agent(agent_id, server_ip, api_path, check_json)
-                except Exception as e:
-                    roxywi_common.handle_exceptions(e, 'RMON', f'Cannot add check to the agent {agent_ip}', loggin=1)
-
-                return "Ok"
+        smon_sql.update_check(smon_id, name, telegram, slack, pd, mm, smon_group_id, desc, enabled, timeout)
+            # if check_type == 'http':
+            #     is_edited = smon_sql.update_check_http(smon_id, url, body, http_method, interval, agent_id, body_req, header_req, accepted_status_codes)
+            # elif check_type == 'tcp':
+            #     is_edited = smon_sql.update_check_tcp(smon_id, hostname, port, interval, agent_id)
+            # elif check_type == 'ping':
+            #     is_edited = smon_sql.update_check_ping(smon_id, hostname, packet_size, interval, agent_id)
+            # elif check_type == 'dns':
+            #     is_edited = smon_sql.update_check_dns(smon_id, hostname, port, resolver, record_type, interval, agent_id)
+            #
+            # if is_edited:
+            #     roxywi_common.logging('RMON', f'The check {name} has been update', login=1)
+            #     if not enabled:
+            #         return 'Ok'
+            #     try:
+            #         api_path = f'check/{smon_id}'
+            #         check_json = create_check_json(json_data)
+            #         server_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
+            #         smon_agent.send_post_request_to_agent(agent_id, server_ip, api_path, check_json)
+            #     except Exception as e:
+            #         roxywi_common.handle_exceptions(e, 'RMON', f'Cannot add check to the agent {agent_ip}', loggin=1)
+            #
+            #     return "Ok"
     except Exception as e:
-        raise Exception(f'error: Cannot update the server: {e}')
+        raise Exception(f'Cannot update the server: {e}')
 
 
-def _validate_smon_check(json_data):
-    port = common.checkAjaxInput(json_data['port'])
-    url = common.checkAjaxInput(json_data['url'])
-    packet_size = common.checkAjaxInput(json_data['packet_size'])
-    agent_id = common.checkAjaxInput(json_data['agent_id'])
-    check_type = common.checkAjaxInput(json_data['check_type'])
-    timeout = int(json_data['timeout'])
-
-    if agent_id == '':
-        raise Exception('warning: Select an Agent first')
-
-    if timeout < 1:
-        raise Exception('warning: Timeout cannot be less than 1 second')
-    elif timeout > 59:
-        raise Exception('warning: Timeout cannot be more than 59 seconds')
-    elif timeout >= int(json_data['interval']):
-        raise Exception('warning: Timeout cannot be greater than or equal to interval')
-
-    if check_type == 'tcp':
-        try:
-            port = int(port)
-        except Exception:
-            raise Exception('error: port must be a number')
-        if port > 65535 or port < 1:
-            raise Exception('error: port must be 1-65535')
-
-    if check_type == 'ping':
-        if int(packet_size) < 16:
-            raise Exception('error: a packet size cannot be less than 16')
-
-    if check_type == 'http':
-        if url.find('http://') == -1 and url.find('https://') == -1:
-            raise Exception('error: URL must start with http:// or https://')
-        try:
-            status_code = int(json_data['status-code'])
-        except Exception:
-            raise Exception('error: Status code must be a number')
-        if status_code > 599 or status_code < 99:
-            raise Exception('error: Status code must be 100-599')
-        if json_data['header_req']:
-            try:
-                headers = eval(json_data['header_req'].replace('\'', '"'))
-                for k, v in headers.items():
-                    _ = f'{k}: {v}'
-            except Exception as e:
-                raise Exception(f'errCannot parse headers: {e}')
-
-
-def create_check_json(json_data: dict) -> dict:
-    check_type = json_data['check_type']
-    check_json = {
-        'check_type': check_type,
-        'name': json_data['name'],
-        'server_ip': json_data['ip'],
-        'interval': json_data['interval'],
-        'timeout': json_data['timeout'],
-    }
-    if check_type == 'ping':
-        check_json.setdefault('packet_size', json_data['packet_size'])
-    elif check_type == 'tcp':
-        check_json.setdefault('port', json_data['port'])
-    elif check_type == 'http':
-        check_json.setdefault('url', json_data['url'])
-        check_json.setdefault('body', json_data['body'])
-        check_json.setdefault('http_method', json_data['http_method'])
-        check_json.setdefault('body_req', json_data['body_req'])
-        check_json.setdefault('status_code', json_data['status-code'])
-        if json_data['header_req']:
-            check_json.setdefault('header_req', json.dumps(json_data['header_req'].replace('\'', '"')))
-    elif check_type == 'dns':
-        check_json.setdefault('port', json_data['port'])
-        check_json.setdefault('resolver', json_data['resolver'])
-        check_json.setdefault('record_type', json_data['record_type'])
-    return check_json
-
-
-def delete_smon(smon_id, user_group) -> str:
+def delete_smon(smon_id: int, user_group: int):
     try:
         agent_id = smon_sql.get_agent_id_by_check_id(smon_id)
         server_ip = smon_sql.get_agent_ip_by_id(agent_id)
@@ -239,9 +158,8 @@ def delete_smon(smon_id, user_group) -> str:
     try:
         if smon_sql.delete_smon(smon_id, user_group):
             roxywi_common.logging('RMON', ' The server from RMON has been delete ', login=1)
-            return 'Ok'
     except Exception as e:
-        raise Exception(f'error: Cannot delete the server {e}')
+        raise e
 
 
 def history_metrics(server_id: int, check_type_id: int) -> dict:
@@ -401,11 +319,11 @@ def check_checks_limit():
     user_subscription = roxywi_common.return_user_subscription()
     count_checks = smon_sql.count_checks()
     if user_subscription['user_plan'] == 'free' and count_checks >= 10:
-        raise Exception('error: You have reached limit for Free plan')
+        raise RoxywiCheckLimits('You have reached limit for Free plan')
     elif user_subscription['user_plan'] == 'home' and count_checks >= 30:
-        raise Exception('error: You have reached limit for Home plan')
+        raise RoxywiCheckLimits('You have reached limit for Home plan')
     elif user_subscription['user_plan'] == 'enterprise' and count_checks >= 100:
-        raise Exception('error: You have reached limit for Enterprise plan')
+        raise RoxywiCheckLimits('You have reached limit for Enterprise plan')
 
 
 def get_check_id_by_name(name: str) -> int:
@@ -436,7 +354,7 @@ def get_average_response_time(check_id: int, check_type_id: int) -> float:
     Get the average response time for a given check ID and check type ID.
 
     Parameters:
-    - check_id (int): The ID of the check.
+    - check_type_id (int): The ID of the check.
     - check_type_id (int): The ID of the check type.
 
     Returns:

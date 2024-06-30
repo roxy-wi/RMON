@@ -57,11 +57,11 @@ def smon_dashboard(smon_id, check_id):
     *.
 
     The `smon_id` parameter specifies the ID of the RMON service.
-    The `check_id` parameter specifies the ID of the check associated with the RMON service.
+    The `check_type_id` parameter specifies the ID of the check associated with the RMON service.
 
     The method performs the following steps:
     1. Checks user group for Flask access.
-    2. Retrieves the RMON object from the database using the `smon_id` and `check_id` parameters.
+    2. Retrieves the RMON object from the database using the `smon_id` and `check_type_id` parameters.
     3. Gets the current date and time using the `get_present_time()` function from the common module.
     4. Sets the initial value of `cert_day_diff` as 'N/A'.
     5. Tries to calculate the average response time for the RMON service using the `get_avg_resp_time` function from the SQL module. If an exception occurs, the average response time is
@@ -71,7 +71,7 @@ def smon_dashboard(smon_id, check_id):
     7. Iterates over the retrieved RMON object and checks if the SSL expiration date is not None. If it is not None, calculates the difference in days between the expiration date and the
     * present date using the `datetime.strptime()` function and assigns it to `cert_day_diff`.
     8. Constructs a dictionary (`kwargs`) containing various parameters required for rendering the template, including `lang`, `smon`, `group`, `user_subscription`, `check
-    *_interval`, `uptime`, `avg_res_time`, `smon_name`, `cert_day_diff`, `check_id`, `dashboard_id`, and `last_resp_time`.
+    *_interval`, `uptime`, `avg_res_time`, `smon_name`, `cert_day_diff`, `check_type_id`, `dashboard_id`, and `last_resp_time`.
     9. Renders the RMON history template ('include/smon/smon_history.html') using the `render_template` function from Flask, passing the `kwargs` dictionary as keyword arguments.
     """
     roxywi_common.check_user_group_for_flask()
@@ -97,7 +97,7 @@ def smon_dashboard(smon_id, check_id):
         'avg_res_time': avg_res_time,
         'smon_name': smon_sql.get_smon_service_name_by_id(smon_id),
         'cert_day_diff': cert_day_diff,
-        'check_id': check_id,
+        'check_type_id': check_id,
         'dashboard_id': smon_id,
         'last_resp_time': last_resp_time,
         'agents': smon_sql.get_agents(g.user_params['group_id'])
@@ -331,7 +331,7 @@ def smon_history_metric_chart(check_id, check_type_id):
                 else:
                     json_metric['agent'] = 'None'
 
-            for i in chart_metrics:
+            for i in chart_metrics.iterator():
                 json_metric['time'] = common.get_time_zoned_date(i.date, '%H:%M:%S')
                 json_metric['value'] = "{:.3f}".format(i.response_time)
                 json_metric['mes'] = str(i.mes)
@@ -352,7 +352,8 @@ def smon_history_metric_chart(check_id, check_type_id):
                         json_metric['start_transfer'] = '0'
                     else:
                         json_metric['start_transfer'] = str(i.start_transfer)
-                    json_metric['download'] = str(i.download)
+                    json_metric['m_download'] = str(i.download)
+                print(json.dumps(json_metric))
             yield f"data:{json.dumps(json_metric)}\n\n"
             time.sleep(interval)
 

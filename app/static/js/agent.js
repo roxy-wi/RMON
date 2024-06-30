@@ -110,13 +110,12 @@ function addAgent(dialog_id, agent_id=0, edit=false, reconfigure=false) {
 	}
 	if (valid) {
 		$.ajax({
-			url: "/rmon/agent",
+			url: api_v_prefix + "/rmon/agent",
 			type: method,
 			data: JSON.stringify(agent_data),
 			contentType: "application/json; charset=utf-8",
 			success: function (data) {
-				data = data.replace(/\s+/g, ' ');
-				if (data.indexOf('error:') != '-1' || data.indexOf('unique') != '-1') {
+				if (data.status === 'failed') {
 					toastr.error(data);
 				} else {
 					toastr.clear();
@@ -124,7 +123,7 @@ function addAgent(dialog_id, agent_id=0, edit=false, reconfigure=false) {
 					if (edit) {
 						getAgent(agent_id, false);
 					} else {
-						getAgent(data, new_agent = true);
+						getAgent(data.id, new_agent = true);
 					}
 				}
 			}
@@ -302,12 +301,12 @@ function confirmDeleteAgent(id) {
 }
 function removeAgent(id, dialog_id) {
 	$.ajax({
-        url: "/rmon/agent",
+        url: api_v_prefix + "/rmon/agent",
         type: "delete",
-        data: {agent_id: id},
+        data: JSON.stringify({agent_id: id}),
+		contentType: "application/json; charset=utf-8",
         success: function (data){
-            data = data.replace(/\s+/g, ' ');
-            if (data.indexOf('error:') != '-1' || data.indexOf('unique') != '-1') {
+            if (data.status === 'failed') {
                 toastr.error(data);
             } else {
                 toastr.clear();
