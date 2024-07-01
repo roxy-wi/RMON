@@ -9,14 +9,13 @@ slack-sdk>=3.4.0
 pdpyras>=4.5.2
 peewee>=3.14.10
 PyMySQL>=1.0.2
-Werkzeug==2.0.3
+Werkzeug~=3.0.3
 Flask~=3.0.3
 Flask-APScheduler==1.12.4
 Flask-Caching==1.10.1
 Flask-JWT-Extended==4.6.0
 flask-swagger==0.2.14
 Flask-Pydantic
-pydantic-enhanced-serializer
 ansible-core==2.11.12
 ansible-runner==2.3.1
 distro>=1.9.0
