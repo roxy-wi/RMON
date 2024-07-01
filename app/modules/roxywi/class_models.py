@@ -1,12 +1,10 @@
 import re
-from annotated_types import Gt, Le, Any
-from typing import Optional, Annotated, Union, Literal
+from annotated_types import Gt, Le
+from typing import Optional, Annotated, Union, Literal, Any
 
 from shlex import quote
 from pydantic_core import CoreSchema, core_schema
-from pydantic import BaseModel, field_validator, StringConstraints, IPvAnyAddress, AnyUrl, root_validator, GetCoreSchemaHandler, ValidationError
-
-from app.modules.roxywi.exception import RoxywiValidationError
+from pydantic import BaseModel, field_validator, StringConstraints, IPvAnyAddress, AnyUrl, root_validator, GetCoreSchemaHandler, UUID4
 
 DomainName = Annotated[str, StringConstraints(pattern=r"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$")]
 
@@ -75,14 +73,14 @@ class BaseCheckRequest(BaseModel):
             try:
                 timeout = int(values['timeout'])
             except ValueError:
-                raise RoxywiValidationError('timeout must be an integer')
+                raise ValueError('timeout must be an integer')
         if 'interval' in values:
             try:
                 interval = int(values['interval'])
             except ValueError:
-                raise RoxywiValidationError('interval must be an integer')
+                raise ValueError('interval must be an integer')
         if timeout >= interval:
-            raise RoxywiValidationError('timeout value must be less than interval')
+            raise ValueError('timeout value must be less than interval')
         return values
 
 
@@ -138,6 +136,21 @@ class UserPut(BaseModel):
 
 
 class AddUserToGroup(BaseModel):
-    user_id: int
-    group_id: int
-    role_id: Annotated[int, Gt(1), Le(4)]
+    # user_id: int
+    # group_id: int
+    role_id: Annotated[int, Gt(0), Le(4)]
+
+
+class RmonAgent(BaseModel):
+    name: EscapedString
+    desc: Optional[EscapedString] = ''
+    enabled: Optional[bool] = 1
+    shared: Optional[bool] = 0
+    port: Annotated[int, Gt(1024), Le(65535)] = 5101
+    server_id: int
+    agent_uuid: Optional[UUID4] = ''
+    reconfigure: Optional[bool] = 0
+
+
+class GroupQuery(BaseModel):
+    group_id: Optional[int] = None

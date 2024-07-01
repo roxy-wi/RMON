@@ -136,7 +136,9 @@ def check_user_password(login: str, password: str) -> dict:
         raise Exception('There is no login or password')
 
     try:
+        from playhouse.shortcuts import model_to_dict
         user = user_sql.get_user_by_username(login)
+        print(model_to_dict(user))
     except Exception:
         raise Exception('ban')
 
@@ -145,13 +147,13 @@ def check_user_password(login: str, password: str) -> dict:
     if user.ldap_user == 1:
         if login in user.username and check_in_ldap(login, password):
             user_uuid = create_uuid_and_token(login)
-            return {'uuid': user_uuid, 'group': str(user.groups), 'user': user.user_id}
+            return {'uuid': user_uuid, 'group': str(user.group_id.group_id), 'user': user.user_id}
         else:
             raise Exception('ban')
     else:
         hashed_password = roxy_wi_tools.Tools.get_hash(password)
         if login in user.username and hashed_password == user.password:
             user_uuid = create_uuid_and_token(login)
-            return {'uuid': user_uuid, 'group': str(user.groups), 'user': user.user_id}
+            return {'uuid': user_uuid, 'group': str(user.group_id.group_id), 'user': user.user_id}
         else:
             raise Exception('ban')

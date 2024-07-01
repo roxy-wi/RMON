@@ -139,6 +139,8 @@ def get_agent_id_by_uuid(agent_uuid: int) -> int:
 def get_agent_id_by_ip(agent_ip) -> int:
 	try:
 		return SmonAgent.get(SmonAgent.server_id == Server.get(Server.ip == agent_ip).server_id).id
+	except SmonAgent.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 
@@ -322,42 +324,6 @@ def select_smon_checks(check_type: str, group_id: int) -> tuple:
 		out_error(e)
 
 
-# def select_smon_ping():
-# 	try:
-# 		query_res = SmonPingCheck.select().execute()
-# 	except Exception as e:
-# 		out_error(e)
-# 	else:
-# 		return query_res
-#
-#
-# def select_smon_tcp():
-# 	try:
-# 		query_res = SmonTcpCheck.select().execute()
-# 	except Exception as e:
-# 		out_error(e)
-# 	else:
-# 		return query_res
-#
-#
-# def select_smon_http():
-# 	try:
-# 		query_res = SmonHttpCheck.select().execute()
-# 	except Exception as e:
-# 		out_error(e)
-# 	else:
-# 		return query_res
-#
-#
-# def select_smon_dns():
-# 	try:
-# 		query_res = SmonDnsCheck.select().execute()
-# 	except Exception as e:
-# 		out_error(e)
-# 	else:
-# 		return query_res
-
-
 def select_smon_by_id(last_id):
 	query = SMON.select().where(SMON.id == last_id)
 	try:
@@ -506,7 +472,7 @@ def get_last_smon_res_time_by_check(smon_id: int, check_id: int) -> int:
 
 
 def get_smon_history_count_checks(smon_id: int) -> dict:
-	count_checks = {}
+	count_checks_dict = {}
 	query = SmonHistory.select(fn.Count(SmonHistory.status)).where(
 		SmonHistory.smon_id == smon_id
 	)
@@ -517,7 +483,7 @@ def get_smon_history_count_checks(smon_id: int) -> dict:
 	else:
 		try:
 			for i in query_res:
-				count_checks['total'] = i.status
+				count_checks_dict['total'] = i.status
 		except Exception as e:
 			raise Exception(f'error: {e}')
 
@@ -532,11 +498,11 @@ def get_smon_history_count_checks(smon_id: int) -> dict:
 	else:
 		try:
 			for i in query_res:
-				count_checks['up'] = i.status
+				count_checks_dict['up'] = i.status
 		except Exception as e:
 			raise Exception(f'error: {e}')
 
-	return count_checks
+	return count_checks_dict
 
 
 def get_smon_service_name_by_id(smon_id: int) -> str:
@@ -572,12 +538,6 @@ def update_check(smon_id, name, telegram, slack, pd, mm, group_id, desc, en, tim
 
 
 def update_check_agent(smon_id: int, agent_id: int, check_type: str) -> None:
-	# select_query = {
-	# 	'http': SmonHttpCheck.update(agent_id=agent_id).where(SmonHttpCheck.smon_id == smon_id),
-	# 	'tcp': SmonTcpCheck.update(agent_id=agent_id).where(SmonTcpCheck.smon_id == smon_id),
-	# 	'dns': SmonDnsCheck.update(agent_id=agent_id).where(SmonDnsCheck.smon_id == smon_id),
-	# 	'ping': SmonPingCheck.update(agent_id=agent_id).where(SmonPingCheck.smon_id == smon_id)
-	# }
 	correct_model = tool_common.get_model_for_check(check_type=check_type)
 	try:
 		return correct_model.update(agent_id=agent_id).where(correct_model.smon_id == smon_id).execute()
@@ -724,12 +684,6 @@ def delete_smon_history():
 
 
 def select_checks_for_agent(agent_id: int, check_type: str) -> dict:
-	# select_query = {
-	# 	'http': SmonHttpCheck.select(SmonHttpCheck, SMON).join(SMON).where(SmonHttpCheck.agent_id == agent_id).objects(),
-	# 	'tcp': SmonTcpCheck.select(SmonTcpCheck, SMON).join(SMON).where(SmonTcpCheck.agent_id == agent_id).objects(),
-	# 	'dns': SmonDnsCheck.select(SmonDnsCheck, SMON).join(SMON).where(SmonDnsCheck.agent_id == agent_id).objects(),
-	# 	'ping': SmonPingCheck.select(SmonPingCheck, SMON).join(SMON).where(SmonPingCheck.agent_id == agent_id).objects()
-	# }
 	correct_model = tool_common.get_model_for_check(check_type=check_type)
 	try:
 		return correct_model.select(correct_model, SMON).join(SMON).where(correct_model.agent_id == agent_id).objects().execute()

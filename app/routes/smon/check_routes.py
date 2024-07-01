@@ -1,5 +1,3 @@
-import json
-
 from flask import render_template, request, jsonify, g
 from flask_jwt_extended import jwt_required
 
@@ -10,34 +8,6 @@ import app.modules.db.smon as smon_sql
 import app.modules.tools.smon as smon_mod
 import app.modules.tools.smon_agent as agent_mod
 import app.modules.roxywi.common as roxywi_common
-
-
-@bp.route('/check', methods=['PUT', 'DELETE'])
-@jwt_required()
-def smon_add():
-    json_data = request.get_json()
-    user_group = roxywi_common.get_user_group(id=1)
-    # if request.method == "POST":
-    #     try:
-    #         smon_mod.check_checks_limit()
-    #     except Exception as e:
-    #         return f'{e}'
-    #     try:
-    #         last_id = smon_mod.create_smon(data, user_group)
-    #     except Exception as e:
-    #         return str(e), 200
-    #     return str(last_id)
-    # elif request.method == "PUT":
-    if request.method == "PUT":
-        check_id = json_data['check_type_id']
-
-        if roxywi_common.check_user_group_for_flask():
-            try:
-                status = smon_mod.update_smon(check_id, json_data, user_group)
-            except Exception as e:
-                return f'{e}', 200
-            else:
-                return status, 201
 
 
 @bp.route('/check/settings/<int:smon_id>/<int:check_type_id>')
@@ -132,14 +102,12 @@ def move_checks():
     old_agent = int(request.json.get('old_agent'))
     new_agent = int(request.json.get('new_agent'))
     old_agent_ip = smon_sql.get_agent_ip_by_id(old_agent)
-    # new_agent_ip = smon_sql.get_agent_ip_by_id(new_agent)
     checks = {}
 
     try:
         for check_type in ('http', 'tcp', 'dns', 'ping'):
             got_checks = smon_sql.select_checks_for_agent(old_agent, check_type)
             for c in got_checks:
-                print(c.smon_id)
                 checks[c.smon_id] = check_type
                 agent_mod.delete_check(old_agent, old_agent_ip, c.smon_id)
                 smon_sql.update_check_agent(c.smon_id, new_agent, check_type)

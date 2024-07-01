@@ -8,8 +8,10 @@ from app.api.v1.routes.main import bp
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.common as roxywi_common
 from app.views.server.views import ServerGroupView
+from app.views.user.views import UsersView
 
 bp.add_url_rule('/group', view_func=ServerGroupView.as_view('group', True))
+bp.add_url_rule('/users', view_func=UsersView.as_view('users'), methods=['GET'])
 
 
 @jwt.expired_token_loader

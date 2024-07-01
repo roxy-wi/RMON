@@ -101,16 +101,17 @@ function addAgent(dialog_id, agent_id=0, edit=false, reconfigure=false) {
         'shared': agent_shared
     };
 	let method = 'POST';
+	let req_url = api_v_prefix + "/rmon/agent";
 	if (edit) {
 		method = 'PUT'
-		agent_data['agent_id'] = agent_id;
 		if (reconfigure) {
 			agent_data['reconfigure'] = "1";
 		}
+		req_url = api_v_prefix + "/rmon/agent/" + agent_id;
 	}
 	if (valid) {
 		$.ajax({
-			url: api_v_prefix + "/rmon/agent",
+			url: req_url,
 			type: method,
 			data: JSON.stringify(agent_data),
 			contentType: "application/json; charset=utf-8",
@@ -301,9 +302,9 @@ function confirmDeleteAgent(id) {
 }
 function removeAgent(id, dialog_id) {
 	$.ajax({
-        url: api_v_prefix + "/rmon/agent",
+        url: api_v_prefix + "/rmon/agent/" + id,
         type: "delete",
-        data: JSON.stringify({agent_id: id}),
+        data: JSON.stringify({}),
 		contentType: "application/json; charset=utf-8",
         success: function (data){
             if (data.status === 'failed') {

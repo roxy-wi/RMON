@@ -13,7 +13,9 @@ import app.modules.roxywi.user as roxywi_user
 import app.modules.roxywi.common as roxywi_common
 from app.modules.db.db_model import User as User_DB
 from app.modules.roxywi.exception import RoxywiResourceNotFound
-from app.modules.roxywi.class_models import UserPost, UserPut, IdResponse, IdDataResponse, BaseResponse, AddUserToGroup
+from app.modules.roxywi.class_models import (
+    UserPost, UserPut, IdResponse, IdDataResponse, BaseResponse, AddUserToGroup, GroupQuery
+)
 from app.middleware import get_user_params, page_for_admin, check_group
 
 
@@ -43,7 +45,7 @@ class UserView(MethodView):
         parameters:
         - in: 'path'
           name: 'user_id'
-          description: 'ID of the UserPost to retrieve'
+          description: 'ID of the User to retrieve'
           required: true
           schema:
             type: 'integer'
@@ -51,32 +53,54 @@ class UserView(MethodView):
           '200':
             description: 'Successful Operation'
             schema:
-              id: 'UserPost'
+              type: 'object'
+              id: 'User'
               properties:
-                id:
+                user_group_id:
+                  type: 'object'
+                  properties:
+                    description:
+                      type: 'string'
+                      description: 'Group description'
+                    group_id:
+                      type: 'integer'
+                      description: 'Group ID'
+                    name:
+                      type: 'string'
+                      description: 'Group name'
+                user_id:
+                  type: 'object'
+                  properties:
+                    email:
+                      type: 'string'
+                      description: 'User email'
+                    enabled:
+                      type: 'integer'
+                      description: 'User activation status'
+                    last_login_date:
+                      type: 'string'
+                      format: 'date-time'
+                      description: 'User last login date'
+                    last_login_ip:
+                      type: 'string'
+                      description: 'User last login IP'
+                    ldap_user:
+                      type: 'integer'
+                      description: 'Is User a LDAP user'
+                    role:
+                      type: 'string'
+                      description: 'User role'
+                    user_id:
+                      type: 'integer'
+                      description: 'User ID'
+                    username:
+                      type: 'string'
+                      description: 'Username'
+                user_role_id:
                   type: 'integer'
-                  description: 'UserPost ID'
-                name:
-                  type: 'string'
-                  description: 'Username'
-                email:
-                  type: 'string'
-                  description: 'Email'
-                group:
-                  type: 'integer'
-                  description: 'Group ID'
-                enabled:
-                  type: 'boolean'
-                  description: 'UserPost account is active'
-                last_login_date:
-                  type: 'string'
-                  format: 'date-time'
-                  description: 'Last login date'
-                last_login_ip:
-                  type: 'string'
-                  description: 'Last login IP'
+                  description: 'User role ID'
           '404':
-            description: 'UserPost not found'
+            description: 'User not found'
             schema:
               id: 'NotFound'
               properties:
@@ -84,8 +108,9 @@ class UserView(MethodView):
                   type: 'string'
                   description: 'Error message'
         """
+        users_list = []
         try:
-            user = user_sql.get_user_id(user_id)
+            users = user_sql.select_user_groups_with_names(user_id)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user')
 
@@ -93,13 +118,15 @@ class UserView(MethodView):
             roxywi_common.is_user_has_access_to_group(user_id)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot find user'), 404
-
-        return model_to_dict(user, exclude=[User_DB.password, User_DB.user_services])
+        for user in users:
+            users_list.append(model_to_dict(user, exclude={User_DB.group_id, User_DB.password, User_DB.user_services}))
+        return jsonify(users_list)
+        # return jsonify({'e': users})
 
     @validate(body=UserPost)
     def post(self, body: UserPost) -> Union[dict, tuple]:
         """
-        Create UserPost
+        Create a new user
         ---
         tags:
           - User
@@ -136,7 +163,7 @@ class UserView(MethodView):
                   description: The ID of the user's group
         responses:
           200:
-            description: UserPost created
+            description: user created
             schema:
               id: CreateUserResponse
               properties:
@@ -175,7 +202,7 @@ class UserView(MethodView):
         parameters:
           - in: 'path'
             name: 'user_id'
-            description: 'ID of the UserPost to retrieve'
+            description: 'ID of the User to retrieve'
             required: true
             schema:
               type: 'integer'
@@ -202,7 +229,7 @@ class UserView(MethodView):
           400:
             description: Invalid request
           201:
-            description: UserPost information update successful
+            description: User information update successful
         """
         try:
             user = user_sql.get_user_id(user_id)
@@ -232,11 +259,11 @@ class UserView(MethodView):
             type: 'integer'
         responses:
           204:
-            description: UserPost deletion successful
+            description: User deletion successful
           400:
             description: Invalid request
           404:
-            description: UserPost not found
+            description: User not found
         """
         try:
             roxywi_common.is_user_has_access_to_group(user_id)
@@ -264,7 +291,7 @@ class UserGroupView(MethodView):
     def __init__(self, is_api: bool = False):
         self.json_data = request.get_json()
 
-    def get(self, group_id: int):
+    def get(self, user_id: int):
         """
         Fetch a specific User Group.
         ---
@@ -283,7 +310,7 @@ class UserGroupView(MethodView):
             schema:
               type: array
               items:
-                id: UserPost
+                id: UserGet
                 properties:
                   email:
                     type: string
@@ -324,100 +351,134 @@ class UserGroupView(MethodView):
                     example: "admin"
         """
         try:
-            users = user_sql.get_users_in_group(group_id)
+            users = user_sql.select_user_groups_with_names(user_id)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot get group')
 
         json_data = []
         for user in users:
-            json_data.append(model_to_dict(user, exclude=[User_DB.password, User_DB.user_services]))
+            json_data.append(model_to_dict(user, exclude=[User_DB.password, User_DB.user_services, User_DB.group_id]))
 
         return jsonify(json_data)
 
     @validate(body=AddUserToGroup)
-    def post(self, body: AddUserToGroup):
+    def post(self, user_id: int, group_id: int, body: AddUserToGroup):
         """
-        Add or Update a User in a group
+        Add a User to a specific Group
         ---
         tags:
-          - User group
+        - 'User group'
         parameters:
-          - in: body
-            name: body
-            schema:
-              id: AddUserGroup
-              required:
-                - group_id
-                - user_id
-                - role_id
-              properties:
-                group_id:
-                  type: integer
-                  description: The group ID
-                user_id:
-                  type: integer
-                  description: The user ID
-                role_id:
-                  type: integer
-                  description: The role ID
+        - in: 'path'
+          name: 'user_id'
+          description: 'ID of the User to be added'
+          required: true
+          schema:
+            type: 'integer'
+        - in: 'path'
+          name: 'group_id'
+          description: 'ID of the Group which will have a new user'
+          required: true
+          schema:
+            type: 'integer'
+        - in: body
+          name: role_id
+          required: true
+          schema:
+            properties:
+              role_id:
+                type: integer
+                description: A role inside the group
         responses:
-          201:
-            description: UserPost addition to group successful
+          '201':
+            description: 'User successfully added to the group'
+          '404':
+            description: 'User or Group not found'
         """
         try:
-            _ = user_sql.get_user_id(body.user_id)
-            groups = group_sql.select_groups(id=body.group_id)
-            if len(groups) == 0:
-                raise RoxywiResourceNotFound
+            self._check_is_user_and_group(user_id, group_id)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot get user or group'), 404
         try:
-            user_sql.update_user_role(body.user_id, body.group_id, body.role_id)
+            user_sql.update_user_role(user_id, group_id, body.role_id)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot add user to group'), 500
         else:
             return BaseResponse().model_dump(mode='json'), 201
 
-    def delete(self):
+    @validate(body=AddUserToGroup)
+    def put(self, user_id: int, group_id: int, body: AddUserToGroup):
         """
-        Remove a User from a group
+        Update a User to a specific Group
         ---
         tags:
-          - User group
+        - 'User group'
         parameters:
-          - in: body
-            name: body
-            schema:
-              id: RemoveUserGroup
-              required:
-                - group_id
-                - user_id
-              properties:
-                group_id:
-                  type: integer
-                  description: The group ID
-                user_id:
-                  type: integer
-                  description: The user ID
+        - in: 'path'
+          name: 'user_id'
+          description: 'ID of the User to be added'
+          required: true
+          schema:
+            type: 'integer'
+        - in: 'path'
+          name: 'group_id'
+          description: 'ID of the Group where updating the user'
+          required: true
+          schema:
+            type: 'integer'
+        - in: body
+          name: role_id
+          required: true
+          schema:
+            properties:
+              role_id:
+                type: integer
+                description: A role inside the group
         responses:
-          204:
-            description: UserPost removal from group successful
-          400:
-            description: Invalid request
-          404:
-            description: UserPost not found
+          '201':
+            description: 'User successfully added to the group'
+          '404':
+            description: 'User or Group not found'
         """
         try:
-            group_id = int(self.json_data['group_id'])
-            user_id = int(self.json_data['user_id'])
+            self._check_is_user_and_group(user_id, group_id)
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user data'), 400
+            return roxywi_common.handle_json_exceptions(e, 'Cannot get user or group'), 404
 
         try:
-            _ = user_sql.get_user_id(user_id)
-            groups = group_sql.select_groups(group_id)
-            if len(groups) == 0:
-                raise RoxywiResourceNotFound
+            user_sql.delete_user_from_group(group_id, user_id)
+            user_sql.update_user_role(user_id, group_id, body.role_id)
+            return BaseResponse().model_dump(mode='json'), 201
+        except Exception as e:
+            return roxywi_common.handle_json_exceptions(e, 'Cannot delete user')
+
+    def delete(self, user_id: int, group_id: int):
+        """
+        Delete User from a specific Group
+        ---
+        tags:
+        - 'User group'
+        parameters:
+        - in: 'path'
+          name: 'user_id'
+          description: 'ID of the User to be deleted'
+          required: true
+          schema:
+            type: 'integer'
+        - in: 'path'
+          name: 'group_id'
+          description: 'ID of the Group from which user will be deleted'
+          required: true
+          schema:
+            type: 'integer'
+        responses:
+          '204':
+            description: 'User successfully deleted'
+          '404':
+            description: 'User or Group not found'
+        """
+        try:
+            self._check_is_user_and_group(user_id, group_id)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot get user or group'), 404
 
@@ -426,3 +487,95 @@ class UserGroupView(MethodView):
             return BaseResponse().model_dump(mode='json'), 204
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot delete user')
+
+    @staticmethod
+    def _check_is_user_and_group(user_id: int, group_id: int):
+        try:
+            _ = user_sql.get_user_id(user_id)
+            groups = group_sql.get_group_name_by_id(group_id)
+            if len(groups) == 0:
+                raise RoxywiResourceNotFound
+        except Exception as e:
+            raise e
+
+
+class UsersView(MethodView):
+    methods = ["GET", "POST", "PUT", "DELETE"]
+    decorators = [jwt_required(), get_user_params(), page_for_admin(), check_group()]
+
+    def __init__(self):
+        self.json_data = request.get_json()
+
+    @validate()
+    def get(self, query: GroupQuery):
+        """
+        Get users information by Group ID, or all users if Group ID not provided.
+        Get all users or users by group can only superAdmin role. Admin roles can get users only from its current group.
+        ---
+        tags:
+        - 'User'
+        parameters:
+        - in: 'query'
+          name: 'group_id'
+          description: 'ID of the group to list users'
+          required: false
+          schema:
+            type: 'integer'
+        responses:
+          '200':
+            description: 'Successful operation'
+            schema:
+              type: 'array'
+              items:
+                type: 'object'
+                properties:
+                  id:
+                    type: 'integer'
+                    description: 'Unique user ID'
+                  name:
+                    type: 'string'
+                    description: 'Username'
+                  email:
+                    type: 'string'
+                    description: 'User email address'
+                  group:
+                    type: 'integer'
+                    description: 'Group ID of the user'
+                  enabled:
+                    type: 'boolean'
+                    description: 'User account is active'
+                  ldap:
+                    type: 'boolean'
+                    description: 'User is a LDAP user'
+                  last_login_date:
+                    type: 'string'
+                    format: 'date-time'
+                    description: 'Last login date'
+                  last_login_ip:
+                    type: 'string'
+                    description: 'Last login IP'
+          '404':
+            description: 'Users not found'
+            schema:
+              id: 'NotFound'
+              properties:
+                message:
+                  type: 'string'
+                  description: 'Error message'
+        """
+        if g.user_params['role'] == 1:
+            group_id = query.group_id
+        else:
+            group_id = g.user_params['group_id']
+        if group_id:
+            try:
+                users = user_sql.get_users_in_group(group_id)
+            except Exception as e:
+                return roxywi_common.handle_json_exceptions(e, 'Cannot get group')
+        else:
+            users = User_DB.select()
+
+        json_data = []
+        for user in users:
+            json_data.append(model_to_dict(user, exclude=[User_DB.password, User_DB.user_services]))
+        return jsonify(json_data)

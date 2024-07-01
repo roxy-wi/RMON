@@ -37,7 +37,6 @@ def create_check(json_data, user_group, check_type, show_new=1) -> Union[bool, t
     try:
         last_id = smon_sql.insert_smon(name, enable, smon_group_id, desc, telegram, slack, pd, mm, user_group, check_type, timeout)
     except Exception as e:
-        print('error')
         return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot create check: {name}')
 
     if last_id:
@@ -92,7 +91,6 @@ def create_tcp_check(data: TcpCheckRequest, last_id: int) -> tuple[dict, int]:
 
 
 def update_smon(smon_id, json_data, user_group) -> None:
-    print(json_data)
     try:
         name = json_data.name
         enabled = json_data.enabled

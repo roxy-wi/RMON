@@ -41,13 +41,22 @@ class BaseModel(Model):
         database = connect()
 
 
+class Groups(BaseModel):
+    group_id = AutoField(column_name='id')
+    name = CharField(constraints=[SQL('UNIQUE')])
+    description = CharField(null=True)
+
+    class Meta:
+        table_name = 'groups'
+
+
 class User(BaseModel):
     user_id = AutoField(column_name='id')
     username = CharField(constraints=[SQL('UNIQUE')])
     email = CharField(constraints=[SQL('UNIQUE')])
     password = CharField(null=True)
     role = CharField()
-    groups = CharField()
+    group_id = ForeignKeyField(Groups, on_delete='Cascade')
     ldap_user = IntegerField(constraints=[SQL('DEFAULT "0"')])
     enabled = IntegerField(constraints=[SQL('DEFAULT "1"')])
     user_services = CharField(constraints=[SQL('DEFAULT "1 2 3 4 5"')])
@@ -124,25 +133,12 @@ class PD(BaseModel):
 
 
 class UUID(BaseModel):
-    user_id = IntegerField()
+    user_id = ForeignKeyField(User, on_delete='Cascade')
     uuid = CharField()
     exp = DateTimeField(default=datetime.now)
 
     class Meta:
         table_name = 'uuid'
-        primary_key = False
-
-
-class ApiToken(BaseModel):
-    token = CharField()
-    user_name = CharField()
-    user_group_id = IntegerField()
-    user_role = IntegerField()
-    create_date = DateTimeField(default=datetime.now)
-    expire_date = DateTimeField(default=datetime.now)
-
-    class Meta:
-        table_name = 'api_tokens'
         primary_key = False
 
 
@@ -159,18 +155,9 @@ class Setting(BaseModel):
         constraints = [SQL('UNIQUE (param, `group`)')]
 
 
-class Groups(BaseModel):
-    group_id = AutoField(column_name='id')
-    name = CharField(constraints=[SQL('UNIQUE')])
-    description = CharField(null=True)
-
-    class Meta:
-        table_name = 'groups'
-
-
 class UserGroups(BaseModel):
-    user_id = IntegerField()
-    user_group_id = IntegerField()
+    user_id = ForeignKeyField(User, on_delete='Cascade')
+    user_group_id = ForeignKeyField(Groups, on_delete='Cascade')
     user_role_id = IntegerField()
 
     class Meta:
@@ -190,7 +177,7 @@ class Cred(BaseModel):
 
     class Meta:
         table_name = 'cred'
-        constraints = [SQL('UNIQUE (name, `groups`)')]
+        constraints = [SQL('UNIQUE (name, `group_id`)')]
 
 
 class Version(BaseModel):
@@ -421,7 +408,7 @@ def create_tables():
     conn = connect()
     with conn:
         conn.create_tables(
-            [User, Server, Role, Telegram, Slack, UUID, ApiToken, Groups, UserGroups, Setting, Cred, Version, ActionHistory,
+            [User, Server, Role, Telegram, Slack, UUID, Groups, UserGroups, Setting, Cred, Version, ActionHistory,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
              SmonStatusPage, SmonStatusPageCheck, SMON, Alerts, SmonGroup, MM]
         )

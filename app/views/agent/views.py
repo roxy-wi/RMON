@@ -2,6 +2,7 @@ from flask.views import MethodView
 from flask_jwt_extended import jwt_required
 from flask import render_template, jsonify, request, g
 from playhouse.shortcuts import model_to_dict
+from flask_pydantic import validate
 
 import app.modules.db.smon as smon_sql
 import app.modules.roxywi.common as roxywi_common
@@ -9,13 +10,14 @@ import app.modules.tools.common as tools_common
 import app.modules.tools.smon_agent as smon_agent
 from app.middleware import get_user_params, check_group
 from app.modules.roxywi.exception import RoxywiResourceNotFound
+from app.modules.roxywi.class_models import BaseResponse, IdResponse, RmonAgent
 
 
 class AgentView(MethodView):
     method_decorators = ["GET", "POST", "PUT", "DELETE"]
     decorators = [jwt_required(), get_user_params(), check_group()]
 
-    def __init__(self, is_api=False):
+    def __init__(self):
         """
         Initialize AgentView instance
         ---
@@ -26,17 +28,16 @@ class AgentView(MethodView):
             description: is api
         """
         self.json_data = request.get_json()
-        self.is_api = is_api
 
-    def get(self):
+    def get(self, agent_id: int):
         """
-        Get all agents
+        Get an agent
         ---
         tags:
           - Agent
         responses:
           200:
-            description: A list of agents
+            description: Information about an agent
             schema:
               type: array
               items:
@@ -77,7 +78,7 @@ class AgentView(MethodView):
                       enable:
                         type: integer
                         example: 1
-                      groups:
+                      group_id:
                         type: string
                         example: "1"
                       hostname:
@@ -106,11 +107,7 @@ class AgentView(MethodView):
                     example: cf2cc8d2-4c44-48d1-9ed3-f6f49f8327fa
         """
         try:
-            if g.user_params['role'] == 1:
-                group = int(self.json_data['group_id'])
-            else:
-                group = int(g.user_params['group_id'])
-            agent_id = int(self.json_data['agent_id'])
+            group = int(g.user_params['group_id'])
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse agent data')
         try:
@@ -128,7 +125,8 @@ class AgentView(MethodView):
             return roxywi_common.handler_exceptions_for_json_data(e, '')
         return jsonify(agent_list)
 
-    def post(self):
+    @validate(body=RmonAgent)
+    def post(self, body: RmonAgent):
         """
         Creates a new agent
         ---
@@ -189,18 +187,25 @@ class AgentView(MethodView):
             description: Invalid payload received
         """
         try:
-            last_id = smon_agent.add_agent(self.json_data)
-            return jsonify({'status': 'ok', 'id': last_id}), 201
+            last_id = smon_agent.add_agent(body)
+            return IdResponse(id=last_id).model_dump(mode='json'), 201
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot add agent')
 
-    def put(self):
+    @validate(body=RmonAgent)
+    def put(self, agent_id: int, body: RmonAgent):
         """
         Updates an agent
         ---
         tags:
           - Agent
         parameters:
+          - in: 'path'
+            name: 'agent_id'
+            description: 'ID of the agent to update'
+            required: true
+            schema:
+              type: 'integer'
           - in: body
             name: body
             schema:
@@ -254,29 +259,24 @@ class AgentView(MethodView):
             description: Invalid payload received
         """
         try:
-            smon_agent.update_agent(self.json_data)
-            return jsonify({'status': 'ok'}), 201
+            smon_agent.update_agent(agent_id, body)
+            return BaseResponse().model_dump(mode='json'), 201
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot update agent')
 
     def delete(self):
         """
-        Remove a specific RMON agent.
+        Remove a specific agent.
         ---
         tags:
           - Agent
         parameters:
-          - in: body
-            name: body
+          - in: 'path'
+            name: 'agent_id'
+            description: 'ID of the agent to remove'
+            required: true
             schema:
-              id: AgentDelete
-              required:
-                - id
-              properties:
-                id:
-                  type: integer
-                  description: The ID of the Agent to delete
-                  example: 1
+              type: 'integer'
         responses:
           200:
             description: Agent successfully deleted
@@ -367,7 +367,7 @@ class AgentsView(MethodView):
                       enable:
                         type: integer
                         example: 1
-                      groups:
+                      group_id:
                         type: string
                         example: "1"
                       hostname:

@@ -49,7 +49,7 @@ def get_current_group():
             data = roxywi_user.get_user_active_group(uuid, group)
             return jsonify({'status': 'ok', 'data': data})
         except Exception as e:
-            roxywi_common.handle_json_exceptions(e, 'Cannot get current group')
+            roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get current group')
     elif request.method == 'PUT':
         user = claims['sub']
 

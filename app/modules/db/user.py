@@ -57,7 +57,7 @@ def delete_user_groups(user_id):
 def update_user_current_groups(groups, user_uuid):
 	user_id = get_user_id_by_uuid(user_uuid)
 	try:
-		User.update(groups=groups).where(User.user_id == user_id).execute()
+		User.update(group_id=groups).where(User.user_id == user_id).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -125,7 +125,7 @@ def select_users(**kwargs):
 			UserGroups.user_group_id == kwargs.get("group")
 		))
 	elif kwargs.get('by_group_id'):
-		query = User.select().where(User.groups == kwargs.get("by_group_id"))
+		query = User.select().where(User.group_id == kwargs.get("by_group_id"))
 	else:
 		get_date = roxy_wi_tools.GetDate(get_setting('time_zone'))
 		cur_date = get_date.return_date('regular', timedelta_minutes_minus=15)
@@ -160,11 +160,9 @@ def check_user_group(user_id, group_id):
 			return False
 
 
-def select_user_groups_with_names(user_id, **kwargs):
+def select_user_groups_with_names(user_id, **kwargs) -> UserGroups:
 	if kwargs.get("all") is not None:
-		query = (UserGroups.select(
-			UserGroups.user_group_id, UserGroups.user_id, Groups.name, Groups.description
-		).join(Groups, on=(UserGroups.user_group_id == Groups.group_id)))
+		query = (UserGroups.select().join(Groups))
 	elif kwargs.get("user_not_in_group") is not None:
 		query = (Groups.select(
 			Groups.group_id, Groups.name
@@ -174,14 +172,11 @@ def select_user_groups_with_names(user_id, **kwargs):
 		), join_type=JOIN.LEFT_OUTER).group_by(Groups.name).where(UserGroups.user_id.is_null(True)))
 	else:
 		query = (UserGroups.select(
-			UserGroups.user_group_id, UserGroups.user_role_id, Groups.name, Groups.group_id
-		).join(Groups, on=(UserGroups.user_group_id == Groups.group_id)).where(UserGroups.user_id == user_id))
+		).join(Groups).where(UserGroups.user_id == user_id))
 	try:
-		query_res = query.execute()
+		return query.execute()
 	except Exception as e:
 		out_error(e)
-	else:
-		return query_res
 
 
 def select_user_roles_by_group(group_id: int) -> UserGroups:
@@ -228,7 +223,7 @@ def get_user_name_by_uuid(uuid):
 
 def get_user_id_by_uuid(uuid):
 	try:
-		query = User.select(User.user_id).join(UUID, on=(User.user_id == UUID.user_id)).where(UUID.uuid == uuid)
+		query = User.select(User.user_id).join(UUID).where(UUID.uuid == uuid)
 		query_res = query.execute()
 	except Exception as e:
 		out_error(e)
@@ -261,16 +256,14 @@ def get_user_role_by_uuid(uuid, group_id):
 
 def get_user_current_group_by_uuid(uuid):
 	try:
-		query_res = User.select(User.groups).join(
-			UUID, on=(User.user_id == UUID.user_id)
-		).where(
+		query_res = User.select(User.group_id).join(UUID).where(
 			(UUID.uuid == uuid)
 		).execute()
 	except Exception as e:
 		out_error(e)
 	else:
 		for user_id in query_res:
-			return int(user_id.groups)
+			return int(user_id.group_id.group_id)
 
 
 def write_user_uuid(login, user_uuid):
@@ -319,7 +312,7 @@ def get_super_admin_count() -> int:
 
 
 def select_users_emails_by_group_id(group_id: int):
-	query = User.select(User.email).where((User.groups == group_id) & (User.role != 'guest'))
+	query = User.select(User.email).where((User.group_id == group_id) & (User.role != 'guest'))
 	try:
 		query_res = query.execute()
 	except Exception as e:
@@ -383,6 +376,6 @@ def get_user_id(user_id: int) -> User:
 
 def get_users_in_group(group_id: int) -> User:
 	try:
-		return User.select().join(UserGroups, on=(User.user_id == UserGroups.user_id)).where(UserGroups.user_group_id == group_id).execute()
+		return User.select().join(UserGroups).where(UserGroups.user_group_id == group_id).execute()
 	except Exception as e:
 		out_error(e)

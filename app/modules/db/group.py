@@ -99,6 +99,8 @@ def update_group(name, descript, group_id):
 def get_group_name_by_id(group_id):
 	try:
 		group_name = Groups.get(Groups.group_id == group_id)
+	except Groups.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 	else:

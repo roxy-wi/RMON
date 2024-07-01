@@ -1,13 +1,15 @@
 import uuid
 import json
+from typing import Union
 
 import requests
 import app.modules.db.sql as sql
 import app.modules.db.smon as smon_sql
 import app.modules.db.server as server_sql
-import app.modules.common.common as common
 import app.modules.roxywi.common as roxywi_common
 from app.modules.service.installation import run_ansible
+from app.modules.roxywi.class_models import RmonAgent
+from app.modules.roxywi.exception import RoxywiResourceNotFound
 
 
 def generate_agent_inv(server_ip: str, action: str, agent_uuid: uuid, agent_port=5101) -> object:
@@ -40,17 +42,23 @@ def check_agent_limit():
         raise Exception('error: You have reached limit for Enterprise plan')
 
 
-def add_agent(data) -> int:
-    server_id = int(data.get("server_id"))
-    server_ip = server_sql.select_server_ip_by_id(server_id)
+def add_agent(data: RmonAgent) -> Union[int, tuple]:
+    try:
+        server_ip = server_sql.select_server_ip_by_id(data.server_id)
+    except Exception as e:
+        return roxywi_common.handle_json_exceptions(e, 'Cannot find the server'), 404
+    try:
+        _ = smon_sql.get_agent_id_by_ip(server_ip)
+    except RoxywiResourceNotFound:
+        pass
+    else:
+        return roxywi_common.handle_json_exceptions('', 'The agent is already installed the server'), 409
     agent_uuid = str(uuid.uuid4())
     check_agent_limit()
-    agent_kwargs = _validate_agent_json(data)
-    agent_kwargs['server_id'] = server_id
-    agent_kwargs['uuid'] = agent_uuid
+    agent_kwargs = data.model_dump(mode='python', include={'agent_uuid': agent_uuid})
 
     try:
-        inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid, agent_kwargs['port'])
+        inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid, data.port)
         run_ansible(inv, server_ips, 'rmon_agent')
     except Exception as e:
         roxywi_common.handle_exceptions(e, server_ip, 'Cannot install RMON agent', login=1)
@@ -76,21 +84,15 @@ def delete_agent(agent_id: int):
         raise e
 
 
-def update_agent(json_data):
-    agent_id = int(json_data.pop("agent_id"))
-    json_data = _validate_agent_json(json_data)
-
-    try:
-        reconfigure = int(json_data.pop("reconfigure"))
-    except Exception:
-        reconfigure = 0
+def update_agent(agent_id: int, data: RmonAgent):
+    json_data = data.model_dump(mode='python', exclude={'reconfigure': True})
 
     try:
         smon_sql.update_agent(agent_id, **json_data)
     except Exception as e:
         raise e
 
-    if reconfigure:
+    if data.reconfigure:
         agent_uuid = smon_sql.get_agent_uuid(agent_id)
         server_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
         try:
@@ -98,34 +100,6 @@ def update_agent(json_data):
             run_ansible(inv, server_ips, 'rmon_agent')
         except Exception as e:
             raise e
-
-
-def _validate_agent_json(json_data: json) -> json:
-    try:
-        json_data['name'] = common.checkAjaxInput(json_data.get("name"))
-    except Exception:
-        raise Exception(f'error: Invalid name value')
-    try:
-        json_data['desc'] = common.checkAjaxInput(json_data.get("desc"))
-    except Exception:
-        raise Exception(f'error: Invalid description value')
-    try:
-        json_data['enabled'] = int(json_data.get("enabled"))
-    except Exception as e:
-        raise Exception(f'error: Invalid enabled value: {e}')
-    try:
-        json_data['shared'] = int(json_data.get("shared"))
-    except Exception as e:
-        raise Exception(f'error: Invalid shared value: {e}')
-    try:
-        json_data['port'] = int(json_data.get("port"))
-    except Exception as e:
-        raise Exception(f'error: Invalid port value: {e}')
-
-    if json_data['port'] > 65535 or json_data['port'] < 1:
-        raise Exception('error: port must be 1-65535')
-
-    return json_data
 
 
 def get_agent_headers(agent_id: int) -> dict:
@@ -155,7 +129,6 @@ def send_post_request_to_agent(agent_id: int, server_ip: str, api_path: str, jso
     agent = smon_sql.get_agent_data(agent_id)
     try:
         req = requests.post(f'http://{server_ip}:{agent.port}/{api_path}', headers=headers, json=json_data, timeout=5)
-        print(req)
         return req.content
     except Exception as e:
         raise Exception(f'error: Cannot get agent status: {e}')
@@ -267,7 +240,6 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
         else:
             json_data['header_req'] = ''
         api_path = f'check/{check.smon_id}'
-        print('json_data',json_data)
         try:
             send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
         except Exception as e:

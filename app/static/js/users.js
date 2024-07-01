@@ -526,7 +526,7 @@ function saveGroupsAndRoles(user_id) {
 	});
 	for (const [key, value] of Object.entries(jsonData)) {
 		if (Object.keys(value).length === 0) {
-			toastr.error('error: UserPost must have at least one group');
+			toastr.error('error: User must have at least one group');
 			return false;
 		}
 	}

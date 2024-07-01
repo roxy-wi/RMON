@@ -49,7 +49,10 @@ def handle_pydantic_validation_errors1(e):
     else:
         req_type = e.query_params
     for er in req_type:
-        errors.append(f'{er["loc"][0]}: {er["msg"]}')
+        if len(er["loc"]) > 0:
+            errors.append(f'{er["loc"][0]}: {er["msg"]}')
+        else:
+            errors.append(er["msg"])
     return ErrorResponse(error=errors).model_dump(mode='json'), 400
 
 

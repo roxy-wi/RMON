@@ -64,9 +64,9 @@ def default_values():
 		print(str(e))
 
 	data_source = [
-		{'username': 'admin', 'email': 'admin@localhost', 'password': '21232f297a57a5a743894a0e4a801fc3', 'role': '1', 'groups': '1'},
-		{'username': 'editor', 'email': 'editor@localhost', 'password': '5aee9dbd2a188839105073571bee1b1f', 'role': '2', 'groups': '1'},
-		{'username': 'guest', 'email': 'guest@localhost', 'password': '084e0343a0486ff05530df6c705c8bb4', 'role': '4', 'groups': '1'}
+		{'username': 'admin', 'email': 'admin@localhost', 'password': '21232f297a57a5a743894a0e4a801fc3', 'role': '1', 'group_id': '1'},
+		{'username': 'editor', 'email': 'editor@localhost', 'password': '5aee9dbd2a188839105073571bee1b1f', 'role': '2', 'group_id': '1'},
+		{'username': 'guest', 'email': 'guest@localhost', 'password': '084e0343a0486ff05530df6c705c8bb4', 'role': '4', 'group_id': '1'}
 	]
 
 	try:
@@ -78,8 +78,8 @@ def default_values():
 		create_users = True
 
 	try:
-		if create_users:
-			User.insert_many(data_source).on_conflict_ignore().execute()
+		# if create_users:
+		User.insert_many(data_source).on_conflict_ignore().execute()
 	except Exception as e:
 		print(str(e))
 
@@ -131,13 +131,6 @@ def update_db_v_3_4_5_22():
 		Version.insert(version='1.0').execute()
 	except Exception as e:
 		print('Cannot insert version %s' % e)
-
-
-def update_ver():
-	try:
-		Version.update(version='1.0.5').execute()
-	except Exception:
-		print('Cannot update version')
 
 
 def update_db_v_1_0_3():
@@ -216,6 +209,7 @@ def update_db_v_1_1():
 	try:
 		migrate(
 			migrator.rename_column('user', 'activeuser', 'enabled'),
+			migrator.rename_column('user', 'groups', 'group_id'),
 			migrator.rename_column('cred', 'enable', 'key_enabled'),
 			migrator.rename_column('cred', 'groups', 'group_id'),
 		)
@@ -224,6 +218,13 @@ def update_db_v_1_1():
 			print("Updating... DB has been updated to version 1.1")
 		else:
 			print("An error occurred:", e)
+
+
+def update_ver():
+	try:
+		Version.update(version='1.1').execute()
+	except Exception:
+		print('Cannot update version')
 
 
 def check_ver():

@@ -1,6 +1,6 @@
 import os
 import glob
-from typing import Any, Tuple
+from typing import Any
 
 from flask import request, g
 from flask_jwt_extended import get_jwt
@@ -186,7 +186,7 @@ def get_users_params(**kwargs):
 	try:
 		group_id = user_sql.get_user_current_group_by_uuid(user_uuid)
 	except Exception as e:
-		raise Exception(f'error: Cannot get user group: {e}')
+		raise Exception(f'Cannot get user group: {e}')
 
 	try:
 		group_id_from_cookies = int(user_data['group'])

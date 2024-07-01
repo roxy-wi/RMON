@@ -353,7 +353,6 @@ def smon_history_metric_chart(check_id, check_type_id):
                     else:
                         json_metric['start_transfer'] = str(i.start_transfer)
                     json_metric['m_download'] = str(i.download)
-                print(json.dumps(json_metric))
             yield f"data:{json.dumps(json_metric)}\n\n"
             time.sleep(interval)
 
