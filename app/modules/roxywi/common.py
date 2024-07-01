@@ -2,7 +2,9 @@ import os
 import glob
 from typing import Any
 
-from flask import request
+from flask import request, g
+from flask_jwt_extended import get_jwt
+from flask_jwt_extended import verify_jwt_in_request
 
 from app.modules.db.sql import get_setting
 import app.modules.db.roxy as roxy_sql
@@ -11,61 +13,43 @@ import app.modules.db.group as group_sql
 import app.modules.db.server as server_sql
 import app.modules.db.history as history_sql
 import app.modules.roxy_wi_tools as roxy_wi_tools
+from app.modules.roxywi.exception import RoxywiResourceNotFound, RoxywiCheckLimits
+from app.modules.roxywi.class_models import ErrorResponse
 
 get_config_var = roxy_wi_tools.GetConfigVar()
-
-
-def return_error_message():
-	return 'error: All fields must be completed'
 
 
 def get_user_group(**kwargs) -> int:
 	user_group = ''
 
 	try:
-		user_group_id = request.cookies.get('group')
+		verify_jwt_in_request()
+		claims = get_jwt()
+		user_group_id = claims['group']
 		groups = group_sql.select_groups(id=user_group_id)
-		for g in groups:
-			if g.group_id == int(user_group_id):
+		for group in groups:
+			if group.group_id == int(user_group_id):
 				if kwargs.get('id'):
-					user_group = g.group_id
+					user_group = group.group_id
 				else:
-					user_group = g.name
+					user_group = group.name
 	except Exception as e:
 		raise Exception(f'error: {e}')
 	return user_group
 
 
-def check_user_group_for_flask(**kwargs):
-	if kwargs.get('token') is not None:
-		return True
-
-	if kwargs.get('user_uuid'):
-		group_id = kwargs.get('user_group_id')
-		user_uuid = kwargs.get('user_uuid')
-		user_id = user_sql.get_user_id_by_uuid(user_uuid)
-	else:
-		user_uuid = request.cookies.get('uuid')
-		group_id = request.cookies.get('group')
-		user_id = user_sql.get_user_id_by_uuid(user_uuid)
+def check_user_group_for_flask():
+	verify_jwt_in_request()
+	claims = get_jwt()
+	user_uuid = claims['uuid']
+	group_id = claims['group']
+	user_id = user_sql.get_user_id_by_uuid(user_uuid)
 
 	if user_sql.check_user_group(user_id, group_id):
 		return True
 	else:
-		logging('RMON server', ' has tried to actions in not his group ', roxywi=1, login=1)
+		logging('RMON server', ' has tried to actions in not his group ', login=1)
 		return False
-
-
-def get_user_id(**kwargs):
-	if kwargs.get('login'):
-		return user_sql.get_user_id_by_username(kwargs.get('login'))
-
-	user_uuid = request.cookies.get('uuid')
-
-	if user_uuid is not None:
-		user_id = user_sql.get_user_id_by_uuid(user_uuid)
-
-		return user_id
 
 
 def check_is_server_in_group(server_ip: str) -> bool:
@@ -75,7 +59,7 @@ def check_is_server_in_group(server_ip: str) -> bool:
 		if (s[2] == server_ip and int(s[3]) == int(group_id)) or group_id == 1:
 			return True
 		else:
-			logging('RMON server', ' has tried to actions in not his group server ', roxywi=1, login=1)
+			logging('RMON server', ' has tried to actions in not his group server ', login=1)
 			return False
 
 
@@ -125,7 +109,9 @@ def logging(server_ip: str, action: str, **kwargs) -> None:
 		ip = ''
 
 	try:
-		user_uuid = request.cookies.get('uuid')
+		verify_jwt_in_request()
+		claims = get_jwt()
+		user_uuid = claims['uuid']
 		login = user_sql.get_user_name_by_uuid(user_uuid)
 	except Exception:
 		login = ''
@@ -151,7 +137,8 @@ def logging(server_ip: str, action: str, **kwargs) -> None:
 
 def keep_action_history(service: str, action: str, server_ip: str, login: str, user_ip: str):
 	if login != '':
-		user_id = user_sql.get_user_id_by_username(login)
+		user = user_sql.get_user_by_username(login)
+		user_id = user.user_id
 	else:
 		user_id = 0
 	if user_ip == '':
@@ -167,11 +154,6 @@ def keep_action_history(service: str, action: str, server_ip: str, login: str, u
 
 
 def get_dick_permit(**kwargs):
-	if kwargs.get('token'):
-		token = kwargs.get('token')
-	else:
-		token = ''
-
 	if not kwargs.get('group_id'):
 		try:
 			group_id = get_user_group(id=1)
@@ -180,7 +162,7 @@ def get_dick_permit(**kwargs):
 	else:
 		group_id = kwargs.pop('group_id')
 
-	if check_user_group_for_flask(token=token):
+	if check_user_group_for_flask():
 		try:
 			servers = server_sql.get_dick_permit(group_id, **kwargs)
 		except Exception as e:
@@ -192,8 +174,11 @@ def get_dick_permit(**kwargs):
 
 
 def get_users_params(**kwargs):
+	verify_jwt_in_request()
+	user_data = get_jwt()
+
 	try:
-		user_uuid = request.cookies.get('uuid')
+		user_uuid = user_data['uuid']
 		user = user_sql.get_user_name_by_uuid(user_uuid)
 	except Exception:
 		raise Exception('error: Cannot get user UUID')
@@ -201,10 +186,10 @@ def get_users_params(**kwargs):
 	try:
 		group_id = user_sql.get_user_current_group_by_uuid(user_uuid)
 	except Exception as e:
-		raise Exception(f'error: Cannot get user group: {e}')
+		raise Exception(f'Cannot get user group: {e}')
 
 	try:
-		group_id_from_cookies = int(request.cookies.get('group'))
+		group_id_from_cookies = int(user_data['group'])
 	except Exception as e:
 		raise Exception(f'error: Cannot get group id from cookies: {e}')
 
@@ -298,4 +283,22 @@ def handle_exceptions(ex: Exception, server_ip: str, message: str, **kwargs: Any
 
 def handle_json_exceptions(ex: Exception, message: str, server_ip='RMON server') -> dict:
 	logging(server_ip, f'error: {message}: {ex}', login=1)
-	return {'status': 'failed', 'error': f'{message}: {ex}'}
+	return ErrorResponse(error=f'{message}: {ex}').model_dump(mode='json')
+
+
+def is_user_has_access_to_group(user_id: int) -> None:
+	if not user_sql.check_user_group(user_id, g.user_params['group_id']) and g.user_params['role'] != 1:
+		raise Exception('UserPost has no access to group')
+
+
+def handler_exceptions_for_json_data(ex: Exception, main_ex_mes: str) -> tuple[dict, int]:
+	if isinstance(ex, KeyError):
+		return handle_json_exceptions(ex, 'Missing key in JSON data'), 500
+	elif isinstance(ex, ValueError):
+		return handle_json_exceptions(ex, 'Wrong type or missing value in JSON data'), 500
+	elif isinstance(ex, RoxywiResourceNotFound):
+		return handle_json_exceptions(ex, 'Resource not found'), 404
+	elif isinstance(ex, RoxywiCheckLimits):
+		return handle_json_exceptions(ex, 'Limit exceeded'), 409
+	else:
+		return handle_json_exceptions(ex, main_ex_mes), 500

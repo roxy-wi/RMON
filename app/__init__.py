@@ -1,12 +1,14 @@
 from flask import Flask
 from flask_caching import Cache
-from flask_login import LoginManager
 from flask_apscheduler import APScheduler
+from flask_jwt_extended import JWTManager
 
 app = Flask(__name__)
 app.config.from_object('app.config.Configuration')
 app.jinja_env.add_extension('jinja2.ext.do')
 app.jinja_env.add_extension('jinja2.ext.loopcontrols')
+
+jwt = JWTManager(app)
 
 cache = Cache()
 cache.init_app(app)
@@ -15,8 +17,15 @@ scheduler = APScheduler()
 scheduler.init_app(app)
 scheduler.start()
 
-login_manager = LoginManager(app)
-login_manager.login_view = 'login_page'
+from app.api.v1.routes.main import bp as main_api_v1_0_bp
+from app.api.v1.routes.user import bp as user_api_v1_0_bp
+from app.api.v1.routes.server import bp as server_api_v1_0_bp
+from app.api.v1.routes.rmon import bp as rmon_api_v1_0_bp
+
+main_api_v1_0_bp.register_blueprint(user_api_v1_0_bp, url_prefix='/user')
+main_api_v1_0_bp.register_blueprint(server_api_v1_0_bp, url_prefix='/server')
+main_api_v1_0_bp.register_blueprint(rmon_api_v1_0_bp, url_prefix='/rmon')
+app.register_blueprint(main_api_v1_0_bp, url_prefix='/api/v1.0')
 
 from app.routes.main import bp as main_bp
 from app.routes.smon import bp as smon_bp

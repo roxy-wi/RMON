@@ -1,7 +1,7 @@
 import json
 
 from flask import render_template, request, jsonify, g
-from flask_login import login_required
+from flask_jwt_extended import jwt_required
 
 from app.routes.smon import bp
 from app.middleware import get_user_params
@@ -14,8 +14,8 @@ import app.modules.roxywi.common as roxywi_common
 import app.modules.server.server as server_mod
 
 
-@bp.route('/agent', methods=['GET', 'POST', 'PUT', 'DELETE'])
-@login_required
+@bp.route('/agent', methods=['GET'])
+@jwt_required()
 @get_user_params()
 def agent():
     if request.method == 'GET':
@@ -27,32 +27,10 @@ def agent():
         }
 
         return render_template('smon/agents.html', **kwargs)
-    elif request.method == 'POST':
-        data = request.get_json()
-        try:
-            last_id = smon_agent.add_agent(data)
-            return str(last_id)
-        except Exception as e:
-            return f'{e}'
-    elif request.method == "PUT":
-        json_data = request.get_json()
-        try:
-            smon_agent.update_agent(json_data)
-        except Exception as e:
-            return f'{e}'
-        return 'ok', 201
-    elif request.method == 'DELETE':
-        agent_id = int(request.form.get('agent_id'))
-        try:
-            smon_agent.delete_agent(agent_id)
-            smon_sql.delete_agent(agent_id)
-        except Exception as e:
-            return f'{e}'
-        return 'ok'
 
 
 @bp.get('/agent/<int:agent_id>')
-@login_required
+@jwt_required()
 @get_user_params()
 def get_agent(agent_id):
     kwargs = {
@@ -80,7 +58,7 @@ def agent_get_checks():
 
 
 @bp.get('/agent/free')
-@login_required
+@jwt_required()
 @get_user_params()
 def get_free_agents():
     group_id = g.user_params['group_id']
@@ -93,7 +71,7 @@ def get_free_agents():
 
 
 @bp.get('/agent/count')
-@login_required
+@jwt_required()
 def get_agent_count():
     try:
         smon_agent.check_agent_limit()
@@ -104,7 +82,7 @@ def get_agent_count():
 
 
 @bp.get('/agent/info/<int:agent_id>')
-@login_required
+@jwt_required()
 @get_user_params()
 def get_agent_info(agent_id):
     try:
@@ -116,7 +94,7 @@ def get_agent_info(agent_id):
 
 
 @bp.get('/agent/settings/<int:agent_id>')
-@login_required
+@jwt_required()
 def get_agent_settings(agent_id):
     settings = {}
     try:
@@ -137,7 +115,7 @@ def get_agent_settings(agent_id):
 
 
 @bp.get('/agent/version/<server_ip>')
-@login_required
+@jwt_required()
 def get_agent_version(server_ip):
     agent_id = int(request.args.get('agent_id'))
     last_agent_version = '0.2'
@@ -153,7 +131,7 @@ def get_agent_version(server_ip):
 
 
 @bp.get('/agent/uptime/<server_ip>')
-@login_required
+@jwt_required()
 def get_agent_uptime(server_ip):
     agent_id = int(request.args.get('agent_id'))
 
@@ -165,7 +143,7 @@ def get_agent_uptime(server_ip):
 
 
 @bp.get('/agent/status/<server_ip>')
-@login_required
+@jwt_required()
 def get_agent_status(server_ip):
     agent_id = int(request.args.get('agent_id'))
 
@@ -177,7 +155,7 @@ def get_agent_status(server_ip):
 
 
 @bp.get('/agent/checks/<server_ip>')
-@login_required
+@jwt_required()
 def get_agent_checks(server_ip):
     agent_id = int(request.args.get('agent_id'))
 
@@ -189,7 +167,7 @@ def get_agent_checks(server_ip):
 
 
 @bp.post('/agent/action/<action>')
-@login_required
+@jwt_required()
 @get_user_params()
 def agent_action(action):
     server_ip = common.is_ip_or_dns(request.form.get('server_ip'))
@@ -210,7 +188,7 @@ def agent_action(action):
 
 
 @bp.get('/agent/list')
-@login_required
+@jwt_required()
 @get_user_params()
 def get_agent_list():
     agents_list = {}

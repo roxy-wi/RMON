@@ -102,14 +102,23 @@ def is_ip_or_dns(server_from_request: str) -> str:
 		return ''
 
 
-def checkAjaxInput(ajax_input: str):
+def checkAjaxInput(ajax_input: str, var_type=None, default=None):
 	"""
 	Checks if the provided `ajax_input` string contains any non-permitted characters and returns the modified string.
 
 	:param ajax_input: The input string to be checked and modified.
+	:param var_type: Cast to the desired type.
+	:param default: If default_value, return it with the modified string.
 	:return: The modified `ajax_input` string, or an empty string if the input was empty or contained non-permitted characters.
 	"""
-	if not ajax_input: return ''
+	if var_type:
+		if default:
+			return var_type(default)
+		ajax_input = var_type(ajax_input)
+	if default and not ajax_input:
+		return default
+	if not ajax_input:
+		return ''
 	pattern = re.compile('[&;|$`]')
 	if pattern.search(ajax_input):
 		raise ValueError('Error: Non-permitted characters detected')
@@ -139,7 +148,7 @@ def return_nice_path(return_path: str, is_service=1) -> str:
 
 	"""
 	if not check_is_service_folder(return_path) and is_service:
-		return 'error: The path must contain the name of the service. Check it in Roxy-WI settings'
+		return 'error: The path must contain the name of the service. Check it in RMON settings'
 
 	if return_path[-1] != '/':
 		return_path += '/'

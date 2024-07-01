@@ -1,24 +1,4 @@
-var url = "/static/js/script.js";
 var cur_url = window.location.href.split('/');
-var intervalId;
-function validateEmail(email) {
-	const re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-	return re.test(email);
-}
-function ValidateIPaddress(ipaddress) {
-	if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ipaddress)) {
-		return (true)
-	}
-	return (false)
-}
-function escapeHtml(unsafe) {
-	return unsafe
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&#039;");
-}
 var wait_mess_word = $('#translate').attr('data-wait_mess');
 var wait_mess = '<div class="alert alert-warning">'+wait_mess_word+'</div>'
 function show_current_page(id) {
@@ -76,6 +56,12 @@ $( document ).ajaxSend(function( event, request, settings ) {
 });
 $( document ).ajaxComplete(function( event, request, settings ) {
 	NProgress.done();
+});
+$.ajaxSetup({
+	headers: {"X-CSRF-TOKEN": csrf_token},
+});
+$(document).ajaxError(function myErrorHandler(event, xhr, ajaxOptions, thrownError) {
+  toastr.error(xhr.responseJSON.error);
 });
 function showLog() {
 	var waf = cur_url[2];
@@ -163,19 +149,6 @@ function showRemoteLogFiles() {
 		}
 	} );
 
-}
-function clearAllAjaxFields() {
-	$("#ajax").empty();
-	$('.alert').remove();
-	try {
-		myCodeMirror.toTextArea();
-	} catch (e) {
-		console.log(e)
-	}
-	$("#saveconfig").remove();
-	$("h4").remove();
-	$("#ajax-compare").empty();
-	$("#config").empty();
 }
 function findGetParameter(parameterName) {
     var result = null,
@@ -396,26 +369,30 @@ $( function() {
 		$('#0').css("display", "inline");
 	});
 	$('#auth').submit(function () {
-		var next_url = findGetParameter('next');
+		let next_url = findGetParameter('next');
+		let json_data = {
+			"login": $('#login').val(),
+			"pass": $('#pass').val(),
+			"next": next_url
+		}
 		$.ajax({
 			url: "/login",
-			data: {
-				login: $('#login').val(),
-				pass: $('#pass').val(),
-				next: next_url
-			},
+			data: JSON.stringify(json_data),
+			contentType: "application/json; charset=utf-8",
 			type: "POST",
 			success: function (data) {
-				if (data.indexOf('disabled') != '-1') {
-					$('.alert').show();
-					$('.alert').html(data);
-				} else if (data.indexOf('ban') != '-1') {
-					ban();
-				} else if (data.indexOf('error') != '-1') {
-					toastr.error(data);
+				if (data.status === 'failed') {
+					if (data.error.indexOf('disabled') != '-1') {
+						$('.alert').show();
+						$('.alert').html(data.error);
+					} else if (data.error.indexOf('ban') != '-1') {
+						ban();
+					} else {
+						toastr.error(data.error);
+					}
 				} else {
 					sessionStorage.removeItem('check-service');
-					window.location.replace(data);
+					window.location.replace(data.next_url);
 				}
 			}
 		});
@@ -431,8 +408,6 @@ $( function() {
 	});
 
 	var user_settings_tabel_title = $("#show-user-settings-table").attr('title');
-	var cancel_word = $('#translate').attr('data-cancel');
-	var save_word = $('#translate').attr('data-save');
 	var change_word = $('#translate').attr('data-change');
 	var password_word = $('#translate').attr('data-password');
 	var change_pass_word = change_word + ' ' + password_word
@@ -475,11 +450,12 @@ $( function() {
 		$('#theme_select').selectmenu('refresh');
 		$.ajax({
 			url: "/user/group",
+			contentType: "application/json; charset=utf-8",
 			success: function (data) {
-				if (data.indexOf('danger') != '-1') {
-					$("#ajax").html(data);
+				if (data.status === 'failed') {
+					toastr.error(data.error)
 				} else {
-					$('#show-user-settings-group').html(data);
+					$('#show-user-settings-group').html(data.data);
 					$("select").selectmenu();
 				}
 			}
@@ -683,14 +659,12 @@ listHistory();
 function changeCurrentGroupF() {
 	$.ajax({
 		url: "/user/group",
-		data: {
-			group: $('#newCurrentGroup').val(),
-			uuid: Cookies.get('uuid')
-		},
+		data: JSON.stringify({"group": $('#newCurrentGroup').val()}),
+		contentType: "application/json; charset=utf-8",
 		type: "PUT",
 		success: function (data) {
-			if (data.indexOf('error: ') != '-1') {
-				toastr.error(data);
+			if (data.error === 'failed') {
+				toastr.error(data.error);
 			} else {
 				toastr.clear();
 				Cookies.remove('group');
@@ -846,29 +820,6 @@ function changeUserPasswordItOwn(d) {
 		});
 	}
 }
-function waitForElm(selector) {
-	return new Promise(resolve => {
-		if (document.querySelector(selector)) {
-			return resolve(document.querySelector(selector));
-		}
-
-		const observer = new MutationObserver(mutations => {
-			if (document.querySelector(selector)) {
-				resolve(document.querySelector(selector));
-				observer.disconnect();
-			}
-		});
-
-		observer.observe(document.body, {
-			childList: true,
-			subtree: true
-		});
-	});
-}
-function randomIntFromInterval(min, max) {
-  return Math.floor(Math.random() * (max - min + 1) + min)
-}
-const removeEmptyLines = str => str.split(/\r?\n/).filter(line => line.trim() !== '').join('\n');
 function show_version() {
 	NProgress.configure({showSpinner: false});
 	$.ajax( {
@@ -893,18 +844,6 @@ function show_version() {
 		}
 	} );
 	NProgress.configure({showSpinner: true});
-}
-function show_pretty_ansible_error(data) {
-	try {
-		data = data.split('error: ');
-		var p_err = JSON.parse(data[1]);
-		return p_err['msg'];
-	} catch (e) {
-		return data;
-	}
-}
-function openTab(tabId) {
-	$( "#tabs" ).tabs( "option", "active", tabId );
 }
 function showPassword(input) {
   var x = document.getElementById(input);

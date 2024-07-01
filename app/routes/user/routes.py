@@ -1,90 +1,26 @@
 import json
 
-from flask import render_template, request
-from flask_login import login_required
+from flask import request, jsonify
+from flask_jwt_extended import get_jwt
+from flask_jwt_extended import jwt_required
 
 from app.routes.user import bp
-import app.modules.db.sql as sql
-import app.modules.db.user as user_sql
 import app.modules.db.group as group_sql
 import app.modules.common.common as common
 import app.modules.roxywi.user as roxywi_user
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.common as roxywi_common
-from app.middleware import get_user_params
+from app.views.user.views import UserView
 
 
 @bp.before_request
-@login_required
+@jwt_required()
 def before_request():
     """ Protect all the admin endpoints. """
     pass
 
 
-@bp.post('/create')
-@get_user_params()
-def create_user():
-    roxywi_auth.page_for_admin(level=2)
-    email = common.checkAjaxInput(request.form.get('newemail'))
-    password = common.checkAjaxInput(request.form.get('newpassword'))
-    role = common.checkAjaxInput(request.form.get('newrole'))
-    new_user = common.checkAjaxInput(request.form.get('newusername'))
-    page = common.checkAjaxInput(request.form.get('page'))
-    activeuser = common.checkAjaxInput(request.form.get('activeuser'))
-    group = common.checkAjaxInput(request.form.get('newgroupuser'))
-    token = common.checkAjaxInput(request.form.get('token'))
-    lang = roxywi_common.get_user_lang_for_flask()
-
-    if not roxywi_common.check_user_group_for_flask(token=token):
-        return 'error: Wrong group'
-    if roxywi_auth.is_admin(level=2, role_id=role):
-        roxywi_common.logging(new_user, ' tried to privilege escalation: user creation', login=1)
-        return 'error: Wrong role'
-    try:
-        roxywi_user.create_user(new_user, email, password, role, activeuser, group)
-    except Exception as e:
-        return str(e)
-    else:
-        return render_template(
-            'ajax/new_user.html', users=user_sql.select_users(user=new_user), groups=group_sql.select_groups(), page=page,
-            roles=sql.select_roles(), adding=1, lang=lang
-        )
-
-
-@bp.post('/update')
-def update_user():
-    roxywi_auth.page_for_admin(level=2)
-    email = request.form.get('email')
-    new_user = request.form.get('updateuser')
-    user_id = request.form.get('id')
-    enabled = request.form.get('activeuser')
-    group_id = int(request.form.get('usergroup'))
-
-    if roxywi_common.check_user_group_for_flask():
-        if request.form.get('role'):
-            role_id = int(request.form.get('role'))
-            if roxywi_auth.is_admin(level=role_id):
-                roxywi_user.update_user(email, new_user, user_id, enabled, group_id, role_id)
-            else:
-                roxywi_common.logging(new_user, ' tried to privilege escalation', login=1)
-                return 'error: dalsd'
-        else:
-            try:
-                user_sql.update_user_from_admin_area(new_user, email, user_id, enabled)
-            except Exception as e:
-                return f'error: Cannot update user: {e}'
-            roxywi_common.logging(new_user, ' has been updated user ', login=1)
-
-        return 'ok'
-
-
-@bp.route('/delete/<int:user_id>')
-def delete_user(user_id):
-    roxywi_auth.page_for_admin(level=2)
-    try:
-        return roxywi_user.delete_user(user_id)
-    except Exception as e:
-        return f'error: {e}'
+bp.add_url_rule('', view_func=UserView.as_view('user'), methods=['POST'])
 
 
 @bp.route('/ldap/<username>')
@@ -105,15 +41,20 @@ def update_password():
 
 @bp.route('/group', methods=['GET', 'PUT'])
 def get_current_group():
+    claims = get_jwt()
+    uuid = claims['uuid']
     if request.method == 'GET':
-        uuid = common.checkAjaxInput(request.cookies.get('uuid'))
-        group = common.checkAjaxInput(request.cookies.get('group'))
-        return roxywi_user.get_user_active_group(uuid, group)
+        group = claims['group']
+        try:
+            data = roxywi_user.get_user_active_group(uuid, group)
+            return jsonify({'status': 'ok', 'data': data})
+        except Exception as e:
+            roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get current group')
     elif request.method == 'PUT':
-        group_id = common.checkAjaxInput(request.form.get('group'))
-        user_uuid = common.checkAjaxInput(request.form.get('uuid'))
+        user = claims['sub']
 
-        return roxywi_user.change_user_active_group(group_id, user_uuid)
+        group_id = int(request.json.get('group'))
+        return roxywi_user.change_user_active_group(user, group_id, uuid)
 
 
 @bp.route('/groups/<int:user_id>')

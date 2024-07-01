@@ -1,5 +1,5 @@
 from flask import render_template, g, request, jsonify
-from flask_login import login_required
+from flask_jwt_extended import jwt_required
 
 from app.routes.overview import bp
 from app.middleware import get_user_params
@@ -12,7 +12,7 @@ import app.modules.common.common as common
 
 
 @bp.before_request
-@login_required
+@jwt_required()
 def before_request():
     """ Protect all the admin endpoints. """
     pass
@@ -57,6 +57,7 @@ def overview_logs():
 
 
 @bp.route('/metrics/cpu', methods=['POST'])
+@get_user_params()
 def metrics_cpu():
     metrics_type = common.checkAjaxInput(request.form.get('ip'))
 

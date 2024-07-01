@@ -1,17 +1,18 @@
 from peewee import Case, JOIN
 
-from app.modules.db.db_model import User, UserGroups, Groups, UUID, ApiToken
+from app.modules.db.db_model import User, UserGroups, Groups, UUID
 from app.modules.db.sql import get_setting
 from app.modules.db.common import out_error
 import app.modules.roxy_wi_tools as roxy_wi_tools
+from app.modules.roxywi.exception import RoxywiResourceNotFound
 
 
-def add_user(user, email, password, role, activeuser, group):
+def add_user(user, email, password, role, enabled, group):
 	if password != 'aduser':
 		try:
 			hashed_pass = roxy_wi_tools.Tools.get_hash(password)
 			last_id = User.insert(
-				username=user, email=email, password=hashed_pass, role=role, activeuser=activeuser, groups=group
+				username=user, email=email, password=hashed_pass, role=role, enabled=enabled, groups=group
 			).execute()
 		except Exception as e:
 			out_error(e)
@@ -20,7 +21,7 @@ def add_user(user, email, password, role, activeuser, group):
 	else:
 		try:
 			last_id = User.insert(
-				username=user, email=email, role=role, ldap_user=1, activeuser=activeuser, groups=group
+				username=user, email=email, role=role, ldap_user=1, enabled=enabled, groups=group
 			).execute()
 		except Exception as e:
 			out_error(e)
@@ -28,16 +29,16 @@ def add_user(user, email, password, role, activeuser, group):
 			return last_id
 
 
-def update_user(user, email, role, user_id, active_user):
+def update_user(user, email, role, user_id, enabled):
 	try:
-		User.update(username=user, email=email, role=role, activeuser=active_user).where(User.user_id == user_id).execute()
+		User.update(username=user, email=email, role=role, enabled=enabled).where(User.user_id == user_id).execute()
 	except Exception as e:
 		out_error(e)
 
 
-def update_user_from_admin_area(user, email, user_id, active_user):
+def update_user_from_admin_area(user, email, user_id, enabled):
 	try:
-		User.update(username=user, email=email, activeuser=active_user).where(User.user_id == user_id).execute()
+		User.update(username=user, email=email, enabled=enabled).where(User.user_id == user_id).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -56,7 +57,7 @@ def delete_user_groups(user_id):
 def update_user_current_groups(groups, user_uuid):
 	user_id = get_user_id_by_uuid(user_uuid)
 	try:
-		User.update(groups=groups).where(User.user_id == user_id).execute()
+		User.update(group_id=groups).where(User.user_id == user_id).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -83,6 +84,8 @@ def delete_user(user_id):
 		user_for_delete = User.delete().where(User.user_id == user_id)
 		user_for_delete.execute()
 		delete_user_groups(user_id)
+	except User.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 		return False
@@ -93,6 +96,15 @@ def delete_user(user_id):
 def update_user_role(user_id: int, group_id: int, role_id: int) -> None:
 	try:
 		UserGroups.insert(user_id=user_id, user_group_id=group_id, user_role_id=role_id).on_conflict('replace').execute()
+	except Exception as e:
+		out_error(e)
+
+
+def delete_user_from_group(group_id: int, user_id):
+	try:
+		UserGroups.delete().where((UserGroups.user_id == user_id) & (UserGroups.user_group_id == group_id)).execute()
+	except UserGroups.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 
@@ -113,7 +125,7 @@ def select_users(**kwargs):
 			UserGroups.user_group_id == kwargs.get("group")
 		))
 	elif kwargs.get('by_group_id'):
-		query = User.select().where(User.groups == kwargs.get("by_group_id"))
+		query = User.select().where(User.group_id == kwargs.get("by_group_id"))
 	else:
 		get_date = roxy_wi_tools.GetDate(get_setting('time_zone'))
 		cur_date = get_date.return_date('regular', timedelta_minutes_minus=15)
@@ -129,7 +141,7 @@ def select_users(**kwargs):
 
 def is_user_active(user_id: int) -> int:
 	try:
-		query = User.get(User.user_id == user_id).activeuser
+		query = User.get(User.user_id == user_id).enabled
 	except Exception as e:
 		out_error(e)
 	else:
@@ -148,11 +160,9 @@ def check_user_group(user_id, group_id):
 			return False
 
 
-def select_user_groups_with_names(user_id, **kwargs):
+def select_user_groups_with_names(user_id, **kwargs) -> UserGroups:
 	if kwargs.get("all") is not None:
-		query = (UserGroups.select(
-			UserGroups.user_group_id, UserGroups.user_id, Groups.name, Groups.description
-		).join(Groups, on=(UserGroups.user_group_id == Groups.group_id)))
+		query = (UserGroups.select().join(Groups))
 	elif kwargs.get("user_not_in_group") is not None:
 		query = (Groups.select(
 			Groups.group_id, Groups.name
@@ -162,17 +172,14 @@ def select_user_groups_with_names(user_id, **kwargs):
 		), join_type=JOIN.LEFT_OUTER).group_by(Groups.name).where(UserGroups.user_id.is_null(True)))
 	else:
 		query = (UserGroups.select(
-			UserGroups.user_group_id, UserGroups.user_role_id, Groups.name, Groups.group_id
-		).join(Groups, on=(UserGroups.user_group_id == Groups.group_id)).where(UserGroups.user_id == user_id))
+		).join(Groups).where(UserGroups.user_id == user_id))
 	try:
-		query_res = query.execute()
+		return query.execute()
 	except Exception as e:
 		out_error(e)
-	else:
-		return query_res
 
 
-def select_user_roles_by_group(group_id: int):
+def select_user_roles_by_group(group_id: int) -> UserGroups:
 	try:
 		query_res = UserGroups.select().where(UserGroups.user_group_id == group_id).execute()
 	except Exception as e:
@@ -216,7 +223,7 @@ def get_user_name_by_uuid(uuid):
 
 def get_user_id_by_uuid(uuid):
 	try:
-		query = User.select(User.user_id).join(UUID, on=(User.user_id == UUID.user_id)).where(UUID.uuid == uuid)
+		query = User.select(User.user_id).join(UUID).where(UUID.uuid == uuid)
 		query_res = query.execute()
 	except Exception as e:
 		out_error(e)
@@ -225,13 +232,11 @@ def get_user_id_by_uuid(uuid):
 			return user.user_id
 
 
-def get_user_id_by_username(username: str):
+def get_user_by_username(username: str) -> User:
 	try:
-		query = User.get(User.username == username).user_id
+		return User.get(User.username == username)
 	except Exception as e:
 		out_error(e)
-	else:
-		return query
 
 
 def get_user_role_by_uuid(uuid, group_id):
@@ -251,21 +256,20 @@ def get_user_role_by_uuid(uuid, group_id):
 
 def get_user_current_group_by_uuid(uuid):
 	try:
-		query_res = User.select(User.groups).join(
-			UUID, on=(User.user_id == UUID.user_id)
-		).where(
+		query_res = User.select(User.group_id).join(UUID).where(
 			(UUID.uuid == uuid)
 		).execute()
 	except Exception as e:
 		out_error(e)
 	else:
 		for user_id in query_res:
-			return int(user_id.groups)
+			return int(user_id.group_id.group_id)
 
 
 def write_user_uuid(login, user_uuid):
 	session_ttl = get_setting('session_ttl')
-	user_id = get_user_id_by_username(login)
+	user = get_user_by_username(login)
+	user_id = user.user_id
 	get_date = roxy_wi_tools.GetDate()
 	cur_date = get_date.return_date('regular', timedelta=session_ttl)
 
@@ -308,7 +312,7 @@ def get_super_admin_count() -> int:
 
 
 def select_users_emails_by_group_id(group_id: int):
-	query = User.select(User.email).where((User.groups == group_id) & (User.role != 'guest'))
+	query = User.select(User.email).where((User.group_id == group_id) & (User.role != 'guest'))
 	try:
 		query_res = query.execute()
 	except Exception as e:
@@ -343,50 +347,6 @@ def is_user_super_admin(user_id: int) -> bool:
 			return False
 
 
-def get_api_token(token):
-	try:
-		user_token = ApiToken.get(ApiToken.token == token)
-	except Exception as e:
-		return str(e)
-	else:
-		return True if token == user_token.token else False
-
-
-def get_user_id_by_api_token(token):
-	query = (User.select(User.user_id).join(ApiToken, on=(
-		ApiToken.user_name == User.username
-	)).where(ApiToken.token == token))
-	try:
-		query_res = query.execute()
-	except Exception as e:
-		return str(e)
-	for i in query_res:
-		return i.user_id
-
-
-def write_api_token(user_token, group_id, user_role, user_name):
-	token_ttl = int(get_setting('token_ttl'))
-	get_date = roxy_wi_tools.GetDate()
-	cur_date = get_date.return_date('regular', timedelta=token_ttl)
-	cur_date_token_ttl = get_date.return_date('regular', timedelta=token_ttl)
-
-	try:
-		ApiToken.insert(
-			token=user_token, user_name=user_name, user_group_id=group_id, user_role=user_role,
-			create_date=cur_date, expire_date=cur_date_token_ttl).execute()
-	except Exception as e:
-		out_error(e)
-
-
-def get_username_group_id_from_api_token(token):
-	try:
-		user_name = ApiToken.get(ApiToken.token == token)
-	except Exception as e:
-		return str(e)
-	else:
-		return user_name.user_name, user_name.user_group_id, user_name.user_role
-
-
 def delete_old_uuid():
 	get_date = roxy_wi_tools.GetDate()
 	cur_date = get_date.return_date('regular')
@@ -405,8 +365,17 @@ def get_role_id(user_id: int, group_id: int) -> int:
 		return int(role_id.user_role_id)
 
 
-def get_user_id(user_id: int) -> int:
+def get_user_id(user_id: int) -> User:
 	try:
 		return User.get(User.user_id == user_id)
+	except User.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		out_error(e)
+
+
+def get_users_in_group(group_id: int) -> User:
+	try:
+		return User.select().join(UserGroups).where(UserGroups.user_group_id == group_id).execute()
 	except Exception as e:
 		out_error(e)

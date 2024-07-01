@@ -51,8 +51,6 @@
 					{% endfor %}
 				</select>
 			</td>
-			{% else %}
-			<input type="hidden" id="servergroup-{{server.0}}" name="servergroup-{{server.0}}" value="{{ group }}" />
 			{% endif %}
 			<td class="checkbox">
 				{% set id = 'enable-' + server.0|string() %}

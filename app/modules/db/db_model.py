@@ -1,10 +1,9 @@
 from playhouse.migrate import *
 from datetime import datetime
-from flask_login import UserMixin
 from playhouse.shortcuts import ReconnectMixin
 from playhouse.sqlite_ext import SqliteExtDatabase
 
-import modules.roxy_wi_tools as roxy_wi_tools
+import app.modules.roxy_wi_tools as roxy_wi_tools
 
 get_config = roxy_wi_tools.GetConfigVar()
 mysql_enable = get_config.get_config_var('mysql', 'enable')
@@ -42,15 +41,24 @@ class BaseModel(Model):
         database = connect()
 
 
-class User(BaseModel, UserMixin):
+class Groups(BaseModel):
+    group_id = AutoField(column_name='id')
+    name = CharField(constraints=[SQL('UNIQUE')])
+    description = CharField(null=True)
+
+    class Meta:
+        table_name = 'groups'
+
+
+class User(BaseModel):
     user_id = AutoField(column_name='id')
     username = CharField(constraints=[SQL('UNIQUE')])
     email = CharField(constraints=[SQL('UNIQUE')])
     password = CharField(null=True)
     role = CharField()
-    groups = CharField()
+    group_id = ForeignKeyField(Groups, on_delete='Cascade')
     ldap_user = IntegerField(constraints=[SQL('DEFAULT "0"')])
-    activeuser = IntegerField(constraints=[SQL('DEFAULT "1"')])
+    enabled = IntegerField(constraints=[SQL('DEFAULT "1"')])
     user_services = CharField(constraints=[SQL('DEFAULT "1 2 3 4 5"')])
     last_login_date = DateTimeField(constraints=[SQL('DEFAULT "0000-00-00 00:00:00"')])
     last_login_ip = CharField(null=True)
@@ -125,25 +133,12 @@ class PD(BaseModel):
 
 
 class UUID(BaseModel):
-    user_id = IntegerField()
+    user_id = ForeignKeyField(User, on_delete='Cascade')
     uuid = CharField()
     exp = DateTimeField(default=datetime.now)
 
     class Meta:
         table_name = 'uuid'
-        primary_key = False
-
-
-class ApiToken(BaseModel):
-    token = CharField()
-    user_name = CharField()
-    user_group_id = IntegerField()
-    user_role = IntegerField()
-    create_date = DateTimeField(default=datetime.now)
-    expire_date = DateTimeField(default=datetime.now)
-
-    class Meta:
-        table_name = 'api_tokens'
         primary_key = False
 
 
@@ -160,18 +155,9 @@ class Setting(BaseModel):
         constraints = [SQL('UNIQUE (param, `group`)')]
 
 
-class Groups(BaseModel):
-    group_id = AutoField(column_name='id')
-    name = CharField(constraints=[SQL('UNIQUE')])
-    description = CharField(null=True)
-
-    class Meta:
-        table_name = 'groups'
-
-
 class UserGroups(BaseModel):
-    user_id = IntegerField()
-    user_group_id = IntegerField()
+    user_id = ForeignKeyField(User, on_delete='Cascade')
+    user_group_id = ForeignKeyField(Groups, on_delete='Cascade')
     user_role_id = IntegerField()
 
     class Meta:
@@ -183,15 +169,15 @@ class UserGroups(BaseModel):
 class Cred(BaseModel):
     id = AutoField()
     name = CharField()
-    enable = IntegerField(constraints=[SQL('DEFAULT 1')])
+    key_enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
     username = CharField()
     password = CharField(null=True)
-    groups = IntegerField(constraints=[SQL('DEFAULT 1')])
+    group_id = IntegerField(constraints=[SQL('DEFAULT 1')])
     passphrase = CharField(null=True)
 
     class Meta:
         table_name = 'cred'
-        constraints = [SQL('UNIQUE (name, `groups`)')]
+        constraints = [SQL('UNIQUE (name, `group_id`)')]
 
 
 class Version(BaseModel):
@@ -422,7 +408,7 @@ def create_tables():
     conn = connect()
     with conn:
         conn.create_tables(
-            [User, Server, Role, Telegram, Slack, UUID, ApiToken, Groups, UserGroups, Setting, Cred, Version, ActionHistory,
+            [User, Server, Role, Telegram, Slack, UUID, Groups, UserGroups, Setting, Cred, Version, ActionHistory,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
              SmonStatusPage, SmonStatusPageCheck, SMON, Alerts, SmonGroup, MM]
         )

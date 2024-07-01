@@ -6,7 +6,7 @@
 		</td>
 		<td style="width: 100%;">
 			{% if group.description is not none %}
-			<input type="text" id="descript-{{ group.group_id }}" value="{{ group.description }}" class="form-control" size="60">
+			<input type="text" id="descript-{{ group.group_id }}" value="{{ group.description.replace("'", "") }}" class="form-control" size="60">
 			{% else %}
 			<input type="text" id="descript-{{ group.group_id }}" class="form-control" size="60">
 			{% endif %}

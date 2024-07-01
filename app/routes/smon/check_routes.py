@@ -1,7 +1,5 @@
-import json
-
 from flask import render_template, request, jsonify, g
-from flask_login import login_required
+from flask_jwt_extended import jwt_required
 
 from app.routes.smon import bp
 from app.middleware import get_user_params
@@ -12,45 +10,8 @@ import app.modules.tools.smon_agent as agent_mod
 import app.modules.roxywi.common as roxywi_common
 
 
-@bp.route('/check', methods=['POST', 'PUT', 'DELETE'])
-@login_required
-def smon_add():
-    json_data = request.get_json()
-    user_group = roxywi_common.get_user_group(id=1)
-    if request.method == "POST":
-        try:
-            smon_mod.check_checks_limit()
-        except Exception as e:
-            return f'{e}'
-        try:
-            last_id = smon_mod.create_smon(json_data, user_group)
-        except Exception as e:
-            return str(e), 200
-        return str(last_id)
-    elif request.method == "PUT":
-        check_id = json_data['check_id']
-
-        if roxywi_common.check_user_group_for_flask():
-            try:
-                status = smon_mod.update_smon(check_id, json_data, user_group)
-            except Exception as e:
-                return f'{e}', 200
-            else:
-                return status, 201
-    elif request.method == "DELETE":
-        check_id = json_data['check_id']
-
-        if roxywi_common.check_user_group_for_flask():
-            try:
-                status = smon_mod.delete_smon(check_id, user_group)
-            except Exception as e:
-                return f'{e}', 200
-            else:
-                return status
-
-
 @bp.route('/check/settings/<int:smon_id>/<int:check_type_id>')
-@login_required
+@jwt_required()
 @get_user_params()
 def check(smon_id, check_type_id):
     smon = smon_sql.select_one_smon(smon_id, check_type_id)
@@ -86,9 +47,9 @@ def check(smon_id, check_type_id):
             settings.setdefault('url', s.url)
             settings.setdefault('method', s.method)
             settings.setdefault('body', s.body)
-            settings.setdefault('status_code', s.accepted_status_codes)
+            settings.setdefault('accepted_status_codes', s.accepted_status_codes)
             if s.body_req:
-                settings.setdefault('body_req', json.loads(s.body_req))
+                settings.setdefault('body_req', str(s.body_req))
             else:
                 settings.setdefault('body_req', '')
             if s.headers:
@@ -105,7 +66,7 @@ def check(smon_id, check_type_id):
 
 
 @bp.route('/check/<int:smon_id>/<int:check_type_id>')
-@login_required
+@jwt_required()
 @get_user_params()
 def get_check(smon_id, check_type_id):
     """
@@ -125,7 +86,7 @@ def get_check(smon_id, check_type_id):
 
 
 @bp.get('/checks/count')
-@login_required
+@jwt_required()
 def get_checks_count():
     try:
         smon_mod.check_checks_limit()
@@ -136,19 +97,17 @@ def get_checks_count():
 
 
 @bp.post('/checks/move')
-@login_required
+@jwt_required()
 def move_checks():
     old_agent = int(request.json.get('old_agent'))
     new_agent = int(request.json.get('new_agent'))
     old_agent_ip = smon_sql.get_agent_ip_by_id(old_agent)
-    # new_agent_ip = smon_sql.get_agent_ip_by_id(new_agent)
     checks = {}
 
     try:
         for check_type in ('http', 'tcp', 'dns', 'ping'):
             got_checks = smon_sql.select_checks_for_agent(old_agent, check_type)
             for c in got_checks:
-                print(c.smon_id)
                 checks[c.smon_id] = check_type
                 agent_mod.delete_check(old_agent, old_agent_ip, c.smon_id)
                 smon_sql.update_check_agent(c.smon_id, new_agent, check_type)

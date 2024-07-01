@@ -1,8 +1,11 @@
+from typing import Union, Type
+
 import distro
 
 import app.modules.db.roxy as roxy_sql
 import app.modules.roxywi.roxy as roxywi_mod
 import app.modules.server.server as server_mod
+from app.modules.db.db_model import SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck
 
 
 def get_services_status(update_cur_ver=0):
@@ -90,3 +93,24 @@ def update_cur_tool_version(tool_name: str) -> None:
 
 def get_cur_tool_version(tool_name: str) -> str:
     return roxy_sql.get_tool_cur_version(tool_name)
+
+
+def get_model_for_check(check_type: str = None, check_type_id: int = None) -> Type[Union[SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck]]:
+    if check_type:
+        check_models = {
+            'tcp': SmonTcpCheck,
+            'http': SmonHttpCheck,
+            'dns': SmonDnsCheck,
+            'ping': SmonPingCheck,
+        }
+    elif check_type_id:
+        check_type = str(check_type_id)
+        check_models = {
+            '1': SmonTcpCheck,
+            '2': SmonHttpCheck,
+            '5': SmonDnsCheck,
+            '4': SmonPingCheck,
+        }
+    else:
+        raise Exception('Wrong check_type')
+    return check_models[check_type]

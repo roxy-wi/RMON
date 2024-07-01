@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
+import os
+import sys
 import distro
 
-from modules.db.db_model import *
+sys.path.append(os.path.join(sys.path[0], '/var/www/rmon/'))
+from app.modules.db.db_model import *
 
 migrator = connect(get_migrator=1)
 
@@ -31,7 +34,7 @@ def default_values():
 		{'param': 'ldap_domain', 'value': '', 'section': 'ldap', 'desc': 'LDAP domain for logging in', 'group': '1'},
 		{'param': 'ldap_class_search', 'value': 'user', 'section': 'ldap', 'desc': 'Class for searching the user', 'group': '1'},
 		{'param': 'ldap_user_attribute', 'value': 'userPrincipalName', 'section': 'ldap', 'desc': 'Attribute to search users by', 'group': '1'},
-		{'param': 'ldap_search_field', 'value': 'mail', 'section': 'ldap', 'desc': 'User\'s email address', 'group': '1'},
+		{'param': 'ldap_search_field', 'value': 'mail', 'section': 'ldap', 'desc': 'UserPost\'s email address', 'group': '1'},
 		{'param': 'ldap_type', 'value': '0', 'section': 'ldap', 'desc': 'Use LDAPS', 'group': '1'},
 		{'param': 'keep_history_range', 'value': '14', 'section': 'smon', 'desc': 'Retention period for RMON history', 'group': '1'},
 		{'param': 'action_keep_history_range', 'value': '30', 'section': 'monitoring', 'desc': 'Retention period for Action history', 'group': '1'},
@@ -50,7 +53,7 @@ def default_values():
 		{'param': 'mail_from', 'value': '', 'section': 'mail', 'desc': 'Address of sender', 'group': '1'},
 		{'param': 'mail_smtp_host', 'value': '', 'section': 'mail', 'desc': 'SMTP server address', 'group': '1'},
 		{'param': 'mail_smtp_port', 'value': '25', 'section': 'mail', 'desc': 'SMTP server port', 'group': '1'},
-		{'param': 'mail_smtp_user', 'value': '', 'section': 'mail', 'desc': 'User for auth', 'group': '1'},
+		{'param': 'mail_smtp_user', 'value': '', 'section': 'mail', 'desc': 'UserPost for auth', 'group': '1'},
 		{'param': 'mail_smtp_password', 'value': '', 'section': 'mail', 'desc': 'Password for auth', 'group': '1'},
 		{'param': 'log_time_storage', 'value': '14', 'section': 'logs', 'desc': 'Retention period for user activity logs (in days)', 'group': '1'},
 		{'param': 'apache_log_path', 'value': f'/var/log/{apache_dir}/', 'section': 'logs', 'desc': 'Path to Apache logs. Apache service for RMON', 'group': '1'},
@@ -61,9 +64,9 @@ def default_values():
 		print(str(e))
 
 	data_source = [
-		{'username': 'admin', 'email': 'admin@localhost', 'password': '21232f297a57a5a743894a0e4a801fc3', 'role': '1', 'groups': '1'},
-		{'username': 'editor', 'email': 'editor@localhost', 'password': '5aee9dbd2a188839105073571bee1b1f', 'role': '2', 'groups': '1'},
-		{'username': 'guest', 'email': 'guest@localhost', 'password': '084e0343a0486ff05530df6c705c8bb4', 'role': '4', 'groups': '1'}
+		{'username': 'admin', 'email': 'admin@localhost', 'password': '21232f297a57a5a743894a0e4a801fc3', 'role': '1', 'group_id': '1'},
+		{'username': 'editor', 'email': 'editor@localhost', 'password': '5aee9dbd2a188839105073571bee1b1f', 'role': '2', 'group_id': '1'},
+		{'username': 'guest', 'email': 'guest@localhost', 'password': '084e0343a0486ff05530df6c705c8bb4', 'role': '4', 'group_id': '1'}
 	]
 
 	try:
@@ -75,8 +78,8 @@ def default_values():
 		create_users = True
 
 	try:
-		if create_users:
-			User.insert_many(data_source).on_conflict_ignore().execute()
+		# if create_users:
+		User.insert_many(data_source).on_conflict_ignore().execute()
 	except Exception as e:
 		print(str(e))
 
@@ -128,13 +131,6 @@ def update_db_v_3_4_5_22():
 		Version.insert(version='1.0').execute()
 	except Exception as e:
 		print('Cannot insert version %s' % e)
-
-
-def update_ver():
-	try:
-		Version.update(version='1.0.5').execute()
-	except Exception:
-		print('Cannot update version')
 
 
 def update_db_v_1_0_3():
@@ -209,6 +205,28 @@ def update_db_v_1_0_7_1():
 		print("Updating... DB has been updated to version 1.0.7-1")
 
 
+def update_db_v_1_1():
+	try:
+		migrate(
+			migrator.rename_column('user', 'activeuser', 'enabled'),
+			migrator.rename_column('user', 'groups', 'group_id'),
+			migrator.rename_column('cred', 'enable', 'key_enabled'),
+			migrator.rename_column('cred', 'groups', 'group_id'),
+		)
+	except Exception as e:
+		if e.args[0] == 'no such column: "activeuser"' or str(e) == '(1060, no such column: "activeuser")':
+			print("Updating... DB has been updated to version 1.1")
+		else:
+			print("An error occurred:", e)
+
+
+def update_ver():
+	try:
+		Version.update(version='1.1').execute()
+	except Exception:
+		print('Cannot update version')
+
+
 def check_ver():
 	try:
 		ver = Version.get()
@@ -226,6 +244,7 @@ def update_all():
 	update_db_v_1_0_4()
 	update_db_v_1_0_7()
 	update_db_v_1_0_7_1()
+	update_db_v_1_1()
 
 
 if __name__ == "__main__":

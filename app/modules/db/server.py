@@ -1,5 +1,6 @@
 from app.modules.db.db_model import mysql_enable, connect, Server, SystemInfo
 from app.modules.db.common import out_error
+from app.modules.roxywi.exception import RoxywiResourceNotFound
 
 
 def add_server(hostname, ip, group, enable, cred, port, desc):
@@ -124,6 +125,8 @@ def is_serv_protected(serv):
 def select_server_ip_by_id(server_id: int) -> str:
 	try:
 		server_ip = Server.get(Server.server_id == server_id).ip
+	except Server.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		return out_error(e)
 	else:
@@ -144,7 +147,7 @@ def select_servers(**kwargs):
 	cursor = conn.cursor()
 
 	if mysql_enable == '1':
-		sql = """select * from `servers` where `enable` = 1 ORDER BY servers.groups """
+		sql = """select * from `servers` where `enable` = 1 ORDER BY servers.group_id """
 
 		if kwargs.get("server") is not None:
 			sql = """select * from `servers` where `ip` = '{}' """.format(kwargs.get("server"))
@@ -153,7 +156,7 @@ def select_servers(**kwargs):
 		if kwargs.get("id"):
 			sql = """select * from `servers` where `id` = '{}' """.format(kwargs.get("id"))
 	else:
-		sql = """select * from servers where enable = '1' ORDER BY servers.groups """
+		sql = """select * from servers where enable = '1' ORDER BY servers.group_id """
 
 		if kwargs.get("server") is not None:
 			sql = """select * from servers where ip = '{}' """.format(kwargs.get("server"))

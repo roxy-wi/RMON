@@ -1,6 +1,8 @@
 from app.modules.db.db_model import Groups, Setting, UserGroups
 from app.modules.db.common import out_error
 
+from app.modules.roxywi.exception import RoxywiResourceNotFound
+
 
 def select_groups(**kwargs):
 	if kwargs.get("group") is not None:
@@ -12,22 +14,23 @@ def select_groups(**kwargs):
 
 	try:
 		query_res = query.execute()
+	except Groups.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 	else:
 		return query_res
 
 
-def add_group(name, description):
+def add_group(name: str, description: str) -> int:
 	try:
 		last_insert = Groups.insert(name=name, description=description)
 		last_insert_id = last_insert.execute()
 	except Exception as e:
 		out_error(e)
-		return False
 	else:
 		add_setting_for_new_group(last_insert_id)
-		return True
+		return last_insert_id
 
 
 def add_setting_for_new_group(group_id):
@@ -50,7 +53,7 @@ def add_setting_for_new_group(group_id):
 		{'param': 'ldap_domain', 'value': '', 'section': 'ldap', 'desc': 'LDAP domain for logging in', 'group': group_id},
 		{'param': 'ldap_class_search', 'value': 'user', 'section': 'ldap', 'desc': 'Class for searching the user', 'group': group_id},
 		{'param': 'ldap_user_attribute', 'value': 'sAMAccountName', 'section': 'ldap', 'desc': 'Attribute to search users by', 'group': group_id},
-		{'param': 'ldap_search_field', 'value': 'mail', 'section': 'ldap', 'desc': 'User\'s email address', 'group': group_id},
+		{'param': 'ldap_search_field', 'value': 'mail', 'section': 'ldap', 'desc': 'UserPost\'s email address', 'group': group_id},
 		{'param': 'ldap_type', 'value': '0', 'section': 'ldap', 'desc': 'Use LDAPS', 'group': group_id},
 	]
 
@@ -96,16 +99,9 @@ def update_group(name, descript, group_id):
 def get_group_name_by_id(group_id):
 	try:
 		group_name = Groups.get(Groups.group_id == group_id)
+	except Groups.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 	else:
 		return group_name.name
-
-
-def get_group_id_by_name(group_name):
-	try:
-		group_id = Groups.get(Groups.name == group_name)
-	except Exception as e:
-		out_error(e)
-	else:
-		return group_id.group_id

@@ -1,6 +1,6 @@
 import pytz
 from flask import render_template, request, g
-from flask_login import login_required
+from flask_jwt_extended import jwt_required
 
 from app import scheduler
 from app.routes.admin import bp
@@ -18,7 +18,7 @@ import app.modules.tools.common as tools_common
 
 
 @bp.before_request
-@login_required
+@jwt_required()
 def before_request():
     """ Protect all the admin endpoints. """
     pass
@@ -46,7 +46,7 @@ def admin():
     kwargs = {
         'lang': g.user_params['lang'],
         'users': users,
-        'groups': group_sql.select_groups(),
+        'group_id': group_sql.select_groups(),
         'group': roxywi_common.get_user_group(id=1),
         'sshs': sshs,
         'servers': servers,

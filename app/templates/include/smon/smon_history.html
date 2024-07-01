@@ -15,11 +15,11 @@
 <div class="row wrap1">
 {% for s in smon %}
     <div id="smon_name" class="col-md-8">
-    {% if check_id == 2 %}
+    {% if check_type_id == 2 %}
         <a href="{{s.url}}" title="{{lang.words.open|title()}}" target="_blank">{{s.url}}</a>
-    {% elif check_id == 1 %}
+    {% elif check_type_id == 1 %}
        {{s.ip}}:{{s.port}}
-    {% elif check_id == 5 %}
+    {% elif check_type_id == 5 %}
         {{s.ip}} {{lang.phrases.resource_record_type}}: {{s.record_type|upper()}}
     {% else %}
         {{s.ip}}
@@ -47,16 +47,16 @@
     <div class="col">
         <h4>{{lang.words.checking|title()}}</h4>
         <p class="smon_stats">({{lang.words.type|title()}})</p>
-        <span class="smon_value" title="{{last_resp_time}}">{{checking_types[check_id|string()]}}</span>
+        <span class="smon_value" title="{{last_resp_time}}">{{checking_types[check_type_id|string()]}}</span>
     </div>
-    {% if check_id == 2 %}
+    {% if check_type_id == 2 %}
     <div class="col">
         <h4>{{lang.words.method|title()}}</h4>
         <p class="smon_stats">HTTP</p>
         <span class="smon_value" title="HTTP {{lang.words.method}}">{{s.method.upper()}}</span>
     </div>
     {% endif %}
-    {% if check_id == 5 %}
+    {% if check_type_id == 5 %}
     <div class="col">
         <h4>Resolver</h4>
         <p class="smon_stats">DNS {{ lang.words.server }}</p>
@@ -99,10 +99,10 @@
 		let metrics = new Promise(
 			(resolve, reject) => {
 				removeData();
-				getSmonHistoryCheckData('{{dashboard_id}}', '{{ check_id }}');
+				getSmonHistoryCheckData('{{dashboard_id}}', '{{ check_type_id }}');
 			});
 		metrics.then();
-        show_statuses('{{dashboard_id}}', '{{check_id}}', '#smon_history_statuses');
+        show_statuses('{{dashboard_id}}', '{{check_type_id}}', '#smon_history_statuses');
 	}
 	showSmonHistory();
 </script>

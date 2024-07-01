@@ -396,14 +396,15 @@ def show_firewalld_rules(server_ip) -> str:
 	return render_template('ajax/firewall_rules.html', input_chain=input_chain2, IN_public_allow=in_public_allow, output_chain=output_chain, lang=lang)
 
 
-def create_server(hostname, ip, group, enable, cred, port, desc, **kwargs) -> bool:
+def create_server(hostname, ip, group, enable, cred, port, desc, **kwargs) -> int:
 	if not roxywi_auth.is_admin(level=2, role_id=kwargs.get('role_id')):
-		raise Exception('error: not enough permission')
+		raise Exception('not enough permission')
 
-	if server_sql.add_server(hostname, ip, group, enable, cred, port, desc):
-		return True
-	else:
-		return False
+	try:
+		last_id = server_sql.add_server(hostname, ip, group, enable, cred, port, desc)
+		return last_id
+	except Exception as e:
+		raise Exception(e)
 
 
 def update_server_after_creating(hostname: str, ip: str) -> str:
@@ -435,12 +436,6 @@ def server_is_up(server_ip: str) -> str:
 	cmd = f'if ping -c 1 -W 1 {server_ip} >> /dev/null; then echo up; else echo down; fi'
 	server_status, stderr = subprocess_execute(cmd)
 	return server_status[0]
-
-
-# def show_server_services(server_id: int) -> str:
-# 	server = server_sql.select_servers(id=server_id)
-# 	lang = roxywi_common.get_user_lang_for_flask()
-# 	return render_template('ajax/show_server_services.html', server=server, lang=lang)
 
 
 def start_ssh_agent() -> dict:

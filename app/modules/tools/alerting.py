@@ -352,7 +352,7 @@ def check_email_alert() -> str:
 	return 'ok'
 
 
-def add_telegram_channel(token: str, channel: str, group: str, page: str) -> str:
+def add_telegram_channel(token: str, channel: str, group: str) -> str:
 	if token is None or channel is None or group is None:
 		return error_mess
 	else:
@@ -365,7 +365,7 @@ def add_telegram_channel(token: str, channel: str, group: str, page: str) -> str
 			return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channels=channels, page=page, receiver='telegram')
 
 
-def add_slack_channel(token: str, channel: str, group: str, page: str) -> str:
+def add_slack_channel(token: str, channel: str, group: str) -> str:
 	if token is None or channel is None or group is None:
 		return error_mess
 	else:
@@ -377,7 +377,7 @@ def add_slack_channel(token: str, channel: str, group: str, page: str) -> str:
 			return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channels=channels, page=page, receiver='slack')
 
 
-def add_pd_channel(token: str, channel: str, group: str, page: str) -> str:
+def add_pd_channel(token: str, channel: str, group: str) -> str:
 	if token is None or channel is None or group is None:
 		return error_mess
 	else:
@@ -389,7 +389,7 @@ def add_pd_channel(token: str, channel: str, group: str, page: str) -> str:
 			return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channels=channels, page=page, receiver='pd')
 
 
-def add_mm_channel(token: str, channel: str, group: str, page: str) -> str:
+def add_mm_channel(token: str, channel: str, group: str) -> str:
 	if token is None or channel is None or group is None:
 		return error_mess
 	else:
@@ -475,7 +475,7 @@ def delete_receiver_channel(channel_id: int, receiver_name: str) -> None:
 	return delete_functions[receiver_name](channel_id)
 
 
-def add_receiver_channel(receiver_name: str, token: str, channel: str, group: id, page: str) -> str:
+def add_receiver_channel(receiver_name: str, token: str, channel: str, group: id) -> str:
 	add_functions = {
 		"telegram": add_telegram_channel,
 		"slack": add_slack_channel,

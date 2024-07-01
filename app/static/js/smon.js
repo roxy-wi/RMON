@@ -1,6 +1,3 @@
-var add_word = $('#translate').attr('data-add');
-var delete_word = $('#translate').attr('data-delete');
-var cancel_word = $('#translate').attr('data-cancel');
 var check_types = {'tcp': 1, 'http': 2, 'ping': 4, 'dns': 5};
 $(function () {
 	$( "#check_type" ).on('selectmenuchange',function() {
@@ -89,44 +86,41 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'mm': $('#new-smon-mm').val(),
 		'packet_size': $('#new-smon-packet_size').val(),
 		'http_method': $('#new-smon-method').val(),
-		'check_type': check_type,
 		'interval': $('#new-smon-interval').val(),
 		'agent_id': $('#new-smon-agent-id').val(),
 		'body_req': $('#new-smon-body-req').val(),
 		'header_req': $('#new-smon-header-req').val(),
-		'status-code': $('#new-smon-status-code').val(),
+		'accepted_status_codes': $('#new-smon-status-code').val(),
 		'timeout': $('#new-smon-timeout').val()
 	}
 	let method = "post";
+	let api_url = api_v_prefix + '/rmon/check/' + check_type;
 	if (edit) {
 		method = "put";
-		jsonData['check_id'] = smon_id;
+		api_url = api_v_prefix + '/rmon/check/' + check_type + "/" + smon_id;
 	}
 	if (valid) {
 		$.ajax( {
-			url: '/rmon/check',
+			url: api_url,
             data: JSON.stringify(jsonData),
             contentType: "application/json; charset=utf-8",
 			type: method,
 			success: function( data ) {
-				data = data.replace(/\s+/g,' ');
-				if (data.indexOf('error:') != '-1' || data.indexOf('unique') != '-1') {
+				if (data.status === 'failed') {
 					toastr.error(data);
-				} else if (data.indexOf('warning:') != '-1') {
-					toastr.warning(data);
 				} else {
 					let check_id = check_types[check_type];
 					if (edit) {
 						getSmonCheck(smon_id, check_id, dialog_id);
 					} else {
-						getSmonCheck(data, check_id, dialog_id, true);
+						getSmonCheck(data.id, check_id, dialog_id, true);
 					}
 				}
 			}
 		} );
 	}
 }
-function confirmDeleteSmon(id) {
+function confirmDeleteSmon(id, check_type) {
 	$( "#dialog-confirm" ).dialog({
 		resizable: false,
 		height: "auto",
@@ -137,7 +131,7 @@ function confirmDeleteSmon(id) {
 			text: delete_word,
 			click: function () {
 				$(this).dialog("close");
-				removeSmon(id);
+				removeSmon(id, check_type);
 			}
 		}, {
 			text: cancel_word,
@@ -147,23 +141,22 @@ function confirmDeleteSmon(id) {
 		}]
 	});
 }
-function removeSmon(smon_id) {
-	$("#smon-"+smon_id).css("background-color", "#f2dede");
-	let jsonData = {'check_id': smon_id}
-	$.ajax( {
-		url: "/rmon/check",
+function removeSmon(smon_id, check_type) {
+	$("#smon-" + smon_id).css("background-color", "#f2dede");
+	$.ajax({
+		url: api_v_prefix + "/rmon/check/" + check_type + "/" + smon_id,
 		type: "DELETE",
-		data: JSON.stringify(jsonData),
 		contentType: "application/json; charset=utf-8",
-		success: function( data ) {
-			data = data.replace(/\s+/g,' ');
-			if(data === "Ok") {
-				$("#smon-"+smon_id).remove();
+		success: function (data, statusText, xhr) {
+			if (xhr.status === 204) {
+				$("#smon-" + smon_id).remove();
 			} else {
-				toastr.error(data);
+				if (data.status === 'failed') {
+					toastr.error(data);
+				}
 			}
 		}
-	} );
+	});
 }
 function openSmonDialog(check_type, smon_id=0, edit=false) {
 	check_and_clear_check_type(check_type);
@@ -251,7 +244,7 @@ function getCheckSettings(smon_id, check_type) {
 			} catch (e) {
 				$('#new-smon-header-req').val(data['header_req']);
 			}
-			$('#new-smon-status-code').val(data['status_code']);
+			$('#new-smon-status-code').val(data['accepted_status_codes']);
 			$('#new-smon-agent-id').val(data['agent_id']).change();
 			$('#new-smon-telegram').val(data['tg']).change();
 			$('#new-smon-slack').val(data['slack']).change();
@@ -1014,12 +1007,13 @@ function stream_chart(chart_id, check_id, check_type_id) {
         chart_id.data.labels.push(data.time);
         chart_id.data.datasets[0].data.push(data.value);
         if (check_type_id === '2') {
+			console.log(data)
             chart_id.data.datasets[1].data.push(data.name_lookup);
             chart_id.data.datasets[2].data.push(data.connect);
             chart_id.data.datasets[3].data.push(data.app_connect);
             chart_id.data.datasets[4].data.push(data.pre_transfer);
             chart_id.data.datasets[5].data.push(data.redirect);
-            chart_id.data.datasets[6].data.push(data.download);
+            chart_id.data.datasets[6].data.push(data.m_download);
         }
 		if (data.status === "0") {
 			chart_id.data.datasets[0].fillColor = 'rgb(239,5,59)';
