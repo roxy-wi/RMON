@@ -52,7 +52,7 @@
 			<td class="third-collumn-wi">
 			    {% for group in users_groups %}
 				    {% if group.user_id|string() == USER.user_id|string() %}
-					    <span title="{{ group.groups.name }}: {{ group.groups.description }}"> {{ group.groups.name }}</span>
+					    <span title="{{ group.user_group_id.name }}: {{ group.user_group_id.description }}"> {{ group.user_group_id.name }}</span>
 					{% endif %}
 				{% endfor %}
 			</td>

@@ -188,13 +188,13 @@ def get_users_params(**kwargs):
 	except Exception as e:
 		raise Exception(f'Cannot get user group: {e}')
 
-	try:
-		group_id_from_cookies = int(user_data['group'])
-	except Exception as e:
-		raise Exception(f'error: Cannot get group id from cookies: {e}')
-
-	if group_id_from_cookies != group_id:
-		raise Exception('error: Wrong current group')
+	# try:
+	# 	group_id_from_cookies = int(user_data['group'])
+	# except Exception as e:
+	# 	raise Exception(f'error: Cannot get group id from cookies: {e}')
+	#
+	# if group_id_from_cookies != group_id:
+	# 	raise Exception('error: Wrong current group')
 
 	try:
 		role = user_sql.get_user_role_by_uuid(user_uuid, group_id)

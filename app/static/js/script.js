@@ -411,57 +411,7 @@ $( function() {
 	var change_word = $('#translate').attr('data-change');
 	var password_word = $('#translate').attr('data-password');
 	var change_pass_word = change_word + ' ' + password_word
-	var showUserSettings = $("#show-user-settings").dialog({
-		autoOpen: false,
-		width: 600,
-		modal: true,
-		title: user_settings_tabel_title,
-		buttons: [{
-			text: save_word,
-			click: function () {
-				saveUserSettings();
-				$(this).dialog("close");
-			}
-		}, {
-			text: change_pass_word,
-			click: function () {
-				changePassword();
-				$(this).dialog("close");
-			}
-		}, {
-			text: cancel_word,
-			click: function () {
-				$(this).dialog("close");
-			}
-		}]
-	});
 
-	$('#show-user-settings-button').click(function () {
-		if (localStorage.getItem('disabled_alert') == '1') {
-			$('#disable_alerting').prop('checked', false).checkboxradio('refresh');
-		} else {
-			$('#disable_alerting').prop('checked', true).checkboxradio('refresh');
-		}
-		let theme = 'light';
-		if(localStorage.getItem('theme') != null) {
-			theme = localStorage.getItem('theme');
-		}
-		$('#theme_select').val(theme).change();
-		$('#theme_select').selectmenu('refresh');
-		$.ajax({
-			url: "/user/group",
-			contentType: "application/json; charset=utf-8",
-			success: function (data) {
-				if (data.status === 'failed') {
-					toastr.error(data.error)
-				} else {
-					$('#show-user-settings-group').html(data.data);
-					$("select").selectmenu();
-				}
-			}
-		});
-		showUserSettings.dialog('open');
-	});
 	var cur_url = window.location.href.split('/').pop();
 	cur_url = cur_url.split('/');
 	cur_url = cur_url[0].split('#');
@@ -562,13 +512,13 @@ $( function() {
 		document.body.removeChild(el);
 	})
 });
-function saveUserSettings(){
+function saveUserSettings(user_id){
 	if ($('#disable_alerting').is(':checked')) {
 		localStorage.removeItem('disabled_alert');
 	} else {
 		localStorage.setItem('disabled_alert', '1');
 	}
-	changeCurrentGroupF();
+	changeCurrentGroupF(user_id);
 	changeTheme($('#theme_select').val());
 	Cookies.set('lang', $('#lang_select').val(), { expires: 365, path: '/', samesite: 'strict', secure: 'true' });
 }
@@ -656,19 +606,16 @@ function listHistory() {
 createHistory();
 listHistory();
 
-function changeCurrentGroupF() {
+function changeCurrentGroupF(user_id) {
 	$.ajax({
-		url: "/user/group",
-		data: JSON.stringify({"group": $('#newCurrentGroup').val()}),
+		url: api_v_prefix + "/user/" + user_id + "/groups/" + $('#newCurrentGroup').val(),
 		contentType: "application/json; charset=utf-8",
-		type: "PUT",
+		type: "PATCH",
 		success: function (data) {
 			if (data.error === 'failed') {
 				toastr.error(data.error);
 			} else {
 				toastr.clear();
-				Cookies.remove('group');
-				Cookies.set('group', $('#newCurrentGroup').val(), {expires: 365, path: '/', samesite: 'strict', secure: 'true'});
 				location.reload();
 			}
 		}
@@ -871,4 +818,68 @@ function common_ajax_action_after_success(dialog_id, new_group, ajax_append_id, 
 	setTimeout(function() {
 		$( "."+new_group ).removeClass( "update" );
 	}, 2500 );
+}
+function openUserSettings(user_id) {
+	if (localStorage.getItem('disabled_alert') == '1') {
+		$('#disable_alerting').prop('checked', false).checkboxradio('refresh');
+	} else {
+		$('#disable_alerting').prop('checked', true).checkboxradio('refresh');
+	}
+	let theme = 'light';
+	if (localStorage.getItem('theme') != null) {
+		theme = localStorage.getItem('theme');
+	}
+	$('#theme_select').val(theme).change();
+	$('#theme_select').selectmenu('refresh');
+	$.ajax({
+		url: api_v_prefix + "/user/" + user_id + "/groups",
+		contentType: "application/json; charset=utf-8",
+		success: function (data) {
+			if (data.status === 'failed') {
+				toastr.error(data.error)
+			} else {
+				console.log(data)
+				$('#newCurrentGroup').find('option').remove();
+				for (k in data) {
+					let group = data[k];
+					if (group['user_group_id']['group_id'] === group['user_id']['group_id']['group_id']) {
+						generateSelect('#newCurrentGroup', group['user_group_id']['group_id'], group['user_group_id']['name'], 'selected');
+					} else {
+						generateSelect('#newCurrentGroup', group['user_group_id']['group_id'], group['user_group_id']['name']);
+					}
+				}
+				$("#newCurrentGroup").selectmenu('refresh');
+			}
+		}
+	});
+	let user_settings_tabel_title = $("#show-user-settings-table").attr('title');
+	let change_pass_word = $('#translate').attr('data-change') + ' ' + $('#translate').attr('data-password')
+	let showUserSettings = $("#show-user-settings").dialog({
+		autoOpen: false,
+		width: 600,
+		modal: true,
+		title: user_settings_tabel_title,
+		buttons: [{
+			text: save_word,
+			click: function () {
+				saveUserSettings(user_id);
+				$(this).dialog("close");
+			}
+		}, {
+			text: change_pass_word,
+			click: function () {
+				changePassword();
+				$(this).dialog("close");
+			}
+		}, {
+			text: cancel_word,
+			click: function () {
+				$(this).dialog("close");
+			}
+		}]
+	});
+	showUserSettings.dialog('open');
+}
+function generateSelect(select_id, option_value, option_name, is_selected='') {
+	$(select_id).append('<option value="' + option_value + '" '+is_selected+'>' + option_name + '</option>');
 }

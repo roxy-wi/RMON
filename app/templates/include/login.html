@@ -1,5 +1,7 @@
 {% if g.user_params['user'] %}
-	<span id="show-user-settings-button" class="user-circle login" title="{{lang.words.user3|title()}} {{lang.words.settings}}" style="margin-top: 5px;">{{g.user_params['user']}}</span>
+	<span id="show-user-settings-button" class="user-circle login" title="{{lang.words.user3|title()}} {{lang.words.settings}}" style="margin-top: 5px;" onclick="openUserSettings('{{ g.user_params['user_id'] }}')">
+        {{g.user_params['user']}}
+    </span>
 {% else %}
 	<a href=/app/login title="Login" class="login"> Login</a>
 {% endif %}

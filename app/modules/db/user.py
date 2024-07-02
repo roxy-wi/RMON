@@ -252,8 +252,6 @@ def get_user_role_by_uuid(uuid, group_id):
 		out_error(e)
 	else:
 		for user_id in query_res:
-			print('role')
-			print(model_to_dict(user_id))
 			return int(user_id.user_role_id)
 
 

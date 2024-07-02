@@ -2,13 +2,14 @@ from typing import Union
 
 from flask.views import MethodView
 from flask_pydantic import validate
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt, set_access_cookies
 from flask import render_template, jsonify, request, g
 from playhouse.shortcuts import model_to_dict
 
 import app.modules.db.sql as sql
 import app.modules.db.user as user_sql
 import app.modules.db.group as group_sql
+import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.user as roxywi_user
 import app.modules.roxywi.common as roxywi_common
 from app.modules.db.db_model import User as User_DB
@@ -285,11 +286,14 @@ class UserView(MethodView):
 
 
 class UserGroupView(MethodView):
-    methods = ["GET", "POST", "PUT", "DELETE"]
+    methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
     decorators = [jwt_required(), get_user_params(), page_for_admin(level=2), check_group()]
 
-    def __init__(self, is_api: bool = False):
-        self.json_data = request.get_json()
+    def __init__(self):
+        if request.method not in ('GET', 'DELETE', 'PATCH'):
+            self.json_data = request.get_json()
+        else:
+            self.json_data = None
 
     def get(self, user_id: int):
         """
@@ -357,7 +361,7 @@ class UserGroupView(MethodView):
 
         json_data = []
         for user in users:
-            json_data.append(model_to_dict(user, exclude=[User_DB.password, User_DB.user_services, User_DB.group_id]))
+            json_data.append(model_to_dict(user, exclude=[User_DB.password, User_DB.user_services]))
 
         return jsonify(json_data)
 
@@ -452,9 +456,56 @@ class UserGroupView(MethodView):
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot delete user')
 
+    def patch(self, user_id: int, group_id: int):
+        """
+        Assign a User to a specific Group
+        ---
+        tags:
+          - 'User group'
+        parameters:
+          - in: 'path'
+            name: 'user_id'
+            description: 'ID of the User to be assigned to the group'
+            required: true
+            schema:
+              type: 'integer'
+          - in: 'path'
+            name: 'group_id'
+            description: 'ID of the Group which the user will be assigned to'
+            required: true
+            schema:
+              type: 'integer'
+        responses:
+          201:
+            description: 'User successfully assigned to the group'
+          404:
+            description: 'User or Group not found'
+            schema:
+              id: 'NotFound'
+              properties:
+                error:
+                  type: 'string'
+                  description: 'Error message'
+        """
+        try:
+            self._check_is_user_and_group(user_id, group_id)
+        except Exception as e:
+            return roxywi_common.handle_json_exceptions(e, 'Cannot get user or group'), 404
+
+        claims = get_jwt()
+        user_param = {"user": user_id, "uuid": claims['uuid'], "group": group_id}
+        access_token = roxywi_auth.create_jwt_token(user_param)
+        response = jsonify({'status': 'Ok'})
+        set_access_cookies(response, access_token)
+        try:
+            user_sql.update_user_current_groups(group_id, claims['uuid'])
+        except Exception as e:
+            return roxywi_common.handle_json_exceptions(e, 'Cannot update user or group'), 500
+        return response
+
     def delete(self, user_id: int, group_id: int):
         """
-        Delete User from a specific Group
+        Delete a User from a specific Group
         ---
         tags:
         - 'User group'

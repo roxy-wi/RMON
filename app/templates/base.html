@@ -76,7 +76,7 @@
 				</div>
 			</div>
 		</div>
-		<div id="show-user-settings">
+		<div id="show-user-settings" style="display: none;">
 			<table class="overview" id="show-user-settings-table" title="{{lang.words.user3|title()}} {{lang.words.settings}}">
 				<tr>
 					<td class="padding20" style="width: 70%">{{lang.words.alerts|title()}}</td>
@@ -90,7 +90,12 @@
 						{{ select('lang_select', values=languages, selected=lang.lang_short) }}
 					</td>
 				</tr>
-				<tr id="show-user-settings-group"></tr>
+				<tr id="show-user-settings-group">
+                    <td class="padding20" style="width: 70%">{{lang.words.current2|title()}} {{lang.words.group}}</td>
+                    <td>
+                        <select id="newCurrentGroup" name="newCurrentGroup"></select>
+                    </td>
+                </tr>
 				<tr id="show-user-settings-them">
                     <td class="padding20">{{lang.words.theme|title()}}</td>
 					<td>

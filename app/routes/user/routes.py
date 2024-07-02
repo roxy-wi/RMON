@@ -1,7 +1,6 @@
 import json
 
-from flask import request, jsonify
-from flask_jwt_extended import get_jwt
+from flask import request
 from flask_jwt_extended import jwt_required
 
 from app.routes.user import bp
@@ -39,22 +38,15 @@ def update_password():
     return roxywi_user.update_user_password(password, uuid, user_id_from_get)
 
 
-@bp.route('/group', methods=['GET', 'PUT'])
-def get_current_group():
-    claims = get_jwt()
-    uuid = claims['uuid']
-    if request.method == 'GET':
-        group = claims['group']
-        try:
-            data = roxywi_user.get_user_active_group(uuid, group)
-            return jsonify({'status': 'ok', 'data': data})
-        except Exception as e:
-            roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get current group')
-    elif request.method == 'PUT':
-        user = claims['sub']
-
-        group_id = int(request.json.get('group'))
-        return roxywi_user.change_user_active_group(user, group_id, uuid)
+# @bp.route('/group', methods=['PUT'])
+# def get_current_group():
+#     claims = get_jwt()
+#     uuid = claims['uuid']
+#     if request.method == 'PUT':
+#         user = claims['sub']
+#
+#         group_id = int(request.json.get('group'))
+#         return roxywi_user.change_user_active_group(user, group_id, uuid)
 
 
 @bp.route('/groups/<int:user_id>')
