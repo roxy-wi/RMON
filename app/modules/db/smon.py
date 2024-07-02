@@ -169,16 +169,6 @@ def select_en_smon_ping(agent_id) -> object:
 		return query_res
 
 
-def select_en_smon_ping(agent_id) -> object:
-	query = SmonPingCheck.select(SmonPingCheck, SMON).join_from(SmonPingCheck, SMON).where((SMON.en == '1') & (SmonPingCheck.agent_id == agent_id))
-	try:
-		query_res = query.execute()
-	except Exception as e:
-		out_error(e)
-	else:
-		return query_res
-
-
 def select_en_smon_dns(agent_id) -> object:
 	query = SmonDnsCheck.select(SmonDnsCheck, SMON).join_from(SmonDnsCheck, SMON).where((SMON.en == '1') & (SmonDnsCheck.agent_id == agent_id))
 	try:

@@ -164,7 +164,7 @@ def get_ldap_email(username) -> str:
         ldap_bind.protocol_version = ldap.VERSION3
         ldap_bind.set_option(ldap.OPT_REFERRALS, 0)
 
-        bind = ldap_bind.simple_bind_s(user, password)
+        _ = ldap_bind.simple_bind_s(user, password)
 
         criteria = "(&(objectClass=" + ldap_class_search + ")(" + ldap_user_attribute + "=" + username + "))"
         attributes = [ldap_search_field]

@@ -100,7 +100,7 @@ def upload_ssh_key(ssh_id: int, key: str, passphrase: str) -> None:
 		raise Exception(e)
 
 	try:
-		_check_split = name.split('_')[1]
+		_ = name.split('_')[1]
 		split_name = True
 	except Exception:
 		split_name = False

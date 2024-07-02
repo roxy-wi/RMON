@@ -194,9 +194,9 @@ class ServerView(MethodView):
             port = int(self.json_data['port'])
             desc = common.checkAjaxInput(self.json_data['desc'])
         except ValueError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a value')
+            return roxywi_common.handle_json_exceptions(e, 'There is must be a value')
         except KeyError as e:
-            return roxywi_common.handle_json_exceptions(e, f'There is must be a key')
+            return roxywi_common.handle_json_exceptions(e, 'There is must be a key')
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot parse server data')
 
@@ -396,7 +396,7 @@ class CredsView(MethodView):
         Retrieve credentials based on the group ID
         ---
         tags:
-          - SSH credentials 
+          - SSH credentials
         responses:
           200:
             description: Credentials retrieval successful
@@ -418,7 +418,7 @@ class CredsView(MethodView):
         Create a new credential entry
         ---
         tags:
-          - SSH credentials 
+          - SSH credentials
         parameters:
           - in: body
             name: body
@@ -475,7 +475,7 @@ class CredsView(MethodView):
         Update a credential entry
         ---
         tags:
-          - SSH credentials 
+          - SSH credentials
         parameters:
           - in: body
             name: body
@@ -543,7 +543,7 @@ class CredsView(MethodView):
         Delete a credential entry
         ---
         tags:
-          - SSH credentials 
+          - SSH credentials
         parameters:
           - in: body
             name: body
@@ -580,7 +580,7 @@ class CredsView(MethodView):
         Upload an SSH private key
         ---
         tags:
-          - SSH credentials 
+          - SSH credentials
         parameters:
          - in: body
            name: body

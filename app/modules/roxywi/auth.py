@@ -75,19 +75,19 @@ def check_in_ldap(user, password):
         ldap_bind.protocol_version = ldap.VERSION3
         ldap_bind.set_option(ldap.OPT_REFERRALS, 0)
 
-        bind = ldap_bind.simple_bind_s(root_user, root_password)
+        _ = ldap_bind.simple_bind_s(root_user, root_password)
 
         criteria = "(&(objectClass=" + ldap_class_search + ")(" + ldap_user_attribute + "=" + user + "))"
         attributes = [ldap_search_field]
         result = ldap_bind.search_s(ldap_base, ldap.SCOPE_SUBTREE, criteria, attributes)
 
-        bind = ldap_bind.simple_bind_s(result[0][0], password)
+        _ = ldap_bind.simple_bind_s(result[0][0], password)
     except ldap.INVALID_CREDENTIALS:
         return False
     except ldap.SERVER_DOWN:
         raise Exception('error: LDAP server is down')
     except ldap.LDAPError as e:
-        if type(e.message) == dict and 'desc' in e.message:
+        if isinstance(e.message, dict) and 'desc' in e.message:
             raise Exception(f'error: {e.message["desc"]}')
         else:
             raise Exception(f'error: {e}')
@@ -95,7 +95,7 @@ def check_in_ldap(user, password):
         return True
 
 
-def create_uuid_and_token(login: str):
+def create_uuid(login: str):
     user_uuid = str(uuid.uuid4())
     user_sql.write_user_uuid(login, user_uuid)
 
@@ -146,14 +146,14 @@ def check_user_password(login: str, password: str) -> dict:
         raise Exception('Your login is disabled')
     if user.ldap_user == 1:
         if login in user.username and check_in_ldap(login, password):
-            user_uuid = create_uuid_and_token(login)
+            user_uuid = create_uuid(login)
             return {'uuid': user_uuid, 'group': str(user.group_id.group_id), 'user': user.user_id}
         else:
             raise Exception('ban')
     else:
         hashed_password = roxy_wi_tools.Tools.get_hash(password)
         if login in user.username and hashed_password == user.password:
-            user_uuid = create_uuid_and_token(login)
+            user_uuid = create_uuid(login)
             return {'uuid': user_uuid, 'group': str(user.group_id.group_id), 'user': user.user_id}
         else:
             raise Exception('ban')

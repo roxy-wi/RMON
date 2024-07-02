@@ -62,7 +62,7 @@ def bad_request(e):
 
 
 @app.errorhandler(401)
-def page_is_forbidden(e):
+def no_auth(e):
     if 'api' in request.url:
         return jsonify({'error': str(e)}), 401
     return redirect(url_for('login_page'))
@@ -109,7 +109,7 @@ def method_not_allowed(e):
 
 @app.errorhandler(409)
 @get_user_params()
-def method_not_allowed(e):
+def conflict(e):
     return jsonify({'error': str(e)}), 409
 
 

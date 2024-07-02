@@ -10,6 +10,7 @@ migrator = connect(get_migrator=1)
 
 
 def default_values():
+	create_users = True
 	if distro.id() == 'ubuntu':
 		apache_dir = 'apache2'
 	else:
@@ -58,8 +59,22 @@ def default_values():
 		{'param': 'log_time_storage', 'value': '14', 'section': 'logs', 'desc': 'Retention period for user activity logs (in days)', 'group': '1'},
 		{'param': 'apache_log_path', 'value': f'/var/log/{apache_dir}/', 'section': 'logs', 'desc': 'Path to Apache logs. Apache service for RMON', 'group': '1'},
 	]
+
 	try:
 		Setting.insert_many(data_source).on_conflict_ignore().execute()
+	except Exception as e:
+		print(str(e))
+
+	try:
+		if Role.get(Role.name == 'superAdmin').role_id == 1:
+			create_users = False
+		else:
+			create_users = True
+	except Exception as e:
+		print(str(e))
+
+	try:
+		Groups.insert(name='Default', description='All servers are included in this group by default', group_id=1).on_conflict_ignore().execute()
 	except Exception as e:
 		print(str(e))
 
@@ -68,14 +83,6 @@ def default_values():
 		{'username': 'editor', 'email': 'editor@localhost', 'password': '5aee9dbd2a188839105073571bee1b1f', 'role': '2', 'group_id': '1'},
 		{'username': 'guest', 'email': 'guest@localhost', 'password': '084e0343a0486ff05530df6c705c8bb4', 'role': '4', 'group_id': '1'}
 	]
-
-	try:
-		if Role.get(Role.name == 'superAdmin').role_id == 1:
-			create_users = False
-		else:
-			create_users = True
-	except Exception:
-		create_users = True
 
 	try:
 		if create_users:
@@ -107,11 +114,6 @@ def default_values():
 	except Exception as e:
 		print(str(e))
 
-	try:
-		Groups.insert(name='Default', description='All servers are included in this group by default', group_id=1).on_conflict_ignore().execute()
-	except Exception as e:
-		print(str(e))
-
 	data_source = [
 		{'name': 'rmon-socket', 'current_version': '1.0', 'new_version': '0', 'is_roxy': 1, 'desc': ''},
 		{'name': 'rmon-server', 'current_version': '1.0', 'new_version': '0', 'is_roxy': 1, 'desc': ''},
@@ -131,43 +133,6 @@ def update_db_v_3_4_5_22():
 		Version.insert(version='1.0').execute()
 	except Exception as e:
 		print('Cannot insert version %s' % e)
-
-
-def update_db_v_1_0_3():
-	try:
-		migrate(
-			migrator.add_column('smon_history', 'name_lookup', IntegerField(default=0)),
-			migrator.add_column('smon_history', 'connect', IntegerField(default=0)),
-			migrator.add_column('smon_history', 'app_connect', IntegerField(default=0)),
-			migrator.add_column('smon_history', 'pre_transfer', IntegerField(default=0)),
-			migrator.add_column('smon_history', 'redirect', IntegerField(default=0)),
-			migrator.add_column('smon_history', 'start_transfer', IntegerField(default=0)),
-			migrator.add_column('smon_history', 'download', IntegerField(default=0)),
-			migrator.add_column_default('smon_history', 'name_lookup', 0),
-			migrator.add_column_default('smon_history', 'connect', 0),
-			migrator.add_column_default('smon_history', 'app_connect', 0),
-			migrator.add_column_default('smon_history', 'pre_transfer', 0),
-			migrator.add_column_default('smon_history', 'redirect', 0),
-			migrator.add_column_default('smon_history', 'start_transfer', 0),
-			migrator.add_column_default('smon_history', 'download', 0),
-		)
-	except Exception as e:
-		if e.args[0] == 'duplicate column name: name_lookup' or str(e) == '(1060, "Duplicate column name \'name_lookup\'")':
-			print('Updating... DB has been updated to version 1.0.3')
-		else:
-			print("An error occurred:", e)
-	try:
-		migrate(
-			migrator.drop_column('smon_http_check', 'name_lookup', cascade=False),
-			migrator.drop_column('smon_http_check', 'connect', cascade=False),
-			migrator.drop_column('smon_http_check', 'app_connect', cascade=False),
-			migrator.drop_column('smon_http_check', 'pre_transfer', cascade=False),
-			migrator.drop_column('smon_http_check', 'redirect', cascade=False),
-			migrator.drop_column('smon_http_check', 'start_transfer', cascade=False),
-			migrator.drop_column('smon_http_check', 'download', cascade=False),
-		)
-	except Exception:
-		pass
 
 
 def update_db_v_1_0_4():
@@ -242,7 +207,6 @@ def update_all():
 	if check_ver() is None:
 		update_db_v_3_4_5_22()
 	update_ver()
-	update_db_v_1_0_3()
 	update_db_v_1_0_4()
 	update_db_v_1_0_7()
 	update_db_v_1_0_7_1()

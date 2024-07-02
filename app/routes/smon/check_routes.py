@@ -112,9 +112,8 @@ def move_checks():
                 agent_mod.delete_check(old_agent, old_agent_ip, c.smon_id)
                 smon_sql.update_check_agent(c.smon_id, new_agent, check_type)
     except Exception as e:
-        roxywi_common.handle_json_exceptions(e, f'Cannot get checks')
+        roxywi_common.handle_json_exceptions(e, 'Cannot get checks')
 
     agent_mod.send_checks(new_agent)
 
     return jsonify({'checks': str(checks)})
-

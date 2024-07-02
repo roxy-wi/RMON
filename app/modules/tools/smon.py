@@ -1,4 +1,3 @@
-import json
 from datetime import datetime
 from typing import Union
 
@@ -10,7 +9,7 @@ import app.modules.server.server as server_mod
 import app.modules.tools.smon_agent as smon_agent
 import app.modules.roxywi.common as roxywi_common
 from app.modules.roxywi.exception import RoxywiCheckLimits
-from app.modules.roxywi.class_models import IdResponse, IdDataResponse, HttpCheckRequest, DnsCheckRequest, PingCheckRequest, TcpCheckRequest
+from app.modules.roxywi.class_models import HttpCheckRequest, DnsCheckRequest, PingCheckRequest, TcpCheckRequest
 
 
 def create_check(json_data, user_group, check_type, show_new=1) -> Union[bool, tuple]:
@@ -120,28 +119,6 @@ def update_smon(smon_id, json_data, user_group) -> None:
 
     try:
         smon_sql.update_check(smon_id, name, telegram, slack, pd, mm, smon_group_id, desc, enabled, timeout)
-            # if check_type == 'http':
-            #     is_edited = smon_sql.update_check_http(smon_id, url, body, http_method, interval, agent_id, body_req, header_req, accepted_status_codes)
-            # elif check_type == 'tcp':
-            #     is_edited = smon_sql.update_check_tcp(smon_id, hostname, port, interval, agent_id)
-            # elif check_type == 'ping':
-            #     is_edited = smon_sql.update_check_ping(smon_id, hostname, packet_size, interval, agent_id)
-            # elif check_type == 'dns':
-            #     is_edited = smon_sql.update_check_dns(smon_id, hostname, port, resolver, record_type, interval, agent_id)
-            #
-            # if is_edited:
-            #     roxywi_common.logging('RMON', f'The check {name} has been update', login=1)
-            #     if not enabled:
-            #         return 'Ok'
-            #     try:
-            #         api_path = f'check/{smon_id}'
-            #         check_json = create_check_json(json_data)
-            #         server_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
-            #         smon_agent.send_post_request_to_agent(agent_id, server_ip, api_path, check_json)
-            #     except Exception as e:
-            #         roxywi_common.handle_exceptions(e, 'RMON', f'Cannot add check to the agent {agent_ip}', loggin=1)
-            #
-            #     return "Ok"
     except Exception as e:
         raise Exception(f'Cannot update the server: {e}')
 

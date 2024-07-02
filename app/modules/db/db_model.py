@@ -408,7 +408,7 @@ def create_tables():
     conn = connect()
     with conn:
         conn.create_tables(
-            [User, Server, Role, Telegram, Slack, UUID, Groups, UserGroups, Setting, Cred, Version, ActionHistory,
+            [Groups, User, Server, Role, Telegram, Slack, UUID, UserGroups, Setting, Cred, Version, ActionHistory,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
              SmonStatusPage, SmonStatusPageCheck, SMON, Alerts, SmonGroup, MM]
         )

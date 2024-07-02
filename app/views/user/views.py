@@ -232,7 +232,7 @@ class UserView(MethodView):
             description: User information update successful
         """
         try:
-            user = user_sql.get_user_id(user_id)
+            _ = user_sql.get_user_id(user_id)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot get user'), 404
         try:
@@ -281,7 +281,7 @@ class UserView(MethodView):
             roxywi_user.delete_user(user_id)
             return BaseResponse().model_dump(mode='json'), 204
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot delete the user')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot delete the user')
 
 
 class UserGroupView(MethodView):

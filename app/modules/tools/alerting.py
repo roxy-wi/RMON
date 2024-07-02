@@ -7,7 +7,6 @@ from flask import render_template, request, abort
 import app.modules.db.sql as sql
 import app.modules.db.user as user_sql
 import app.modules.db.group as group_sql
-import app.modules.db.server as server_sql
 import app.modules.db.channel as channel_sql
 import app.modules.common.common as common
 import app.modules.roxywi.common as roxywi_common
@@ -362,7 +361,7 @@ def add_telegram_channel(token: str, channel: str, group: str) -> str:
 			groups = group_sql.select_groups()
 			roxywi_common.logging('RMON server', f'A new Telegram channel {channel} has been created ', roxywi=1, login=1)
 
-			return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channels=channels, page=page, receiver='telegram')
+			return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channels=channels, receiver='telegram')
 
 
 def add_slack_channel(token: str, channel: str, group: str) -> str:
@@ -374,7 +373,7 @@ def add_slack_channel(token: str, channel: str, group: str) -> str:
 			channels = channel_sql.select_slack(token=token)
 			groups = group_sql.select_groups()
 			roxywi_common.logging('RMON server', f'A new Slack channel {channel} has been created ', roxywi=1, login=1)
-			return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channels=channels, page=page, receiver='slack')
+			return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channels=channels, receiver='slack')
 
 
 def add_pd_channel(token: str, channel: str, group: str) -> str:
@@ -386,7 +385,7 @@ def add_pd_channel(token: str, channel: str, group: str) -> str:
 			channels = channel_sql.select_pd(token=token)
 			groups = group_sql.select_groups()
 			roxywi_common.logging('RMON server', f'A new PagerDuty channel {channel} has been created ', roxywi=1, login=1)
-			return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channels=channels, page=page, receiver='pd')
+			return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channels=channels, receiver='pd')
 
 
 def add_mm_channel(token: str, channel: str, group: str) -> str:
@@ -398,7 +397,7 @@ def add_mm_channel(token: str, channel: str, group: str) -> str:
 			channels = channel_sql.select_mm(token=token)
 			groups = group_sql.select_groups()
 			roxywi_common.logging('RMON server', f'A new Mattermost channel {channel} has been created ', roxywi=1, login=1)
-			return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channels=channels, page=page, receiver='mm')
+			return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channels=channels, receiver='mm')
 
 
 def delete_telegram_channel(channel_id) -> str:
@@ -484,7 +483,7 @@ def add_receiver_channel(receiver_name: str, token: str, channel: str, group: id
 	}
 
 	try:
-		return add_functions[receiver_name](token, channel, group, page)
+		return add_functions[receiver_name](token, channel, group)
 	except Exception as e:
 		return f'error: Cannot add new receiver: {e}'
 
