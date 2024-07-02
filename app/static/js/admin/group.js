@@ -98,31 +98,40 @@ function confirmDeleteGroup(id) {
     });
 }
 function removeGroup(id) {
-	$("#group-" + id).css("background-color", "#f2dede");
-	$.ajax({
-		url: "/group",
-        data: JSON.stringify({'group_id': id}),
+    $("#group-" + id).css("background-color", "#f2dede");
+    $.ajax({
+        url: api_v_prefix + "/group/" + id,
+        type: "DELETE",
         contentType: "application/json; charset=utf-8",
-		success: function (data) {
-			if (data.status === 'failed') {
-                toastr.error(data.error);
-			} else if (data.indexOf('error:') != '-1' || data.indexOf('unique') != '-1') {
+		statusCode: {
+			204: function (xhr) {
 				$("#group-" + id).remove();
-				$('select:regex(id, group) option[value=' + id + ']').remove();
-				$('select:regex(id, group)').selectmenu("refresh");
+                $('select:regex(id, group) option[value=' + id + ']').remove();
+                $('select:regex(id, group)').selectmenu("refresh");
+			},
+			404: function (xhr) {
+				$("#group-" + id).remove();
+                $('select:regex(id, group) option[value=' + id + ']').remove();
+                $('select:regex(id, group)').selectmenu("refresh");
 			}
-		}
-	});
+		},
+        success: function (data) {
+            if (data) {
+                if (data.status === 'failed') {
+                    toastr.error(data.error);
+                }
+            }
+        }
+    });
 }
 function updateGroup(id) {
     toastr.clear();
     let json_data = {
         "name": $('#name-' + id).val(),
-        "desc": $('#descript-' + id).val(),
-        "group_id": id
+        "desc": $('#descript-' + id).val()
     }
     $.ajax({
-        url: "/group/update",
+        url: api_v_prefix + "/group/" + id,
         data: JSON.stringify(json_data),
         contentType: "application/json; charset=utf-8",
         type: "PUT",

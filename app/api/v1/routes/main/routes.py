@@ -10,8 +10,16 @@ import app.modules.roxywi.common as roxywi_common
 from app.views.server.views import ServerGroupView
 from app.views.user.views import UsersView
 
-bp.add_url_rule('/group', view_func=ServerGroupView.as_view('group', True))
 bp.add_url_rule('/users', view_func=UsersView.as_view('users'), methods=['GET'])
+
+
+def register_api(view, endpoint, url, pk='check_id', pk_type='int'):
+    view_func = view.as_view(endpoint, True)
+    bp.add_url_rule(url, view_func=view_func, methods=['POST',])
+    bp.add_url_rule(f'/{url}/<{pk_type}:{pk}>', view_func=view_func, methods=['PUT', 'DELETE'])
+
+
+register_api(ServerGroupView, 'group', '/group', 'group_id')
 
 
 @jwt.expired_token_loader

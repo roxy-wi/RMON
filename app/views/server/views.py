@@ -15,6 +15,7 @@ import app.modules.server.server as server_mod
 import app.modules.tools.smon as smon_mod
 from app.middleware import get_user_params, page_for_admin, check_group
 from app.modules.roxywi.exception import RoxywiGroupMismatch, RoxywiResourceNotFound
+from app.modules.roxywi.class_models import IdResponse
 
 
 class ServerView(MethodView):
@@ -255,7 +256,10 @@ class ServerGroupView(MethodView):
             type: boolean
             description: is api
         """
-        self.json_data = request.get_json()
+        if request.method != 'DELETE':
+            self.json_data = request.get_json()
+        else:
+            self.json_data = None
         self.is_api = is_api
 
     def post(self):
@@ -292,20 +296,26 @@ class ServerGroupView(MethodView):
             last_id = group_sql.add_group(group, desc)
             roxywi_common.logging('RMON server', f'A new group {group} has been created', roxywi=1, login=1)
             if self.is_api:
-                return jsonify({'status': 'Created', 'id': last_id}), 201
+                return IdResponse(id=last_id).model_dump(mode='json'), 201
             else:
                 data = render_template('ajax/new_group.html', groups=group_sql.select_groups(group=group))
                 return jsonify({'status': 'Created', 'data': data, 'id': last_id}), 201
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot create group')
 
-    def put(self):
+    def put(self, group_id: int):
         """
         Update a group
         ---
         tags:
           - Group
         parameters:
+          - in: 'path'
+            name: 'group_id'
+            description: 'Group ID to change'
+            required: true
+            schema:
+              type: 'integer'
           - in: body
             name: body
             schema:
@@ -321,9 +331,6 @@ class ServerGroupView(MethodView):
                 desc:
                   type: string
                   description: The group description
-                id:
-                  type: integer
-                  description: The ID of the group to be updated
         responses:
           201:
             description: Group update successful
@@ -331,7 +338,6 @@ class ServerGroupView(MethodView):
         try:
             name = common.checkAjaxInput(self.json_data['name'])
             desc = common.checkAjaxInput(self.json_data['desc'])
-            group_id = int(self.json_data['id'])
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse group data')
 
@@ -341,36 +347,41 @@ class ServerGroupView(MethodView):
         except Exception as e:
             roxywi_common.handle_json_exceptions(e, 'Cannot update group')
 
-    def delete(self):
+    def delete(self, group_id: int):
         """
         Delete a group
         ---
         tags:
           - Group
         parameters:
-          - in: body
-            name: body
+          - in: 'path'
+            name: 'group_id'
+            description: 'Group ID to delete'
+            required: true
             schema:
-              id: DeleteGroup
-              required:
-                - id
-              properties:
-                id:
-                  type: integer
-                  description: The ID of the group to be deleted
+              type: 'integer'
         responses:
           204:
             description: Group deletion successful
         """
         try:
-            group_id = int(self.json_data['id'])
+            self._check_is_user_and_group(group_id)
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse group data')
+            return roxywi_common.handle_json_exceptions(e, 'Cannot get user or group'), 404
         try:
             group_mod.delete_group(group_id)
             return jsonify({'status': 'Ok'}), 204
         except Exception as e:
             roxywi_common.handle_json_exceptions(e, 'Cannot delete group')
+
+    @staticmethod
+    def _check_is_user_and_group(group_id: int):
+        try:
+            groups = group_sql.get_group_name_by_id(group_id)
+            if len(groups) == 0:
+                raise RoxywiResourceNotFound
+        except Exception as e:
+            raise e
 
 
 class CredsView(MethodView):

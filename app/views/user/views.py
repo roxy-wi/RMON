@@ -287,7 +287,7 @@ class UserView(MethodView):
 
 class UserGroupView(MethodView):
     methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
-    decorators = [jwt_required(), get_user_params(), page_for_admin(level=2), check_group()]
+    decorators = [jwt_required(), get_user_params(), page_for_admin(level=4), check_group()]
 
     def __init__(self):
         if request.method not in ('GET', 'DELETE', 'PATCH'):
@@ -399,6 +399,7 @@ class UserGroupView(MethodView):
           '404':
             description: 'User or Group not found'
         """
+        page_for_admin(level=2)
         try:
             self._check_is_user_and_group(user_id, group_id)
         except Exception as e:
@@ -444,6 +445,7 @@ class UserGroupView(MethodView):
           '404':
             description: 'User or Group not found'
         """
+        page_for_admin(level=2)
         try:
             self._check_is_user_and_group(user_id, group_id)
         except Exception as e:
@@ -528,6 +530,7 @@ class UserGroupView(MethodView):
           '404':
             description: 'User or Group not found'
         """
+        page_for_admin(level=2)
         try:
             self._check_is_user_and_group(user_id, group_id)
         except Exception as e:

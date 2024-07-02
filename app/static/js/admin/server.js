@@ -131,11 +131,19 @@ function removeServer(id) {
 		data: JSON.stringify({'id': id}),
 		type: "DELETE",
 		contentType: "application/json; charset=utf-8",
-		success: function (data) {
-			if (data.status === "failed") {
-				toastr.error(data);
-			} else {
+		statusCode: {
+			204: function (xhr) {
 				$("#server-" + id).remove();
+			},
+			404: function (xhr) {
+				$("#server-" + id).remove();
+			}
+		},
+		success: function (data) {
+			if (data) {
+				if (data.status === "failed") {
+					toastr.error(data);
+				}
 			}
 		}
 	});
