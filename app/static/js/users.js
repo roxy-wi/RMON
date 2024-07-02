@@ -262,8 +262,7 @@ function showApacheLog(serv) {
 			hour: hour,
 			minute: minute,
 			hour1: hour1,
-			minute1: minute1,
-			token: $('#token').val()
+			minute1: minute1
 		},
 		type: "POST",
 		success: function( data ) {
@@ -324,8 +323,7 @@ function changeUserPassword(id, d) {
 			url: "/user/password",
 			data: {
 				updatepassowrd: pass,
-				id: id,
-				token: $('#token').val()
+				id: id
 			},
 			type: "POST",
 			success: function (data) {
@@ -544,8 +542,8 @@ function saveGroupsAndRoles(user_id) {
 	let jsonData = {};
 	jsonData[user_id] = {};
 	$('#checked_groups tbody tr').each(function () {
-		var this_id = $(this).attr('id').split('-')[1];
-		var role_id = $('#add_role-' + this_id).val();
+		let this_id = $(this).attr('id').split('-')[1];
+		let role_id = $('#add_role-' + this_id).val();
 		jsonData[user_id][this_id] = {'role_id': role_id};
 	});
 	for (const [key, value] of Object.entries(jsonData)) {
@@ -558,8 +556,7 @@ function saveGroupsAndRoles(user_id) {
 		url: "/user/groups/save",
 		data: {
 			changeUserGroupsUser: $('#login-' + user_id).val(),
-			jsonDatas: JSON.stringify(jsonData),
-			token: $('#token').val()
+			jsonDatas: JSON.stringify(jsonData)
 		},
 		type: "POST",
 		success: function (data) {

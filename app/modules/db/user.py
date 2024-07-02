@@ -64,7 +64,7 @@ def update_user_current_groups(groups, user_uuid):
 
 def update_user_current_groups_by_id(groups, user_id):
 	try:
-		user_update = User.update(groups=groups).where(User.user_id == user_id)
+		user_update = User.update(group_id=groups).where(User.user_id == user_id)
 		user_update.execute()
 	except Exception as e:
 		out_error(e)
