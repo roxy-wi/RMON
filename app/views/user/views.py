@@ -286,7 +286,7 @@ class UserView(MethodView):
 
 class UserGroupView(MethodView):
     methods = ["GET", "POST", "PUT", "DELETE"]
-    decorators = [jwt_required(), get_user_params(), page_for_admin(), check_group()]
+    decorators = [jwt_required(), get_user_params(), page_for_admin(level=2), check_group()]
 
     def __init__(self, is_api: bool = False):
         self.json_data = request.get_json()

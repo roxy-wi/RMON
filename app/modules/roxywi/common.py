@@ -198,8 +198,8 @@ def get_users_params(**kwargs):
 
 	try:
 		role = user_sql.get_user_role_by_uuid(user_uuid, group_id)
-	except Exception:
-		raise Exception('error: Cannot get user role')
+	except Exception as e:
+		raise Exception(f'error: Cannot get user role {e}')
 
 	try:
 		user_id = user_sql.get_user_id_by_uuid(user_uuid)

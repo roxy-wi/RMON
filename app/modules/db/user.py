@@ -12,7 +12,7 @@ def add_user(user, email, password, role, enabled, group):
 		try:
 			hashed_pass = roxy_wi_tools.Tools.get_hash(password)
 			last_id = User.insert(
-				username=user, email=email, password=hashed_pass, role=role, enabled=enabled, groups=group
+				username=user, email=email, password=hashed_pass, role=role, enabled=enabled, group_id=group
 			).execute()
 		except Exception as e:
 			out_error(e)
@@ -21,7 +21,7 @@ def add_user(user, email, password, role, enabled, group):
 	else:
 		try:
 			last_id = User.insert(
-				username=user, email=email, role=role, ldap_user=1, enabled=enabled, groups=group
+				username=user, email=email, role=role, ldap_user=1, enabled=enabled, group_id=group
 			).execute()
 		except Exception as e:
 			out_error(e)
@@ -247,10 +247,13 @@ def get_user_role_by_uuid(uuid, group_id):
 			(UUID.uuid == uuid) &
 			(UserGroups.user_group_id == group_id)
 		).execute()
+		from playhouse.shortcuts import model_to_dict
 	except Exception as e:
 		out_error(e)
 	else:
 		for user_id in query_res:
+			print('role')
+			print(model_to_dict(user_id))
 			return int(user_id.user_role_id)
 
 

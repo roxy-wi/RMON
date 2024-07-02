@@ -24,7 +24,7 @@ from app.views.server.views import ServerGroupView
 from app.modules.roxywi.exception import RoxywiValidationError
 from app.modules.roxywi.class_models import ErrorResponse
 
-bp.add_url_rule('/group', view_func=ServerGroupView.as_view('group', True))
+bp.add_url_rule('/group', view_func=ServerGroupView.as_view('group'))
 
 
 @app.template_filter('strftime')

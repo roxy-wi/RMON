@@ -24,4 +24,4 @@ const ha = `${scriptPath}/ha.js`;
 const csrf_token = Cookies.get('csrf_access_token');
 
 // Current API version prefix
-const api_v_prefix = '/api/v1.0/'
+const api_v_prefix = '/api/v1.0'

@@ -185,15 +185,39 @@ function removeUser(id) {
 		}
 	});
 }
+function updateUserRole(user_id, role_id) {
+	let group_id = $('#new-sshgroup').val();
+	$.ajax({
+		url: api_v_prefix + "/user/" + user_id + "/groups/" + group_id,
+		data: JSON.stringify({'role_id': role_id}),
+		contentType: "application/json; charset=utf-8",
+		type: "PUT",
+		success: function (data) {
+			if (data.status === 'failed') {
+				toastr.error(data.error);
+			} else {
+				toastr.remove();
+				$("#user-" + id).addClass("update", 1000);
+				setTimeout(function () {
+					$("#user-" + id).removeClass("update");
+				}, 2500);
+			}
+		}
+	});
+}
 function updateUser(id) {
 	let role = $('#role-' + id).val();
 	let enabled = 0;
 	if ($('#enabled-' + id).is(':checked')) {
 		enabled = '1';
 	}
+	console.log(role)
 	if (role == null && role !== undefined) {
 		toastr.warning('You cannot edit superAdmin user');
 		return false;
+	}
+	if (role !== null && role !== undefined) {
+		updateUserRole(id, role);
 	}
 	toastr.remove();
 	let json_data = {
