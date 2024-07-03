@@ -133,12 +133,12 @@ function addAgent(dialog_id, agent_id=0, edit=false, reconfigure=false) {
 }
 function getAgentSettings(agent_id) {
 	$.ajax({
-		url: "/rmon/agent/settings/" + agent_id,
+		url: api_v_prefix + "/rmon/agent/" + agent_id,
 		async: false,
 		success: function (data) {
 			$('#new-agent-name').val(data['name']);
 			$('#new-agent-port').val(data['port']);
-			$('#new-agent-server-id').append('<option value="' + data['server_id'] + '" selected="selected">' + data['hostname'] + '</option>');
+			generateSelect('#new-agent-server-id', data['server_id']['server_id'], data['server_id']['hostname'], 'selected')
 			$('#new-agent-server-id').attr('disabled', 'disabled');
 			$('#new-agent-desc').val(data['desc']);
 			$('#new-agent-enabled').checkboxradio("refresh");
@@ -166,7 +166,7 @@ function getFreeServers() {
 		success: function (data) {
 			$("#new-agent-server-id option[value!='------']").remove();
 			for (k in data) {
-				$('#new-agent-server-id').append('<option value="' + k + '" selected="selected">' + data[k] + '</option>');
+				generateSelect('#new-agent-server-id', k, data[k])
 			}
 			$('#new-agent-server-id').selectmenu("refresh");
 		}
@@ -269,9 +269,15 @@ function getAgentTotalChecks(server_ip, agent_id){
 		url: '/rmon/agent/checks/' + server_ip,
 		type: 'get',
 		data: {agent_id: agent_id},
+		contentType: "application/json; charset=utf-8",
 		success: function (data){
 			try {
-				$('#agent-total-checks-'+agent_id).text(data)
+				data = JSON.parse(data);
+				if (data.error) {
+					$('#agent-total-checks-'+agent_id).text(data.error);
+				} else {
+					$('#agent-total-checks-'+agent_id).text(data);
+				}
 			} catch (e) {
 				console.log(e);
 				$('#agent-'+agent_id).addClass('div-server-head-down')
@@ -357,7 +363,7 @@ function agentAction(action, id, server_ip, dialog_id) {
 }
 function getAgents(select_id) {
 	$.ajax({
-		url: "/rmon/agent/list",
+		url: api_v_prefix + "/rmon/agents",
 		type: "get",
 		contentType: "application/json; charset=UTF-8",
 		async: false,
@@ -367,11 +373,14 @@ function getAgents(select_id) {
 			} else {
 				toastr.clear();
 				$(select_id).find('option').remove();
-				for (k in data.agents) {
-					$(select_id).append('<option value="' + k + '">' + data.agents[k] + '</option>')
-						.val(data.agents[k]);
-				}
 				$(select_id).append('<option value="" selected disabled>------</option>');
+				for (k in data) {
+					let agent = data[k];
+					if (agent.enabled === 1) {
+						$(select_id).append('<option value="' + agent.id + '">' + agent.name + '</option>')
+							.val(agent.name);
+					}
+				}
 				$(select_id).selectmenu('refresh');
 			}
 		}

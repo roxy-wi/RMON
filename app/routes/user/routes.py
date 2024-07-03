@@ -38,17 +38,6 @@ def update_password():
     return roxywi_user.update_user_password(password, uuid, user_id_from_get)
 
 
-# @bp.route('/group', methods=['PUT'])
-# def get_current_group():
-#     claims = get_jwt()
-#     uuid = claims['uuid']
-#     if request.method == 'PUT':
-#         user = claims['sub']
-#
-#         group_id = int(request.json.get('group'))
-#         return roxywi_user.change_user_active_group(user, group_id, uuid)
-
-
 @bp.route('/groups/<int:user_id>')
 def show_user_groups_and_roles(user_id):
     lang = roxywi_common.get_user_lang_for_flask()

@@ -93,27 +93,6 @@ def get_agent_info(agent_id):
     return render_template('ajax/smon/agent.html', agents=agent_data, lang=roxywi_common.get_user_lang_for_flask())
 
 
-@bp.get('/agent/settings/<int:agent_id>')
-@jwt_required()
-def get_agent_settings(agent_id):
-    settings = {}
-    try:
-        agent_data = smon_sql.get_agent(agent_id)
-    except Exception as e:
-        return f'{e}'
-
-    for a in agent_data:
-        settings.setdefault('name', a.name)
-        settings.setdefault('server_id', str(a.server_id))
-        settings.setdefault('hostname', a.hostname)
-        settings.setdefault('desc', a.desc)
-        settings.setdefault('enabled', str(a.enabled))
-        settings.setdefault('shared', str(a.shared))
-        settings.setdefault('port', str(a.port))
-
-    return jsonify(settings)
-
-
 @bp.get('/agent/version/<server_ip>')
 @jwt_required()
 def get_agent_version(server_ip):
@@ -185,17 +164,3 @@ def agent_action(action):
     except Exception as e:
         return f'{e}'
     return 'ok'
-
-
-@bp.get('/agent/list')
-@jwt_required()
-@get_user_params()
-def get_agent_list():
-    agents_list = {}
-    try:
-        agents = smon_sql.get_enabled_agents(g.user_params['group_id'])
-        for a in agents:
-            agents_list[a.id] = a.name
-        return jsonify({'status': 'ok', 'agents': agents_list})
-    except Exception as e:
-        return roxywi_common.handle_json_exceptions(e, 'Cannot get enabled agents')

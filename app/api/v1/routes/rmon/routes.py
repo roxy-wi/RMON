@@ -11,7 +11,7 @@ def register_api(view, endpoint, url, pk='check_id', pk_type='int'):
 
 
 # bp.add_url_rule('/agent', view_func=AgentView.as_view('agent', True))
-bp.add_url_rule('/agents', view_func=AgentsView.as_view('agents', True))
+bp.add_url_rule('/agents', view_func=AgentsView.as_view('agents'))
 
 register_api(AgentView, 'agent', '/agent', 'agent_id')
 register_api(CheckHttpView, 'http_check', '/check/http', 'check_id')

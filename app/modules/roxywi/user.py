@@ -1,14 +1,11 @@
 import os
 
-from flask import render_template, make_response, jsonify
-from flask_jwt_extended import create_access_token, set_access_cookies
-from playhouse.shortcuts import model_to_dict
+from flask import render_template, make_response
 
 import app.modules.db.sql as sql
 import app.modules.db.user as user_sql
 import app.modules.roxywi.common as roxywi_common
 import app.modules.tools.alerting as alerting
-from app.modules.db.db_model import UserGroups
 
 
 def create_user(new_user: str, email: str, password: str, role: int, activeuser: int, group: int) -> int:
@@ -72,42 +69,6 @@ def update_user_password(password, uuid, user_id_from_get):
     user_sql.update_user_password(password, user_id)
     roxywi_common.logging(f'user {username}', ' has changed password ', login=1)
     return 'ok'
-
-
-def change_user_services(user: str, user_id: int, user_services: str) -> str:
-    services = ''
-
-    for _k, v in user_services.items():
-        for k2, _v2 in v.items():
-            services += ' ' + k2
-
-    try:
-        user_sql.update_user_services(services=services, user_id=user_id)
-    except Exception as e:
-        return f'error: Cannot save: {e}'
-    roxywi_common.logging('RMON server', f'Access to the services has been updated for user: {user}', login=1)
-    return 'ok'
-
-#
-# def change_user_active_group(user: int, group_id: int, user_uuid: str):
-#     additional_claims = {'uuid': user_uuid, 'group': str(group_id)}
-#     response = jsonify({"status": "done"})
-#     access_token = create_access_token(str(user), additional_claims=additional_claims)
-#     set_access_cookies(response, access_token)
-#     try:
-#         user_sql.update_user_current_groups(group_id, user_uuid)
-#         return response
-#     except Exception as e:
-#         roxywi_common.handle_exceptions(e, 'RMON', 'Cannot change the group', login=1)
-
-
-# def get_user_active_group(uuid: str) -> list[dict]:
-#     user_id = user_sql.get_user_id_by_uuid(uuid)
-#     groups = user_sql.select_user_groups_with_names(user_id)
-#     groups_list = []
-#     for q in groups:
-#         groups_list.append(model_to_dict(q, exclude=[UserGroups.user_role_id, UserGroups.user_id.password]))
-#     return groups_list
 
 
 def show_user_groups_and_roles(user_id: int, lang: str) -> str:

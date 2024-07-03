@@ -2,6 +2,30 @@ from flask import Flask
 from flask_caching import Cache
 from flask_apscheduler import APScheduler
 from flask_jwt_extended import JWTManager
+from logging.config import dictConfig
+
+dictConfig({
+    'version': 1,
+    'formatters': {'default': {
+        'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+    }},
+    'handlers': {
+        "file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "default",
+            "level": "INFO",
+            "filename": "/var/log/rmon/rmon.log",
+            "mode": "a",
+            "encoding": "utf-8",
+            "maxBytes": 500000,
+            "backupCount": 4
+        }
+    },
+    'root': {
+        'level': 'INFO',
+        'handlers': ['file']
+    },
+})
 
 app = Flask(__name__)
 app.config.from_object('app.config.Configuration')

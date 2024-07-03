@@ -6,6 +6,7 @@ from flask import request, g
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import verify_jwt_in_request
 
+from app import app
 from app.modules.db.sql import get_setting
 import app.modules.db.roxy as roxy_sql
 import app.modules.db.user as user_sql
@@ -91,13 +92,6 @@ def get_files(folder, file_format, server_ip=None) -> list:
 
 
 def logging(server_ip: str, action: str, **kwargs) -> None:
-	get_date = roxy_wi_tools.GetDate(get_setting('time_zone'))
-	cur_date_in_log = get_date.return_date('date_in_log')
-	log_path = get_config_var.get_config_var('main', 'log_path')
-
-	if not os.path.exists(log_path):
-		os.makedirs(log_path)
-
 	try:
 		user_group = get_user_group()
 	except Exception:
@@ -117,22 +111,19 @@ def logging(server_ip: str, action: str, **kwargs) -> None:
 		login = ''
 
 	if kwargs.get('login'):
-		mess = f"{cur_date_in_log} from {ip} user: {login}, group: {user_group}, {action} on: {server_ip}\n"
+		mess = f"from {ip} user: {login}, group: {user_group}, {action} on: {server_ip}"
 	else:
-		mess = f"{cur_date_in_log} {action} from {ip}\n"
-	log_file = f"{log_path}/rmon.log"
+		mess = f"{action} from {ip}"
+	if kwargs.get('mes_type') == 'error':
+		app.logger.error(mess)
+	else:
+		app.logger.info(mess)
 
 	if kwargs.get('keep_history'):
 		try:
 			keep_action_history(kwargs.get('service'), action, server_ip, login, ip)
 		except Exception as e:
-			print(f'error: Cannot save history: {e}')
-
-	try:
-		with open(log_file, 'a') as log:
-			log.write(mess)
-	except IOError as e:
-		print(f'Cannot write log. Please check log_path in config {e}')
+			app.logger.error(f'Cannot save history: {e}')
 
 
 def keep_action_history(service: str, action: str, server_ip: str, login: str, user_ip: str):
@@ -150,7 +141,7 @@ def keep_action_history(service: str, action: str, server_ip: str, login: str, u
 
 		history_sql.insert_action_history(service, action, server_id, user_id, user_ip, server_ip, hostname)
 	except Exception as e:
-		logging('RMON server', f'Cannot save a history: {e}', roxywi=1)
+		logging('RMON server', f'Cannot save a history: {e}', mes_type='error')
 
 
 def get_dick_permit(**kwargs):
@@ -187,14 +178,6 @@ def get_users_params(**kwargs):
 		group_id = user_sql.get_user_current_group_by_uuid(user_uuid)
 	except Exception as e:
 		raise Exception(f'Cannot get user group: {e}')
-
-	# try:
-	# 	group_id_from_cookies = int(user_data['group'])
-	# except Exception as e:
-	# 	raise Exception(f'error: Cannot get group id from cookies: {e}')
-	#
-	# if group_id_from_cookies != group_id:
-	# 	raise Exception('error: Wrong current group')
 
 	try:
 		role = user_sql.get_user_role_by_uuid(user_uuid, group_id)
@@ -282,7 +265,7 @@ def handle_exceptions(ex: Exception, server_ip: str, message: str, **kwargs: Any
 
 
 def handle_json_exceptions(ex: Exception, message: str, server_ip='RMON server') -> dict:
-	logging(server_ip, f'error: {message}: {ex}', login=1)
+	logging(server_ip, f'{message}: {ex}', login=1, mes_type='error')
 	return ErrorResponse(error=f'{message}: {ex}').model_dump(mode='json')
 
 

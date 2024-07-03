@@ -55,7 +55,8 @@ def add_agent(data: RmonAgent) -> Union[int, tuple]:
         return roxywi_common.handle_json_exceptions('', 'The agent is already installed the server'), 409
     agent_uuid = str(uuid.uuid4())
     check_agent_limit()
-    agent_kwargs = data.model_dump(mode='python', include={'agent_uuid': agent_uuid})
+    agent_kwargs = data.model_dump(mode='json', exclude={'reconfigure': True})
+    agent_kwargs['uuid'] = agent_uuid
 
     try:
         inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid, data.port)

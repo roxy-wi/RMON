@@ -84,7 +84,7 @@ def get_agent_id_by_check_id(check_id: int):
 
 def add_agent(**kwargs) -> int:
 	try:
-		last_id = SmonAgent.insert(kwargs).execute()
+		last_id = SmonAgent.insert(**kwargs).execute()
 		return last_id
 	except Exception as e:
 		out_error(e)

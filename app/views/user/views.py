@@ -303,14 +303,14 @@ class UserGroupView(MethodView):
           - User group
         parameters:
         - in: 'path'
-          name: 'group_id'
-          description: 'Group ID to list'
+          name: 'user_id'
+          description: 'User ID to get'
           required: true
           schema:
             type: 'integer'
         responses:
           200:
-            description: A list of users in the group
+            description: A list of user's groups
             schema:
               type: array
               items:

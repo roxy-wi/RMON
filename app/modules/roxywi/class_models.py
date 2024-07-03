@@ -136,8 +136,6 @@ class UserPut(BaseModel):
 
 
 class AddUserToGroup(BaseModel):
-    # user_id: int
-    # group_id: int
     role_id: Annotated[int, Gt(0), Le(4)]
 
 
@@ -148,7 +146,7 @@ class RmonAgent(BaseModel):
     shared: Optional[bool] = 0
     port: Annotated[int, Gt(1024), Le(65535)] = 5101
     server_id: int
-    agent_uuid: Optional[UUID4] = ''
+    uuid: Optional[UUID4] = ''
     reconfigure: Optional[bool] = 0
 
 
