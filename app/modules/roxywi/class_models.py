@@ -62,7 +62,7 @@ class BaseCheckRequest(BaseModel):
     mm: Optional[int] = 0
     slack: Optional[int] = 0
     interval: Optional[int] = 120
-    group: Optional[EscapedString] = ''
+    group: Optional[EscapedString] = None
 
     @root_validator(pre=True)
     @classmethod
@@ -87,9 +87,9 @@ class BaseCheckRequest(BaseModel):
 class HttpCheckRequest(BaseCheckRequest):
     url: AnyUrl
     http_method: Literal['get', 'post', 'put', 'patch', 'delete', 'head', 'options']
-    header_req: Optional[str] = ''
-    body_req: Optional[str] = ''
-    body: Optional[EscapedString] = ''
+    header_req: Optional[str] = None
+    body_req: Optional[str] = None
+    body: Optional[EscapedString] = None
     accepted_status_codes: Annotated[int, Gt(99), Le(599)]
 
     @field_validator('http_method', mode='before')
@@ -141,7 +141,7 @@ class AddUserToGroup(BaseModel):
 
 class RmonAgent(BaseModel):
     name: EscapedString
-    desc: Optional[EscapedString] = ''
+    desc: Optional[EscapedString] = None
     enabled: Optional[bool] = 1
     shared: Optional[bool] = 0
     port: Annotated[int, Gt(1024), Le(65535)] = 5101

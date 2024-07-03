@@ -61,7 +61,10 @@ $.ajaxSetup({
 	headers: {"X-CSRF-TOKEN": csrf_token},
 });
 $(document).ajaxError(function myErrorHandler(event, xhr, ajaxOptions, thrownError) {
-  toastr.error(xhr.responseJSON.error);
+	if (xhr.status != 401) {
+		toastr.error(xhr.responseJSON.error);
+	}
+
 });
 function showLog() {
 	var waf = cur_url[2];
@@ -380,15 +383,28 @@ $( function() {
 			data: JSON.stringify(json_data),
 			contentType: "application/json; charset=utf-8",
 			type: "POST",
+			statusCode: {
+				401: function (xhr) {
+					$('.alert').show();
+					if (xhr.responseText.indexOf('disabled') != '-1') {
+						$('.alert').html('Your login is disabled')
+					} else {
+						$('.alert').html('Login or password is incorrect');
+						ban();
+					}
+				}
+			},
 			success: function (data) {
 				if (data.status === 'failed') {
 					if (data.error.indexOf('disabled') != '-1') {
 						$('.alert').show();
 						$('.alert').html(data.error);
-					} else if (data.error.indexOf('ban') != '-1') {
-						ban();
+					// } else if (data.error == 'Cannot check login password: ban') {
+
 					} else {
-						toastr.error(data.error);
+						$('.alert').show();
+						$('.alert').html(data.error);
+						ban();
 					}
 				} else {
 					sessionStorage.removeItem('check-service');
