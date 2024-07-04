@@ -1,10 +1,11 @@
-from flask_jwt_extended import get_jwt
+from flask_jwt_extended import get_jwt, verify_jwt_in_request
 
 from app.modules.db.db_model import Setting, Role
 from app.modules.db.common import out_error
 
 
 def get_setting(param, **kwargs):
+	verify_jwt_in_request()
 	claims = get_jwt()
 	user_group_id = claims['group']
 
