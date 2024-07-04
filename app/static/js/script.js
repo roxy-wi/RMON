@@ -399,8 +399,6 @@ $( function() {
 					if (data.error.indexOf('disabled') != '-1') {
 						$('.alert').show();
 						$('.alert').html(data.error);
-					// } else if (data.error == 'Cannot check login password: ban') {
-
 					} else {
 						$('.alert').show();
 						$('.alert').html(data.error);

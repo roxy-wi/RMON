@@ -48,7 +48,7 @@ function addServer(dialog_id) {
     let server_group = $('#new-server-group-add').val();
     let cred = $('#credentials').val();
     let enable = 0;
-    if ($('#enabled').is(':checked')) {
+    if ($('#new-server-enabled').is(':checked')) {
         enable = '1';
     }
     let allFields = $([]).add($('#new-server-add')).add($('#new-ip')).add($('#new-port'))
@@ -120,8 +120,7 @@ function confirmDeleteServer(id) {
 function removeServer(id) {
 	$("#server-" + id).css("background-color", "#f2dede");
 	$.ajax({
-		url: "/server",
-		data: JSON.stringify({'id': id}),
+		url: api_v_prefix + "/server/" + id,
 		type: "DELETE",
 		contentType: "application/json; charset=utf-8",
 		statusCode: {
@@ -144,7 +143,7 @@ function removeServer(id) {
 function updateServer(id) {
     toastr.clear();
     let enable = 0;
-    if ($('#enabled-' + id).is(':checked')) {
+    if ($('#server-enabled-' + id).is(':checked')) {
         enable = '1';
     }
     let server_group = $('#servergroup-' + id + ' option:selected').val();

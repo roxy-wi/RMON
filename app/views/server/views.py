@@ -233,7 +233,8 @@ class ServerView(MethodView):
 
         return BaseResponse().model_dump(mode='json'), 201
 
-    def delete(self, server_id: int):
+    @staticmethod
+    def delete(server_id: int):
         """
         Delete a server
         ---
@@ -256,7 +257,7 @@ class ServerView(MethodView):
         """
         try:
             server_mod.delete_server(server_id)
-            return BaseResponse.model_dump(mode='json'), 204
+            return BaseResponse().model_dump(mode='json'), 204
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot delete server')
 
