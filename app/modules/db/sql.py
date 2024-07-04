@@ -1,16 +1,14 @@
-from flask import request
+from flask_jwt_extended import get_jwt
 
 from app.modules.db.db_model import Setting, Role
 from app.modules.db.common import out_error
 
 
 def get_setting(param, **kwargs):
-	user_group_id = ''
-	try:
-		user_group_id = request.cookies.get('group')
-	except Exception:
-		pass
-	if user_group_id == '' or user_group_id is None or param in ('proxy', 'agent_port', 'master_port', 'master_ip'):
+	claims = get_jwt()
+	user_group_id = claims['group']
+
+	if param in ('proxy', 'agent_port', 'master_port', 'master_ip'):
 		user_group_id = 1
 
 	if kwargs.get('all'):

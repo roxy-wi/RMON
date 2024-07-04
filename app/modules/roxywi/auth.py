@@ -136,9 +136,7 @@ def check_user_password(login: str, password: str) -> dict:
         raise Exception('There is no login or password')
 
     try:
-        from playhouse.shortcuts import model_to_dict
         user = user_sql.get_user_by_username(login)
-        print(model_to_dict(user))
     except Exception:
         raise Exception('ban')
 
