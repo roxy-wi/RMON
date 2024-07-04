@@ -48,12 +48,8 @@ function addServer(dialog_id) {
     let server_group = $('#new-server-group-add').val();
     let cred = $('#credentials').val();
     let enable = 0;
-    let add_to_smon = 0;
     if ($('#enabled').is(':checked')) {
         enable = '1';
-    }
-    if ($('#add_to_smon').is(':checked')) {
-        add_to_smon = '1';
     }
     let allFields = $([]).add($('#new-server-add')).add($('#new-ip')).add($('#new-port'))
     allFields.removeClass("ui-state-error");
@@ -73,11 +69,10 @@ function addServer(dialog_id) {
 	}
     if (valid) {
         let json_data = {
-            "name": servername,
+            "hostname": servername,
             "ip": ip,
             "port": $('#new-port').val(),
-            "group": server_group,
-            "add_to_smon": add_to_smon,
+            "group_id": server_group,
             "enabled": enable,
             "creds_id": cred,
             "desc": $('#desc').val(),
@@ -96,8 +91,6 @@ function addServer(dialog_id) {
                     $("input[type=checkbox]").checkboxradio();
                     $(".controlgroup").controlgroup();
                     $("select").selectmenu();
-                    let id = data.id;
-                    // after_server_creating(servername, ip, scan_server);
                 }
             }
         });
