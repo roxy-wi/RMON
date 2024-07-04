@@ -9,7 +9,7 @@ def select_ssh(**kwargs) -> Cred:
 	elif kwargs.get("id") is not None:
 		query = Cred.select().where(Cred.id == kwargs.get('id'))
 	elif kwargs.get("serv") is not None:
-		query = Cred.select().join(Server, on=(Cred.id == Server.cred)).where(Server.ip == kwargs.get('serv'))
+		query = Cred.select().join(Server, on=(Cred.id == Server.creds_id)).where(Server.ip == kwargs.get('serv'))
 	elif kwargs.get("group") is not None:
 		query = Cred.select().where(Cred.group_id == kwargs.get("group"))
 	else:

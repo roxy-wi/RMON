@@ -15,7 +15,7 @@ from app.modules.roxywi.exception import RoxywiResourceNotFound
 def get_agents(group_id: int):
 	try:
 		return SmonAgent.select(SmonAgent, Server).join(Server).where(
-			(Server.groups == group_id) |
+			(Server.group_id == group_id) |
 			(SmonAgent.shared == 1)
 		).objects().execute()
 	except Exception as e:
@@ -25,7 +25,7 @@ def get_agents(group_id: int):
 def get_enabled_agents(group_id: int):
 	try:
 		return SmonAgent.select(SmonAgent, Server).join(Server).where(
-			(Server.groups == group_id) &
+			(Server.group_id == group_id) &
 			(SmonAgent.enabled == True) |
 			(SmonAgent.shared == 1)
 		).objects().execute()
@@ -37,7 +37,7 @@ def get_free_servers_for_agent(group_id: int):
 	try:
 		query = Server.select().where(
 			(Server.server_id.not_in(SmonAgent.select(SmonAgent.server_id))) &
-			(Server.groups == group_id)
+			(Server.group_id == group_id)
 		)
 		return query.execute()
 	except Exception as e:
@@ -55,7 +55,7 @@ def get_agent_with_group(agent_id: int, group_id: int):
 	try:
 		return SmonAgent.select(SmonAgent, Server).join(Server).where(
 			(SmonAgent.id == agent_id) *
-			(Server.groups == group_id)
+			(Server.group_id == group_id)
 		).objects().execute()
 	except Exception as e:
 		out_error(e)

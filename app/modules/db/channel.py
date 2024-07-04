@@ -11,7 +11,7 @@ def get_user_telegram_by_group(group):
 
 def get_telegram_by_ip(ip):
 	try:
-		return Telegram.select().join(Server, on=(Server.groups == Telegram.groups)).where(Server.ip == ip).execute()
+		return Telegram.select().join(Server, on=(Server.group_id == Telegram.groups)).where(Server.ip == ip).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -32,7 +32,7 @@ def get_user_slack_by_group(group):
 
 def get_slack_by_ip(ip):
 	try:
-		return Slack.select().join(Server, on=(Server.groups == Slack.groups)).where(Server.ip == ip).execute()
+		return Slack.select().join(Server, on=(Server.group_id == Slack.groups)).where(Server.ip == ip).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -59,7 +59,7 @@ def get_user_mm_by_group(group):
 
 
 def get_pd_by_ip(ip):
-	query = PD.select().join(Server, on=(Server.groups == PD.groups)).where(Server.ip == ip)
+	query = PD.select().join(Server, on=(Server.group_id == PD.groups)).where(Server.ip == ip)
 	try:
 		query_res = query.execute()
 	except Exception as e:
@@ -256,7 +256,7 @@ def select_mm(**kwargs):
 
 
 def get_mm_by_ip(ip):
-	query = MM.select().join(Server, on=(Server.groups == MM.groups)).where(Server.ip == ip)
+	query = MM.select().join(Server, on=(Server.group_id == MM.groups)).where(Server.ip == ip)
 	try:
 		query_res = query.execute()
 	except Exception as e:

@@ -53,7 +53,7 @@
 			</td>
 			{% endif %}
 			<td class="checkbox">
-				{% set id = 'enable-' + server.0|string() %}
+				{% set id = 'enabled-' + server.0|string() %}
 				{% if server.4 == 1 %}
 					{{ checkbox(id, checked='checked') }}
 				{% else %}

@@ -152,3 +152,13 @@ class RmonAgent(BaseModel):
 
 class GroupQuery(BaseModel):
     group_id: Optional[int] = None
+
+
+class ServerRequest(BaseModel):
+    hostname: EscapedString
+    ip: Union[IPvAnyAddress, DomainName]
+    enabled: Optional[bool] = 1
+    creds_id: int
+    port: Optional[int] = 22
+    desc: Optional[EscapedString] = None
+    group_id: Optional[int] = None

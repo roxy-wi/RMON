@@ -49,7 +49,7 @@ function addServer(dialog_id) {
     let cred = $('#credentials').val();
     let enable = 0;
     let add_to_smon = 0;
-    if ($('#enable').is(':checked')) {
+    if ($('#enabled').is(':checked')) {
         enable = '1';
     }
     if ($('#add_to_smon').is(':checked')) {
@@ -151,7 +151,7 @@ function removeServer(id) {
 function updateServer(id) {
     toastr.clear();
     let enable = 0;
-    if ($('#enable-' + id).is(':checked')) {
+    if ($('#enabled-' + id).is(':checked')) {
         enable = '1';
     }
     let server_group = $('#servergroup-' + id + ' option:selected').val();
@@ -159,16 +159,16 @@ function updateServer(id) {
 		server_group = $('#new-sshgroup').val();
 	}
     let json_data = {
-        "name": $('#hostname-' + id).val(),
+        "hostname": $('#hostname-' + id).val(),
         "port": $('#port-' + id).val(),
-        "group": server_group,
+        "ip": $('#ip-' + id).text(),
+        "group_id": server_group,
         "enabled": enable,
         "creds_id": $('#credentials-' + id + ' option:selected').val(),
-        "id": id,
         "desc": $('#desc-' + id).val()
     }
     $.ajax({
-        url: "/server",
+        url: api_v_prefix + "/server/" + id,
         data: JSON.stringify(json_data),
         contentType: "application/json; charset=utf-8",
         type: "PUT",
@@ -204,12 +204,12 @@ function checkSshConnect(ip) {
 }
 function cloneServer(id) {
 	$( "#add-server-button" ).trigger( "click" );
-	if ($('#enable-'+id).is(':checked')) {
-		$('#enable').prop('checked', true)
+	if ($('#enabled-'+id).is(':checked')) {
+		$('#enabled').prop('checked', true)
 	} else {
-		$('#enable').prop('checked', false)
+		$('#enabled').prop('checked', false)
 	}
-	$('#enable').checkboxradio("refresh");
+	$('#enabled').checkboxradio("refresh");
 	$('#new-server-add').val($('#hostname-'+id).val())
 	$('#new-ip').val($('#ip-'+id).val())
 	$('#new-port').val($('#port-'+id).val())

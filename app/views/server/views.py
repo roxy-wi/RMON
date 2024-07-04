@@ -1,4 +1,5 @@
 from flask.views import MethodView
+from flask_pydantic import validate
 from flask_jwt_extended import jwt_required
 from flask import render_template, jsonify, request, g
 from playhouse.shortcuts import model_to_dict
@@ -12,10 +13,9 @@ import app.modules.roxywi.group as group_mod
 import app.modules.roxywi.common as roxywi_common
 import app.modules.server.ssh as ssh_mod
 import app.modules.server.server as server_mod
-import app.modules.tools.smon as smon_mod
 from app.middleware import get_user_params, page_for_admin, check_group
 from app.modules.roxywi.exception import RoxywiGroupMismatch, RoxywiResourceNotFound
-from app.modules.roxywi.class_models import IdResponse
+from app.modules.roxywi.class_models import BaseResponse, IdResponse, ServerRequest, GroupQuery
 
 
 class ServerView(MethodView):
@@ -32,10 +32,80 @@ class ServerView(MethodView):
             type: boolean
             description: is api
         """
-        self.json_data = request.get_json()
+        if request.method not in ('GET', 'DELETE'):
+            self.json_data = request.get_json()
+        else:
+            self.json_data = None
         self.is_api = is_api
 
-    def post(self):
+    @validate(query=GroupQuery)
+    def get(self, server_id: int, query: GroupQuery):
+        """
+        Retrieve server information based on GroupQuery
+        ---
+        tags:
+          - 'Server'
+        parameters:
+          - in: 'query'
+            name: 'GroupQuery'
+            description: 'GroupQuery to filter servers. Only for superAdmin role'
+            required: false
+            schema:
+              type: 'string'
+        responses:
+          200:
+            description: 'Server Information'
+            content:
+              application/json:
+                schema:
+                  type: 'object'
+                  properties:
+                    alert:
+                      type: 'integer'
+                      description: 'Alert status of the server'
+                    creds_id:
+                      type: 'integer'
+                      description: 'Credentials ID'
+                    desc:
+                      type: 'string'
+                      description: 'Description of the server'
+                    enabled:
+                      type: 'integer'
+                      description: 'Enabled status of the server'
+                    group_id:
+                      type: 'string'
+                      description: 'ID of the group the server belongs to'
+                    hostname:
+                      type: 'string'
+                      description: 'Hostname of the server'
+                    ip:
+                      type: 'string'
+                      description: 'IP address of the server'
+                    port:
+                      type: 'integer'
+                      description: 'Port number of the server'
+                    pos:
+                      type: 'integer'
+                      description: 'Position of the server'
+                    server_id:
+                      type: 'integer'
+                      description: 'ID of the server'
+        """
+        if g.user_params['role'] == 1:
+            if query.group_id:
+                group_id = query.group_id
+            else:
+                group_id = g.user_params['group_id']
+        else:
+            group_id = g.user_params['group_id']
+        try:
+            server = server_sql.get_server_with_group(server_id, group_id)
+        except Exception as e:
+            return roxywi_common.handle_json_exceptions(e, 'Cannot get group')
+        return jsonify(model_to_dict(server))
+
+    @validate(body=ServerRequest)
+    def post(self, body: ServerRequest):
         """
         Create a new server
         ---
@@ -47,15 +117,14 @@ class ServerView(MethodView):
             schema:
               id: NewServer
               required:
-                - name
+                - hostname
                 - ip
                 - enabled
                 - creds_id
                 - port
                 - desc
-                - add_to_smon
               properties:
-                name:
+                hostname:
                   type: string
                   description: The server name
                 ip:
@@ -73,76 +142,40 @@ class ServerView(MethodView):
                 desc:
                   type: string
                   description: The server description
-                add_to_smon:
-                  type: integer
-                  description: If server is to be added to SMON or not
         responses:
           201:
             description: Server creation successful
         """
-        try:
-            if g.user_params['role'] == 1:
-                group = int(self.json_data['group'])
+        if g.user_params['role'] == 1:
+            if body.group_id:
+                group = body.group_id
             else:
                 group = int(g.user_params['group_id'])
-            hostname = common.checkAjaxInput(self.json_data['name'])
-            ip = common.is_ip_or_dns(self.json_data['ip'])
-            enable = int(self.json_data['enabled'])
-            cred = int(self.json_data['creds_id'])
-            port = int(self.json_data['port'])
-            desc = common.checkAjaxInput(self.json_data['desc'])
-            add_to_smon = int(self.json_data['add_to_smon'])
-            lang = roxywi_common.get_user_lang_for_flask()
-        except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse server data')
+        else:
+            group = int(g.user_params['group_id'])
+        lang = roxywi_common.get_user_lang_for_flask()
 
         try:
-            last_id = server_mod.create_server(hostname, ip, group, enable, cred, port, desc)
+            last_id = server_mod.create_server(body.hostname, body.ip, group, body.enabled, body.creds_id, body.port, body.desc)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot create a server')
 
-        if add_to_smon:
-            try:
-                user_group = roxywi_common.get_user_group(id=1)
-                json_data = {
-                    "name": hostname,
-                    "ip": ip,
-                    "port": "0",
-                    "enabled": "1",
-                    "url": "",
-                    "body": "",
-                    "group": hostname,
-                    "desc": f"Ping {hostname}",
-                    "tg": "0",
-                    "slack": "0",
-                    "pd": "0",
-                    "resolver": "",
-                    "record_type": "",
-                    "packet_size": "56",
-                    "http_method": "",
-                    "check_type": "ping",
-                    "agent_id": "1",
-                    "interval": "120",
-                }
-                smon_mod.create_check(json_data, user_group, show_new=False)
-            except Exception as e:
-                roxywi_common.logging(ip, f'error: Cannot add server {hostname} to SMON: {e}')
-
-        roxywi_common.logging(ip, f'A new server {hostname} has been created', login=1, keep_history=1, service='server')
+        roxywi_common.logging(body.ip, f'A new server {body.hostname} has been created', login=1, keep_history=1, service='server')
 
         try:
-            server_mod.update_server_after_creating(hostname, ip)
+            server_mod.update_server_after_creating(body.hostname, body.ip)
         except Exception as e:
-            roxywi_common.logging(ip, f'error: Cannot get system info from {hostname}: {e}', login=1, keep_history=1, service='server')
+            roxywi_common.logging(body.ip, f'error: Cannot get system info from {body.hostname}: {e}', login=1, keep_history=1, service='server')
 
         if self.is_api:
-            return jsonify({'status': 'Created', 'id': last_id}), 201
+            return IdResponse(id=last_id).model_dump(mode='json'), 201
         else:
             data = render_template('ajax/new_server.html', groups=group_sql.select_groups(),
-                servers=server_sql.select_servers(server=ip), lang=lang, sshs=cred_sql.select_ssh(group=group), adding=1)
+                servers=server_sql.select_servers(server=body.ip), lang=lang, sshs=cred_sql.select_ssh(group=group), adding=1)
             return jsonify({'status': 'Created', 'data': data, 'id': last_id}), 201
 
-    def put(self):
+    @validate(body=ServerRequest)
+    def put(self, server_id: int, body: ServerRequest):
         """
         Update a server
         ---
@@ -183,34 +216,24 @@ class ServerView(MethodView):
           201:
             description: Server update successful
        """
-        try:
-            if g.user_params['role'] == 1:
-                group = int(self.json_data['group'])
+        if g.user_params['role'] == 1:
+            if body.group_id:
+                group = body.group_id
             else:
                 group = int(g.user_params['group_id'])
-            name = common.checkAjaxInput(self.json_data['name'])
-            enable = int(self.json_data['enabled'])
-            serv_id = int(self.json_data['id'])
-            cred = int(self.json_data['creds_id'])
-            port = int(self.json_data['port'])
-            desc = common.checkAjaxInput(self.json_data['desc'])
-        except ValueError as e:
-            return roxywi_common.handle_json_exceptions(e, 'There is must be a value')
-        except KeyError as e:
-            return roxywi_common.handle_json_exceptions(e, 'There is must be a key')
-        except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot parse server data')
+        else:
+            group = int(g.user_params['group_id'])
 
         try:
-            server_sql.update_server(name, group, enable, serv_id, cred, port, desc)
-            server_ip = server_sql.select_server_ip_by_id(serv_id)
-            roxywi_common.logging(server_ip, f'The server {name} has been update', roxywi=1, login=1, keep_history=1, service='server')
+            server_sql.update_server(body.hostname, group, body.enabled, server_id, body.creds_id, body.port, body.desc)
+            server_ip = server_sql.select_server_ip_by_id(server_id)
+            roxywi_common.logging(server_ip, f'The server {body.hostname} has been update', roxywi=1, login=1, keep_history=1, service='server')
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot update server')
 
-        return jsonify({'status': 'Created'}), 201
+        return BaseResponse().model_dump(mode='json'), 201
 
-    def delete(self):
+    def delete(self, server_id: int):
         """
         Delete a server
         ---
@@ -232,12 +255,8 @@ class ServerView(MethodView):
             description: Server deletion successful
         """
         try:
-            server_id = int(self.json_data['id'])
-        except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse server data')
-        try:
             server_mod.delete_server(server_id)
-            return jsonify({'status': 'Ok'}), 204
+            return BaseResponse.model_dump(mode='json'), 204
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot delete server')
 
@@ -256,11 +275,14 @@ class ServerGroupView(MethodView):
             type: boolean
             description: is api
         """
-        if request.method != 'DELETE':
+        if request.method not in ('GET', 'DELETE'):
             self.json_data = request.get_json()
         else:
             self.json_data = None
         self.is_api = is_api
+
+    def get(self, group_id: int):
+        ...
 
     def post(self):
         """

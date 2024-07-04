@@ -3,10 +3,10 @@ from app.modules.db.common import out_error
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 
 
-def add_server(hostname, ip, group, enable, cred, port, desc):
+def add_server(hostname, ip, group, enabled, creds_id, port, desc):
 	try:
 		server_id = Server.insert(
-			hostname=hostname, ip=ip, groups=group, enable=enable, cred=cred, port=port, desc=desc
+			hostname=hostname, ip=ip, group_id=group, enabled=enabled, creds_id=creds_id, port=port, desc=desc
 		).execute()
 		return server_id
 	except Exception as e:
@@ -24,10 +24,10 @@ def delete_server(server_id):
 		return True
 
 
-def update_server(hostname, group, enable, server_id, cred, port, desc):
+def update_server(hostname, group, enabled, server_id, creds_id, port, desc):
 	try:
 		server_update = Server.update(
-			hostname=hostname, groups=group, enable=enable, cred=cred, port=port, desc=desc
+			hostname=hostname, group_id=group, enabled=enabled, creds_id=creds_id, port=port, desc=desc
 		).where(Server.server_id == server_id)
 		server_update.execute()
 	except Exception as e:
@@ -43,7 +43,7 @@ def get_hostname_by_server_ip(server_ip):
 
 def get_server_group(server_ip):
 	try:
-		return Server.get(Server.ip == server_ip).groups
+		return Server.get(Server.ip == server_ip).group_id
 	except Exception as e:
 		return out_error(e)
 
@@ -147,7 +147,7 @@ def select_servers(**kwargs):
 	cursor = conn.cursor()
 
 	if mysql_enable == '1':
-		sql = """select * from `servers` where `enable` = 1 ORDER BY servers.group_id """
+		sql = """select * from `servers` where `enabled` = 1 ORDER BY servers.group_id """
 
 		if kwargs.get("server") is not None:
 			sql = """select * from `servers` where `ip` = '{}' """.format(kwargs.get("server"))
@@ -156,7 +156,7 @@ def select_servers(**kwargs):
 		if kwargs.get("id"):
 			sql = """select * from `servers` where `id` = '{}' """.format(kwargs.get("id"))
 	else:
-		sql = """select * from servers where enable = '1' ORDER BY servers.group_id """
+		sql = """select * from servers where enabled = '1' ORDER BY servers.group_id """
 
 		if kwargs.get("server") is not None:
 			sql = """select * from servers where ip = '{}' """.format(kwargs.get("server"))
@@ -175,24 +175,24 @@ def select_servers(**kwargs):
 
 def get_dick_permit(group_id, **kwargs):
 	only_group = kwargs.get('only_group')
-	disable = 'enable = 1'
+	disable = 'enabled = 1'
 	conn = connect()
 	cursor = conn.cursor()
 
 	if kwargs.get('disable') == 0:
-		disable = '(enable = 1 or enable = 0)'
+		disable = '(enabled = 1 or enabled = 0)'
 
 	try:
 		if mysql_enable == '1':
 			if group_id == 1 and not only_group:
 				sql = f" select * from `servers` where {disable} order by `pos` asc"
 			else:
-				sql = f" select * from `servers` where `groups` = {group_id} and ({disable}) order by `pos` asc"
+				sql = f" select * from `servers` where `group_id` = {group_id} and ({disable}) order by `pos` asc"
 		else:
 			if group_id == 1 and not only_group:
 				sql = f" select * from servers where {disable} order by pos"
 			else:
-				sql = f" select * from servers where groups = '{group_id}' and ({disable}) order by pos"
+				sql = f" select * from servers where group_id = '{group_id}' and ({disable}) order by pos"
 
 	except Exception as e:
 		raise Exception(f'error: {e}')
@@ -203,3 +203,12 @@ def get_dick_permit(group_id, **kwargs):
 		out_error(e)
 	else:
 		return cursor.fetchall()
+
+
+def get_server_with_group(server_id: int, group_id: int) -> Server:
+	try:
+		return Server.get((Server.server_id == server_id) & (Server.group_id == group_id))
+	except Server.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		out_error(e)

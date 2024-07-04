@@ -560,7 +560,7 @@ class UsersView(MethodView):
     def __init__(self):
         self.json_data = request.get_json()
 
-    @validate()
+    @validate(query=GroupQuery)
     def get(self, query: GroupQuery):
         """
         Get users information by Group ID, or all users if Group ID not provided.
@@ -618,7 +618,10 @@ class UsersView(MethodView):
                   description: 'Error message'
         """
         if g.user_params['role'] == 1:
-            group_id = query.group_id
+            if query.group_id:
+                group_id = query.group_id
+            else:
+                group_id = None
         else:
             group_id = g.user_params['group_id']
         if group_id:

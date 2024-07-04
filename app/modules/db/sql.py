@@ -5,9 +5,12 @@ from app.modules.db.common import out_error
 
 
 def get_setting(param, **kwargs):
-	verify_jwt_in_request()
-	claims = get_jwt()
-	user_group_id = claims['group']
+	try:
+		verify_jwt_in_request()
+		claims = get_jwt()
+		user_group_id = claims['group']
+	except Exception:
+		user_group_id = 1
 
 	if param in ('proxy', 'agent_port', 'master_port', 'master_ip'):
 		user_group_id = 1
