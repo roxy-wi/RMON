@@ -205,7 +205,6 @@ class ServerView(BaseServer):
               required:
                 - name
                 - enabled
-                - id
                 - creds_id
                 - port
                 - desc
@@ -216,9 +215,6 @@ class ServerView(BaseServer):
                 enabled:
                   type: integer
                   description: If server is enabled or not
-                id:
-                  type: integer
-                  description: The server ID to be updated
                 creds_id:
                   type: integer
                   description: The ID of the credentials
@@ -419,21 +415,12 @@ class ServerGroupView(MethodView):
             raise e
 
 
-class CredView(MethodView):
+class CredView(BaseServer):
     methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
     decorators = [jwt_required(), get_user_params(), page_for_admin(level=2), check_group()]
 
     def __init__(self, is_api=False):
-        """
-        Initialize CredView instance
-        ---
-        parameters:
-          - name: is_api
-            in: path
-            type: boolean
-            description: is api
-        """
-        self.json_data = request.get_json()
+        super().__init__()
         self.is_api = is_api
 
     @staticmethod
@@ -579,9 +566,6 @@ class CredView(MethodView):
                 key_enabled:
                   type: integer
                   description: If key is enabled or not
-                id:
-                  type: integer
-                  description: The SSH ID
                 password:
                   type: string
                   description: The password
@@ -666,7 +650,7 @@ class CredView(MethodView):
             return roxywi_common.handle_json_exceptions(e, ''), 404
 
         try:
-            ssh_mod.upload_ssh_key(creds_id, body.key, body.passphrase)
+            ssh_mod.upload_ssh_key(creds_id, body.private_key, body.passphrase)
             return BaseResponse().model_dump(mode='json'), 201
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot upload SSH key')

@@ -5,7 +5,7 @@ from app.views.server.views import ServerView, CredView, CredsView
 def register_api(view, endpoint, url, pk='check_id', pk_type='int'):
     view_func = view.as_view(endpoint, True)
     bp.add_url_rule(url, view_func=view_func, methods=['POST',])
-    bp.add_url_rule(f'/{url}/<{pk_type}:{pk}>', view_func=view_func, methods=['GET', 'PUT', 'DELETE'])
+    bp.add_url_rule(f'/{url}/<{pk_type}:{pk}>', view_func=view_func, methods=['GET', 'PUT', 'DELETE', 'PATCH'])
 
 
 register_api(ServerView, 'server', '', 'server_id')

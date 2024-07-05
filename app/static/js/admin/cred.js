@@ -168,7 +168,7 @@ function uploadSsh() {
 		"passphrase": $('#ssh-key-pass').val(),
 	}
     $.ajax({
-        url: api_v_prefix + "/server/cred/" + id,
+        url: api_v_prefix + "/server/cred/" + $('#ssh-key-name').val(),
         data: JSON.stringify(jsonData),
 		contentType: "application/json; charset=utf-8",
         type: "PATCH",
@@ -191,13 +191,14 @@ function updateSSH(id) {
 	let group = $('#sshgroup-' + id).val();
 	let jsonData = {
 		"name": $('#ssh_name-' + id).val(),
-		"group_id": group,
+		"group": group,
 		"key_enabled": ssh_enable,
 		"username": $('#ssh_user-' + id).val(),
 		"password": $('#ssh_pass-' + id).val(),
+		"id": id,
 	}
 	$.ajax({
-		url: api_v_prefix + "/server/cred/" + id,
+		url: "/server/cred",
 		data: JSON.stringify(jsonData),
 		contentType: "application/json; charset=utf-8",
 		type: "PUT",
