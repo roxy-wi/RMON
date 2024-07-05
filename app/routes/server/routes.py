@@ -4,7 +4,7 @@ from app.routes.server import bp
 import app.modules.common.common as common
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.server.server as server_mod
-from app.views.server.views import ServerView, CredsView
+from app.views.server.views import ServerView, CredView
 
 
 @bp.before_request
@@ -14,8 +14,8 @@ def before_request():
     pass
 
 
-bp.add_url_rule('', view_func=ServerView.as_view('server'))
-bp.add_url_rule('/cred', view_func=CredsView.as_view('cred'))
+bp.add_url_rule('', view_func=ServerView.as_view('server'), methods=['POST'])
+bp.add_url_rule('/cred', view_func=CredView.as_view('cred'), methods=['POST'])
 
 
 @bp.route('/check/ssh/<server_ip>')

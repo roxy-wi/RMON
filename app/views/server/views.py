@@ -1,3 +1,5 @@
+from typing import Union
+
 from flask.views import MethodView
 from flask_pydantic import validate
 from flask_jwt_extended import jwt_required
@@ -15,27 +17,35 @@ import app.modules.server.ssh as ssh_mod
 import app.modules.server.server as server_mod
 from app.middleware import get_user_params, page_for_admin, check_group
 from app.modules.roxywi.exception import RoxywiGroupMismatch, RoxywiResourceNotFound
-from app.modules.roxywi.class_models import BaseResponse, IdResponse, ServerRequest, GroupQuery
+from app.modules.roxywi.class_models import BaseResponse, IdResponse, ServerRequest, GroupQuery, CredRequest, CredUploadRequest
 
 
-class ServerView(MethodView):
-    methods = ["POST", "PUT", "DELETE"]
+class BaseServer(MethodView):
     decorators = [jwt_required(), get_user_params(), page_for_admin(level=2), check_group()]
 
-    def __init__(self, is_api=False):
-        """
-        Initialize ServerView instance
-        ---
-        parameters:
-          - name: is_api
-            in: path
-            type: boolean
-            description: is api
-        """
-        if request.method not in ('GET', 'DELETE'):
+    def __init__(self):
+        if request.method not in ('GET', 'DELETE', 'PUT'):
             self.json_data = request.get_json()
         else:
             self.json_data = None
+
+    @staticmethod
+    def return_group_id(body: Union[ServerRequest, CredRequest, GroupQuery]):
+        if g.user_params['role'] == 1:
+            if body.group_id:
+                group_id = body.group_id
+            else:
+                group_id = int(g.user_params['group_id'])
+        else:
+            group_id = int(g.user_params['group_id'])
+        return group_id
+
+
+class ServerView(BaseServer):
+    methods = ["POST", "PUT", "DELETE"]
+
+    def __init__(self, is_api=False):
+        super().__init__()
         self.is_api = is_api
 
     @validate(query=GroupQuery)
@@ -46,6 +56,12 @@ class ServerView(MethodView):
         tags:
           - 'Server'
         parameters:
+          - in: 'path'
+            name: 'server_id'
+            description: 'ID of the User to retrieve'
+            required: true
+            schema:
+              type: 'integer'
           - in: 'query'
             name: 'GroupQuery'
             description: 'GroupQuery to filter servers. Only for superAdmin role'
@@ -146,13 +162,7 @@ class ServerView(MethodView):
           201:
             description: Server creation successful
         """
-        if g.user_params['role'] == 1:
-            if body.group_id:
-                group = body.group_id
-            else:
-                group = int(g.user_params['group_id'])
-        else:
-            group = int(g.user_params['group_id'])
+        group = BaseServer.return_group_id(body)
         lang = roxywi_common.get_user_lang_for_flask()
 
         try:
@@ -182,6 +192,12 @@ class ServerView(MethodView):
         tags:
           - Server
         parameters:
+          - in: 'path'
+            name: 'server_id'
+            description: 'ID of the User to retrieve'
+            required: true
+            schema:
+              type: 'integer'
           - in: body
             name: body
             schema:
@@ -241,16 +257,12 @@ class ServerView(MethodView):
         tags:
           - Server
         parameters:
-          - in: body
-            name: body
+          - in: 'path'
+            name: 'server_id'
+            description: 'ID of the User to retrieve'
+            required: true
             schema:
-              id: DeleteServer
-              required:
-                - id
-              properties:
-                id:
-                  type: integer
-                  description: The server ID to be deleted
+              type: 'integer'
         responses:
           204:
             description: Server deletion successful
@@ -407,13 +419,13 @@ class ServerGroupView(MethodView):
             raise e
 
 
-class CredsView(MethodView):
+class CredView(MethodView):
     methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
     decorators = [jwt_required(), get_user_params(), page_for_admin(level=2), check_group()]
 
     def __init__(self, is_api=False):
         """
-        Initialize CredsView instance
+        Initialize CredView instance
         ---
         parameters:
           - name: is_api
@@ -425,47 +437,87 @@ class CredsView(MethodView):
         self.is_api = is_api
 
     @staticmethod
-    def get():
+    def get(creds_id: int):
         """
-        Retrieve credentials based on the group ID
+        Retrieve credential information for a specific ID
         ---
         tags:
-          - SSH credentials
+          - 'SSH credentials'
+        parameters:
+          - in: 'path'
+            name: 'creds_id'
+            description: 'ID of the credential to retrieve'
+            required: true
+            schema:
+                 type: 'integer'
         responses:
           200:
-            description: Credentials retrieval successful
-            schema:
-              $ref: '#/definitions/Credential'
+            description: 'Individual Credential Information'
+            content:
+              application/json:
+                schema:
+                  type: 'object'
+                  properties:
+                    group_id:
+                      type: 'integer'
+                      description: 'Group ID the credential belongs to'
+                    id:
+                      type: 'integer'
+                      description: 'Credential ID'
+                    key_enabled:
+                      type: 'integer'
+                      description: 'Key status of the credential'
+                    name:
+                      type: 'string'
+                      description: 'Name of the credential'
+                    username:
+                      type: 'string'
+                      description: 'Username associated with the credential'
+          404:
+            description: 'Credential not found'
+            content:
+              application/json:
+                schema:
+                  type: 'object'
+                  properties:
+                    error:
+                      type: 'string'
+                      description: 'Error message'
         """
         group_id = int(g.user_params['group_id'])
         try:
-            creds = cred_sql.select_ssh(group=group_id)
-            json_data = []
+            creds = cred_sql.get_ssh_by_id_and_group(creds_id, group_id)
             for cred in creds:
-                json_data.append(model_to_dict(cred, exclude=[Cred.password, Cred.passphrase]))
-            return jsonify(json_data), 200
+                return jsonify(model_to_dict(cred, exclude=[Cred.password, Cred.passphrase])), 200
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot get credentials')
 
-    def post(self):
+    @validate(body=CredRequest)
+    def post(self, body: CredRequest):
         """
         Create a new credential entry
         ---
         tags:
           - SSH credentials
         parameters:
+          - in: 'path'
+            name: 'creds_id'
+            description: 'ID of the credential to retrieve'
+            required: true
+            schema:
+                 type: 'integer'
           - in: body
             name: body
             schema:
               id: AddCredentials
               required:
-                - group
+                - group_шв
                 - name
                 - username
                 - key_enabled
                 - password
               properties:
-                group:
+                group_id:
                   type: integer
                   description: The group ID
                 name:
@@ -484,43 +536,35 @@ class CredsView(MethodView):
           201:
             description: Credential addition successful
         """
+        group_id = BaseServer.return_group_id(body)
         try:
-            if g.user_params['role'] == 1:
-                group = int(self.json_data['group'])
-            else:
-                group = int(g.user_params['group_id'])
-            name = common.checkAjaxInput(self.json_data['name'])
-            username = common.checkAjaxInput(self.json_data['username'])
-            enabled = int(self.json_data['key_enabled'])
-            try:
-                password = common.checkAjaxInput(self.json_data['password'])
-            except KeyError:
-                password = ''
-        except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse cred data')
-
-        try:
-            return ssh_mod.create_ssh_cred(name, password, group, username, enabled, self.is_api)
+            return ssh_mod.create_ssh_cred(body.name, body.password, group_id, body.username, body.key_enabled, self.is_api)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot create new cred')
 
-    def put(self):
+    @validate(body=CredRequest)
+    def put(self, creds_id: int, body: CredRequest):
         """
         Update a credential entry
         ---
         tags:
           - SSH credentials
         parameters:
+          - in: 'path'
+            name: 'creds_id'
+            description: 'ID of the credential to retrieve'
+            required: true
+            schema:
+                 type: 'integer'
           - in: body
             name: body
             schema:
               id: UpdateCredentials
               required:
-                - group
+                - group_id
                 - name
                 - username
                 - key_enabled
-                - id
                 - password
               properties:
                 group:
@@ -546,91 +590,69 @@ class CredsView(MethodView):
             description: Credential update successful
         """
         try:
-            self._check_is_correct_group()
+            self._check_is_correct_group(creds_id)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, ''), 404
 
         try:
-            if g.user_params['role'] == 1:
-                group = int(self.json_data['group'])
-            else:
-                group = int(g.user_params['group_id'])
-            name = common.checkAjaxInput(self.json_data['name'])
-            username = common.checkAjaxInput(self.json_data['username'])
-            key_enabled = int(self.json_data['key_enabled'])
-            ssh_id = int(self.json_data['id'])
-            try:
-                password = common.checkAjaxInput(self.json_data['password'])
-            except KeyError:
-                password = ''
-        except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse cred data')
-
-        try:
-            ssh_mod.update_ssh_key(ssh_id, name, password, key_enabled, username, group)
-            return jsonify({'status': 'Ok'}), 201
+            ssh_mod.update_ssh_key(creds_id, body.name, body.password, body.key_enabled, body.username, body.group_id)
+            return BaseResponse().model_dump(mode='json'), 201
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot update SSH key')
 
-    def delete(self):
+    def delete(self, creds_id: int):
         """
         Delete a credential entry
         ---
         tags:
           - SSH credentials
         parameters:
-          - in: body
-            name: body
+          - in: 'path'
+            name: 'creds_id'
+            description: 'ID of the credential to retrieve'
+            required: true
             schema:
-              id: DeleteCredentials
-              required:
-                - id
-              properties:
-                id:
-                  type: integer
-                  description: The SSH ID
+                 type: 'integer'
         responses:
           204:
             description: Credential deletion successful
         """
         try:
-            self._check_is_correct_group()
+            self._check_is_correct_group(creds_id)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, ''), 404
 
         try:
-            ssh_id = int(self.json_data['id'])
-        except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse cred data')
-
-        try:
-            ssh_mod.delete_ssh_key(ssh_id)
-            return jsonify({'status': 'Ok'}), 204
+            ssh_mod.delete_ssh_key(creds_id)
+            return BaseResponse().model_dump(mode='json'), 204
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot delete SSH key')
 
-    def patch(self):
+    @validate(body=CredUploadRequest)
+    def patch(self, creds_id: int, body: CredUploadRequest):
         """
         Upload an SSH private key
         ---
         tags:
           - SSH credentials
         parameters:
+         - in: 'path'
+           name: 'creds_id'
+           description: 'ID of the credential to retrieve'
+           required: true
+           schema:
+             type: 'integer'
          - in: body
            name: body
            schema:
              id: UploadSSHKey
              required:
                - private_key
-               - id
                - passphrase
              properties:
                private_key:
                  type: string
                  description: The private key string
-               id:
-                 type: integer
-                 description: The SSH ID
                passphrase:
                  type: string
                  description: The passphrase
@@ -639,32 +661,78 @@ class CredsView(MethodView):
             description: SSH key upload successful
         """
         try:
-            self._check_is_correct_group()
+            self._check_is_correct_group(creds_id)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, ''), 404
 
         try:
-            key = common.checkAjaxInput(self.json_data['private_key'])
-            ssh_id = common.checkAjaxInput(self.json_data['id'])
-            try:
-                passphrase = common.checkAjaxInput(self.json_data['passphrase'])
-            except KeyError:
-                passphrase = ''
-        except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse cred data')
-
-        try:
-            ssh_mod.upload_ssh_key(ssh_id, key, passphrase)
-            return jsonify({'status': 'Ok'}), 201
+            ssh_mod.upload_ssh_key(creds_id, body.key, body.passphrase)
+            return BaseResponse().model_dump(mode='json'), 201
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot upload SSH key')
 
-    def _check_is_correct_group(self):
+    @staticmethod
+    def _check_is_correct_group(creds_id: int):
         if g.user_params['role'] == 1:
             return True
         try:
-            ssh = cred_sql.get_ssh(self.json_data['id'])
+            ssh = cred_sql.get_ssh(creds_id)
         except RoxywiResourceNotFound:
             raise RoxywiResourceNotFound
         if ssh.group_id != g.user_params['group_id']:
             raise RoxywiGroupMismatch
+
+
+class CredsView(BaseServer):
+    def __init__(self):
+        super().__init__()
+
+    @validate(query=GroupQuery)
+    def get(self, query: GroupQuery):
+        """
+        Retrieve credential information based on group_id
+        ---
+        tags:
+          - 'SSH credentials'
+        parameters:
+          - in: 'query'
+            name: 'group_id'
+            description: 'GroupQuery to filter servers. Only for superAdmin role'
+            required: false
+            schema:
+              type: 'integer'
+        responses:
+          200:
+            description: 'Credentials Information'
+            content:
+              application/json:
+                schema:
+                  type: 'array'
+                  items:
+                    type: 'object'
+                    properties:
+                      group_id:
+                        type: 'integer'
+                        description: 'Group ID the credential belongs to'
+                      id:
+                        type: 'integer'
+                        description: 'Credential ID'
+                      key_enabled:
+                        type: 'integer'
+                        description: 'Key status of the credential'
+                      name:
+                        type: 'string'
+                        description: 'Name of the credential'
+                      username:
+                        type: 'string'
+                        description: 'Username of the credential'
+        """
+        group_id = BaseServer.return_group_id(query)
+        try:
+            creds = cred_sql.select_ssh(group=group_id)
+            json_data = []
+            for cred in creds:
+                json_data.append(model_to_dict(cred, exclude=[Cred.password, Cred.passphrase]))
+            return jsonify(json_data), 200
+        except Exception as e:
+            return roxywi_common.handle_json_exceptions(e, 'Cannot get credentials')

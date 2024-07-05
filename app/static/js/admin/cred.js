@@ -68,13 +68,13 @@ function addCreds(dialog_id) {
 	if (valid) {
         let jsonData = {
             "name": $('#new-ssh-add').val(),
-            "group": $('#new-sshgroup').val(),
+            "group_id": $('#new-sshgroup').val(),
             "username": $('#ssh_user').val(),
             "password": $('#ssh_pass').val(),
             "key_enabled": ssh_enable
         }
 		$.ajax({
-			url: "/server/cred",
+			url: api_v_prefix + "/server/cred",
 			data: JSON.stringify(jsonData),
 			contentType: "application/json; charset=utf-8",
 			type: "POST",
@@ -133,8 +133,7 @@ function confirmDeleteSsh(id) {
 function removeSsh(id) {
 	$("#ssh-table-" + id).css("background-color", "#f2dede");
 	$.ajax({
-		url: "/server/cred",
-		data: JSON.stringify({'id': id}),
+		url: api_v_prefix + "/server/cred/" + id,
 		contentType: "application/json; charset=utf-8",
 		type: "DELETE",
 		statusCode: {
@@ -166,12 +165,10 @@ function uploadSsh() {
     }
 	let jsonData = {
 		"private_key": $('#ssh_cert').val(),
-		"id": $('#ssh-key-name').val(),
 		"passphrase": $('#ssh-key-pass').val(),
-		"group": $('#ssh-key-name').val().split('_')[1]
 	}
     $.ajax({
-        url: "/server/cred",
+        url: api_v_prefix + "/server/cred/" + id,
         data: JSON.stringify(jsonData),
 		contentType: "application/json; charset=utf-8",
         type: "PATCH",
@@ -194,14 +191,13 @@ function updateSSH(id) {
 	let group = $('#sshgroup-' + id).val();
 	let jsonData = {
 		"name": $('#ssh_name-' + id).val(),
-		"group": group,
+		"group_id": group,
 		"key_enabled": ssh_enable,
 		"username": $('#ssh_user-' + id).val(),
 		"password": $('#ssh_pass-' + id).val(),
-		"id": id,
 	}
 	$.ajax({
-		url: "/server/cred",
+		url: api_v_prefix + "/server/cred/" + id,
 		data: JSON.stringify(jsonData),
 		contentType: "application/json; charset=utf-8",
 		type: "PUT",

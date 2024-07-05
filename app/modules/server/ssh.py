@@ -66,7 +66,7 @@ def create_ssh_cred(name: str, password: str, group: int, username: str, enable:
 	lang = roxywi_common.get_user_lang_for_flask()
 	name = f'{name}_{group_name}'
 
-	if password != '':
+	if password:
 		try:
 			password = crypt_password(password)
 		except Exception as e:
@@ -150,7 +150,7 @@ def update_ssh_key(ssh_id: int, name: str, password: str, enable: int, username:
 		except Exception as e:
 			raise Exception(e)
 
-	if ssh.key_enabled == 1:
+	if ssh.key_enabled == 1 and os.path.isfile(ssh_key_name):
 		os.rename(ssh_key_name, new_ssh_key_name)
 		os.chmod(new_ssh_key_name, 0o600)
 

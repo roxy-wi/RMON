@@ -22,6 +22,15 @@ def select_ssh(**kwargs) -> Cred:
 		return query_res
 
 
+def get_ssh_by_id_and_group(creds_id: int, group_id: int) -> Cred:
+	try:
+		return Cred.select().where((Cred.group_id == group_id) & (Cred.id == creds_id)).execute()
+	except Cred.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		out_error(e)
+
+
 def get_ssh(ssh_id: int) -> Cred:
 	try:
 		return Cred.get(Cred.id == ssh_id)

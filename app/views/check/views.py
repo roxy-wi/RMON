@@ -10,7 +10,6 @@ import app.modules.db.smon as smon_sql
 import app.modules.roxywi.common as roxywi_common
 import app.modules.tools.smon as smon_mod
 from app.middleware import get_user_params, check_group
-from app.modules.roxywi.exception import RoxywiResourceNotFound
 from app.modules.db.db_model import SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck
 from app.modules.roxywi.class_models import IdResponse, HttpCheckRequest, DnsCheckRequest, TcpCheckRequest, PingCheckRequest, BaseResponse
 

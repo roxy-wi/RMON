@@ -162,3 +162,16 @@ class ServerRequest(BaseModel):
     port: Optional[int] = 22
     desc: Optional[EscapedString] = None
     group_id: Optional[int] = None
+
+
+class CredRequest(BaseModel):
+    name: EscapedString
+    username: EscapedString
+    password: Optional[EscapedString] = None
+    key_enabled: Optional[bool] = 1
+    group_id: Optional[int] = None
+
+
+class CredUploadRequest(BaseModel):
+    private_key: str
+    passphrase: Optional[EscapedString] = None
