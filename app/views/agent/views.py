@@ -398,7 +398,6 @@ class AgentsView(MethodView):
         else:
             group = g.user_params['group_id']
         agents = smon_sql.get_agents(group)
-        # if self.is_api:
         agent_list = []
         for agent in agents:
             agent_dict = model_to_dict(agent)

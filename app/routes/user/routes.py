@@ -52,8 +52,3 @@ def change_user_groups_and_roles():
     user_uuid = request.cookies.get('uuid')
 
     return roxywi_user.save_user_group_and_role(user, groups_and_roles, user_uuid)
-
-
-@bp.route('/group/name/<int:group_id>')
-def get_group_name_by_id(group_id):
-    return group_sql.get_group_name_by_id(group_id)

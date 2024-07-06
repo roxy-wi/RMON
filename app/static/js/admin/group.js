@@ -64,13 +64,14 @@ function addGroup(dialog_id) {
 function getGroupNameById(group_id) {
 	let group_name = ''
 	$.ajax({
-		url: "/user/group/name/" + group_id,
+		url: api_v_prefix + "/group/" + group_id,
 		async: false,
+        contentType: "application/json; charset=utf-8",
 		success: function (data) {
-			if (data.indexOf('error:') != '-1') {
+			if (data.status === 'failed') {
 				toastr.error(data);
 			} else {
-				group_name = data;
+				group_name = data.name;
 			}
 		}
 	});

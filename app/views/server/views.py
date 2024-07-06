@@ -271,7 +271,7 @@ class ServerView(BaseServer):
 
 
 class ServerGroupView(MethodView):
-    methods = ["POST", "PUT", "DELETE"]
+    methods = ["GET", "POST", "PUT", "DELETE"]
     decorators = [jwt_required(), get_user_params(), page_for_admin()]
 
     def __init__(self, is_api=False):
@@ -291,7 +291,50 @@ class ServerGroupView(MethodView):
         self.is_api = is_api
 
     def get(self, group_id: int):
-        ...
+        """
+        Retrieve group information for a specific group_id
+        ---
+        tags:
+          - 'Group'
+        parameters:
+          - in: 'path'
+            name: 'group_id'
+            description: 'ID of the group to retrieve to get the group'
+            required: true
+            schema:
+                type: 'integer'
+        responses:
+          200:
+            description: 'Group Information'
+            schema:
+              type: 'object'
+              properties:
+                description:
+                  type: 'string'
+                  description: 'Description of the server group'
+                group_id:
+                  type: 'integer'
+                  description: 'Server group ID'
+                name:
+                  type: 'string'
+                  description: 'Name of the server group'
+          404:
+            description: 'Server group not found'
+            content:
+              application/json:
+                schema:
+                  type: 'object'
+                  properties:
+                    error:
+                      type: 'string'
+                      description: 'Error message'
+        """
+        try:
+            groups = group_sql.select_groups(id=group_id)
+            for group in groups:
+                return model_to_dict(group)
+        except Exception as e:
+            return roxywi_common.handle_json_exceptions(e, 'Cannot get group')
 
     def post(self):
         """
@@ -440,26 +483,24 @@ class CredView(BaseServer):
         responses:
           200:
             description: 'Individual Credential Information'
-            content:
-              application/json:
-                schema:
-                  type: 'object'
-                  properties:
-                    group_id:
-                      type: 'integer'
-                      description: 'Group ID the credential belongs to'
-                    id:
-                      type: 'integer'
-                      description: 'Credential ID'
-                    key_enabled:
-                      type: 'integer'
-                      description: 'Key status of the credential'
-                    name:
-                      type: 'string'
-                      description: 'Name of the credential'
-                    username:
-                      type: 'string'
-                      description: 'Username associated with the credential'
+            schema:
+              type: 'object'
+              properties:
+                group_id:
+                  type: 'integer'
+                  description: 'Group ID the credential belongs to'
+                id:
+                  type: 'integer'
+                  description: 'Credential ID'
+                key_enabled:
+                  type: 'integer'
+                  description: 'Key status of the credential'
+                name:
+                  type: 'string'
+                  description: 'Name of the credential'
+                username:
+                  type: 'string'
+                  description: 'Username associated with the credential'
           404:
             description: 'Credential not found'
             content:
@@ -573,13 +614,14 @@ class CredView(BaseServer):
           201:
             description: Credential update successful
         """
+        group_id = BaseServer.return_group_id(body)
         try:
             self._check_is_correct_group(creds_id)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, ''), 404
 
         try:
-            ssh_mod.update_ssh_key(creds_id, body.name, body.password, body.key_enabled, body.username, body.group_id)
+            ssh_mod.update_ssh_key(creds_id, body.name, body.password, body.key_enabled, body.username, group_id)
             return BaseResponse().model_dump(mode='json'), 201
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot update SSH key')

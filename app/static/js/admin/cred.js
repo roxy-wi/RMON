@@ -74,7 +74,7 @@ function addCreds(dialog_id) {
             "key_enabled": ssh_enable
         }
 		$.ajax({
-			url: api_v_prefix + "/server/cred",
+			url: "/server/cred",
 			data: JSON.stringify(jsonData),
 			contentType: "application/json; charset=utf-8",
 			type: "POST",
@@ -191,14 +191,13 @@ function updateSSH(id) {
 	let group = $('#sshgroup-' + id).val();
 	let jsonData = {
 		"name": $('#ssh_name-' + id).val(),
-		"group": group,
+		"group_id": group,
 		"key_enabled": ssh_enable,
 		"username": $('#ssh_user-' + id).val(),
-		"password": $('#ssh_pass-' + id).val(),
-		"id": id,
+		"password": $('#ssh_pass-' + id).val()
 	}
 	$.ajax({
-		url: "/server/cred",
+		url: api_v_prefix + "/server/cred/" + id,
 		data: JSON.stringify(jsonData),
 		contentType: "application/json; charset=utf-8",
 		type: "PUT",
