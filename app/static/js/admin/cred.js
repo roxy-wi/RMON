@@ -139,7 +139,9 @@ function removeSsh(id) {
 		statusCode: {
 			204: function (xhr) {
 				$("#ssh-table-" + id).remove();
+				$('select:regex(id, ssh-key-name) option[value=' + id + ']').remove();
 				$('select:regex(id, credentials) option[value=' + id + ']').remove();
+				$('select:regex(id, ssh-key-name)').selectmenu("refresh");
 				$('select:regex(id, credentials)').selectmenu("refresh");
 			},
 			404: function (xhr) {
@@ -168,7 +170,7 @@ function uploadSsh() {
 		"passphrase": $('#ssh-key-pass').val(),
 	}
     $.ajax({
-        url: api_v_prefix + "/server/cred/" + $('#ssh-key-name').val(),
+        url: api_v_prefix + "/server/cred/" + $('#ssh-key-name').val().split("_")[0],
         data: JSON.stringify(jsonData),
 		contentType: "application/json; charset=utf-8",
         type: "PATCH",
@@ -212,8 +214,8 @@ function updateSSH(id) {
 				}, 2500);
 				$('select:regex(id, credentials) option[value=' + id + ']').remove();
 				$('select:regex(id, ssh-key-name) option[value=' + $('#ssh_name-' + id).val() + ']').remove();
-				$('select:regex(id, credentials)').append('<option value=' + id + '>' + $('#ssh_name-' + id).val() + '</option>').selectmenu("refresh");
-				$('select:regex(id, ssh-key-name)').append('<option value=' + $('#ssh_name-' + id).val() + '>' + $('#ssh_name-' + id).val() + '</option>').selectmenu("refresh");
+				$('select:regex(id, credentials)').append('<option value=' + id + '>' + $('#ssh_name-' + id).val().split("_")[0] + '</option>').selectmenu("refresh");
+				$('select:regex(id, ssh-key-name)').append('<option value=' + $('#ssh_name-' + id).val().split("_")[0] + '>' + $('#ssh_name-' + id).val() + '</option>').selectmenu("refresh");
 			}
 		}
 	});

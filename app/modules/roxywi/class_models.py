@@ -154,6 +154,11 @@ class GroupQuery(BaseModel):
     group_id: Optional[int] = None
 
 
+class GroupRequest(BaseModel):
+    name: EscapedString
+    desc: Optional[EscapedString] = None
+
+
 class ServerRequest(BaseModel):
     hostname: EscapedString
     ip: Union[IPvAnyAddress, DomainName]

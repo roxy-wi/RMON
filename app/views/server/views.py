@@ -17,7 +17,9 @@ import app.modules.server.ssh as ssh_mod
 import app.modules.server.server as server_mod
 from app.middleware import get_user_params, page_for_admin, check_group
 from app.modules.roxywi.exception import RoxywiGroupMismatch, RoxywiResourceNotFound
-from app.modules.roxywi.class_models import BaseResponse, IdResponse, ServerRequest, GroupQuery, CredRequest, CredUploadRequest
+from app.modules.roxywi.class_models import (
+    BaseResponse, IdResponse, IdDataResponse, ServerRequest, GroupQuery, GroupRequest, CredRequest, CredUploadRequest
+)
 
 
 class BaseServer(MethodView):
@@ -107,13 +109,7 @@ class ServerView(BaseServer):
                       type: 'integer'
                       description: 'ID of the server'
         """
-        if g.user_params['role'] == 1:
-            if query.group_id:
-                group_id = query.group_id
-            else:
-                group_id = g.user_params['group_id']
-        else:
-            group_id = g.user_params['group_id']
+        group_id = BaseServer.return_group_id(query)
         try:
             server = server_sql.get_server_with_group(server_id, group_id)
         except Exception as e:
@@ -163,7 +159,6 @@ class ServerView(BaseServer):
             description: Server creation successful
         """
         group = BaseServer.return_group_id(body)
-        lang = roxywi_common.get_user_lang_for_flask()
 
         try:
             last_id = server_mod.create_server(body.hostname, body.ip, group, body.enabled, body.creds_id, body.port, body.desc)
@@ -171,18 +166,18 @@ class ServerView(BaseServer):
             return roxywi_common.handle_json_exceptions(e, 'Cannot create a server')
 
         roxywi_common.logging(body.ip, f'A new server {body.hostname} has been created', login=1, keep_history=1, service='server')
-
         try:
             server_mod.update_server_after_creating(body.hostname, body.ip)
         except Exception as e:
-            roxywi_common.logging(body.ip, f'error: Cannot get system info from {body.hostname}: {e}', login=1, keep_history=1, service='server')
+            roxywi_common.logging(body.ip, f'Cannot get system info from {body.hostname}: {e}', login=1, keep_history=1, service='server', mes_type='error')
 
         if self.is_api:
             return IdResponse(id=last_id).model_dump(mode='json'), 201
         else:
+            lang = roxywi_common.get_user_lang_for_flask()
             data = render_template('ajax/new_server.html', groups=group_sql.select_groups(),
                 servers=server_sql.select_servers(server=body.ip), lang=lang, sshs=cred_sql.select_ssh(group=group), adding=1)
-            return jsonify({'status': 'Created', 'data': data, 'id': last_id}), 201
+            return IdDataResponse(data=data, id=last_id), 201
 
     @validate(body=ServerRequest)
     def put(self, server_id: int, body: ServerRequest):
@@ -228,16 +223,10 @@ class ServerView(BaseServer):
           201:
             description: Server update successful
        """
-        if g.user_params['role'] == 1:
-            if body.group_id:
-                group = body.group_id
-            else:
-                group = int(g.user_params['group_id'])
-        else:
-            group = int(g.user_params['group_id'])
+        group_id = BaseServer.return_group_id(body)
 
         try:
-            server_sql.update_server(body.hostname, group, body.enabled, server_id, body.creds_id, body.port, body.desc)
+            server_sql.update_server(body.hostname, group_id, body.enabled, server_id, body.creds_id, body.port, body.desc)
             server_ip = server_sql.select_server_ip_by_id(server_id)
             roxywi_common.logging(server_ip, f'The server {body.hostname} has been update', roxywi=1, login=1, keep_history=1, service='server')
         except Exception as e:
@@ -336,7 +325,8 @@ class ServerGroupView(MethodView):
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot get group')
 
-    def post(self):
+    @validate(body=GroupRequest)
+    def post(self, body: GroupRequest):
         """
         Create a new group
         ---
@@ -362,22 +352,18 @@ class ServerGroupView(MethodView):
             description: Group creation successful
         """
         try:
-            group = common.checkAjaxInput(self.json_data['name'])
-            desc = common.checkAjaxInput(self.json_data['desc'])
-        except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse group data')
-        try:
-            last_id = group_sql.add_group(group, desc)
-            roxywi_common.logging('RMON server', f'A new group {group} has been created', roxywi=1, login=1)
+            last_id = group_sql.add_group(body.name, body.desc)
+            roxywi_common.logging('RMON server', f'A new group {body.name} has been created', roxywi=1, login=1)
             if self.is_api:
                 return IdResponse(id=last_id).model_dump(mode='json'), 201
             else:
-                data = render_template('ajax/new_group.html', groups=group_sql.select_groups(group=group))
-                return jsonify({'status': 'Created', 'data': data, 'id': last_id}), 201
+                data = render_template('ajax/new_group.html', groups=group_sql.select_groups(group=body.name))
+                return IdDataResponse(data=data, id=last_id), 201
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot create group')
 
-    def put(self, group_id: int):
+    @validate(body=GroupRequest)
+    def put(self, group_id: int, body: GroupRequest):
         """
         Update a group
         ---
@@ -409,15 +395,10 @@ class ServerGroupView(MethodView):
           201:
             description: Group update successful
        """
-        try:
-            name = common.checkAjaxInput(self.json_data['name'])
-            desc = common.checkAjaxInput(self.json_data['desc'])
-        except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse group data')
 
         try:
-            group_mod.update_group(group_id, name, desc)
-            return jsonify({'status': 'Created'}), 201
+            group_mod.update_group(group_id, body.name, body.desc)
+            return BaseResponse(), 201
         except Exception as e:
             roxywi_common.handle_json_exceptions(e, 'Cannot update group')
 

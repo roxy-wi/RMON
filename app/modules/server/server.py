@@ -100,10 +100,10 @@ def get_remote_files(server_ip: str, config_dir: str, file_format: str):
 	return config_files
 
 
-def get_system_info(server_ip: str) -> str:
-	server_ip = common.is_ip_or_dns(server_ip)
+def get_system_info(server_ip: str) -> None:
+	server_ip = str(server_ip)
 	if server_ip == '':
-		return 'error: IP cannot be empty'
+		raise Exception('IP cannot be empty')
 
 	server_id = server_sql.select_server_id_by_ip(server_ip)
 	command = "sudo lshw -quiet -json"
@@ -407,13 +407,13 @@ def create_server(hostname, ip, group, enable, cred, port, desc, **kwargs) -> in
 		raise Exception(e)
 
 
-def update_server_after_creating(hostname: str, ip: str) -> str:
+def update_server_after_creating(hostname: str, ip: str) -> None:
+	print('sysinfo 123', ip)
 	try:
 		get_system_info(ip)
+		print('sysinfo')
 	except Exception as e:
 		roxywi_common.handle_exceptions(e, hostname, f'Cannot get info from server {hostname}', login=1)
-
-	return 'ok'
 
 
 def delete_server(server_id: int) -> str:
