@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Union
 
 from peewee import fn
 
@@ -302,11 +303,10 @@ def insert_smon_http(smon_id, url, body, http_method, interval, agent_id, body_r
 		out_error(e)
 
 
-def select_smon_checks(check_type: str, group_id: int) -> tuple:
+def select_smon_checks(check_type: str, group_id: int) -> Union[SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck]:
 	correct_model = tool_common.get_model_for_check(check_type=check_type)
 	try:
 		query = correct_model.select().join(SMON).where(SMON.user_group == group_id)
-		print(query)
 		return query.execute()
 	except correct_model.DoesNotExist:
 		raise RoxywiResourceNotFound

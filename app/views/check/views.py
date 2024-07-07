@@ -2,7 +2,7 @@ from typing import Union
 
 from flask.views import MethodView
 from flask_jwt_extended import jwt_required
-from flask import g, abort
+from flask import g, abort, jsonify
 from flask_pydantic import validate
 from playhouse.shortcuts import model_to_dict
 
@@ -10,8 +10,11 @@ import app.modules.db.smon as smon_sql
 import app.modules.roxywi.common as roxywi_common
 import app.modules.tools.smon as smon_mod
 from app.middleware import get_user_params, check_group
+from app.views.server.views import BaseServer
 from app.modules.db.db_model import SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck
-from app.modules.roxywi.class_models import IdResponse, HttpCheckRequest, DnsCheckRequest, TcpCheckRequest, PingCheckRequest, BaseResponse
+from app.modules.roxywi.class_models import (
+    IdResponse, HttpCheckRequest, DnsCheckRequest, TcpCheckRequest, PingCheckRequest, BaseResponse, GroupQuery
+)
 
 
 class CheckView(MethodView):
@@ -37,19 +40,12 @@ class CheckView(MethodView):
         }
 
     def get(self, check_id: int) -> Union[SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck]:
-        if check_id:
-            check_type_id = smon_mod.get_check_id_by_name(self.check_type)
-            checks = smon_sql.select_one_smon(check_id, check_type_id=check_type_id)
-            for check in checks:
-                return model_to_dict(check)
-            else:
-                abort(404, f'{self.check_type} check not found')
+        check_type_id = smon_mod.get_check_id_by_name(self.check_type)
+        checks = smon_sql.select_one_smon(check_id, check_type_id=check_type_id)
+        for check in checks:
+            return model_to_dict(check)
         else:
-            checks = smon_sql.select_smon_checks(self.check_type, self.group_id)
-            check_list = []
-            for check in checks:
-                check_list.append(model_to_dict(check))
-            return check_list
+            abort(404, f'{self.check_type} check not found')
 
     def post(self, data) -> int:
         """
@@ -81,7 +77,7 @@ class CheckView(MethodView):
             raise e
 
         try:
-            smon_mod.create_http_check(data, last_id)
+            self.create_func[self.check_type](data, last_id)
             smon_mod.send_new_check(last_id, data)
         except Exception as e:
             raise e
@@ -115,7 +111,7 @@ class CheckHttpView(CheckView):
 
     def get(self, check_id: int) -> SmonHttpCheck:
         """
-        Get HTTP check or list of HTTP checks, if without {check_id}.
+        Get HTTP check.
         ---
         tags:
         - 'HTTP Check'
@@ -398,7 +394,7 @@ class CheckTcpView(CheckView):
 
     def get(self, check_id: int) -> SmonTcpCheck:
         """
-        Get TCP check or list of TCP checks, if without {check_id}.
+        Get TCP check.
         ---
         tags:
         - 'TCP Check'
@@ -1135,3 +1131,371 @@ class CheckPingView(CheckView):
             description: 'Check Not Found'
         """
         return super().delete(check_id)
+
+
+class ChecksView(MethodView):
+    methods = ["GET"]
+    decorators = [jwt_required(), get_user_params(), check_group()]
+
+    def __init__(self):
+        self.check_type = None
+
+    def get(self, query: GroupQuery) -> Union[SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck]:
+        group_id = BaseServer.return_group_id(query)
+        checks = smon_sql.select_smon_checks(self.check_type, group_id)
+        return checks
+
+
+class ChecksViewHttp(ChecksView):
+    def __init__(self):
+        super().__init__()
+        self.check_type = 'http'
+
+    @validate(query=GroupQuery)
+    def get(self, query: GroupQuery):
+        """
+        Get HTTP list of HTTP checks, for current group or for specific group if {group_id}.
+        ---
+        tags:
+          - 'HTTP Check'
+        parameters:
+        - in: 'query'
+          name: 'group_id'
+          description: 'ID of the group to retrieve'
+          required: true
+          schema:
+            type: 'integer'
+        responses:
+          '200':
+            description: 'Successful Operation'
+            schema:
+              type: array
+              id: 'HttpChecks'
+              items:
+                id: Agent
+                properties:
+                  smon_id:
+                    type: 'object'
+                    description: 'SMON object'
+                    properties:
+                      id:
+                        type: 'integer'
+                        description: 'SMON ID'
+                      name:
+                        type: 'string'
+                        description: 'Name'
+                      port:
+                        type: 'integer'
+                        description: 'Port'
+                      status:
+                        type: 'integer'
+                        description: 'Status'
+                      en:
+                        type: 'integer'
+                        description: 'EN'
+                      desc:
+                        type: 'string'
+                        description: 'Description'
+                      time_state:
+                        type: 'string'
+                        format: 'date-time'
+                        description: 'Time State'
+                  url:
+                    type: 'string'
+                    description: 'URL to be tested'
+                  method:
+                    type: 'string'
+                    description: 'HTTP Method to be used'
+                  accepted_status_codes:
+                    type: 'string'
+                    description: 'Expected status code'
+                  body:
+                    type: 'string'
+                    description: 'Body content'
+                  interval:
+                    type: 'integer'
+                    description: 'Timeout interval'
+                  agent_id:
+                    type: 'integer'
+                    description: 'Agent ID'
+                  headers:
+                    type: 'string'
+                    description: 'Headers'
+                  body_req:
+                    type: 'string'
+                    description: 'Body Request'
+        """
+        checks = super().get(query)
+        check_list = []
+        for check in checks:
+            check_list.append(model_to_dict(check, exclude=[SmonHttpCheck.smon_id.http, SmonHttpCheck.smon_id.port]))
+        return jsonify(check_list)
+
+
+class ChecksViewDns(ChecksView):
+    def __init__(self):
+        super().__init__()
+        self.check_type = 'dns'
+
+    @validate(query=GroupQuery)
+    def get(self, query: GroupQuery):
+        """
+        Get DNS list of DNS checks, for current group or for specific group if {group_id}.
+        ---
+        tags:
+          - 'DNS Check'
+        parameters:
+          - name: 'group_id'
+            in: 'query'
+            description: 'ID of the group to retrieve'
+            required: false
+            type: 'integer'
+        responses:
+          '200':
+            description: 'A list of DNS checks'
+            schema:
+              type: 'array'
+              items:
+                type: 'object'
+                properties:
+                  agent_id:
+                    type: 'integer'
+                    description: 'ID of the agent for the check'
+                  interval:
+                    type: 'integer'
+                    description: 'Check interval, in seconds'
+                  ip:
+                    type: 'string'
+                    description: 'IP address for the DNS check'
+                  port:
+                    type: 'integer'
+                    description: 'Port number for the DNS check'
+                  record_type:
+                    type: 'string'
+                    description: 'Type of DNS record for the check'
+                  resolver:
+                    type: 'string'
+                    description: 'DNS resolver for the check'
+                  smon_id:
+                    type: 'object'
+                    description: 'Object containing information related to smon_id'
+                    properties:
+                      check_timeout:
+                        type: 'integer'
+                      check_type:
+                        type: 'string'
+                      created_at:
+                        type: 'string'
+                      desc:
+                        type: 'string'
+                      en:
+                        type: 'string'
+                      group_id:
+                        type: 'integer'
+                      id:
+                        type: 'integer'
+                      mm_channel_id:
+                        type: 'integer'
+                      name:
+                        type: 'string'
+                      pd_channel_id:
+                        type: 'integer'
+                      response_time:
+                        type: 'string'
+                      slack_channel_id:
+                        type: 'integer'
+                      status:
+                        type: 'integer'
+                      telegram_channel_id:
+                        type: 'integer'
+                      time_state:
+                        type: 'string'
+                      updated_at:
+                        type: 'string'
+                      user_group:
+                        type: 'integer'
+        """
+        checks = super().get(query)
+        check_list = []
+        for check in checks:
+            check_list.append(model_to_dict(check, exclude=[
+                SmonDnsCheck.smon_id.body_status, SmonDnsCheck.smon_id.http, SmonDnsCheck.smon_id.port, SmonDnsCheck.smon_id.ssl_expire_critical_alert,
+                SmonDnsCheck.smon_id.ssl_expire_date, SmonDnsCheck.smon_id.ssl_expire_warning_alert
+            ]))
+        return jsonify(check_list)
+
+
+class ChecksViewTcp(ChecksView):
+    def __init__(self):
+        super().__init__()
+        self.check_type = 'tcp'
+
+    @validate(query=GroupQuery)
+    def get(self, query: GroupQuery):
+        """
+        Get TCP list of TCP checks, for current group or for specific group if {group_id}.
+        ---
+        tags:
+          - 'TCP Check'
+        parameters:
+          - name: 'group_id'
+            in: 'query'
+            description: 'ID of the group associated with the TCP checks'
+            required: false
+            type: 'integer'
+        responses:
+          '200':
+            description: 'A list of ChecksViewTcp instances'
+            schema:
+              type: 'array'
+              items:
+                type: 'object'
+                properties:
+                  agent_id:
+                    type: 'integer'
+                    description: 'ID of the agent for the check'
+                  interval:
+                    type: 'integer'
+                    description: 'Check interval, in seconds'
+                  ip:
+                    type: 'string'
+                    description: 'IP address for the TCP check'
+                  port:
+                    type: 'integer'
+                    description: 'Port number for the TCP check'
+                  smon_id:
+                    type: 'object'
+                    description: 'A list of TCP checks'
+                    properties:
+                      check_timeout:
+                        type: 'integer'
+                      check_type:
+                        type: 'string'
+                      created_at:
+                        type: 'string'
+                      desc:
+                        type: 'string'
+                      en:
+                        type: 'string'
+                      group_id:
+                        type: 'integer'
+                      id:
+                        type: 'integer'
+                      mm_channel_id:
+                        type: 'integer'
+                      name:
+                        type: 'string'
+                      pd_channel_id:
+                        type: 'integer'
+                      response_time:
+                        type: 'string'
+                      slack_channel_id:
+                        type: 'integer'
+                      status:
+                        type: 'integer'
+                      telegram_channel_id:
+                        type: 'integer'
+                      time_state:
+                        type: 'string'
+                      updated_at:
+                        type: 'string'
+                      user_group:
+                        type: 'integer'
+        """
+        checks = super().get(query)
+        check_list = []
+        for check in checks:
+            check_list.append(model_to_dict(check, exclude=[
+                SmonTcpCheck.smon_id.body_status, SmonTcpCheck.smon_id.http, SmonTcpCheck.smon_id.port,
+                SmonTcpCheck.smon_id.ssl_expire_critical_alert,
+                SmonTcpCheck.smon_id.ssl_expire_date, SmonTcpCheck.smon_id.ssl_expire_warning_alert
+            ]))
+        return jsonify(check_list)
+
+
+class ChecksViewPing(ChecksView):
+    def __init__(self):
+        super().__init__()
+        self.check_type = 'ping'
+
+    @validate(query=GroupQuery)
+    def get(self, query: GroupQuery):
+        """
+        Get Ping list of Ping checks, for current group or for specific group if {group_id}.
+        ---
+        tags:
+          - 'Ping Check'
+        parameters:
+          - name: 'group_id'
+            in: 'query'
+            description: 'ID of the group associated with the Ping checks'
+            required: false
+            type: 'integer'
+        responses:
+          '200':
+            description: 'ID of the group associated with the Ping checks'
+            schema:
+              type: 'array'
+              items:
+                type: 'object'
+                properties:
+                  agent_id:
+                    type: 'integer'
+                    description: 'ID of the agent for the check'
+                  interval:
+                    type: 'integer'
+                    description: 'Check interval, in seconds'
+                  ip:
+                    type: 'string'
+                    description: 'IP address for the Ping check'
+                  packet_size:
+                    type: 'integer'
+                    description: 'Size of the packet for the Ping check'
+                  smon_id:
+                    type: 'object'
+                    description: 'Object containing information related to smon_id'
+                    properties:
+                      check_timeout:
+                        type: 'integer'
+                      check_type:
+                        type: 'string'
+                      created_at:
+                        type: 'string'
+                      desc:
+                        type: 'string'
+                      en:
+                        type: 'string'
+                      group_id:
+                        type: 'integer'
+                      id:
+                        type: 'integer'
+                      mm_channel_id:
+                        type: 'integer'
+                      name:
+                        type: 'string'
+                      pd_channel_id:
+                        type: 'integer'
+                      response_time:
+                        type: 'string'
+                      slack_channel_id:
+                        type: 'integer'
+                      status:
+                        type: 'integer'
+                      telegram_channel_id:
+                        type: 'integer'
+                      time_state:
+                        type: 'string'
+                      updated_at:
+                        type: 'string'
+                      user_group:
+                        type: 'integer'
+        """
+        checks = super().get(query)
+        check_list = []
+        for check in checks:
+            check_list.append(model_to_dict(check, exclude=[
+                SmonPingCheck.smon_id.body_status, SmonPingCheck.smon_id.http, SmonPingCheck.smon_id.port,
+                SmonPingCheck.smon_id.ssl_expire_critical_alert,
+                SmonPingCheck.smon_id.ssl_expire_date, SmonPingCheck.smon_id.ssl_expire_warning_alert
+            ]))
+        return jsonify(check_list)
