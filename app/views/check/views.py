@@ -43,7 +43,13 @@ class CheckView(MethodView):
         check_type_id = smon_mod.get_check_id_by_name(self.check_type)
         checks = smon_sql.select_one_smon(check_id, check_type_id=check_type_id)
         for check in checks:
-            return model_to_dict(check)
+            if check.smon_id.group_id:
+                group_name = smon_sql.get_smon_group_name_by_id(check.smon_id.group_id)
+            else:
+                group_name = None
+            check_json = model_to_dict(check)
+            check_json['group_name'] = group_name
+            return check_json
         else:
             abort(404, f'{self.check_type} check not found')
 
@@ -144,7 +150,7 @@ class CheckHttpView(CheckView):
                     status:
                       type: 'integer'
                       description: 'Status'
-                    en:
+                    enabled:
                       type: 'integer'
                       description: 'EN'
                     desc:
@@ -427,7 +433,7 @@ class CheckTcpView(CheckView):
                     status:
                       type: 'integer'
                       description: 'Status'
-                    en:
+                    enabled:
                       type: 'integer'
                       description: 'EN'
                     desc:
@@ -667,7 +673,7 @@ class CheckDnsView(CheckView):
                     status:
                       type: 'integer'
                       description: 'Status'
-                    en:
+                    enabled:
                       type: 'integer'
                       description: 'EN'
                     desc:
@@ -932,7 +938,7 @@ class CheckPingView(CheckView):
                     status:
                       type: 'integer'
                       description: 'Status'
-                    en:
+                    enabled:
                       type: 'integer'
                       description: 'EN'
                     desc:
@@ -1190,7 +1196,7 @@ class ChecksViewHttp(ChecksView):
                       status:
                         type: 'integer'
                         description: 'Status'
-                      en:
+                      enabled:
                         type: 'integer'
                         description: 'EN'
                       desc:
@@ -1288,7 +1294,7 @@ class ChecksViewDns(ChecksView):
                         type: 'string'
                       desc:
                         type: 'string'
-                      en:
+                      enabled:
                         type: 'string'
                       group_id:
                         type: 'integer'
@@ -1375,7 +1381,7 @@ class ChecksViewTcp(ChecksView):
                         type: 'string'
                       desc:
                         type: 'string'
-                      en:
+                      enabled:
                         type: 'string'
                       group_id:
                         type: 'integer'
@@ -1463,7 +1469,7 @@ class ChecksViewPing(ChecksView):
                         type: 'string'
                       desc:
                         type: 'string'
-                      en:
+                      enabled:
                         type: 'string'
                       group_id:
                         type: 'integer'

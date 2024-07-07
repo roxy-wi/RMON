@@ -377,8 +377,7 @@ function getAgents(select_id) {
 				for (k in data) {
 					let agent = data[k];
 					if (agent.enabled === 1) {
-						$(select_id).append('<option value="' + agent.id + '">' + agent.name + '</option>')
-							.val(agent.name);
+						$(select_id).append('<option value="' + agent.id + '">' + agent.name + '</option>');
 					}
 				}
 				$(select_id).selectmenu('refresh');

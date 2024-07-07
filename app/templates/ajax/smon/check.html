@@ -1,6 +1,6 @@
 {% import 'languages/'+lang|default('en')+'.html' as lang %}
 {%- for s in smon -%}
-    {% if s.smon_id.en == 1 %}
+    {% if s.smon_id.enabled == 1 %}
         {% if s.smon_id.status == 1 and s.smon_id.body_status == 1 %}
             {% set additional_classes = 'good div-server-head-up' %}
             {% set uptime_desc = '<b>' +lang.words.uptime + '</b>: <time class="timeago" datetime="'+s.smon_id.time_state|string()+'">'+s.smon_id.time_state|string()+'</time>' %}
@@ -47,7 +47,7 @@
     {{uptime_desc|safe}}
 </div>
 <div class="desc">
-    {% if s.smon_id.en == 1 %}
+    {% if s.smon_id.enabled == 1 %}
         {% if s.smon_id.status == 1 %}
             <b>{{lang.smon_page.desc.resp_time}}</b>:
         {% else %}
@@ -71,7 +71,7 @@
         {% endif %}
         {% endfor %}
 </div>
-    {% if s.smon_id.en == 1 and agent_exist|length > 0 %}
+    {% if s.smon_id.enabled == 1 and agent_exist|length > 0 %}
      {% if s.smon_id.status == 1 and s.smon_id.body_status == 1 %}
         <div class="up">
             {{lang.smon_page.desc.UP}}

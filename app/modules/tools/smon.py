@@ -120,7 +120,7 @@ def update_smon(smon_id, json_data, user_group) -> None:
     try:
         smon_sql.update_check(smon_id, name, telegram, slack, pd, mm, smon_group_id, desc, enabled, timeout)
     except Exception as e:
-        raise Exception(f'Cannot update the server: {e}')
+        raise e
 
 
 def delete_smon(smon_id: int, user_group: int):
@@ -266,7 +266,7 @@ def show_status_page(slug: str) -> str:
             name = s.name
             desc = s.desc
             check_type = s.check_type
-            en = s.en
+            en = s.enabled
             if s.group_id:
                 group = smon_sql.get_smon_group_name_by_id(s.group_id)
             else:

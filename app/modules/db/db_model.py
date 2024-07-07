@@ -203,7 +203,7 @@ class SMON(BaseModel):
     name = CharField(null=True)
     port = IntegerField(null=True)
     status = IntegerField(constraints=[SQL('DEFAULT 1')])
-    en = IntegerField(constraints=[SQL('DEFAULT 1')])
+    enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
     desc = CharField(null=True)
     response_time = CharField(null=True)
     time_state = DateTimeField(constraints=[SQL('DEFAULT "0000-00-00 00:00:00"')])

@@ -155,13 +155,13 @@ def select_server_ip_by_agent_id(agent_id: int) -> str:
 
 def select_en_smon_tcp(agent_id) -> object:
 	try:
-		return SmonTcpCheck.select(SmonTcpCheck, SMON).join_from(SmonTcpCheck, SMON).where((SMON.en == '1') & (SmonTcpCheck.agent_id == agent_id)).execute()
+		return SmonTcpCheck.select(SmonTcpCheck, SMON).join_from(SmonTcpCheck, SMON).where((SMON.enabled == '1') & (SmonTcpCheck.agent_id == agent_id)).execute()
 	except Exception as e:
 		out_error(e)
 
 
 def select_en_smon_ping(agent_id) -> object:
-	query = SmonPingCheck.select(SmonPingCheck, SMON).join_from(SmonPingCheck, SMON).where((SMON.en == '1') & (SmonPingCheck.agent_id == agent_id))
+	query = SmonPingCheck.select(SmonPingCheck, SMON).join_from(SmonPingCheck, SMON).where((SMON.enabled == '1') & (SmonPingCheck.agent_id == agent_id))
 	try:
 		query_res = query.execute()
 	except Exception as e:
@@ -171,7 +171,7 @@ def select_en_smon_ping(agent_id) -> object:
 
 
 def select_en_smon_dns(agent_id) -> object:
-	query = SmonDnsCheck.select(SmonDnsCheck, SMON).join_from(SmonDnsCheck, SMON).where((SMON.en == '1') & (SmonDnsCheck.agent_id == agent_id))
+	query = SmonDnsCheck.select(SmonDnsCheck, SMON).join_from(SmonDnsCheck, SMON).where((SMON.enabled == '1') & (SmonDnsCheck.agent_id == agent_id))
 	try:
 		query_res = query.execute()
 	except Exception as e:
@@ -181,7 +181,7 @@ def select_en_smon_dns(agent_id) -> object:
 
 
 def select_en_smon_http(agent_id) -> object:
-	query = SmonHttpCheck.select(SmonHttpCheck, SMON).join_from(SmonHttpCheck, SMON).where((SMON.en == '1') & (SmonHttpCheck.agent_id == agent_id))
+	query = SmonHttpCheck.select(SmonHttpCheck, SMON).join_from(SmonHttpCheck, SMON).where((SMON.enabled == '1') & (SmonHttpCheck.agent_id == agent_id))
 	try:
 		query_res = query.execute()
 	except Exception as e:
@@ -261,7 +261,7 @@ def select_one_smon(smon_id: int, check_type_id: int) -> tuple:
 def insert_smon(name, enable, group_id, desc, telegram, slack, pd, mm, user_group, check_type, timeout):
 	try:
 		last_id = SMON.insert(
-			name=name, en=enable, desc=desc, group_id=group_id, telegram_channel_id=telegram, slack_channel_id=slack,
+			name=name, enabled=enable, desc=desc, group_id=group_id, telegram_channel_id=telegram, slack_channel_id=slack,
 			pd_channel_id=pd, mm_channel_id=mm, user_group=user_group, status='3', check_type=check_type, check_timeout=timeout
 		).execute()
 		return last_id
@@ -519,7 +519,7 @@ def select_smon_history(smon_id: int, limit: int = 40) -> SmonHistory:
 def update_check(smon_id, name, telegram, slack, pd, mm, group_id, desc, en, timeout):
 	query = (SMON.update(
 		name=name, telegram_channel_id=telegram, slack_channel_id=slack, pd_channel_id=pd, mm_channel_id=mm,
-		group_id=group_id, desc=desc, en=en, updated_at=datetime.now(), check_timeout=timeout
+		group_id=group_id, desc=desc, enabled=en, updated_at=datetime.now(), check_timeout=timeout
 	).where(SMON.id == smon_id))
 	try:
 		query.execute()

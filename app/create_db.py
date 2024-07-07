@@ -173,6 +173,7 @@ def update_db_v_1_0_7_1():
 def update_db_v_1_1():
 	try:
 		migrate(
+			migrator.rename_column('smon', 'en', 'enabled'),
 			migrator.rename_column('servers', 'groups', 'group_id'),
 			migrator.rename_column('servers', 'cred', 'creds_id'),
 			migrator.rename_column('servers', 'enable', 'enabled'),
@@ -182,7 +183,7 @@ def update_db_v_1_1():
 			migrator.rename_column('cred', 'groups', 'group_id'),
 		)
 	except Exception as e:
-		if e.args[0] == 'no such column: "groups"' or str(e) == '(1060, no such column: "groups")':
+		if e.args[0] == 'no such column: "en"' or str(e) == '(1060, no such column: "en")':
 			print("Updating... DB has been updated to version 1.1")
 		elif e.args[0] == "'bool' object has no attribute 'sql'":
 			print("Updating... DB has been updated to version 1.1")

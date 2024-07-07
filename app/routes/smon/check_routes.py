@@ -10,61 +10,6 @@ import app.modules.tools.smon_agent as agent_mod
 import app.modules.roxywi.common as roxywi_common
 
 
-@bp.route('/check/settings/<int:smon_id>/<int:check_type_id>')
-@jwt_required()
-@get_user_params()
-def check(smon_id, check_type_id):
-    smon = smon_sql.select_one_smon(smon_id, check_type_id)
-    settings = {}
-    for s in smon:
-        try:
-            group_name = smon_sql.get_smon_group_name_by_id(s.smon_id.group_id)
-        except Exception:
-            group_name = ''
-        settings = {
-            'id': s.smon_id.id,
-            'name': s.smon_id.name,
-            'interval': str(s.interval),
-            'agent_id': str(s.agent_id),
-            'enabled': s.smon_id.en,
-            'status': s.smon_id.status,
-            'http': s.smon_id.http,
-            'desc': s.smon_id.desc,
-            'tg': s.smon_id.telegram_channel_id,
-            'slack': s.smon_id.slack_channel_id,
-            'pd': s.smon_id.pd_channel_id,
-            'mm': s.smon_id.mm_channel_id,
-            'check_type': s.smon_id.check_type,
-            'timeout': s.smon_id.check_timeout,
-            'group': group_name,
-        }
-        if check_type_id in (1, 5):
-            settings.setdefault('port', s.port)
-
-        if check_type_id != 2:
-            settings.setdefault('server_ip', str(s.ip))
-        if check_type_id == 2:
-            settings.setdefault('url', s.url)
-            settings.setdefault('method', s.method)
-            settings.setdefault('body', s.body)
-            settings.setdefault('accepted_status_codes', s.accepted_status_codes)
-            if s.body_req:
-                settings.setdefault('body_req', str(s.body_req))
-            else:
-                settings.setdefault('body_req', '')
-            if s.headers:
-                settings.setdefault('header_req', str(s.headers))
-            else:
-                settings.setdefault('header_req', '')
-        elif check_type_id == 4:
-            settings.setdefault('packet_size', s.packet_size)
-        elif check_type_id == 5:
-            settings.setdefault('resolver', s.resolver)
-            settings.setdefault('record_type', s.record_type)
-
-    return jsonify(settings)
-
-
 @bp.route('/check/<int:smon_id>/<int:check_type_id>')
 @jwt_required()
 @get_user_params()

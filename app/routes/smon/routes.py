@@ -318,7 +318,7 @@ def smon_history_metric_chart(check_id, check_type_id):
                 json_metric['updated_at'] = common.get_time_zoned_date(s.smon_id.updated_at)
                 json_metric['name'] = str(s.smon_id.name)
                 interval = s.interval
-                is_enabled = s.smon_id.en
+                is_enabled = s.smon_id.enabled
                 if s.smon_id.ssl_expire_date is not None:
                     json_metric['ssl_expire_date'] = smon_mod.get_ssl_expire_date(s.smon_id.ssl_expire_date)
                 else:
@@ -333,7 +333,8 @@ def smon_history_metric_chart(check_id, check_type_id):
 
             for i in chart_metrics.iterator():
                 json_metric['time'] = common.get_time_zoned_date(i.date, '%H:%M:%S')
-                json_metric['value'] = "{:.3f}".format(i.response_time)
+                # json_metric['value'] = "{:.3f}".format(i.response_time)
+                json_metric['value'] = i.response_time
                 json_metric['mes'] = str(i.mes)
                 json_metric['uptime'] = uptime
                 json_metric['avg_res_time'] = avg_res_time

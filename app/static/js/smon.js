@@ -211,21 +211,23 @@ function openSmonDialog(check_type, smon_id=0, edit=false) {
 }
 function getCheckSettings(smon_id, check_type) {
 	$.ajax({
-		url: "/rmon/check/settings/" + smon_id + "/" + check_types[check_type],
+		url: api_v_prefix + "/rmon/check/" +  check_type + "/" + smon_id,
 		type: "get",
 		async: false,
 		dataType: "json",
 		success: function (data) {
-			$('#new-smon-name').val(data['name'].replaceAll("'", ""));
-			$('#new-smon-ip').val(data['server_ip']);
+			$('#new-smon-name').val(data['smon_id']['name'].replaceAll("'", ""));
+			$('#new-smon-ip').val(data['ip']);
 			$('#new-smon-port').val(data['port']);
 			$('#new-smon-resolver-server').val(data['resolver']);
 			$('#new-smon-dns_record_typer').val(data['record_type']);
 			$('#new-smon-url').val(data['url']);
-			$('#new-smon-group').val(data['group'].replaceAll("'", ""));
-			$('#new-smon-description').val(data['desc'].replaceAll("'", ""))
+			$('#new-smon-description').val(data['smon_id']['desc'].replaceAll("'", ""))
 			$('#new-smon-packet_size').val(data['packet_size']);
 			$('#new-smon-interval').val(data['interval']);
+			if (data['group_name']) {
+				$('#new-smon-group').val(data['group_name'].replaceAll("'", ""));
+			}
 			if (data['timeout']) {
 				$('#new-smon-timeout').val(data['timeout']);
 			}
@@ -260,7 +262,7 @@ function getCheckSettings(smon_id, check_type) {
 				$('#new-smon-method').selectmenu("refresh");
 			}
 			$('#new-smon-agent-id').selectmenu("refresh");
-			if (data['enabled']) {
+			if (data['smon_id']['enabled']) {
 				$('#new-smon-enable').prop('checked', true)
 			} else {
 				$('#new-smon-enable').prop('checked', false)
