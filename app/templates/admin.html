@@ -59,7 +59,7 @@
 			{% else %}
 				<td class="padding10 first-collumn">
 					{% set id = 'name-' + group.group_id|string() %}
-					{{ input(id, value=group.name) }}
+					{{ input(id, value=group.name.replace("'", "")) }}
 				</td>
 				<td>
 					{% set id = 'descript-' + group.group_id|string() %}
@@ -70,7 +70,7 @@
 					{% endif %}
 				</td>
 				<td>
-					<a class="delete" onclick="confirmDeleteGroup({{ group.group_id }})" title="{{lang.words.delete|title()}} {{lang.words.group2}} {{group.name}}" style="cursor: pointer;"></a>
+					<a class="delete" onclick="confirmDeleteGroup({{ group.group_id }})" title="{{lang.words.delete|title()}} {{lang.words.group2}} {{group.name.replace("'", "")}}" style="cursor: pointer;"></a>
 				</td>
 			{% endif %}
 			</tr>

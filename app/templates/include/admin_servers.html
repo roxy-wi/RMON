@@ -53,7 +53,7 @@
 			</td>
 			{% endif %}
 			<td class="checkbox">
-				{% set id = 'server-enabled-' + server.0|string() %}
+				{% set id = 'server_enabled-' + server.0|string() %}
 				{% if server.4 == 1 %}
 					{{ checkbox(id, checked='checked') }}
 				{% else %}
@@ -114,7 +114,6 @@
 {% endif %}
 <script>
 	{%- for server in servers %}
-		setInterval(serverIsUp, 18000, '{{server.2}}', '{{server.0}}');
-		serverIsUp('{{server.2}}', '{{server.0}}');
+		serverIsUp('{{server.0}}');
 	{%- endfor %}
 </script>

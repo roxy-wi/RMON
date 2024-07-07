@@ -212,3 +212,12 @@ def get_server_with_group(server_id: int, group_id: int) -> Server:
 		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
+
+
+def get_server(server_id: int) -> Server:
+	try:
+		return Server.get(Server.server_id == server_id)
+	except Server.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		out_error(e)

@@ -36,16 +36,18 @@ $( function() {
 function addGroup(dialog_id) {
     toastr.clear();
     let valid = true;
+    let name = $('#new-group-add').val();
+    let desc = $('#new-desc').val();
     let allFields = $([]).add($('#new-group-add'));
     allFields.removeClass("ui-state-error");
     valid = valid && checkLength($('#new-group-add'), "new group name", 1);
     if (valid) {
         let json_data = {
-            "name": $('#new-group-add').val(),
-            "desc": $('#new-desc').val()
+            "name": name,
+            "desc": desc
         }
         $.ajax({
-            url: "/group",
+            url: api_v_prefix + "/group",
             data: JSON.stringify(json_data),
             contentType: "application/json; charset=utf-8",
             type: "POST",
@@ -55,7 +57,19 @@ function addGroup(dialog_id) {
                 } else {
                     let id = data.id;
                     $('select:regex(id, group)').append('<option value=' + id + '>' + $('#new-group-add').val() + '</option>').selectmenu("refresh");
-                    common_ajax_action_after_success(dialog_id, 'newgroup', 'ajax-group', data.data);
+                    let new_group = elem("tr", {"id":"group-"+id,"class":"newgroup"}, [
+                        elem("td", {"class":"padding10","style":"width: 0"}, id),
+                        elem("td", {"class":"padding10 first-collumn"}, [
+                            elem("input", {"type":"text","name":"name-"+id,"value": name,"id":"name-"+id,"class":"form-control","autocomplete":"off"})
+                        ]),
+                        elem("td", null, [
+                            elem("input", {"type":"text","name":"descript-"+id,"value":desc,"id":"descript-"+id,"size":"60","class":"form-control","autocomplete":"off"})
+                        ]),
+                        elem("td", null, [
+                            elem("a", {"class":"delete","onclick":"confirmDeleteGroup("+id+")","title":"Delete group "+name,"style":"cursor: pointer;"})
+                        ])
+                    ])
+                    common_ajax_action_after_success(dialog_id, 'newgroup', 'ajax-group', new_group);
                 }
             }
         });

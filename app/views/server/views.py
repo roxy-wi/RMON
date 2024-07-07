@@ -10,7 +10,6 @@ from app.modules.db.db_model import Cred
 import app.modules.db.cred as cred_sql
 import app.modules.db.group as group_sql
 import app.modules.db.server as server_sql
-import app.modules.common.common as common
 import app.modules.roxywi.group as group_mod
 import app.modules.roxywi.common as roxywi_common
 import app.modules.server.ssh as ssh_mod
@@ -263,21 +262,14 @@ class ServerGroupView(MethodView):
     methods = ["GET", "POST", "PUT", "DELETE"]
     decorators = [jwt_required(), get_user_params(), page_for_admin()]
 
-    def __init__(self, is_api=False):
+    def __init__(self):
         """
         Initialize ServerGroupView instance
-        ---
-        parameters:
-          - name: is_api
-            in: path
-            type: boolean
-            description: is api
         """
         if request.method not in ('GET', 'DELETE'):
             self.json_data = request.get_json()
         else:
             self.json_data = None
-        self.is_api = is_api
 
     def get(self, group_id: int):
         """
@@ -309,14 +301,6 @@ class ServerGroupView(MethodView):
                   description: 'Name of the server group'
           404:
             description: 'Server group not found'
-            content:
-              application/json:
-                schema:
-                  type: 'object'
-                  properties:
-                    error:
-                      type: 'string'
-                      description: 'Error message'
         """
         try:
             groups = group_sql.select_groups(id=group_id)
@@ -354,11 +338,7 @@ class ServerGroupView(MethodView):
         try:
             last_id = group_sql.add_group(body.name, body.desc)
             roxywi_common.logging('RMON server', f'A new group {body.name} has been created', roxywi=1, login=1)
-            if self.is_api:
-                return IdResponse(id=last_id).model_dump(mode='json'), 201
-            else:
-                data = render_template('ajax/new_group.html', groups=group_sql.select_groups(group=body.name))
-                return IdDataResponse(data=data, id=last_id), 201
+            return IdResponse(id=last_id).model_dump(mode='json'), 201
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot create group')
 

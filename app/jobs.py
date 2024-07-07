@@ -94,8 +94,7 @@ def update_owner_on_log():
 
 @scheduler.task('interval', id='delete_ansible_artifacts', hours=24, misfire_grace_time=None)
 def delete_ansible_artifacts():
-    full_path = get_config.get_config_var('main', 'fullpath')
-    ansible_path = f'{full_path}/app/scripts/ansible'
+    ansible_path = '/var/www/rmon/app/scripts/ansible'
     folders = ['artifacts', 'env']
 
     for folder in folders:

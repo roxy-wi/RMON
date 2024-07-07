@@ -6,7 +6,6 @@ from flask import request, g
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import verify_jwt_in_request
 
-from app import app
 from app.modules.db.sql import get_setting
 import app.modules.db.roxy as roxy_sql
 import app.modules.db.user as user_sql
@@ -92,6 +91,14 @@ def get_files(folder, file_format, server_ip=None) -> list:
 
 
 def logging(server_ip: str, action: str, **kwargs) -> None:
+	get_date = roxy_wi_tools.GetDate(get_setting('time_zone'))
+	cur_date_in_log = get_date.return_date('date_in_log')
+	log_path = get_config_var.get_config_var('main', 'log_path')
+	log_file = f"{log_path}/rmon.log"
+
+	if not os.path.exists(log_path):
+		os.makedirs(log_path)
+
 	try:
 		user_group = get_user_group()
 	except Exception:
@@ -111,19 +118,21 @@ def logging(server_ip: str, action: str, **kwargs) -> None:
 		login = ''
 
 	if kwargs.get('login'):
-		mess = f"from {ip} user: {login}, group: {user_group}, {action} on: {server_ip}"
+		mess = f"{cur_date_in_log} from {ip} user: {login}, group: {user_group}, {action} on: {server_ip}\n"
 	else:
-		mess = f"{action} from {ip}"
-	if kwargs.get('mes_type') == 'error':
-		app.logger.error(mess)
-	else:
-		app.logger.info(mess)
+		mess = f"{cur_date_in_log} {action} from {ip}\n"
 
 	if kwargs.get('keep_history'):
 		try:
 			keep_action_history(kwargs.get('service'), action, server_ip, login, ip)
 		except Exception as e:
-			app.logger.error(f'Cannot save history: {e}')
+			print(f'error: Cannot save history: {e}')
+
+	try:
+		with open(log_file, 'a') as log:
+			log.write(mess)
+	except IOError as e:
+		print(f'Cannot write log. Please check log_path in config {e}')
 
 
 def keep_action_history(service: str, action: str, server_ip: str, login: str, user_ip: str):

@@ -1,6 +1,11 @@
+import json
+import time
+
+from flask import Response, stream_with_context
 from flask_jwt_extended import jwt_required
 
 from app.routes.server import bp
+import app.modules.db.server as server_sql
 import app.modules.common.common as common
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.server.server as server_mod
@@ -29,11 +34,32 @@ def check_ssh(server_ip):
         return str(e)
 
 
-@bp.route('/check/server/<server_ip>')
-def check_server(server_ip):
-    server_ip = common.is_ip_or_dns(server_ip)
+@bp.route('/check/server/<int:server_id>')
+def check_server(server_id):
+    def get_check():
+        while True:
+            try:
+                server = server_sql.get_server(server_id)
+            except Exception as e:
+                raise e
+            result = server_mod.server_is_up(server.ip)
+            status = {
+                "status": result,
+                'name': server.hostname,
+                'desc': server.desc,
+                'ip': server.ip,
+                'port': server.port,
+                'enabled': server.enabled,
+                'creds_id': server.creds_id,
+                'group_id': server.group_id
+            }
+            yield f'data:{json.dumps(status)}\n\n'
+            time.sleep(60)
 
-    return server_mod.server_is_up(server_ip)
+    response = Response(stream_with_context(get_check()), mimetype="text/event-stream")
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["X-Accel-Buffering"] = "no"
+    return response
 
 
 @bp.route('/show/if/<server_ip>')

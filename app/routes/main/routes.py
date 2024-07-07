@@ -20,11 +20,8 @@ import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.nettools as nettools_mod
 import app.modules.roxywi.common as roxywi_common
 import app.modules.server.server as server_mod
-from app.views.server.views import ServerGroupView
 from app.modules.roxywi.exception import RoxywiValidationError
 from app.modules.roxywi.class_models import ErrorResponse
-
-bp.add_url_rule('/group', view_func=ServerGroupView.as_view('group'))
 
 
 @app.template_filter('strftime')

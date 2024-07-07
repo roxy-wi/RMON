@@ -14,7 +14,7 @@ bp.add_url_rule('/users', view_func=UsersView.as_view('users'), methods=['GET'])
 
 
 def register_api(view, endpoint, url, pk='check_id', pk_type='int'):
-    view_func = view.as_view(endpoint, True)
+    view_func = view.as_view(endpoint)
     bp.add_url_rule(url, view_func=view_func, methods=['POST',])
     bp.add_url_rule(f'/{url}/<{pk_type}:{pk}>', view_func=view_func, methods=['GET', 'PUT', 'DELETE'])
 
