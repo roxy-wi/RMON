@@ -10,6 +10,7 @@ import app.modules.tools.smon_agent as smon_agent
 from app.middleware import get_user_params, check_group
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 from app.modules.roxywi.class_models import BaseResponse, IdResponse, RmonAgent, GroupQuery
+from app.views.server.views import BaseServer
 
 
 class AgentView(MethodView):
@@ -26,7 +27,10 @@ class AgentView(MethodView):
             type: boolean
             description: is api
         """
-        self.json_data = request.get_json()
+        if request.method not in ('GET', 'DELETE'):
+            self.json_data = request.get_json()
+        else:
+            self.json_data = None
 
     def get(self, agent_id: int):
         """
@@ -263,7 +267,7 @@ class AgentView(MethodView):
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot update agent')
 
-    def delete(self):
+    def delete(self, agent_id: int):
         """
         Remove a specific agent.
         ---
@@ -284,10 +288,6 @@ class AgentView(MethodView):
           404:
             description: Agent not found
         """
-        try:
-            agent_id = int(self.json_data('agent_id'))
-        except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse server data')
         try:
             _ = smon_sql.get_agent_uuid(agent_id)
         except Exception as e:
@@ -390,14 +390,8 @@ class AgentsView(MethodView):
                     format: uuid
                     example: cf2cc8d2-4c44-48d1-9ed3-f6f49f8327fa
         """
-        if query.group_id:
-            if g.user_params['role'] == 1:
-                group = query.group_id
-            else:
-                group = g.user_params['group_id']
-        else:
-            group = g.user_params['group_id']
-        agents = smon_sql.get_agents(group)
+        group_id = BaseServer.return_group_id(query)
+        agents = smon_sql.get_agents(group_id)
         agent_list = []
         for agent in agents:
             agent_dict = model_to_dict(agent)

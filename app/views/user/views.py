@@ -18,6 +18,7 @@ from app.modules.roxywi.class_models import (
     UserPost, UserPut, IdResponse, IdDataResponse, BaseResponse, AddUserToGroup, GroupQuery
 )
 from app.middleware import get_user_params, page_for_admin, check_group
+from app.views.server.views import BaseServer
 
 
 class UserView(MethodView):
@@ -563,15 +564,14 @@ class UsersView(MethodView):
     @validate(query=GroupQuery)
     def get(self, query: GroupQuery):
         """
-        Get users information by Group ID, or all users if Group ID not provided.
-        Get all users or users by group can only superAdmin role. Admin roles can get users only from its current group.
+        Get users information by Group ID.
         ---
         tags:
         - 'User'
         parameters:
         - in: 'query'
           name: 'group_id'
-          description: 'ID of the group to list users'
+          description: 'GroupQuery to filter servers. Only for superAdmin role'
           required: false
           schema:
             type: 'integer'
@@ -617,20 +617,14 @@ class UsersView(MethodView):
                   type: 'string'
                   description: 'Error message'
         """
-        if g.user_params['role'] == 1:
-            if query.group_id:
-                group_id = query.group_id
-            else:
-                group_id = None
-        else:
-            group_id = g.user_params['group_id']
-        if group_id:
-            try:
-                users = user_sql.get_users_in_group(group_id)
-            except Exception as e:
-                return roxywi_common.handle_json_exceptions(e, 'Cannot get group')
-        else:
-            users = User_DB.select()
+        group_id = BaseServer.return_group_id(query)
+        # if group_id:
+        try:
+            users = user_sql.get_users_in_group(group_id)
+        except Exception as e:
+            return roxywi_common.handle_json_exceptions(e, 'Cannot get group')
+        # else:
+        #     users = User_DB.select()
 
         json_data = []
         for user in users:
