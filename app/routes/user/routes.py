@@ -1,15 +1,16 @@
 import json
 
-from flask import request
+from flask import request, g
 from flask_jwt_extended import jwt_required
 
 from app.routes.user import bp
-import app.modules.db.group as group_sql
 import app.modules.common.common as common
 import app.modules.roxywi.user as roxywi_user
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.common as roxywi_common
 from app.views.user.views import UserView
+from app.middleware import get_user_params
+from app.modules.roxywi.class_models import BaseResponse, ErrorResponse
 
 
 @bp.before_request
@@ -30,12 +31,26 @@ def get_ldap_email(username):
 
 
 @bp.post('/password')
-def update_password():
-    password = request.form.get('updatepassowrd')
-    uuid = request.form.get('uuid')
-    user_id_from_get = request.form.get('id')
+@get_user_params()
+def update_user_its_password():
+    password = request.json.get('pass')
 
-    return roxywi_user.update_user_password(password, uuid, user_id_from_get)
+    try:
+        roxywi_user.update_user_password(password, g.user_params['user_id'])
+        return BaseResponse().model_dump(mode='json')
+    except Exception as e:
+        return ErrorResponse(error=str(e)).model_dump(mode='json'), 501
+
+
+@bp.post('/password/<int:user_id>')
+def update_user_password(user_id):
+    password = request.json.get('pass')
+
+    try:
+        roxywi_user.update_user_password(password, user_id)
+        return BaseResponse().model_dump(mode='json')
+    except Exception as e:
+        return ErrorResponse(error=str(e)).model_dump(mode='json'), 501
 
 
 @bp.route('/groups/<int:user_id>')
@@ -49,6 +64,5 @@ def show_user_groups_and_roles(user_id):
 def change_user_groups_and_roles():
     user = common.checkAjaxInput(request.form.get('changeUserGroupsUser'))
     groups_and_roles = json.loads(request.form.get('jsonDatas'))
-    user_uuid = request.cookies.get('uuid')
 
-    return roxywi_user.save_user_group_and_role(user, groups_and_roles, user_uuid)
+    return roxywi_user.save_user_group_and_role(user, groups_and_roles)

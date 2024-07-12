@@ -763,16 +763,12 @@ function changeUserPasswordItOwn(d) {
 		toastr.clear();
 		$.ajax({
 			url: "/user/password",
-			data: {
-				updatepassowrd: pass,
-				uuid: Cookies.get('uuid'),
-				token: $('#token').val()
-			},
+			data: JSON.stringify({'pass': pass}),
 			type: "POST",
+			contentType: "application/json; charset=utf-8",
 			success: function (data) {
-				data = data.replace(/\s+/g, ' ');
-				if (data.indexOf('error:') != '-1') {
-					toastr.error(data);
+				if (data.status === 'failed') {
+					toastr.error(data.error);
 				} else {
 					toastr.clear();
 					d.dialog("close");

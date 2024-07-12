@@ -25,7 +25,7 @@ def check_login():
             abort(401)
 
         try:
-            roxywi_auth.check_login(user_params['user_uuid'])
+            roxywi_auth.check_login(user_params['user_id'])
         except Exception:
             abort(401)
 

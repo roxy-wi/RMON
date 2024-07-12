@@ -320,15 +320,12 @@ function changeUserPassword(id, d) {
 		$('#missmatchpass').hide();
 		toastr.clear();
 		$.ajax({
-			url: "/user/password",
-			data: {
-				updatepassowrd: pass,
-				id: id
-			},
+			url: "/user/password/" + id,
+			data: JSON.stringify({'pass': pass,}),
 			type: "POST",
+			contentType: "application/json; charset=utf-8",
 			success: function (data) {
-				data = data.replace(/\s+/g, ' ');
-				if (data.indexOf('error:') != '-1') {
+				if (data.status === 'failed') {
 					toastr.error(data);
 				} else {
 					toastr.clear();

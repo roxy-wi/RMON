@@ -1,6 +1,6 @@
 from peewee import Case, JOIN
 
-from app.modules.db.db_model import User, UserGroups, Groups, UUID
+from app.modules.db.db_model import User, UserGroups, Groups
 from app.modules.db.sql import get_setting
 from app.modules.db.common import out_error
 import app.modules.roxy_wi_tools as roxy_wi_tools
@@ -54,10 +54,9 @@ def delete_user_groups(user_id):
 		return True
 
 
-def update_user_current_groups(groups, user_uuid):
-	user_id = get_user_id_by_uuid(user_uuid)
+def update_user_current_groups(group_id: int, user_id: int) -> None:
 	try:
-		User.update(group_id=groups).where(User.user_id == user_id).execute()
+		User.update(group_id=group_id).where(User.user_id == user_id).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -81,8 +80,7 @@ def update_user_password(password, user_id):
 
 def delete_user(user_id):
 	try:
-		user_for_delete = User.delete().where(User.user_id == user_id)
-		user_for_delete.execute()
+		User.delete().where(User.user_id == user_id).execute()
 		delete_user_groups(user_id)
 	except User.DoesNotExist:
 		raise RoxywiResourceNotFound
@@ -197,39 +195,13 @@ def select_users_roles():
 		return query_res
 
 
-def update_last_act_user(uuid: str, ip: str) -> None:
+def update_last_act_user(user_id: int, ip: str) -> None:
 	get_date = roxy_wi_tools.GetDate(get_setting('time_zone'))
-	session_ttl = get_setting('session_ttl')
-	cur_date_session = get_date.return_date('regular', timedelta=session_ttl)
 	cur_date = get_date.return_date('regular')
-	user_id = get_user_id_by_uuid(uuid)
 	try:
-		UUID.update(exp=cur_date_session).where(UUID.uuid == uuid).execute()
 		User.update(last_login_date=cur_date, last_login_ip=ip).where(User.user_id == user_id).execute()
 	except Exception as e:
 		out_error(e)
-
-
-def get_user_name_by_uuid(uuid):
-	try:
-		query = User.select(User.username).join(UUID, on=(User.user_id == UUID.user_id)).where(UUID.uuid == uuid)
-		query_res = query.execute()
-	except Exception as e:
-		out_error(e)
-	else:
-		for user in query_res:
-			return user.username
-
-
-def get_user_id_by_uuid(uuid):
-	try:
-		query = User.select(User.user_id).join(UUID).where(UUID.uuid == uuid)
-		query_res = query.execute()
-	except Exception as e:
-		out_error(e)
-	else:
-		for user in query_res:
-			return user.user_id
 
 
 def get_user_by_username(username: str) -> User:
@@ -239,64 +211,16 @@ def get_user_by_username(username: str) -> User:
 		out_error(e)
 
 
-def get_user_role_by_uuid(uuid, group_id):
+def get_user_role_in_group(user_id, group_id):
 	try:
-		query_res = UserGroups.select(UserGroups.user_role_id).join(
-			UUID, on=(UserGroups.user_id == UUID.user_id)
-		).where(
-			(UUID.uuid == uuid) &
-			(UserGroups.user_group_id == group_id)
+		query_res = UserGroups.select().where(
+			(UserGroups.user_id == user_id) & (UserGroups.user_group_id == group_id)
 		).execute()
-		from playhouse.shortcuts import model_to_dict
 	except Exception as e:
 		out_error(e)
 	else:
 		for user_id in query_res:
 			return int(user_id.user_role_id)
-
-
-def get_user_current_group_by_uuid(uuid):
-	try:
-		query_res = User.select(User.group_id).join(UUID).where(
-			(UUID.uuid == uuid)
-		).execute()
-	except Exception as e:
-		out_error(e)
-	else:
-		for user_id in query_res:
-			return int(user_id.group_id.group_id)
-
-
-def write_user_uuid(login, user_uuid):
-	session_ttl = get_setting('session_ttl')
-	user = get_user_by_username(login)
-	user_id = user.user_id
-	get_date = roxy_wi_tools.GetDate()
-	cur_date = get_date.return_date('regular', timedelta=session_ttl)
-
-	try:
-		UUID.insert(user_id=user_id, uuid=user_uuid, exp=cur_date).execute()
-	except Exception as e:
-		out_error(e)
-
-
-def select_user_services(user_id):
-	try:
-		query_res = User.get(User.user_id == user_id).user_services
-	except Exception as e:
-		out_error(e)
-	else:
-		return query_res
-
-
-def update_user_services(services, user_id):
-	try:
-		User.update(user_services=services).where(User.user_id == user_id).execute()
-	except Exception as e:
-		out_error(e)
-		return False
-	else:
-		return True
 
 
 def get_super_admin_count() -> int:
@@ -323,17 +247,6 @@ def select_users_emails_by_group_id(group_id: int):
 		return query_res
 
 
-def select_user_email_by_uuid(uuid: str) -> str:
-	user_id = get_user_id_by_uuid(uuid)
-	try:
-		query_res = User.get(User.user_id == user_id).email
-	except Exception as e:
-		out_error(e)
-		return ""
-	else:
-		return query_res
-
-
 def is_user_super_admin(user_id: int) -> bool:
 	query = UserGroups.select().where(UserGroups.user_id == user_id)
 	try:
@@ -346,15 +259,6 @@ def is_user_super_admin(user_id: int) -> bool:
 				return True
 		else:
 			return False
-
-
-def delete_old_uuid():
-	get_date = roxy_wi_tools.GetDate()
-	cur_date = get_date.return_date('regular')
-	try:
-		UUID.delete().where((UUID.exp < cur_date) | (UUID.exp.is_null(True))).execute()
-	except Exception as e:
-		out_error(e)
 
 
 def get_role_id(user_id: int, group_id: int) -> int:

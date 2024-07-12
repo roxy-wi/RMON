@@ -132,16 +132,6 @@ class PD(BaseModel):
         table_name = 'pd'
 
 
-class UUID(BaseModel):
-    user_id = ForeignKeyField(User, on_delete='Cascade')
-    uuid = CharField()
-    exp = DateTimeField(default=datetime.now)
-
-    class Meta:
-        table_name = 'uuid'
-        primary_key = False
-
-
 class Setting(BaseModel):
     param = CharField()
     value = CharField(null=True)
@@ -408,7 +398,7 @@ def create_tables():
     conn = connect()
     with conn:
         conn.create_tables(
-            [Groups, User, Server, Role, Telegram, Slack, UUID, UserGroups, Setting, Cred, Version, ActionHistory,
+            [Groups, User, Server, Role, Telegram, Slack, UserGroups, Setting, Cred, Version, ActionHistory,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
              SmonStatusPage, SmonStatusPageCheck, SMON, Alerts, SmonGroup, MM]
         )

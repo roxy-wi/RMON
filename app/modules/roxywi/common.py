@@ -41,14 +41,13 @@ def get_user_group(**kwargs) -> int:
 def check_user_group_for_flask():
 	verify_jwt_in_request()
 	claims = get_jwt()
-	user_uuid = claims['uuid']
+	user_id = claims['user_id']
 	group_id = claims['group']
-	user_id = user_sql.get_user_id_by_uuid(user_uuid)
 
 	if user_sql.check_user_group(user_id, group_id):
 		return True
 	else:
-		logging('RMON server', ' has tried to actions in not his group ', login=1)
+		logging('RMON server', 'has tried to actions in not his group', login=1)
 		return False
 
 
@@ -95,6 +94,10 @@ def logging(server_ip: str, action: str, **kwargs) -> None:
 	cur_date_in_log = get_date.return_date('date_in_log')
 	log_path = get_config_var.get_config_var('main', 'log_path')
 	log_file = f"{log_path}/rmon.log"
+	verify_jwt_in_request()
+	claims = get_jwt()
+	user_id = claims['user_id']
+	login = user_sql.get_user_id(user_id=user_id)
 
 	if not os.path.exists(log_path):
 		os.makedirs(log_path)
@@ -109,22 +112,14 @@ def logging(server_ip: str, action: str, **kwargs) -> None:
 	except Exception:
 		ip = ''
 
-	try:
-		verify_jwt_in_request()
-		claims = get_jwt()
-		user_uuid = claims['uuid']
-		login = user_sql.get_user_name_by_uuid(user_uuid)
-	except Exception:
-		login = ''
-
-	if kwargs.get('login'):
-		mess = f"{cur_date_in_log} from {ip} user: {login}, group: {user_group}, {action} on: {server_ip}\n"
-	else:
-		mess = f"{cur_date_in_log} {action} from {ip}\n"
+	# if kwargs.get('login'):
+	mess = f"{cur_date_in_log} from {ip} user: {login.username}, group: {user_group}, {action} on: {server_ip}\n"
+	# else:
+	# 	mess = f"{cur_date_in_log} {action} from {ip}\n"
 
 	if kwargs.get('keep_history'):
 		try:
-			keep_action_history(kwargs.get('service'), action, server_ip, login, ip)
+			keep_action_history(kwargs.get('service'), action, server_ip, login.username, ip)
 		except Exception as e:
 			print(f'error: Cannot save history: {e}')
 
@@ -178,47 +173,31 @@ def get_users_params(**kwargs):
 	user_data = get_jwt()
 
 	try:
-		user_uuid = user_data['uuid']
-		user = user_sql.get_user_name_by_uuid(user_uuid)
+		user_id = user_data['user_id']
+		user = user_sql.get_user_id(user_id)
 	except Exception:
-		raise Exception('error: Cannot get user UUID')
+		raise Exception('error: Cannot get user id')
+
+	if int(user_data['group']) != int(user.group_id.group_id):
+		raise Exception('error: Wrong active group')
 
 	try:
-		group_id = user_sql.get_user_current_group_by_uuid(user_uuid)
-	except Exception as e:
-		raise Exception(f'Cannot get user group: {e}')
-
-	try:
-		role = user_sql.get_user_role_by_uuid(user_uuid, group_id)
+		role = user_sql.get_role_id(user_id, user.group_id.group_id)
 	except Exception as e:
 		raise Exception(f'error: Cannot get user role {e}')
-
-	try:
-		user_id = user_sql.get_user_id_by_uuid(user_uuid)
-	except Exception as e:
-		raise Exception(f'error: Cannot get user id {e}')
-
-	try:
-		user_services = user_sql.select_user_services(user_id)
-	except Exception as e:
-		raise Exception(f'error: Cannot get user services {e}')
 
 	if kwargs.get('disable'):
 		servers = get_dick_permit(disable=0)
 	else:
 		servers = get_dick_permit()
 
-	user_lang = get_user_lang_for_flask()
-
 	user_params = {
-		'user': user,
-		'user_uuid': user_uuid,
+		'user': user.username,
 		'role': role,
 		'servers': servers,
-		'user_services': user_services,
-		'lang': user_lang,
+		'lang': get_user_lang_for_flask(),
 		'user_id': user_id,
-		'group_id': group_id
+		'group_id': user.group_id
 	}
 
 	return user_params
@@ -280,7 +259,7 @@ def handle_json_exceptions(ex: Exception, message: str, server_ip='RMON server')
 
 def is_user_has_access_to_group(user_id: int) -> None:
 	if not user_sql.check_user_group(user_id, g.user_params['group_id']) and g.user_params['role'] != 1:
-		raise Exception('UserPost has no access to group')
+		raise Exception('User has no access to group')
 
 
 def handler_exceptions_for_json_data(ex: Exception, main_ex_mes: str) -> tuple[dict, int]:

@@ -12,23 +12,21 @@ import app.modules.roxywi.common as roxywi_common
 import app.modules.roxy_wi_tools as roxy_wi_tools
 
 
-def check_login(user_uuid) -> str:
-    if user_uuid is None:
+def check_login(user_id: int) -> str:
+    if user_id is None:
         return 'login_page'
 
-    if user_uuid is not None:
-        if user_sql.get_user_name_by_uuid(user_uuid) is None:
-            return 'login_page'
-        else:
-            try:
-                ip = request.remote_addr
-            except Exception:
-                ip = ''
+    if user_sql.get_user_id(user_id) is None:
+        return 'login_page'
+    else:
+        try:
+            ip = request.remote_addr
+        except Exception:
+            ip = ''
 
-            user_sql.update_last_act_user(user_uuid, ip)
+        user_sql.update_last_act_user(user_id, ip)
 
-            return 'ok'
-    return 'login_page'
+        return 'ok'
 
 
 def is_admin(level=1, **kwargs):
@@ -37,11 +35,11 @@ def is_admin(level=1, **kwargs):
     else:
         verify_jwt_in_request()
         claims = get_jwt()
-        user_id = claims['uuid']
+        user_id = claims['user_id']
         group_id = claims['group']
 
         try:
-            role = user_sql.get_user_role_by_uuid(user_id, group_id)
+            role = user_sql.get_user_role_in_group(user_id, group_id)
         except Exception:
             role = 4
     try:
@@ -95,13 +93,6 @@ def check_in_ldap(user, password):
         return True
 
 
-def create_uuid(login: str):
-    user_uuid = str(uuid.uuid4())
-    user_sql.write_user_uuid(login, user_uuid)
-
-    return user_uuid
-
-
 def do_login(user_params: dict, next_url: str):
     if next_url:
         redirect_to = f'https://{request.host}{next_url}'
@@ -118,8 +109,7 @@ def do_login(user_params: dict, next_url: str):
         user_group_name = ''
 
     try:
-        user_name = user_sql.get_user_name_by_uuid(user_params['uuid'])
-        roxywi_common.logging('RMON server', f' user: {user_name}, group: {user_group_name} login', roxywi=1)
+        roxywi_common.logging('RMON server', f' user: {user_params["name"]}, group: {user_group_name} login', roxywi=1)
     except Exception as e:
         print(f'error: {e}')
 
@@ -127,7 +117,7 @@ def do_login(user_params: dict, next_url: str):
 
 
 def create_jwt_token(user_params: dict) -> str:
-    additional_claims = {'uuid': user_params['uuid'], 'group': str(user_params['group'])}
+    additional_claims = {'group': str(user_params['group'])}
     return create_access_token(str(user_params['user']), additional_claims=additional_claims)
 
 
@@ -144,14 +134,12 @@ def check_user_password(login: str, password: str) -> dict:
         raise Exception('Your login is disabled')
     if user.ldap_user == 1:
         if login in user.username and check_in_ldap(login, password):
-            user_uuid = create_uuid(login)
-            return {'uuid': user_uuid, 'group': str(user.group_id.group_id), 'user': user.user_id}
+            return {'group': str(user.group_id.group_id), 'user': user.user_id, 'name': user.username}
         else:
             raise Exception('ban')
     else:
         hashed_password = roxy_wi_tools.Tools.get_hash(password)
         if login in user.username and hashed_password == user.password:
-            user_uuid = create_uuid(login)
-            return {'uuid': user_uuid, 'group': str(user.group_id.group_id), 'user': user.user_id}
+            return {'group': str(user.group_id.group_id), 'user': user.user_id, 'name': user.username}
         else:
             raise Exception('ban')

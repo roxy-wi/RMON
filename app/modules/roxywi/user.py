@@ -28,7 +28,7 @@ def create_user(new_user: str, email: str, password: str, role: int, activeuser:
                   f"Password: {password}"
         alerting.send_email(email, 'A user has been created for you', message)
     except Exception as e:
-        roxywi_common.logging('error: Cannot send email for a new user', e, login=1)
+        roxywi_common.logging('error: Cannot send email for a new user', str(e), login=1)
 
     return user_id
 
@@ -44,7 +44,7 @@ def delete_user(user_id: int) -> None:
         username = u.username
     if user_sql.delete_user(user_id):
         user_sql.delete_user_groups(user_id)
-        roxywi_common.logging(username, ' has been deleted user ', login=1)
+        roxywi_common.logging(username, 'has been deleted user', login=1)
 
 
 def update_user(email, new_user, user_id, enabled, group_id, role_id):
@@ -53,22 +53,13 @@ def update_user(email, new_user, user_id, enabled, group_id, role_id):
     except Exception as e:
         roxywi_common.handle_exceptions(e, 'RMON server', f'Cannot update user {new_user}', login=1)
     user_sql.update_user_role(user_id, group_id, role_id)
-    roxywi_common.logging(new_user, ' has been updated user ', login=1)
+    roxywi_common.logging(new_user, 'has been updated user', login=1)
 
 
-def update_user_password(password, uuid, user_id_from_get):
-    username = ''
-
-    if uuid:
-        user_id = user_sql.get_user_id_by_uuid(uuid)
-    else:
-        user_id = user_id_from_get
-    user = user_sql.select_users(id=user_id)
-    for u in user:
-        username = u.username
+def update_user_password(password, user_id):
+    user = user_sql.get_user_id(user_id)
     user_sql.update_user_password(password, user_id)
-    roxywi_common.logging(f'user {username}', ' has changed password ', login=1)
-    return 'ok'
+    roxywi_common.logging(f'user {user.username}', 'has changed password', login=1)
 
 
 def show_user_groups_and_roles(user_id: int, lang: str) -> str:
@@ -78,14 +69,7 @@ def show_user_groups_and_roles(user_id: int, lang: str) -> str:
     return render_template('ajax/user_groups_and_roles.html', groups=groups, user_groups=user_groups, roles=roles, lang=lang)
 
 
-def is_current_user(user_id: int, user_uuid: str) -> bool:
-    current_user_id = user_sql.get_user_id_by_uuid(user_uuid)
-    if current_user_id == user_id:
-        return True
-    return False
-
-
-def save_user_group_and_role(user: str, groups_and_roles: dict, user_uuid: str):
+def save_user_group_and_role(user: str, groups_and_roles: dict):
     resp = make_response('ok')
     for k, v in groups_and_roles.items():
         user_id = int(k)
@@ -96,8 +80,6 @@ def save_user_group_and_role(user: str, groups_and_roles: dict, user_uuid: str):
             role_id = int(v2['role_id'])
             if len(v) == 1:
                 user_sql.update_user_current_groups_by_id(group_id, user_id)
-                if is_current_user(user_id, user_uuid):
-                    resp.set_cookie('group', str(group_id), secure=True)
             try:
                 user_sql.update_user_role(user_id, group_id, role_id)
             except Exception as e:

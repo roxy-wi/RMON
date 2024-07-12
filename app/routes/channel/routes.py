@@ -45,6 +45,7 @@ def check_receiver(channel_id, receiver_name):
 
 
 @bp.post('/check')
+@get_user_params()
 def check_sender():
     json_data = request.get_json()
     sender = json_data.get('sender')

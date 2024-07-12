@@ -2,7 +2,7 @@ from typing import Union
 
 from flask.views import MethodView
 from flask_pydantic import validate
-from flask_jwt_extended import jwt_required, get_jwt, set_access_cookies
+from flask_jwt_extended import jwt_required, set_access_cookies
 from flask import render_template, jsonify, request, g
 from playhouse.shortcuts import model_to_dict
 
@@ -495,13 +495,12 @@ class UserGroupView(MethodView):
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot get user or group'), 404
 
-        claims = get_jwt()
-        user_param = {"user": user_id, "uuid": claims['uuid'], "group": group_id}
+        user_param = {"user": user_id, "group": group_id}
         access_token = roxywi_auth.create_jwt_token(user_param)
         response = jsonify({'status': 'Ok'})
         set_access_cookies(response, access_token)
         try:
-            user_sql.update_user_current_groups(group_id, claims['uuid'])
+            user_sql.update_user_current_groups(group_id, user_id)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot update user or group'), 500
         return response

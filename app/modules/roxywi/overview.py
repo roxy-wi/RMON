@@ -59,7 +59,7 @@ def show_overview(server_ip) -> str:
     user_uuid = request.cookies.get('uuid')
     group_id = request.cookies.get('group')
     lang = roxywi_common.get_user_lang_for_flask()
-    role = user_sql.get_user_role_by_uuid(user_uuid, group_id)
+    role = user_sql.get_user_role_in_group(user_uuid, group_id)
     server_name = server_sql.get_hostname_by_server_ip(server_ip)
     try:
         agent_id = smon_sql.get_agent_id_by_ip(server_ip)
