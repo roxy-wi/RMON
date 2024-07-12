@@ -8,8 +8,8 @@ class Configuration(object):
     SCHEDULER_API_ENABLED = True
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=1)
     JWT_ALGORITHM = 'RS256'
-    JWT_PRIVATE_KEY = open('/var/lib/rmon/rmon-key').read()
-    JWT_PUBLIC_KEY = open('/var/lib/rmon/rmon-key.pub').read()
+    JWT_PRIVATE_KEY = open('/var/lib/rmon/keys/rmon-key').read()
+    JWT_PUBLIC_KEY = open('/var/lib/rmon/keys/rmon-key.pub').read()
     JWT_TOKEN_LOCATION = ["headers", "cookies"]
     JWT_IDENTITY_CLAIM = 'user_id'
     JWT_ERROR_MESSAGE_KEY = 'error'
