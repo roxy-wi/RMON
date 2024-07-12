@@ -10,6 +10,7 @@ import app.modules.db.server as server_sql
 from app.modules.server import ssh_connection
 import app.modules.roxywi.common as roxywi_common
 import app.modules.roxy_wi_tools as roxy_wi_tools
+from app.modules.roxywi.class_models import IdResponse, IdDataResponse
 
 get_config = roxy_wi_tools.GetConfigVar()
 
@@ -65,24 +66,25 @@ def create_ssh_cred(name: str, password: str, group: int, username: str, enable:
 	group_name = group_sql.get_group_name_by_id(group)
 	lang = roxywi_common.get_user_lang_for_flask()
 	name = f'{name}_{group_name}'
-
-	if password:
+	if password and password != "''":
 		try:
 			password = crypt_password(password)
 		except Exception as e:
 			raise Exception(e)
+	else:
+		password = ''
 
 	try:
 		last_id = cred_sql.insert_new_ssh(name, enable, group, username, password)
 	except Exception as e:
-		raise roxywi_common.handle_exceptions(e, 'RMON server', 'Cannot create new SSH credentials', roxywi=1, login=1)
+		return roxywi_common.handle_json_exceptions(e, 'Cannot create new SSH credentials')
 	roxywi_common.logging('RMON server', f'New SSH credentials {name} has been created', roxywi=1, login=1)
 
 	if is_api:
-		return {'status': 'Created', 'id': last_id}
+		return IdResponse(id=last_id).model_dump(mode='json')
 	else:
 		data = render_template('ajax/new_ssh.html', groups=group_sql.select_groups(), sshs=cred_sql.select_ssh(name=name), lang=lang)
-		return {'status': 'Created', 'id': last_id, 'data': data}
+		return IdDataResponse(id=last_id, data=data).model_dump(mode='json')
 
 
 def upload_ssh_key(ssh_id: int, key: str, passphrase: str) -> None:
@@ -124,11 +126,13 @@ def upload_ssh_key(ssh_id: int, key: str, passphrase: str) -> None:
 		roxywi_common.logging('RMON server', e.args[0], roxywi=1)
 		raise Exception(e)
 
-	if passphrase != '':
+	if passphrase != "''":
 		try:
 			passphrase = crypt_password(passphrase)
 		except Exception as e:
 			raise Exception(e)
+	else:
+		passphrase = ''
 
 	try:
 		cred_sql.update_ssh_passphrase(ssh_id, passphrase)

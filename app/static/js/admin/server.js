@@ -218,7 +218,6 @@ function serverIsUp(server_id) {
 	let server_div = $('#server_status-' + server_id);
 	source.onmessage = function (event) {
 		let data = JSON.parse(event.data);
-		console.log(event)
 		if (data.status === 'up') {
 			server_div.removeClass('serverNone');
 			server_div.removeClass('serverDown');
@@ -240,10 +239,8 @@ function serverIsUp(server_id) {
 		$('#port-' + server_id).val(data.port);
 		$('#desc-' + server_id).val(data.desc);
 		if (data.enabled === 1) {
-			console.log('yes')
 			$('#server_enabled-' + server_id).prop('checked', true);
 		} else {
-			console.log('no')
 			$('#server_enabled-' + server_id).prop('checked', false);
 		}
 		$('#server_enabled-' + server_id).checkboxradio("refresh");

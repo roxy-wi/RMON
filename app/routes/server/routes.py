@@ -45,8 +45,8 @@ def check_server(server_id):
             result = server_mod.server_is_up(server.ip)
             status = {
                 "status": result,
-                'name': server.hostname,
-                'desc': server.desc,
+                'name': server.hostname.replace("'", ""),
+                'desc': server.desc.replace("'", ""),
                 'ip': server.ip,
                 'port': server.port,
                 'enabled': server.enabled,
@@ -54,7 +54,7 @@ def check_server(server_id):
                 'group_id': server.group_id
             }
             yield f'data:{json.dumps(status)}\n\n'
-            time.sleep(60)
+            time.sleep(10)
 
     response = Response(stream_with_context(get_check()), mimetype="text/event-stream")
     response.headers["Cache-Control"] = "no-cache"
