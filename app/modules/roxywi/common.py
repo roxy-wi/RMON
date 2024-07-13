@@ -197,7 +197,7 @@ def get_users_params(**kwargs):
 		'servers': servers,
 		'lang': get_user_lang_for_flask(),
 		'user_id': user_id,
-		'group_id': user.group_id
+		'group_id': user.group_id.group_id
 	}
 
 	return user_params

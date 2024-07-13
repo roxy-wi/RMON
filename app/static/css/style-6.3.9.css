@@ -187,9 +187,9 @@ pre {
     padding-top: 11px;
     text-align: right;
     margin-right: 20px;
-    width: 368px;
+    width: 380px;
     float: left;
-    margin-left: 30%;
+    margin-left: 29%;
 }
 .footer-link, .footer-copyright {
 	color: var(--blue-color);
