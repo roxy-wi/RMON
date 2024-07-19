@@ -1,5 +1,3 @@
-import uuid
-
 from flask import request, abort, url_for, jsonify
 from flask_jwt_extended import create_access_token, set_access_cookies
 from flask_jwt_extended import get_jwt

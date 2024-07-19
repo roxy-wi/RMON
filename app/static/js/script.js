@@ -21,7 +21,9 @@ $( function() {
 	   }
    });
 });
-
+function getRandomArbitrary(min, max) {
+    return Math.random() * (max - min) + min;
+}
 jQuery.expr[':'].regex = function(elem, index, match) {
     var matchParams = match[3].split(','),
         validLabels = /^(data|css):/,
@@ -848,7 +850,6 @@ function openUserSettings(user_id) {
 			if (data.status === 'failed') {
 				toastr.error(data.error)
 			} else {
-				console.log(data)
 				$('#newCurrentGroup').find('option').remove();
 				for (k in data) {
 					let group = data[k];

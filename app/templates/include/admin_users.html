@@ -22,13 +22,14 @@
         {% set disable_superAdmin = {'disabled': ''} %}
         {% if g.user_params['role'] == 2 %}
             {% for user_role in users_roles %}
-                {% if user_role.user_role_id == 1 and user.user_id == user_role.user_id %}
+                {% if user_role.user_role_id|string() == '1' and user.user_id|string() == user_role.user_id|string() %}
                     {% if disable_superAdmin.update({'disabled': 'disabled'}) %} {% endif %}
                 {% endif %}
             {% endfor %}
         {% endif %}
 		<tr id="user-{{user.user_id}}" class="{{ loop.cycle('odd', 'even') }} {% if adding %}newuser{% endif %}">
 			<td class="padding10 first-collumn">
+            {{ disable_superAdmin['disabled'] }}
 				{% set login_id = 'login-' + user.user_id|string() %}
 				{% if user.ldap_user == 1 %}
 					{{ input(login_id, value=user.username, readonly='readonly', disabled=disable_superAdmin['disabled']) }}

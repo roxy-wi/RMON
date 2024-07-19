@@ -35,7 +35,6 @@ class UserView(MethodView):
               type: boolean
               description: is api
         """
-        self.json_data = request.get_json()
         self.is_api = is_api
 
     def get(self, user_id: int):
@@ -123,7 +122,6 @@ class UserView(MethodView):
         for user in users:
             users_list.append(model_to_dict(user, exclude={User_DB.group_id, User_DB.password, User_DB.user_services}))
         return jsonify(users_list)
-        # return jsonify({'e': users})
 
     @validate(body=UserPost)
     def post(self, body: UserPost) -> Union[dict, tuple]:
@@ -289,12 +287,6 @@ class UserView(MethodView):
 class UserGroupView(MethodView):
     methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
     decorators = [jwt_required(), get_user_params(), page_for_admin(level=4), check_group()]
-
-    def __init__(self):
-        if request.method not in ('GET', 'DELETE', 'PATCH'):
-            self.json_data = request.get_json()
-        else:
-            self.json_data = None
 
     def get(self, user_id: int):
         """
@@ -557,9 +549,6 @@ class UsersView(MethodView):
     methods = ["GET", "POST", "PUT", "DELETE"]
     decorators = [jwt_required(), get_user_params(), page_for_admin(), check_group()]
 
-    def __init__(self):
-        self.json_data = request.get_json()
-
     @validate(query=GroupQuery)
     def get(self, query: GroupQuery):
         """
@@ -617,13 +606,10 @@ class UsersView(MethodView):
                   description: 'Error message'
         """
         group_id = BaseServer.return_group_id(query)
-        # if group_id:
         try:
             users = user_sql.get_users_in_group(group_id)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot get group')
-        # else:
-        #     users = User_DB.select()
 
         json_data = []
         for user in users:

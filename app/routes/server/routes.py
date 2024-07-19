@@ -54,7 +54,7 @@ def check_server(server_id):
                 'group_id': server.group_id
             }
             yield f'data:{json.dumps(status)}\n\n'
-            time.sleep(10)
+            time.sleep(60)
 
     response = Response(stream_with_context(get_check()), mimetype="text/event-stream")
     response.headers["Cache-Control"] = "no-cache"

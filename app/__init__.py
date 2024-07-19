@@ -2,6 +2,9 @@ from flask import Flask
 from flask_caching import Cache
 from flask_apscheduler import APScheduler
 from flask_jwt_extended import JWTManager
+from prometheus_client import multiprocess
+from prometheus_client.core import CollectorRegistry
+from prometheus_flask_exporter import PrometheusMetrics
 
 app = Flask(__name__)
 app.config.from_object('app.config.Configuration')
@@ -16,6 +19,12 @@ cache.init_app(app)
 scheduler = APScheduler()
 scheduler.init_app(app)
 scheduler.start()
+
+registry = CollectorRegistry()
+multiprocess.MultiProcessCollector(registry, path='/tmp')
+
+metrics = PrometheusMetrics(app, registry=registry)
+metrics.info('app_info', 'Application info', version='1.0.3')
 
 from app.api.v1.routes.main import bp as main_api_v1_0_bp
 from app.api.v1.routes.user import bp as user_api_v1_0_bp

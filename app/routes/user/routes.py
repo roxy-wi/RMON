@@ -7,7 +7,6 @@ from app.routes.user import bp
 import app.modules.common.common as common
 import app.modules.roxywi.user as roxywi_user
 import app.modules.roxywi.auth as roxywi_auth
-import app.modules.roxywi.common as roxywi_common
 from app.views.user.views import UserView
 from app.middleware import get_user_params
 from app.modules.roxywi.class_models import BaseResponse, ErrorResponse
@@ -51,13 +50,6 @@ def update_user_password(user_id):
         return BaseResponse().model_dump(mode='json')
     except Exception as e:
         return ErrorResponse(error=str(e)).model_dump(mode='json'), 501
-
-
-@bp.route('/groups/<int:user_id>')
-def show_user_groups_and_roles(user_id):
-    lang = roxywi_common.get_user_lang_for_flask()
-
-    return roxywi_user.show_user_groups_and_roles(user_id, lang)
 
 
 @bp.post('/groups/save')

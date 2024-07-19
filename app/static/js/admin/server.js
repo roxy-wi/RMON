@@ -213,7 +213,9 @@ function cloneServer(id) {
 		$('#new-server-group-add').selectmenu("refresh");
 	}
 }
-function serverIsUp(server_id) {
+async function serverIsUp(server_id) {
+	let random_sleep = getRandomArbitrary(1000, 10000);
+	await sleep(random_sleep);
 	const source = new EventSource(`/server/check/server/${server_id}`);
 	let server_div = $('#server_status-' + server_id);
 	source.onmessage = function (event) {

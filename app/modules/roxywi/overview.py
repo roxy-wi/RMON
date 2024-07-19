@@ -1,6 +1,8 @@
 import json
 
-from flask import render_template, request
+from flask import render_template
+from flask_jwt_extended import get_jwt
+from flask_jwt_extended import verify_jwt_in_request
 
 import app.modules.db.sql as sql
 import app.modules.db.roxy as roxy_sql
@@ -56,10 +58,10 @@ def show_services_overview():
 
 def show_overview(server_ip) -> str:
     servers_sorted = []
-    user_uuid = request.cookies.get('uuid')
-    group_id = request.cookies.get('group')
+    verify_jwt_in_request()
+    claims = get_jwt()
     lang = roxywi_common.get_user_lang_for_flask()
-    role = user_sql.get_user_role_in_group(user_uuid, group_id)
+    role = user_sql.get_user_role_in_group(claims['user_id'], claims['group'])
     server_name = server_sql.get_hostname_by_server_ip(server_ip)
     try:
         agent_id = smon_sql.get_agent_id_by_ip(server_ip)

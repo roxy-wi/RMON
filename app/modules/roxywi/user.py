@@ -1,6 +1,6 @@
 import os
 
-from flask import render_template, make_response
+from flask import make_response
 
 import app.modules.db.sql as sql
 import app.modules.db.user as user_sql
@@ -60,13 +60,6 @@ def update_user_password(password, user_id):
     user = user_sql.get_user_id(user_id)
     user_sql.update_user_password(password, user_id)
     roxywi_common.logging(f'user {user.username}', 'has changed password', login=1)
-
-
-def show_user_groups_and_roles(user_id: int, lang: str) -> str:
-    groups = user_sql.select_user_groups_with_names(user_id, user_not_in_group=1)
-    roles = sql.select_roles()
-    user_groups = user_sql.select_user_groups_with_names(user_id)
-    return render_template('ajax/user_groups_and_roles.html', groups=groups, user_groups=user_groups, roles=roles, lang=lang)
 
 
 def save_user_group_and_role(user: str, groups_and_roles: dict):

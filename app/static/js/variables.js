@@ -19,7 +19,6 @@ const overview = `${scriptPath}/overview.js`;
 const awesome = `${scriptPath}/fontawesome.min.js`;
 const ha = `${scriptPath}/ha.js`;
 
-
 // csrf_token
 const csrf_token = Cookies.get('csrf_access_token');
 

@@ -7,10 +7,12 @@ from app import app, jwt
 from app.api.v1.routes.main import bp
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.common as roxywi_common
-from app.views.server.views import ServerGroupView
+from app.views.server.views import ServerGroupView, ServerGroupsView, ServersView
 from app.views.user.views import UsersView
 
 bp.add_url_rule('/users', view_func=UsersView.as_view('users'), methods=['GET'])
+bp.add_url_rule('/groups', view_func=ServerGroupsView.as_view('groups'), methods=['GET'])
+bp.add_url_rule('/servers', view_func=ServersView.as_view('servers'), methods=['GET'])
 
 
 def register_api(view, endpoint, url, pk='check_id', pk_type='int'):

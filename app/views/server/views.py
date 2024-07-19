@@ -43,7 +43,7 @@ class BaseServer(MethodView):
 
 
 class ServerView(BaseServer):
-    methods = ["POST", "PUT", "DELETE"]
+    methods = ["GET", "POST", "PUT", "DELETE"]
 
     def __init__(self, is_api=False):
         super().__init__()
@@ -72,41 +72,39 @@ class ServerView(BaseServer):
         responses:
           200:
             description: 'Server Information'
-            content:
-              application/json:
-                schema:
-                  type: 'object'
-                  properties:
-                    alert:
-                      type: 'integer'
-                      description: 'Alert status of the server'
-                    creds_id:
-                      type: 'integer'
-                      description: 'Credentials ID'
-                    desc:
-                      type: 'string'
-                      description: 'Description of the server'
-                    enabled:
-                      type: 'integer'
-                      description: 'Enabled status of the server'
-                    group_id:
-                      type: 'string'
-                      description: 'ID of the group the server belongs to'
-                    hostname:
-                      type: 'string'
-                      description: 'Hostname of the server'
-                    ip:
-                      type: 'string'
-                      description: 'IP address of the server'
-                    port:
-                      type: 'integer'
-                      description: 'Port number of the server'
-                    pos:
-                      type: 'integer'
-                      description: 'Position of the server'
-                    server_id:
-                      type: 'integer'
-                      description: 'ID of the server'
+            schema:
+              type: 'object'
+              properties:
+                alert:
+                  type: 'integer'
+                  description: 'Alert status of the server'
+                creds_id:
+                  type: 'integer'
+                  description: 'Credentials ID'
+                desc:
+                  type: 'string'
+                  description: 'Description of the server'
+                enabled:
+                  type: 'integer'
+                  description: 'Enabled status of the server'
+                group_id:
+                  type: 'string'
+                  description: 'ID of the group the server belongs to'
+                hostname:
+                  type: 'string'
+                  description: 'Hostname of the server'
+                ip:
+                  type: 'string'
+                  description: 'IP address of the server'
+                port:
+                  type: 'integer'
+                  description: 'Port number of the server'
+                pos:
+                  type: 'integer'
+                  description: 'Position of the server'
+                server_id:
+                  type: 'integer'
+                  description: 'ID of the server'
         """
         group_id = BaseServer.return_group_id(query)
         try:
@@ -256,6 +254,64 @@ class ServerView(BaseServer):
             return BaseResponse().model_dump(mode='json'), 204
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot delete server')
+
+
+class ServersView(MethodView):
+    methods = ["GET"]
+    decorators = [get_user_params(), page_for_admin(level=2), check_group()]
+
+    @validate(query=GroupQuery)
+    def get(self, query: GroupQuery):
+        """
+        Retrieve servers information based on GroupQuery
+        ---
+        tags:
+          - 'Server'
+        parameters:
+          - in: 'query'
+            name: 'GroupQuery'
+            description: 'GroupQuery to filter servers. Only for superAdmin role'
+            required: false
+            schema:
+              type: 'string'
+        responses:
+          200:
+            description: 'Servers Information'
+            schema:
+              type: 'array'
+              items:
+                type: 'object'
+                properties:
+                  alert:
+                    type: 'integer'
+                  creds_id:
+                    type: 'integer'
+                  desc:
+                    type: 'string'
+                  enabled:
+                    type: 'integer'
+                  group_id:
+                    type: 'integer'
+                  hostname:
+                    type: 'string'
+                  ip:
+                    type: 'string'
+                  port:
+                    type: 'integer'
+                  pos:
+                    type: 'integer'
+                  server_id:
+                    type: 'integer'
+          default:
+            description: Unexpected error
+        """
+        group_id = BaseServer.return_group_id(query)
+        try:
+            servers = server_sql.select_servers_with_group(group_id)
+        except Exception as e:
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group')
+        servers_list = [model_to_dict(server) for server in servers]
+        return jsonify(servers_list)
 
 
 class ServerGroupView(MethodView):
@@ -417,6 +473,40 @@ class ServerGroupView(MethodView):
                 raise RoxywiResourceNotFound
         except Exception as e:
             raise e
+
+
+class ServerGroupsView(MethodView):
+    methods = ["GET"]
+    decorators = [jwt_required(), get_user_params(), page_for_admin()]
+
+    def get(self):
+        """
+        This endpoint allows to get server groups.
+        ---
+        tags:
+          - Group
+        responses:
+          200:
+            description: Server groups retrieved successfully
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  description:
+                    type: string
+                  group_id:
+                    type: integer
+                  name:
+                    type: string
+          default:
+            description: Unexpected error
+        """
+        groups_list = []
+        groups = group_sql.select_groups()
+        for group in groups:
+            groups_list.append(model_to_dict(group))
+        return jsonify(groups_list)
 
 
 class CredView(BaseServer):

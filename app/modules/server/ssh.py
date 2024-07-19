@@ -78,7 +78,7 @@ def create_ssh_cred(name: str, password: str, group: int, username: str, enable:
 		last_id = cred_sql.insert_new_ssh(name, enable, group, username, password)
 	except Exception as e:
 		return roxywi_common.handle_json_exceptions(e, 'Cannot create new SSH credentials')
-	roxywi_common.logging('RMON server', f'New SSH credentials {name} has been created', roxywi=1, login=1)
+	roxywi_common.logging('RMON server', f'New SSH credentials {name} has been created', login=1)
 
 	if is_api:
 		return IdResponse(id=last_id).model_dump(mode='json')
@@ -123,7 +123,7 @@ def upload_ssh_key(ssh_id: int, key: str, passphrase: str) -> None:
 	try:
 		os.chmod(ssh_keys, 0o600)
 	except IOError as e:
-		roxywi_common.logging('RMON server', e.args[0], roxywi=1)
+		roxywi_common.logging('RMON server', e.args[0])
 		raise Exception(e)
 
 	if passphrase != "''":
@@ -139,7 +139,7 @@ def upload_ssh_key(ssh_id: int, key: str, passphrase: str) -> None:
 	except Exception as e:
 		raise Exception(e)
 
-	roxywi_common.logging("RMON server", f"A new SSH cert has been uploaded {ssh_keys}", roxywi=1, login=1)
+	roxywi_common.logging("RMON server", f"A new SSH cert has been uploaded {ssh_keys}", login=1)
 
 
 def update_ssh_key(ssh_id: int, name: str, password: str, enable: int, username: str, group: int) -> None:
@@ -160,7 +160,7 @@ def update_ssh_key(ssh_id: int, name: str, password: str, enable: int, username:
 
 	try:
 		cred_sql.update_ssh(ssh_id, name, enable, group, username, password)
-		roxywi_common.logging('RMON server', f'The SSH credentials {name} has been updated ', roxywi=1, login=1)
+		roxywi_common.logging('RMON server', f'The SSH credentials {name} has been updated ', login=1)
 	except Exception as e:
 		raise Exception(e)
 
@@ -177,9 +177,9 @@ def delete_ssh_key(ssh_id) -> None:
 			pass
 	try:
 		cred_sql.delete_ssh(ssh_id)
-		roxywi_common.logging('RMON server', f'The SSH credentials {ssh.name} has deleted', roxywi=1, login=1)
+		roxywi_common.logging('RMON server', f'The SSH credentials {ssh.name} has deleted', login=1)
 	except Exception as e:
-		roxywi_common.handle_exceptions(e, 'RMON server', f'Cannot delete SSH credentials {ssh.name}', roxywi=1, login=1)
+		roxywi_common.handle_exceptions(e, 'RMON server', f'Cannot delete SSH credentials {ssh.name}', login=1)
 
 
 def crypt_password(password: str) -> bytes:
