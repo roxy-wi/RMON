@@ -29,7 +29,6 @@
         {% endif %}
 		<tr id="user-{{user.user_id}}" class="{{ loop.cycle('odd', 'even') }} {% if adding %}newuser{% endif %}">
 			<td class="padding10 first-collumn">
-            {{ disable_superAdmin['disabled'] }}
 				{% set login_id = 'login-' + user.user_id|string() %}
 				{% if user.ldap_user == 1 %}
 					{{ input(login_id, value=user.username, readonly='readonly', disabled=disable_superAdmin['disabled']) }}
