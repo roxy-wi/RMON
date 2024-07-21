@@ -57,7 +57,7 @@ class BaseCheckRequest(BaseModel):
     name: EscapedString
     desc: Optional[str] = ''
     agent_id: int
-    timeout: Optional[int] = 2
+    timeout: Annotated[int, Le(59), Gt(1)] = 2
     enabled: Optional[bool] = 1
     tg: Optional[int] = 0
     pd: Optional[int] = 0
@@ -103,6 +103,13 @@ class HttpCheckRequest(BaseCheckRequest):
     @classmethod
     def set_header_req(cls, v):
         return v.replace('\'', '"')
+
+    @field_validator('url', mode='before')
+    @classmethod
+    def set_url(cls, v):
+        if v.find('http://') == -1 and v.find('https://') == -1:
+            raise ValueError('URL must start with http:// or https://')
+        return v
 
 
 class DnsCheckRequest(BaseCheckRequest):
