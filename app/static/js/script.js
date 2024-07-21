@@ -686,15 +686,16 @@ socket.onopen = function(e) {
 };
 
 function getAlerts() {
-	socket.send("alert_group " + Cookies.get('group') + ' ' + Cookies.get('uuid'));
+	console.log("alert_group " + $('#user_group_socket').val() + " " + $('#user_id_socket').val())
+	socket.send("alert_group " + $('#user_group_socket').val() + " " + $('#user_id_socket').val());
 }
 
 socket.onmessage = function(event) {
-	var cur_url = window.location.href.split('/').pop();
+	let cur_url = window.location.href.split('/').pop();
 	cur_url = cur_url.split('/');
 	if (cur_url != 'login' && localStorage.getItem('disabled_alert') === null) {
-		data = event.data.split(";");
-		for (i = 0; i < data.length; i++) {
+		let data = event.data.split(";");
+		for (let i = 0; i < data.length; i++) {
 			if (data[i].indexOf('warning: ') != '-1') {
 				toastr.warning(data[i]);
 				ion.sound.play("bell_ring");

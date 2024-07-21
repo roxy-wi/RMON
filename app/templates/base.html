@@ -22,6 +22,8 @@
 	<body>
 		{% if g.user_params['user'] %}
 		<script>show_version();</script>
+            <input type="hidden" id="user_group_socket" value="{{ g.user_params['group_id'] }}">
+            <input type="hidden" id="user_id_socket" value="{{ g.user_params['user_id'] }}">
 		{% include 'include/main_menu.html' %}
 		<div class="container">
 			<h2>

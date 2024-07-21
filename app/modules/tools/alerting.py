@@ -1,8 +1,10 @@
 import json
+from typing import Union
 
 import pika
 import requests
-from flask import render_template, request, abort, g
+from flask import render_template, abort, g
+from flask_jwt_extended import get_jwt, verify_jwt_in_request
 
 import app.modules.db.sql as sql
 import app.modules.db.user as user_sql
@@ -248,17 +250,19 @@ def mm_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, 
 		raise Exception(f'error: {e}')
 
 
-def check_rabbit_alert() -> str:
+def check_rabbit_alert() -> Union[str, dict]:
+	verify_jwt_in_request()
+	claims = get_jwt()
 	try:
-		user_group_id = request.cookies.get('group')
+		user_group_id = claims['group']
 	except Exception as e:
-		return f'error: Cannot send a message {e}'
+		return roxywi_common.handle_json_exceptions(e, 'Cannot get group')
 
 	try:
 		json_for_sending = {"user_group": user_group_id, "message": 'info: Test message'}
 		send_message_to_rabbit(json.dumps(json_for_sending))
 	except Exception as e:
-		return f'error: Cannot send a message {e}'
+		return roxywi_common.handle_json_exceptions(e, 'Cannot get group')
 	else:
 		return 'ok'
 

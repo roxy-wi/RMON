@@ -38,12 +38,20 @@ def get_user_group(**kwargs) -> int:
 	return user_group
 
 
-def check_user_group_for_flask():
+def check_user_group_for_flask(**kwargs):
 	verify_jwt_in_request()
 	claims = get_jwt()
 	user_id = claims['user_id']
 	group_id = claims['group']
 
+	if user_sql.check_user_group(user_id, group_id):
+		return True
+	else:
+		logging('RMON server', 'has tried to actions in not his group', login=1)
+		return False
+
+
+def check_user_group_for_socket(user_id: int, group_id: int) -> bool:
 	if user_sql.check_user_group(user_id, group_id):
 		return True
 	else:
