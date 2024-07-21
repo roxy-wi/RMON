@@ -7,11 +7,11 @@
             <span id="agent-name-{{agent.id}}" style="margin-top: 4px;display: inline-block;">
                 <a href="/rmon/agent/{{ agent.id }}" title="{{ lang.words.more|title }} {{ lang.words.info }}">{{agent.name.replace("'","")}}</a>
             </span>
-            <span id="agent-desc-{{agent.id}}">{% if agent.desc != '' %} ({{agent.desc.replace("'", "")}}) {% endif %}</span>
+            <span id="agent-desc-{{agent.id}}">{% if agent.desc != "''" %} ({{agent.desc.replace("'", "")}}) {% endif %}</span>
         </span>
-    {% if g.user_params['group_id']|string() == agent.groups|string() or g.user_params['role'] == 1 %}
+    {% if g.user_params['group_id']|string() == agent.group_id|string() or g.user_params['role'] == 1 %}
         <span class="server-action">
-            {% if g.user_params['role'] <= 3 %}
+            {% if g.user_params['role']|string() <= '3' %}
                 <a id="start-{{ agent.id }}" class="start" title="{{lang.words.start|title()}}">
                     <span class="service-start" onclick="confirmAjaxAction('start', '{{agent.id}}', '{{ agent.ip }}')"></span>
                 </a>

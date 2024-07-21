@@ -312,15 +312,25 @@ function removeAgent(id, dialog_id) {
         type: "delete",
         data: JSON.stringify({}),
 		contentType: "application/json; charset=utf-8",
-        success: function (data){
-            if (data.status === 'failed') {
-                toastr.error(data);
-            } else {
-                toastr.clear();
+		statusCode: {
+			204: function (xhr) {
+				toastr.clear();
                 $(dialog_id).dialog("close");
 				$('#agent-'+id).remove();
-            }
-        }
+			},
+			404: function (xhr) {
+				toastr.clear();
+                $(dialog_id).dialog("close");
+				$('#agent-'+id).remove();
+			}
+		},
+		success: function (data) {
+			if (data) {
+				if (data.status === "failed") {
+					toastr.error(data);
+				}
+			}
+		}
     });
 }
 function confirmAjaxAction(action, id, server_ip) {
