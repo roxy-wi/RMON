@@ -112,7 +112,7 @@ class AgentView(MethodView):
         try:
             group = int(g.user_params['group_id'])
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot parse agent data')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
         try:
             agents = smon_sql.get_agent_with_group(agent_id, group)
         except Exception as e:
@@ -316,7 +316,7 @@ class AgentsView(MethodView):
         parameters:
         - in: 'query'
           name: 'group_id'
-          description: 'ID of the group to list users'
+          description: 'ID of the group to list users. For superAdmin only'
           required: false
           schema:
             type: 'integer'

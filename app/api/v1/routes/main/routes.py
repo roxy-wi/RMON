@@ -9,6 +9,7 @@ import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.common as roxywi_common
 from app.views.server.views import ServerGroupView, ServerGroupsView, ServersView
 from app.views.user.views import UsersView
+from app.views.channel.views import ChannelView, ChannelsView
 
 bp.add_url_rule('/users', view_func=UsersView.as_view('users'), methods=['GET'])
 bp.add_url_rule('/groups', view_func=ServerGroupsView.as_view('groups'), methods=['GET'])
@@ -22,6 +23,16 @@ def register_api(view, endpoint, url, pk='check_id', pk_type='int'):
 
 
 register_api(ServerGroupView, 'group', '/group', 'group_id')
+
+
+def register_api_with_group(view, endpoint, url_beg, pk='receiver', pk_type='int', pk_end='channel_id', pk_type_end='int'):
+    view_func = view.as_view(endpoint, True)
+    bp.add_url_rule(f'/{url_beg}/<any(telegram, slack, pd, mm):{pk}>', view_func=view_func, methods=['POST'])
+    bp.add_url_rule(f'/{url_beg}/<any(telegram, slack, pd, mm):{pk}>/<{pk_type_end}:{pk_end}>', view_func=view_func, methods=['PUT', 'DELETE', 'GET', 'PATCH'])
+
+
+register_api_with_group(ChannelView, 'channel', '/channel')
+bp.add_url_rule('/channels/<any(telegram, slack, pd, mm):receiver>', view_func=ChannelsView.as_view('channels'), methods=['GET'])
 
 
 @jwt.expired_token_loader

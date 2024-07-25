@@ -686,7 +686,6 @@ socket.onopen = function(e) {
 };
 
 function getAlerts() {
-	console.log("alert_group " + $('#user_group_socket').val() + " " + $('#user_id_socket').val())
 	socket.send("alert_group " + $('#user_group_socket').val() + " " + $('#user_id_socket').val());
 }
 

@@ -96,7 +96,7 @@ class Telegram(BaseModel):
     id = AutoField()
     token = CharField()
     chanel_name = CharField()
-    groups = IntegerField()
+    group_id = IntegerField()
 
     class Meta:
         table_name = 'telegram'
@@ -106,7 +106,7 @@ class Slack(BaseModel):
     id = AutoField()
     token = CharField()
     chanel_name = CharField()
-    groups = IntegerField()
+    group_id = IntegerField()
 
     class Meta:
         table_name = 'slack'
@@ -116,7 +116,7 @@ class MM(BaseModel):
     id = AutoField()
     token = CharField()
     chanel_name = CharField()
-    groups = IntegerField()
+    group_id = IntegerField()
 
     class Meta:
         table_name = 'mattermost'
@@ -126,7 +126,7 @@ class PD(BaseModel):
     id = AutoField()
     token = CharField()
     chanel_name = CharField()
-    groups = IntegerField()
+    group_id = IntegerField()
 
     class Meta:
         table_name = 'pd'

@@ -284,147 +284,31 @@ def check_email_alert() -> str:
 	return 'ok'
 
 
-def add_telegram_channel(token: str, channel: str, group: str) -> str:
-	if token is None or channel is None or group is None:
-		return error_mess
-	if channel_sql.insert_new_telegram(token, channel, group):
+def add_receiver(receiver: str, token: str, channel: str, group: str, is_api=False) -> str:
+	last_id = channel_sql.insert_new_receiver(receiver, token, channel, group)
+
+	if is_api:
+		return last_id
+	else:
 		lang = roxywi_common.get_user_lang_for_flask()
-		channels = channel_sql.select_telegram(token=token)
+		new_channel = channel_sql.select_receiver(receiver, last_id)
 		groups = group_sql.select_groups()
-		roxywi_common.logging('RMON server', f'A new Telegram channel {channel} has been created ', roxywi=1, login=1)
-
-		return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channels=channels, receiver='telegram')
-
-
-def add_slack_channel(token: str, channel: str, group: str) -> str:
-	if token is None or channel is None or group is None:
-		return error_mess
-	if channel_sql.insert_new_slack(token, channel, group):
-		lang = roxywi_common.get_user_lang_for_flask()
-		channels = channel_sql.select_slack(token=token)
-		groups = group_sql.select_groups()
-		roxywi_common.logging('RMON server', f'A new Slack channel {channel} has been created ', roxywi=1, login=1)
-		return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channels=channels, receiver='slack')
-
-
-def add_pd_channel(token: str, channel: str, group: str) -> str:
-	if token is None or channel is None or group is None:
-		return error_mess
-	if channel_sql.insert_new_pd(token, channel, group):
-		lang = roxywi_common.get_user_lang_for_flask()
-		channels = channel_sql.select_pd(token=token)
-		groups = group_sql.select_groups()
-		roxywi_common.logging('RMON server', f'A new PagerDuty channel {channel} has been created ', roxywi=1, login=1)
-		return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channels=channels, receiver='pd')
-
-
-def add_mm_channel(token: str, channel: str, group: str) -> str:
-	if token is None or channel is None or group is None:
-		return error_mess
-	if channel_sql.insert_new_mm(token, channel, group):
-		lang = roxywi_common.get_user_lang_for_flask()
-		channels = channel_sql.select_mm(token=token)
-		groups = group_sql.select_groups()
-		roxywi_common.logging('RMON server', f'A new Mattermost channel {channel} has been created ', roxywi=1, login=1)
-		return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channels=channels, receiver='mm')
-
-
-def delete_telegram_channel(channel_id) -> str:
-	telegram = channel_sql.select_telegram(id=channel_id)
-	channel_name = ''
-	for t in telegram:
-		channel_name = t.token
-	if channel_sql.delete_telegram(channel_id):
-		roxywi_common.logging('RMON server', f'The Telegram channel {channel_name} has been deleted ', roxywi=1, login=1)
-		return 'ok'
-
-
-def delete_slack_channel(channel_id) -> str:
-	slack = channel_sql.select_slack(id=channel_id)
-	channel_name = ''
-	for t in slack:
-		channel_name = t.chanel_name
-	if channel_sql.delete_slack(channel_id):
-		roxywi_common.logging('RMON server', f'The Slack channel {channel_name} has been deleted ', roxywi=1, login=1)
-		return 'ok'
-
-
-def delete_pd_channel(channel_id) -> str:
-	pd = channel_sql.select_pd(id=channel_id)
-	channel_name = ''
-	for t in pd:
-		channel_name = t.chanel_name
-	if channel_sql.delete_pd(channel_id):
-		roxywi_common.logging('RMON server', f'The PageDuty channel {channel_name} has been deleted ', roxywi=1, login=1)
-		return 'ok'
-
-
-def delete_mm_channel(channel_id) -> str:
-	pd = channel_sql.select_mm(id=channel_id)
-	channel_name = ''
-	for t in pd:
-		channel_name = t.chanel_name
-	if channel_sql.delete_mm(channel_id):
-		roxywi_common.logging('RMON server', f'The Mattermost channel {channel_name} has been deleted ', roxywi=1, login=1)
-		return 'ok'
-
-
-def update_telegram(token: str, channel: str, group: str, user_id: int) -> str:
-	channel_sql.update_telegram(token, channel, group, user_id)
-	roxywi_common.logging('group ' + group, f'The Telegram token has been updated for channel: {channel}', roxywi=1, login=1)
-	return 'ok'
-
-
-def update_slack(token: str, channel: str, group: str, user_id: int) -> str:
-	channel_sql.update_slack(token, channel, group, user_id)
-	roxywi_common.logging(f'group {group}', f'The Slack token has been updated for channel: {channel}', roxywi=1, login=1)
-	return 'ok'
-
-
-def update_pd(token: str, channel: str, group: str, user_id: int) -> str:
-	channel_sql.update_pd(token, channel, group, user_id)
-	roxywi_common.logging(f'group {group}', f'The PagerDuty token has been updated for channel: {channel}', roxywi=1, login=1)
-	return 'ok'
-
-
-def update_mm(token: str, channel: str, group: str, user_id: int) -> str:
-	channel_sql.update_mm(token, channel, group, user_id)
-	roxywi_common.logging(f'group {group}', f'The Mattermost token has been updated for channel: {channel}', roxywi=1, login=1)
-	return 'ok'
+		roxywi_common.logging('Roxy-WI server', f'A new {receiver.title()} channel {channel} has been created ', roxywi=1, login=1)
+		return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channel=new_channel, receiver=receiver)
 
 
 def delete_receiver_channel(channel_id: int, receiver_name: str) -> None:
-	delete_functions = {
-		"telegram": delete_telegram_channel,
-		"slack": delete_slack_channel,
-		"pd": delete_pd_channel,
-		"mm": delete_mm_channel,
-	}
-	return delete_functions[receiver_name](channel_id)
-
-
-def add_receiver_channel(receiver_name: str, token: str, channel: str, group: id) -> str:
-	add_functions = {
-		"telegram": add_telegram_channel,
-		"slack": add_slack_channel,
-		"pd": add_pd_channel,
-		"mm": add_mm_channel,
-	}
-
 	try:
-		return add_functions[receiver_name](token, channel, group)
+		channel_sql.delete_receiver(receiver_name, channel_id)
 	except Exception as e:
-		return f'error: Cannot add new receiver: {e}'
+		raise e
 
 
-def update_receiver_channel(receiver_name: str, token: str, channel: str, group: id, user_id: int) -> None:
-	update_functions = {
-		"telegram": update_telegram,
-		"slack": update_slack,
-		"pd": update_pd,
-		"mm": update_mm,
-	}
-	return update_functions[receiver_name](token, channel, group, user_id)
+def update_receiver_channel(receiver_name: str, token: str, channel: str, group: id, channel_id: int) -> None:
+	try:
+		channel_sql.update_receiver(receiver_name, token, channel, group, channel_id)
+	except Exception as e:
+		raise e
 
 
 def check_receiver(channel_id: int, receiver_name: str) -> str:
@@ -449,22 +333,31 @@ def check_receiver(channel_id: int, receiver_name: str) -> str:
 
 def load_channels():
 	try:
+		user_subscription = roxywi_common.return_user_status()
+	except Exception as e:
+		user_subscription = roxywi_common.return_unsubscribed_user_status()
+		roxywi_common.logging('Roxy-WI server', f'Cannot get a user plan: {e}', roxywi=1)
+
+	try:
 		user_params = roxywi_common.get_users_params()
 	except Exception:
 		abort(403)
 
 	kwargs = {
+		'user_subscription': user_subscription,
 		'user_params': user_params,
 		'lang': user_params['lang']
 	}
 
-	user_group = roxywi_common.get_user_group(id=1)
-	kwargs.setdefault('telegrams', channel_sql.get_user_telegram_by_group(user_group))
-	kwargs.setdefault('pds', channel_sql.get_user_pd_by_group(user_group))
-	kwargs.setdefault('mms', channel_sql.get_user_mm_by_group(user_group))
-	kwargs.setdefault('groups', group_sql.select_groups())
-	kwargs.setdefault('slacks', channel_sql.get_user_slack_by_group(user_group))
-	kwargs.setdefault('user_params', user_params)
-	kwargs.setdefault('lang', user_params['lang'])
+	if user_subscription['user_status']:
+		user_group = roxywi_common.get_user_group(id=1)
+		kwargs.setdefault('telegrams', channel_sql.get_user_receiver_by_group('telegram', user_group))
+		kwargs.setdefault('pds', channel_sql.get_user_receiver_by_group('pd', user_group))
+		kwargs.setdefault('mms', channel_sql.get_user_receiver_by_group('mm', user_group))
+		kwargs.setdefault('groups', group_sql.select_groups())
+		kwargs.setdefault('slacks', channel_sql.get_user_receiver_by_group('slack', user_group))
+		kwargs.setdefault('user_subscription', user_subscription)
+		kwargs.setdefault('user_params', user_params)
+		kwargs.setdefault('lang', user_params['lang'])
 
 	return render_template('ajax/channels.html', **kwargs)

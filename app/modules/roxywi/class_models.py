@@ -189,3 +189,9 @@ class CredRequest(BaseModel):
 class CredUploadRequest(BaseModel):
     private_key: str
     passphrase: Optional[EscapedString] = None
+
+
+class ChannelRequest(BaseModel):
+    token: EscapedString
+    channel: EscapedString
+    group_id: Optional[int] = None

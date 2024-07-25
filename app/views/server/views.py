@@ -17,7 +17,7 @@ import app.modules.server.server as server_mod
 from app.middleware import get_user_params, page_for_admin, check_group
 from app.modules.roxywi.exception import RoxywiGroupMismatch, RoxywiResourceNotFound
 from app.modules.roxywi.class_models import (
-    BaseResponse, IdResponse, IdDataResponse, ServerRequest, GroupQuery, GroupRequest, CredRequest, CredUploadRequest
+    BaseResponse, IdResponse, IdDataResponse, ServerRequest, GroupQuery, GroupRequest, CredRequest, CredUploadRequest, ChannelRequest
 )
 
 
@@ -31,7 +31,7 @@ class BaseServer(MethodView):
             self.json_data = None
 
     @staticmethod
-    def return_group_id(body: Union[ServerRequest, CredRequest, GroupQuery]):
+    def return_group_id(body: Union[ServerRequest, CredRequest, GroupQuery, ChannelRequest]):
         if g.user_params['role'] == 1:
             if body.group_id:
                 group_id = body.group_id
@@ -317,15 +317,6 @@ class ServersView(MethodView):
 class ServerGroupView(MethodView):
     methods = ["GET", "POST", "PUT", "DELETE"]
     decorators = [jwt_required(), get_user_params(), page_for_admin()]
-
-    def __init__(self):
-        """
-        Initialize ServerGroupView instance
-        """
-        if request.method not in ('GET', 'DELETE'):
-            self.json_data = request.get_json()
-        else:
-            self.json_data = None
 
     def get(self, group_id: int):
         """

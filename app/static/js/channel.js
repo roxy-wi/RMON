@@ -178,13 +178,12 @@ function updateReceiver(id, receiver_name) {
 	}
 	toastr.clear();
 	let json_data = {
-		"receiver_token": $('#' + receiver_name + '-token-' + id).val(),
+		"token": $('#' + receiver_name + '-token-' + id).val(),
 		"channel": $('#' + receiver_name + '-chanel-' + id).val(),
-		"group": group,
-		"id": id
+		"group_id": group,
 	}
 	$.ajax({
-		url: "/channel/receiver/" + receiver_name,
+		url: api_v_prefix + "/channel/" + receiver_name + "/" + id,
 		data: JSON.stringify(json_data),
 		contentType: "application/json; charset=utf-8",
 		type: "PUT",
@@ -229,13 +228,13 @@ function addRecevier(dialog_id, receiver_name) {
 	}
 	if (valid) {
 		let jsonData = {
-			"receiver": receiver_name_div.val(),
+			"token": receiver_name_div.val(),
 			"channel": channel_div.val(),
-			"group": group,
+			"group_id": group,
 		}
 		toastr.clear();
 		$.ajax({
-			url: "/channel/receiver/" + receiver_name,
+			url: "/channel/" + receiver_name,
 			data: JSON.stringify(jsonData),
 			contentType: "application/json; charset=utf-8",
 			type: "POST",
@@ -279,15 +278,22 @@ function cloneReceiver(id, receiver_name) {
 function removeReceiver(receiver_name, receiver_id) {
 	$("#" + receiver_name + "-table-" + receiver_id).css("background-color", "#f2dede");
 	$.ajax({
-		url: "/channel/receiver/" + receiver_name,
-		data: JSON.stringify({"channel_id": receiver_id}),
+		url: api_v_prefix + "/channel/" + receiver_name + "/" + receiver_id,
 		contentType: "application/json; charset=utf-8",
 		type: "DELETE",
-		success: function (data) {
-			if (data.status === 'failed') {
-				toastr.error(data.error);
-			} else {
+		statusCode: {
+			204: function (xhr) {
 				$("#" + receiver_name + "-table-" + receiver_id).remove();
+			},
+			404: function (xhr) {
+				$("#" + receiver_name + "-table-" + receiver_id).remove();
+			}
+		},
+		success: function (data) {
+			if (data) {
+				if (data.status === "failed") {
+					toastr.error(data);
+				}
 			}
 		}
 	});
