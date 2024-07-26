@@ -1,5 +1,5 @@
 from app.api.v1.routes.user import bp
-from app.views.user.views import UserView, UserGroupView
+from app.views.user.views import UserView, UserGroupView, UserRoles
 
 
 def register_api(view, endpoint, url, pk='check_id', pk_type='int'):
@@ -16,3 +16,4 @@ def register_api_with_group(view, endpoint, url_beg, url_end, pk='user_id', pk_t
 
 register_api(UserView, 'user', '', 'user_id')
 register_api_with_group(UserGroupView, 'user_group', 'user', 'groups')
+bp.add_url_rule('/roles', view_func=UserRoles.as_view('roles'))

@@ -49,10 +49,7 @@ def update_setting(param: str, val: str, user_group: int) -> bool:
 
 
 def select_roles():
-	query = Role.select()
 	try:
-		query_res = query.execute()
+		return Role.select().execute()
 	except Exception as e:
 		out_error(e)
-	else:
-		return query_res

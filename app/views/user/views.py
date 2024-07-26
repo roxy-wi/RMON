@@ -3,7 +3,7 @@ from typing import Union
 from flask.views import MethodView
 from flask_pydantic import validate
 from flask_jwt_extended import jwt_required, set_access_cookies
-from flask import render_template, jsonify, request, g
+from flask import render_template, jsonify, g
 from playhouse.shortcuts import model_to_dict
 
 import app.modules.db.sql as sql
@@ -615,3 +615,48 @@ class UsersView(MethodView):
         for user in users:
             json_data.append(model_to_dict(user, exclude=[User_DB.password, User_DB.user_services]))
         return jsonify(json_data)
+
+
+class UserRoles(MethodView):
+    methods = ['GET']
+    decorators = [jwt_required(), get_user_params(), page_for_admin()]
+
+    def get(self):
+        """
+        User Roles
+        ---
+        tags:
+          - User Roles
+        summary: Get All User Role Information
+        description: This method is used to retrieve all available user roles along with their descriptions and corresponding role_ids.
+        produces:
+          - application/json
+        responses:
+          200:
+            description: User Roles Returned
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: The name of the user role.
+                    example: "superAdmin"
+                  role_id:
+                    type: integer
+                    description: The ID of the user role.
+                    example: 1
+                  description:
+                    type: string
+                    description: The description of the user role.
+                    example: "Has the highest level of administrative..."
+        """
+        try:
+            roles = sql.select_roles()
+        except Exception as e:
+            return roxywi_common.handle_json_exceptions(e, 'Cannot get roles')
+        roles_list = []
+        for role in roles:
+            roles_list.append(model_to_dict(role))
+        return jsonify(roles_list)

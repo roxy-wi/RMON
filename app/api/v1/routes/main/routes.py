@@ -65,6 +65,38 @@ def swagger_ui():
 
 @bp.post('/login')
 def do_login():
+    """
+    Do log in
+    ---
+    tags:
+      - Authentication
+    description: This route is used to log into the system
+    parameters:
+      - name: body
+        in: body
+        schema:
+          type: object
+          properties:
+            login:
+              type: string
+              required: true
+              description: The user's login name
+            password:
+              type: string
+              required: true
+              description: The user's password
+    responses:
+      200:
+        description: Login successfully, return a JWT token
+        schema:
+          type: object
+          properties:
+            access_token:
+              type: string
+              description: JWT token for user authentication
+      401:
+        description: Authentication Error
+    """
     try:
         login = request.json.get('login')
         password = request.json.get('password')
