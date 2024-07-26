@@ -34,10 +34,10 @@ def smon_main_dashboard():
         'group': group_id,
         'smon_groups': smon_sql.select_smon_groups(group_id),
         'smon_status': tools_common.is_tool_active('rmon-server'),
-        'telegrams': channel_sql.get_user_telegram_by_group(group_id),
-        'slacks': channel_sql.get_user_slack_by_group(group_id),
-        'pds': channel_sql.get_user_pd_by_group(group_id),
-        'mms': channel_sql.get_user_mm_by_group(group_id),
+        'telegrams': channel_sql.get_user_receiver_by_group('telegram', group_id),
+        'slacks': channel_sql.get_user_receiver_by_group('slack', group_id),
+        'pds': channel_sql.get_user_receiver_by_group('pd', group_id),
+        'mms': channel_sql.get_user_receiver_by_group('mm', group_id),
         'sort': request.args.get('sort', None)
     }
 
