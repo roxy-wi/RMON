@@ -697,9 +697,10 @@ function checkChecksLimit() {
 	return return_value;
 }
 var charts = []
-function getSmonHistoryCheckDataStatusPage(server) {
+function getSmonHistoryCheckDataStatusPage(server, check_type_id) {
+	let check_types = {'ping': '1', 'tcp': '2', 'http': '4', 'dns': '5'}
 	$.ajax({
-		url: "/rmon/history/metric/" + server,
+		url: "/rmon/history/metric/" + server + "/" + check_types[check_type_id],
 		success: function (result) {
 			let data = [];
 			data.push(result.chartData.curr_con);

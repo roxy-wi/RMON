@@ -56,7 +56,7 @@
             <div class="tooltip check_tooltip">Group: {{value.group}}, check type: {{value.check_type}}</div>
             <div class="tooltip check_tooltip check_last_check">
                 last check
-                <span id="en_table_metric-{{ check }}" class="plus switcher_table_metric" onclick="getSmonHistoryCheckDataStatusPage('{{ check }}')" title="{{lang.words.show|title()}} {{lang.words.response}}"></span>
+                <span id="en_table_metric-{{ check }}" class="plus switcher_table_metric" onclick="getSmonHistoryCheckDataStatusPage('{{ check }}', '{{value.check_type}}')" title="{{lang.words.show|title()}} {{lang.words.response}}"></span>
                 <span id="dis_table_metric-{{ check }}" class="minus switcher_table_metric" onclick="hideSmonHistoryCheckDataStatusPage('{{ check }}')" style="display: none;" title="{{lang.words.hide}}"></span>
             </div>
             <div id="history-status-{{ check }}" style="display: none;">
