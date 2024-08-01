@@ -202,7 +202,7 @@ function updateReceiver(id, receiver_name) {
 }
 function checkReceiver(channel_id, receiver_name) {
 	$.ajax({
-		url: "/channel/check/" + receiver_name + "/" + channel_id,
+		url: api_v_prefix + "/channel/" + receiver_name + "/" + channel_id,
 		contentType: "application/json; charset=utf-8",
 		type: "PATCH",
 		success: function (data) {

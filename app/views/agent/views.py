@@ -38,6 +38,12 @@ class AgentView(MethodView):
         ---
         tags:
           - Agent
+        parameters:
+          - in: 'path'
+            name: 'agent_id'
+            description: 'ID of the agent to update'
+            required: true
+            type: 'integer'
         responses:
           200:
             description: Information about an agent
@@ -207,8 +213,7 @@ class AgentView(MethodView):
             name: 'agent_id'
             description: 'ID of the agent to update'
             required: true
-            schema:
-              type: 'integer'
+            type: 'integer'
           - in: body
             name: body
             schema:
@@ -278,8 +283,7 @@ class AgentView(MethodView):
             name: 'agent_id'
             description: 'ID of the agent to remove'
             required: true
-            schema:
-              type: 'integer'
+            type: 'integer'
         responses:
           200:
             description: Agent successfully deleted
@@ -318,8 +322,7 @@ class AgentsView(MethodView):
           name: 'group_id'
           description: 'ID of the group to list users. For superAdmin only'
           required: false
-          schema:
-            type: 'integer'
+          type: 'integer'
         responses:
           200:
             description: A list of agents

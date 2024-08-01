@@ -48,8 +48,7 @@ class UserView(MethodView):
           name: 'user_id'
           description: 'ID of the User to retrieve'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         responses:
           '200':
             description: 'Successful Operation'
@@ -204,8 +203,7 @@ class UserView(MethodView):
             name: 'user_id'
             description: 'ID of the User to retrieve'
             required: true
-            schema:
-              type: 'integer'
+            type: 'integer'
           - in: body
             name: body
             schema:
@@ -255,8 +253,7 @@ class UserView(MethodView):
           name: 'user_id'
           description: 'User ID to delete'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         responses:
           204:
             description: User deletion successful
@@ -299,8 +296,7 @@ class UserGroupView(MethodView):
           name: 'user_id'
           description: 'User ID to get'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         responses:
           200:
             description: A list of user's groups
@@ -370,14 +366,12 @@ class UserGroupView(MethodView):
           name: 'user_id'
           description: 'ID of the User to be added'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         - in: 'path'
           name: 'group_id'
           description: 'ID of the Group which will have a new user'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         - in: body
           name: role_id
           required: true
@@ -416,14 +410,12 @@ class UserGroupView(MethodView):
           name: 'user_id'
           description: 'ID of the User to be added'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         - in: 'path'
           name: 'group_id'
           description: 'ID of the Group where updating the user'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         - in: body
           name: role_id
           required: true
@@ -462,14 +454,12 @@ class UserGroupView(MethodView):
             name: 'user_id'
             description: 'ID of the User to be assigned to the group'
             required: true
-            schema:
-              type: 'integer'
+            type: 'integer'
           - in: 'path'
             name: 'group_id'
             description: 'ID of the Group which the user will be assigned to'
             required: true
-            schema:
-              type: 'integer'
+            type: 'integer'
         responses:
           201:
             description: 'User successfully assigned to the group'
@@ -508,14 +498,12 @@ class UserGroupView(MethodView):
           name: 'user_id'
           description: 'ID of the User to be deleted'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         - in: 'path'
           name: 'group_id'
           description: 'ID of the Group from which user will be deleted'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         responses:
           '204':
             description: 'User successfully deleted'
@@ -561,8 +549,7 @@ class UsersView(MethodView):
           name: 'group_id'
           description: 'GroupQuery to filter servers. Only for superAdmin role'
           required: false
-          schema:
-            type: 'integer'
+          type: 'integer'
         responses:
           '200':
             description: 'Successful operation'

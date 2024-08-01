@@ -83,6 +83,47 @@ class SettingsView(MethodView):
 
     @validate(body=SettingsRequest, query=GroupQuery)
     def post(self, section: str, body: SettingsRequest, query: GroupQuery):
+        """
+        Update settings
+        ---
+        tags:
+          - Settings
+        summary: Create or update a setting.
+        description: Can be used to create a new setting or update an existing one in the specified section.
+        parameters:
+        - name: section
+          in: path
+          description: The name of the settings section. Only 'main', 'rmon', 'rabbitmq', 'ldap', 'monitoring', 'logs' are allowed.
+          required: true
+          type: string
+          enum: ['main', 'rmon', 'rabbitmq', 'ldap', 'monitoring', 'logs']
+        - name: group_id
+          in: query
+          description: The parameter is used only for the superAdmin role.
+          required: false
+          type: integer
+        - name: body
+          in: body
+          description: Updated settings values.
+          required: true
+          schema:
+            type: object
+            properties:
+              param:
+                type: string
+                description: The parameter name of the setting.
+              value:
+                type: string
+                description: The new value for the setting.
+            example:
+              param: "some_param"
+              value: "some_value"
+        produces:
+          - application/json
+        responses:
+          201:
+            description: OK
+        """
         val = body.value.replace('92', '/')
         try:
             group_id = BaseServer.return_group_id(query)

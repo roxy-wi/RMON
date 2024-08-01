@@ -343,8 +343,7 @@ class ChannelsView(MethodView):
           name: 'group_id'
           description: 'ID of the group to list channels. For superAdmin only'
           required: false
-          schema:
-            type: 'integer'
+          type: 'integer'
         produces:
           - application/json
         responses:

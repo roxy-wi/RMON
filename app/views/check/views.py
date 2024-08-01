@@ -126,8 +126,7 @@ class CheckHttpView(CheckView):
           name: 'check_id'
           description: 'ID of the check to retrieve'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         responses:
           '200':
             description: 'Successful Operation'
@@ -293,8 +292,7 @@ class CheckHttpView(CheckView):
           name: 'check_id'
           description: 'ID of the check to update'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         - in: 'body'
           name: 'body'
           description: 'Object to be updated'
@@ -382,8 +380,7 @@ class CheckHttpView(CheckView):
           name: 'check_id'
           description: 'ID of the check to delete'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         responses:
           '204':
             description: 'Successful Deletion'
@@ -409,8 +406,7 @@ class CheckTcpView(CheckView):
           name: 'check_id'
           description: 'ID of the check to retrieve'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         responses:
           '200':
             description: 'Successful Operation'
@@ -548,8 +544,7 @@ class CheckTcpView(CheckView):
           name: 'check_id'
           description: 'ID of the check to update'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         - in: 'body'
           name: 'body'
           description: 'Object to be updated'
@@ -622,8 +617,7 @@ class CheckTcpView(CheckView):
           name: 'check_id'
           description: 'ID of the check to delete'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         responses:
           '204':
             description: 'Successful Deletion'
@@ -649,8 +643,7 @@ class CheckDnsView(CheckView):
           name: 'check_id'
           description: 'ID of the check to retrieve'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         responses:
           '200':
             description: 'Successful Operation'
@@ -804,8 +797,7 @@ class CheckDnsView(CheckView):
           name: 'check_id'
           description: 'ID of the check to update'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         - in: 'body'
           name: 'body'
           description: 'Object to be updated'
@@ -887,8 +879,7 @@ class CheckDnsView(CheckView):
           name: 'check_id'
           description: 'ID of the check to delete'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         responses:
           '204':
             description: 'Successful Deletion'
@@ -914,8 +905,7 @@ class CheckPingView(CheckView):
           name: 'check_id'
           description: 'ID of the check to retrieve'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         responses:
           '200':
             description: 'Successful Operation'
@@ -1053,8 +1043,7 @@ class CheckPingView(CheckView):
           name: 'check_id'
           description: 'ID of the check to update'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         - in: 'body'
           name: 'body'
           description: 'Object to be updated'
@@ -1128,8 +1117,7 @@ class CheckPingView(CheckView):
           name: 'check_id'
           description: 'ID of the check to delete'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         responses:
           '204':
             description: 'Successful Deletion'
@@ -1169,8 +1157,7 @@ class ChecksViewHttp(ChecksView):
           name: 'group_id'
           description: 'ID of the group to retrieve'
           required: true
-          schema:
-            type: 'integer'
+          type: 'integer'
         responses:
           '200':
             description: 'Successful Operation'
