@@ -124,7 +124,11 @@ class SettingsView(MethodView):
           201:
             description: OK
         """
-        val = body.value.replace('92', '/')
+        try:
+            val = body.value.replace('92', '/')
+        except Exception:
+            val = body.value
+
         try:
             group_id = BaseServer.return_group_id(query)
         except Exception as e:

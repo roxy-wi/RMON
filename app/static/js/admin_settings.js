@@ -31,9 +31,9 @@ $( function() {
 		let val = $(this).val();
 		if($('#'+id).is(':checkbox')) {
 			if ($('#'+id).is(':checked')){
-				val = 1;
+				val = '1';
 			} else {
-				val = 0;
+				val = '0';
 			}
 		}
 		let section = $(this).parent().parent().attr('class').split(' ')[1].split('-')[0];
