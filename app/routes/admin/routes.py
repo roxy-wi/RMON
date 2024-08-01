@@ -1,5 +1,5 @@
 import pytz
-from flask import render_template, request, g
+from flask import render_template, g
 from flask_jwt_extended import jwt_required
 
 from app import scheduler
@@ -13,7 +13,6 @@ from app.middleware import get_user_params
 import app.modules.roxywi.roxy as roxy
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.common as roxywi_common
-import app.modules.tools.smon as smon_mod
 import app.modules.tools.common as tools_common
 
 
@@ -166,29 +165,3 @@ def check_update():
     roxywi_auth.page_for_admin()
     scheduler.run_job('check_new_version')
     return 'ok'
-
-
-@bp.post('/setting/<param>')
-def update_settings(param):
-    """
-    Updates the specified setting with the given parameter value.
-
-    Parameters:
-    - param (str): The name of the setting to be updated.
-
-    Returns:
-    - str: A string indicating the success of the update.
-    """
-    roxywi_auth.page_for_admin(level=2)
-    val = request.form.get('val').replace('92', '/')
-    user_group = roxywi_common.get_user_group(id=1)
-    if sql.update_setting(param, val, user_group):
-        roxywi_common.logging('RMON server', f'The {param} setting has been changed to: {val}', roxywi=1, login=1)
-
-        if param == 'master_port':
-            try:
-                smon_mod.change_smon_port(val)
-            except Exception as e:
-                return f'{e}'
-
-        return 'Ok'

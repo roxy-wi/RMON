@@ -1,15 +1,9 @@
 $( function() {
-   $('#nginx-section-head').click(function () {
-		hideAndShowSettings('nginx');
-	});
 	$('#main-section-head').click(function () {
 		hideAndShowSettings('main');
 	});
 	$('#monitoring-section-head').click(function () {
 		hideAndShowSettings('monitoring');
-	});
-	$('#haproxy-section-head').click(function () {
-		hideAndShowSettings('haproxy');
 	});
 	$('#ldap-section-head').click(function () {
 		hideAndShowSettings('ldap');
@@ -20,12 +14,6 @@ $( function() {
 	$('#rabbitmq-section-head').click(function () {
 		hideAndShowSettings('rabbitmq');
 	});
-	$('#apache-section-head').click(function () {
-		hideAndShowSettings('apache');
-	});
-	$('#keepalived-section-head').click(function () {
-		hideAndShowSettings('keepalived');
-	});
 	$('#mail-section-head').click(function () {
 		hideAndShowSettings('mail');
 	});
@@ -33,14 +21,14 @@ $( function() {
 		hideAndShowSettings('smon');
 	});
 	$( "#settings select" ).on('select2:select',function() {
-		var id = $(this).attr('id');
-		var val = $(this).val();
-		updateSettings(id, val);
-		updateSettings(id[1])
+		let id = $(this).attr('id');
+		let val = $(this).val();
+		let section = $(this).parent().parent().attr('class').split(' ')[1].split('-')[0];
+		updateSettings(id, section, val);
 	});
 	$( "#settings input" ).change(function() {
-		var id = $(this).attr('id');
-		var val = $(this).val();
+		let id = $(this).attr('id');
+		let val = $(this).val();
 		if($('#'+id).is(':checkbox')) {
 			if ($('#'+id).is(':checked')){
 				val = 1;
@@ -48,11 +36,12 @@ $( function() {
 				val = 0;
 			}
 		}
-		updateSettings(id, val);
+		let section = $(this).parent().parent().attr('class').split(' ')[1].split('-')[0];
+		updateSettings(id, section, val);
 	});
 });
 function hideAndShowSettings(section) {
-	var ElemId = $('#' + section + '-section-h3');
+	let ElemId = $('#' + section + '-section-h3');
 	if(ElemId.attr('class') == 'plus-after') {
 		$('.' + section + '-section').show();
 		ElemId.removeClass('plus-after');
@@ -65,23 +54,27 @@ function hideAndShowSettings(section) {
 		$.getScript(awesome);
 	}
 }
-function updateSettings(param, val) {
+function updateSettings(param, section, val) {
 	try {
 		val = val.replace(/\//g, "92");
 	} catch (e) {
 		val = val;
 	}
 	toastr.clear();
+	let json_data = {
+		'param': param,
+		'value': val
+	}
+	if (section === 'smon') {
+		section = 'rmon';
+	}
 	$.ajax({
-		url: "/admin/setting/" + param,
-		data: {
-			val: val,
-			token: $('#token').val()
-		},
+		url: api_v_prefix + "/settings/" + section,
+		data: JSON.stringify(json_data),
 		type: "POST",
+		contentType: "application/json; charset=utf-8",
 		success: function (data) {
-			data = data.replace(/\s+/g, ' ');
-			if (data.indexOf('error:') != '-1') {
+			if (data.status === 'failed') {
 				toastr.error(data);
 			} else {
 				toastr.clear();

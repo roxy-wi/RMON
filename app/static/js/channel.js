@@ -202,8 +202,9 @@ function updateReceiver(id, receiver_name) {
 }
 function checkReceiver(channel_id, receiver_name) {
 	$.ajax({
-		url: "/channel/check/" + channel_id + "/" + receiver_name,
+		url: "/channel/check/" + receiver_name + "/" + channel_id,
 		contentType: "application/json; charset=utf-8",
+		type: "PATCH",
 		success: function (data) {
 			if (data.status === 'failed') {
 				toastr.error(data.error);

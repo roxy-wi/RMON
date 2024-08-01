@@ -12,11 +12,16 @@ def get_setting(param, **kwargs):
 	except Exception:
 		user_group_id = 1
 
+	if kwargs.get('group_id'):
+		user_group_id = kwargs.get('group_id')
+
 	if param in ('proxy', 'agent_port', 'master_port', 'master_ip'):
 		user_group_id = 1
 
 	if kwargs.get('all'):
 		query = Setting.select().where(Setting.group == user_group_id).order_by(Setting.section.desc())
+	elif kwargs.get('section'):
+		query = Setting.select().where((Setting.group == user_group_id) & (Setting.section == kwargs.get('section')))
 	else:
 		query = Setting.select().where((Setting.param == param) & (Setting.group == user_group_id))
 
@@ -25,7 +30,7 @@ def get_setting(param, **kwargs):
 	except Exception as e:
 		out_error(e)
 	else:
-		if kwargs.get('all'):
+		if kwargs.get('all') or kwargs.get('section'):
 			return query_res
 		else:
 			for setting in query_res:
@@ -38,14 +43,12 @@ def get_setting(param, **kwargs):
 					return setting.value
 
 
-def update_setting(param: str, val: str, user_group: int) -> bool:
+def update_setting(param: str, val: str, user_group: int) -> None:
 	query = Setting.update(value=val).where((Setting.param == param) & (Setting.group == user_group))
 	try:
 		query.execute()
-		return True
 	except Exception as e:
 		out_error(e)
-		return False
 
 
 def select_roles():
