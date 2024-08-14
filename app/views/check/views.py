@@ -11,9 +11,9 @@ import app.modules.roxywi.common as roxywi_common
 import app.modules.tools.smon as smon_mod
 from app.middleware import get_user_params, check_group
 from app.views.server.views import BaseServer
-from app.modules.db.db_model import SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck
+from app.modules.db.db_model import SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonSMTPCheck
 from app.modules.roxywi.class_models import (
-    IdResponse, HttpCheckRequest, DnsCheckRequest, TcpCheckRequest, PingCheckRequest, BaseResponse, GroupQuery
+    IdResponse, HttpCheckRequest, DnsCheckRequest, TcpCheckRequest, PingCheckRequest, BaseResponse, GroupQuery, SmtpCheckRequest
 )
 
 
@@ -36,10 +36,11 @@ class CheckView(MethodView):
             'http': smon_mod.create_http_check,
             'tcp': smon_mod.create_tcp_check,
             'dns': smon_mod.create_dns_check,
-            'ping': smon_mod.create_ping_check
+            'ping': smon_mod.create_ping_check,
+            'smtp': smon_mod.create_smtp_check
         }
 
-    def get(self, check_id: int) -> Union[SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck]:
+    def get(self, check_id: int) -> Union[SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonSMTPCheck]:
         check_type_id = smon_mod.get_check_id_by_name(self.check_type)
         checks = smon_sql.select_one_smon(check_id, check_type_id=check_type_id)
         for check in checks:
@@ -135,11 +136,11 @@ class CheckHttpView(CheckView):
               properties:
                 smon_id:
                   type: 'object'
-                  description: 'SMON object'
+                  description: 'RMON object'
                   properties:
                     id:
                       type: 'integer'
-                      description: 'SMON ID'
+                      description: 'RMON ID'
                     name:
                       type: 'string'
                       description: 'Name'
@@ -415,11 +416,11 @@ class CheckTcpView(CheckView):
               properties:
                 smon_id:
                   type: 'object'
-                  description: 'SMON object'
+                  description: 'RMON object'
                   properties:
                     id:
                       type: 'integer'
-                      description: 'SMON ID'
+                      description: 'RMON ID'
                     name:
                       type: 'string'
                       description: 'Name'
@@ -652,11 +653,11 @@ class CheckDnsView(CheckView):
               properties:
                 smon_id:
                   type: 'object'
-                  description: 'SMON object'
+                  description: 'RMON object'
                   properties:
                     id:
                       type: 'integer'
-                      description: 'SMON ID'
+                      description: 'RMON ID'
                     name:
                       type: 'string'
                       description: 'Name'
@@ -914,11 +915,11 @@ class CheckPingView(CheckView):
               properties:
                 smon_id:
                   type: 'object'
-                  description: 'SMON object'
+                  description: 'RMON object'
                   properties:
                     id:
                       type: 'integer'
-                      description: 'SMON ID'
+                      description: 'RMON ID'
                     name:
                       type: 'string'
                       description: 'Name'
@@ -1127,6 +1128,251 @@ class CheckPingView(CheckView):
         return super().delete(check_id)
 
 
+class CheckSmtpView(CheckView):
+    def __init__(self):
+        super().__init__()
+        self.check_type = 'smtp'
+
+    def get(self, check_id: int) -> SmonSMTPCheck:
+        """
+        Get SMTP check or list of SMTP checks, if without {check_id}.
+        ---
+        tags:
+        - 'SMTP Check'
+        parameters:
+        - in: 'path'
+          name: 'check_id'
+          description: 'ID of the check to retrieve'
+          required: true
+          type: 'integer'
+        responses:
+          '200':
+            description: 'Successful Operation'
+            schema:
+              id: 'SMTPCheckDetails'
+              properties:
+                smon_id:
+                  type: 'object'
+                  description: 'RMON object'
+                  properties:
+                    id:
+                      type: 'integer'
+                      description: 'RMON ID'
+                    name:
+                      type: 'string'
+                      description: 'Name'
+                    port:
+                      type: 'integer'
+                      description: 'Port'
+                    status:
+                      type: 'integer'
+                      description: 'Status'
+                    enabled:
+                      type: 'integer'
+                      description: 'EN'
+                    desc:
+                      type: 'string'
+                      description: 'Description'
+                    time_state:
+                      type: 'string'
+                      format: 'date-time'
+                      description: 'Time State'
+                ip:
+                  type: 'string'
+                  description: 'SMTP server to be tested'
+                username:
+                  type: 'integer'
+                  description: 'Username to connect to the SMTP server'
+                interval:
+                  type: 'integer'
+                  description: 'Ping interval'
+                agent_id:
+                  type: 'integer'
+                  description: 'Agent ID'
+        """
+        return super().get(check_id)
+
+    @validate(body=SmtpCheckRequest)
+    def post(self, body: SmtpCheckRequest) -> Union[dict, tuple]:
+        """
+        Create a new SMTP check
+        ---
+        tags:
+        - 'SMTP Check'
+        parameters:
+        - in: 'body'
+          name: 'body'
+          description: 'SMTP Check Details'
+          required: true
+          schema:
+            id: 'CheckPingDetails'
+            required:
+              - name
+              - ip
+              - port
+              - username
+              - password
+              - enabled
+              - agent_id
+            properties:
+              name:
+                type: 'string'
+                description: 'Check name'
+              ip:
+                type: 'string'
+                description: 'IP address or domain name for SMTP server check'
+              enabled:
+                type: 'string'
+                description: 'Enable status (1 for enabled)'
+              group:
+                type: 'string'
+                description: 'Group (optional)'
+              desc:
+                type: 'string'
+                description: 'Description (optional)'
+              tg:
+                type: 'string'
+                description: 'Telegram channel ID (optional)'
+              slack:
+                type: 'string'
+                description: 'Slack channel ID (optional)'
+              pd:
+                type: 'string'
+                description: 'Pager Duty channel ID (optional)'
+              mm:
+                type: 'string'
+                description: 'Mattermost channel ID (optional)'
+              username:
+                type: 'string'
+                description: 'Username to connect to the SMTP server'
+              password:
+                type: 'string'
+                description: 'Password to connect to the SMTP server'
+              interval:
+                type: 'string'
+                description: 'Interval check (optional)'
+                default: 120
+              agent_id:
+                type: 'string'
+                description: 'Agent ID'
+              timeout:
+                type: 'string'
+                description: 'Timeout (optional)'
+                default: 2
+        responses:
+          '200':
+            description: 'Successful Operation'
+            schema:
+              id: 'CheckSMTPResponse'
+              properties:
+                id:
+                  type: 'string'
+                  description: 'ID of the created test case'
+        """
+        try:
+            last_id = super().post(body)
+            return IdResponse(status='Ok', id=last_id).model_dump(mode='json'), 201
+        except Exception as e:
+            return roxywi_common.handler_exceptions_for_json_data(e, '')
+
+    @validate(body=SmtpCheckRequest)
+    def put(self, check_id: int, body: SmtpCheckRequest) -> Union[dict, tuple]:
+        """
+        Update SMTP check
+        ---
+        tags:
+        - 'SMTP Check'
+        parameters:
+        - in: 'path'
+          name: 'check_id'
+          description: 'ID of the check to update'
+          required: true
+          type: 'integer'
+        - in: 'body'
+          name: 'body'
+          description: 'Object to be updated'
+          required: true
+          schema:
+            id: 'SmonSMTPCheck'
+            properties:
+              name:
+                type: 'string'
+                description: 'Check name'
+              ip:
+                type: 'string'
+                description: 'IP address or domain of SMTP server check'
+              enabled:
+                type: 'string'
+                description: 'Enable status (1 for enabled)'
+              group:
+                type: 'string'
+                description: 'Group (optional)'
+              desc:
+                type: 'string'
+                description: 'Description (optional)'
+              tg:
+                type: 'string'
+                description: 'Telegram channel ID (optional)'
+              slack:
+                type: 'string'
+                description: 'Slack channel ID (optional)'
+              pd:
+                type: 'string'
+                description: 'Pager Duty channel ID (optional)'
+              mm:
+                type: 'string'
+                description: 'Mattermost channel ID (optional)'
+              username:
+                type: 'string'
+                description: 'Username to connect to the SMTP server'
+              password:
+                type: 'string'
+                description: 'Password to connect to the SMTP server'
+              interval:
+                type: 'string'
+                description: 'Interval check (optional)'
+                default: 120
+              agent_id:
+                type: 'string'
+                description: 'Agent ID'
+              timeout:
+                type: 'string'
+                description: 'Timeout (optional)'
+                default: 2
+        responses:
+          '201':
+            description: 'Successful Operation, Ping Check updated'
+          '404':
+            description: 'Ping Check not found'
+        """
+        try:
+            super().put(check_id, body)
+            return BaseResponse(status='Ok').model_dump(mode='json'), 201
+        except Exception as e:
+            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot update {self.check_type} check')
+
+    @validate()
+    def delete(self, check_id: int) -> Union[dict, tuple]:
+        """
+        Delete check
+        ---
+        tags:
+        - 'SMTP Check'
+        parameters:
+        - in: 'path'
+          name: 'check_id'
+          description: 'ID of the check to delete'
+          required: true
+          type: 'integer'
+        responses:
+          '204':
+            description: 'Successful Deletion'
+          '404':
+            description: 'Check Not Found'
+        """
+        return super().delete(check_id)
+
+
 class ChecksView(MethodView):
     methods = ["GET"]
     decorators = [jwt_required(), get_user_params(), check_group()]
@@ -1169,11 +1415,11 @@ class ChecksViewHttp(ChecksView):
                 properties:
                   smon_id:
                     type: 'object'
-                    description: 'SMON object'
+                    description: 'RMON object'
                     properties:
                       id:
                         type: 'integer'
-                        description: 'SMON ID'
+                        description: 'RMON ID'
                       name:
                         type: 'string'
                         description: 'Name'
@@ -1490,5 +1736,92 @@ class ChecksViewPing(ChecksView):
                 SmonPingCheck.smon_id.body_status, SmonPingCheck.smon_id.http, SmonPingCheck.smon_id.port,
                 SmonPingCheck.smon_id.ssl_expire_critical_alert,
                 SmonPingCheck.smon_id.ssl_expire_date, SmonPingCheck.smon_id.ssl_expire_warning_alert
+            ]))
+        return jsonify(check_list)
+
+
+class ChecksViewSmtp(ChecksView):
+    def __init__(self):
+        super().__init__()
+        self.check_type = 'smtp'
+
+    @validate(query=GroupQuery)
+    def get(self, query: GroupQuery):
+        """
+        Get SMTP list of SMTP checks, for current group or for specific group if {group_id}.
+        ---
+        tags:
+          - 'SMTP Check'
+        parameters:
+          - name: 'group_id'
+            in: 'query'
+            description: 'ID of the group associated with the Ping checks'
+            required: false
+            type: 'integer'
+        responses:
+          '200':
+            description: 'ID of the group associated with the Ping checks'
+            schema:
+              type: 'array'
+              items:
+                type: 'object'
+                properties:
+                  agent_id:
+                    type: 'integer'
+                    description: 'ID of the agent for the check'
+                  interval:
+                    type: 'integer'
+                    description: 'Check interval, in seconds'
+                  ip:
+                    type: 'string'
+                    description: 'IP address for the Ping check'
+                  packet_size:
+                    type: 'integer'
+                    description: 'Size of the packet for the Ping check'
+                  smon_id:
+                    type: 'object'
+                    description: 'Object containing information related to smon_id'
+                    properties:
+                      check_timeout:
+                        type: 'integer'
+                      check_type:
+                        type: 'string'
+                      created_at:
+                        type: 'string'
+                      desc:
+                        type: 'string'
+                      enabled:
+                        type: 'string'
+                      group_id:
+                        type: 'integer'
+                      id:
+                        type: 'integer'
+                      mm_channel_id:
+                        type: 'integer'
+                      name:
+                        type: 'string'
+                      pd_channel_id:
+                        type: 'integer'
+                      response_time:
+                        type: 'string'
+                      slack_channel_id:
+                        type: 'integer'
+                      status:
+                        type: 'integer'
+                      telegram_channel_id:
+                        type: 'integer'
+                      time_state:
+                        type: 'string'
+                      updated_at:
+                        type: 'string'
+                      user_group:
+                        type: 'integer'
+        """
+        checks = super().get(query)
+        check_list = []
+        for check in checks:
+            check_list.append(model_to_dict(check, exclude=[
+                SmonSMTPCheck.smon_id.body_status, SmonSMTPCheck.smon_id.http, SmonSMTPCheck.smon_id.ssl_expire_critical_alert,
+                SmonSMTPCheck.smon_id.ssl_expire_date, SmonSMTPCheck.smon_id.ssl_expire_warning_alert
             ]))
         return jsonify(check_list)

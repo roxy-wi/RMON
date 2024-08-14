@@ -68,7 +68,7 @@
         </td>
         <td>
             {% if action == 'smon' %}
-            <a href="/rmon/history/host/{{t.ip|replace("'","")}}" title="{{lang.words.open|title()}} {{lang.words.history}} {{lang.words.for}} {{t.ip}} {{lang.words.host}}">{{t.ip|replace("'","")}}</a>
+            <a href="/rmon/history/host/{{t.rmon_id}}" title="{{lang.words.open|title()}} {{lang.words.history}} {{lang.words.for}} {{t.ip}} {{lang.words.host}}">{{t.name|replace("'","")}}</a>
             {% else %}
             <a href="/history/server/{{t.ip|replace("'","")}}" title="{{lang.words.open|title()}} {{lang.words.history}} {{lang.words.for}} {{t.ip}} {{lang.words.host}}">{{t.ip|replace("'","")}}</a>
             {% endif %}

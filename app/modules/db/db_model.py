@@ -218,18 +218,19 @@ class SMON(BaseModel):
         constraints = [SQL('UNIQUE (name, port)')]
 
 
-class Alerts(BaseModel):
+class RMONAlertsHistory(BaseModel):
+    id = AutoField()
+    name = CharField()
     message = CharField()
     level = CharField()
-    ip = CharField()
+    rmon_id = ForeignKeyField(SMON, on_delete='Cascade')
     port = IntegerField()
     user_group = IntegerField(constraints=[SQL('DEFAULT 1')])
     service = CharField()
     date = DateTimeField(default=datetime.now)
 
     class Meta:
-        table_name = 'alerts'
-        primary_key = False
+        table_name = 'rmon_alerts_history'
 
 
 class ActionHistory(BaseModel):
@@ -318,6 +319,21 @@ class SmonTcpCheck(BaseModel):
         primary_key = False
 
 
+class SmonSMTPCheck(BaseModel):
+    smon_id = ForeignKeyField(SMON, on_delete='Cascade', unique=True)
+    ip = CharField()
+    port = IntegerField()
+    username = CharField()
+    password = CharField()
+    use_tls = IntegerField(constraints=[SQL('DEFAULT 1')])
+    interval = IntegerField(constraints=[SQL('DEFAULT 120')])
+    agent_id = IntegerField(constraints=[SQL('DEFAULT 1')])
+
+    class Meta:
+        table_name = 'smon_smtp_check'
+        primary_key = False
+
+
 class SmonHttpCheck(BaseModel):
     smon_id = ForeignKeyField(SMON, on_delete='Cascade', unique=True)
     url = CharField()
@@ -400,5 +416,5 @@ def create_tables():
         conn.create_tables(
             [Groups, User, Server, Role, Telegram, Slack, UserGroups, Setting, Cred, Version, ActionHistory,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
-             SmonStatusPage, SmonStatusPageCheck, SMON, Alerts, SmonGroup, MM]
+             SmonStatusPage, SmonStatusPageCheck, SMON, SmonGroup, MM, RMONAlertsHistory, SmonSMTPCheck]
         )

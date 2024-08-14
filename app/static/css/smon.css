@@ -266,3 +266,15 @@ h4 {
     float: left;
     margin-right: 10px;
 }
+.edit-button {
+    padding-left: 20px;
+    font-size: 15px;
+    display: inline-block;
+    cursor: pointer;
+}
+.edit-button-fa .fa-edit {
+    margin-bottom: 0;
+}
+.edit-button .fa-edit {
+    margin-bottom: 2px;
+}

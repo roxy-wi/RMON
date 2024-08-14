@@ -1,4 +1,4 @@
-var check_types = {'tcp': 1, 'http': 2, 'ping': 4, 'dns': 5};
+var check_types = {'tcp': 1, 'http': 2, 'smtp': 3, 'ping': 4, 'dns': 5};
 $(function () {
 	$( "#check_type" ).on('selectmenuchange',function() {
 		check_and_clear_check_type($('#check_type').val());
@@ -28,11 +28,11 @@ function sort_by_status() {
 	$(".dis").prependTo("#dis_services");
 	$('.group').remove();
 	$('.group_name').detach();
-	window.history.pushState("SMON Dashboard", "SMON Dashboard", "?sort=by_status");
+	window.history.pushState("RMON Dashboard", "RMON Dashboard", "?sort=by_status");
 }
 function showSmon(action) {
 	if (action === 'not_sort') {
-		window.history.pushState("SMON Dashboard", "SMON Dashboard", "/rmon/dashboard");
+		window.history.pushState("RMON Dashboard", "RMON Dashboard", "/rmon/dashboard");
 	}
 	window.location.reload();
 }
@@ -62,6 +62,14 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		valid = valid && checkLength($('#new-smon-resolver-server'), "Resolver server", 1);
 		valid = valid && checkLength($('#new-smon-ip'), "Hostname", 1);
 	}
+	if (check_type === 'smtp') {
+		allFields = $([]).add($('#new-smon-ip')).add($('#new-smon-port')).add($('#new-smon-name')).add($('#new-smon-username')).add($('#new-smon-password')).add($('#new-smon-interval')).add($('#new-smon-timeout'))
+		allFields.removeClass("ui-state-error");
+		valid = valid && checkLength($('#new-smon-port'), "Port", 1);
+		valid = valid && checkLength($('#new-smon-username'), "Username", 1);
+		valid = valid && checkLength($('#new-smon-password'), "Password", 1);
+		valid = valid && checkLength($('#new-smon-ip'), "Hostname", 1);
+	}
 	valid = valid && checkLength($('#new-smon-name'), "Name", 1);
 	valid = valid && checkLength($('#new-smon-interval'), "Check interval", 1);
 	valid = valid && checkLength($('#new-smon-timeout'), "Timeout", 1);
@@ -75,6 +83,8 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'port': $('#new-smon-port').val(),
 		'resolver': $('#new-smon-resolver-server').val(),
 		'record_type': $('#new-smon-dns_record_type').val(),
+		'username': $('#new-smon-username').val(),
+		'password': $('#new-smon-password').val(),
 		'enabled': enable,
 		'url': $('#new-smon-url').val(),
 		'body': $('#new-smon-body').val(),
@@ -225,6 +235,8 @@ function getCheckSettings(smon_id, check_type) {
 			$('#new-smon-description').val(data['smon_id']['desc'].replaceAll("'", ""))
 			$('#new-smon-packet_size').val(data['packet_size']);
 			$('#new-smon-interval').val(data['interval']);
+			$('#new-smon-username').val(data['username']);
+			$('#new-smon-password').val(data['password']);
 			if (data['group_name']) {
 				$('#new-smon-group').val(data['group_name'].replaceAll("'", ""));
 			}
@@ -304,48 +316,55 @@ function getSmonCheck(smon_id, check_id, dialog_id, new_check=false, intervaled=
 	}
 }
 function check_and_clear_check_type(check_type) {
+	$("#check_type").val(check_type);
+	$('#check_type').selectmenu("refresh");
 	if (check_type === 'http') {
 		$('.new_smon_hostname').hide();
-		$("#check_type").val('http');
-		$('#check_type').selectmenu("refresh");
 		$('.smon_tcp_check').hide();
 		$('.smon_ping_check').hide();
 		$('.smon_dns_check').hide();
+		$('.smon_smtp_check').hide();
 		clear_check_vals();
 		$('.smon_http_check').show();
 	} else if (check_type === 'tcp') {
-		$("#check_type").val('tcp');
-		$('#check_type').selectmenu("refresh");
 		$('.new_smon_hostname').show();
 		$('.smon_http_check').hide();
 		$('.smon_dns_check').hide();
 		$('.smon_ping_check').hide();
+		$('.smon_smtp_check').hide();
 		clear_check_vals();
 		$('.smon_tcp_check').show();
 	} else if (check_type === 'dns') {
-		$("#check_type").val('dns');
-		$('#check_type').selectmenu("refresh");
-		$('.smon_tcp_check').hide();
 		$('.new_smon_hostname').show();
+		$('.smon_tcp_check').hide();
 		$('.smon_http_check').hide();
 		$('.smon_ping_check').hide();
+		$('.smon_smtp_check').hide();
 		clear_check_vals();
 		$('#new-smon-port').val('53');
 		$('.smon_dns_check').show();
-	} else {
-		$('.smon_http_check').hide();
+	} else if (check_type === 'smtp') {
 		$('.new_smon_hostname').show();
 		$('.smon_tcp_check').hide();
+		$('.smon_http_check').hide();
+		$('.smon_ping_check').hide();
 		$('.smon_dns_check').hide();
+		clear_check_vals();
+		$('#new-smon-port').val('587');
+		$('.smon_smtp_check').show();
+	} else {
+		$('.new_smon_hostname').show();
+		$('.smon_http_check').hide();
+		$('.smon_tcp_check').hide();
+		$('.smon_dns_check').hide();
+		$('.smon_smtp_check').hide();
 		$('.smon_ping_check').show();
-		$("#check_type").val('ping');
 		clear_check_vals();
 		$('#new-smon-packet_size').val('56');
-		$('#check_type').selectmenu("refresh");
 	}
 }
 function clear_check_vals() {
-	const inputs_for_clean = ['url', 'body', 'body-req', 'port', 'packet_size', 'ip', 'header-req']
+	const inputs_for_clean = ['url', 'body', 'body-req', 'port', 'packet_size', 'ip', 'header-req', 'username', 'password']
 	for (let i of inputs_for_clean) {
 		$('#new-smon-' + i).val('');
 	}
@@ -698,7 +717,7 @@ function checkChecksLimit() {
 }
 var charts = []
 function getSmonHistoryCheckDataStatusPage(server, check_type_id) {
-	let check_types = {'ping': '1', 'tcp': '2', 'http': '4', 'dns': '5'}
+	let check_types = {'ping': '1', 'http': '2', 'smtp': '3', 'tcp': '4', 'dns': '5'}
 	$.ajax({
 		url: "/rmon/history/metric/" + server + "/" + check_types[check_type_id],
 		success: function (result) {
@@ -739,19 +758,20 @@ function getSmonHistoryCheckData(check_id, check_type_id) {
     $.ajax({
         url: "/rmon/history/metric/" + check_id + "/" + check_type_id,
         success: function (result) {
-            let data = [];
-            data.push(result.chartData.curr_con);
-            let labels = result.chartData.labels;
-			if (check_type_id == 2) {
+			let labels = result.chartData.labels;
+			if (check_type_id === '2') {
 				renderSMONChartHttp(result, labels, check_id, check_type_id);
+			} else if (check_type_id === '3') {
+				renderSMONChartSmtp(result, labels, check_id, check_type_id);
 			} else {
+				let data = [];
+				data.push(result.chartData.curr_con);
 				renderSMONChart(data[0], labels, check_id, check_type_id);
 			}
-        }
+		}
     });
 }
 function renderSMONChartHttp(result, labels, check_id, check_type_id) {
-	const resp_time_word = $('#translate').attr('data-resp_time');
     const ctx = document.getElementById('metrics_' + check_id);
 
     // Преобразование данных в массивы
@@ -909,8 +929,122 @@ function renderSMONChartHttp(result, labels, check_id, check_type_id) {
     const myChart = new Chart(ctx, config);
 	stream_chart(myChart, check_id, check_type_id);
 }
+function renderSMONChartSmtp(result, labels, check_id, check_type_id) {
+    const ctx = document.getElementById('metrics_' + check_id);
+	console.log('123' + result)
+    // Преобразование данных в массивы
+    const labelArray = labels.split(',');
+    const name_lookup = result.chartData.name_lookup.split(',');
+    const connect = result.chartData.connect.split(',');
+    const app_connect = result.chartData.app_connect.split(',');
+    const curr_con = result.chartData.curr_con.split(',');
+
+    // Удаление последнего пустого элемента в каждом массиве
+    labelArray.pop();
+    name_lookup.pop();
+    connect.pop();
+    app_connect.pop();
+    curr_con.pop();
+
+    // Создание объекта dataset
+    const dataset = [{
+        label: resp_time_word + ' (ms)',
+        data: curr_con,
+        borderColor: 'rgba(41, 115, 147, 0.5)',
+        backgroundColor: 'rgba(49, 175, 225, 0.5)',
+        tension: 0.4,
+        pointRadius: 3,
+        borderWidth: 1,
+        fill: true
+    }, {
+		label: 'Name lookup (ms)',
+        data: name_lookup,
+        borderColor: 'rgba(41,147,78,0.5)',
+        backgroundColor: 'rgba(49,225,84,0.5)',
+        tension: 0.4,
+        pointRadius: 3,
+        borderWidth: 1,
+        fill: true
+	}, {
+		label: 'Connect (ms)',
+        data: connect,
+        borderColor: 'rgba(140,147,41,0.5)',
+        backgroundColor: 'rgba(225,210,49,0.5)',
+        tension: 0.4,
+        pointRadius: 3,
+        borderWidth: 1,
+        fill: true
+	}, {
+		label: 'App connect (ms)',
+        data: app_connect,
+        borderColor: 'rgba(147,126,41,0.5)',
+        backgroundColor: 'rgba(225,175,49,0.5)',
+        tension: 0.4,
+        pointRadius: 3,
+        borderWidth: 1,
+        fill: true
+	}];
+
+    const config = {
+        type: 'line',
+        data: {
+            labels: labelArray,
+            datasets: dataset
+        },
+        options: {
+            animation: true,
+			maintainAspectRatio: false,
+			plugins: {
+				title: {
+					display: true,
+					font: { size: 15 },
+					padding: { top: 10 }
+				},
+				legend: {
+					display: true,
+					position: 'bottom',
+					align: 'left',
+					labels: {
+						color: 'rgb(255, 99, 132)',
+						font: { size: 10, family: 'BlinkMacSystemFont' },
+						boxWidth: 13,
+						// padding: 5
+					},
+				}
+			},
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Time'
+                    },
+                    ticks: {
+                        source: 'data',
+                        autoSkip: true,
+                        autoSkipPadding: 45,
+                        maxRotation: 0
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: resp_time_word + ' (ms)'
+                    },
+                    ticks: {
+                        font: {
+                            size: 10
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    const myChart = new Chart(ctx, config);
+	stream_chart(myChart, check_id, check_type_id);
+}
+
 function renderSMONChart(data, labels, check_id, check_type_id) {
-    const resp_time_word = $('#translate').attr('data-resp_time');
     const ctx = document.getElementById('metrics_' + check_id);
 
     // Преобразование данных в массивы
@@ -997,25 +1131,30 @@ function stream_chart(chart_id, check_id, check_type_id) {
         const data = JSON.parse(event.data);
         if (chart_id.data.labels.length >= 40) {
             chart_id.data.labels.shift();
+			console.log(chart_id.data)
             chart_id.data.datasets[0].data.shift();
-			if (check_type_id === '2') {
+			if (check_type_id === '2' || check_type_id === '3') {
 				chart_id.data.datasets[1].data.shift();
 				chart_id.data.datasets[2].data.shift();
 				chart_id.data.datasets[3].data.shift();
-				chart_id.data.datasets[4].data.shift();
-				chart_id.data.datasets[5].data.shift();
-				chart_id.data.datasets[6].data.shift();
+				if (check_type_id === '2') {
+					chart_id.data.datasets[4].data.shift();
+					chart_id.data.datasets[5].data.shift();
+					chart_id.data.datasets[6].data.shift();
+				}
 			}
         }
         chart_id.data.labels.push(data.time);
         chart_id.data.datasets[0].data.push(data.value);
-        if (check_type_id === '2') {
+        if (check_type_id === '2' || check_type_id === '3') {
             chart_id.data.datasets[1].data.push(data.name_lookup);
             chart_id.data.datasets[2].data.push(data.connect);
             chart_id.data.datasets[3].data.push(data.app_connect);
-            chart_id.data.datasets[4].data.push(data.pre_transfer);
-            chart_id.data.datasets[5].data.push(data.redirect);
-            chart_id.data.datasets[6].data.push(data.m_download);
+			if (check_type_id === '2') {
+				chart_id.data.datasets[4].data.push(data.pre_transfer);
+				chart_id.data.datasets[5].data.push(data.redirect);
+				chart_id.data.datasets[6].data.push(data.m_download);
+			}
         }
 		if (data.status === "0") {
 			chart_id.data.datasets[0].fillColor = 'rgb(239,5,59)';
@@ -1026,7 +1165,7 @@ function stream_chart(chart_id, check_id, check_type_id) {
 }
 function update_cur_statues(check_id, data) {
 	let status = data.status;
-	if (status == "4") {
+	if (status === "4") {
 		return false;
 	}
 	let last_resp_time = data.value;
@@ -1037,7 +1176,7 @@ function update_cur_statues(check_id, data) {
 	if (status === "0") {
 		add_class = 'serverDown';
 		cur_status = 'DOWN';
-	} else if (status == "4") {
+	} else if (status === "4") {
 		add_class = 'serverNone';
 		cur_status = 'DISABLED';
 	}
@@ -1046,7 +1185,7 @@ function update_cur_statues(check_id, data) {
 	} else {
 		last_resp_time = last_resp_time + 'ms'
 	}
-	let title_text = `${$('#translate').attr('data-history_of')} ${data.name}`
+	let title_text = `${$('#translate').attr('data-history_of')} ${data.name.replaceAll("'", "")}`
 	let div_cur_status = '<span class="' + add_class + ' cur_status" style="font-size: 30px; border-radius: 50rem!important;min-width: 62px;">' + cur_status + '</span>'
 	let div_server_statuses = '<div class="smon_server_statuses ' + add_class + '" title="" data-help="' + time + ' ' + mes + '" style="margin-left: 4px;"></div>'
 	$('#cur_status').html(div_cur_status);

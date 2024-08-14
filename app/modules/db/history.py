@@ -1,31 +1,31 @@
-from app.modules.db.db_model import ActionHistory, Alerts
+from app.modules.db.db_model import ActionHistory, RMONAlertsHistory
 from app.modules.db.sql import get_setting
 from app.modules.db.common import out_error
 import app.modules.roxy_wi_tools as roxy_wi_tools
 
 
 def alerts_history(service, user_group, **kwargs):
-	if kwargs.get('host'):
-		query = Alerts.select().where(
-			(Alerts.service == service) &
-			(Alerts.ip == kwargs.get('host')) &
-			(Alerts.user_group == user_group)
+	if kwargs.get('check_id'):
+		query = RMONAlertsHistory.select().where(
+			(RMONAlertsHistory.service == service) &
+			(RMONAlertsHistory.rmon_id == kwargs.get('check_id')) &
+			(RMONAlertsHistory.user_group == user_group)
 		)
 	else:
-		query = Alerts.select().where(Alerts.service == service)
+		query = RMONAlertsHistory.select().where(RMONAlertsHistory.service == service)
 	try:
 		return query.execute()
 	except Exception as e:
 		out_error(e)
 
 
-def insert_alerts(user_group, level, ip, port, message, service):
+def insert_alerts(check_id, user_group, level, check_name, port, message, service):
 	get_date = roxy_wi_tools.GetDate()
 	cur_date = get_date.return_date('regular')
 	try:
-		Alerts.insert(
-			user_group=user_group, message=message, level=level, ip=ip, port=port, service=service,
-			date=cur_date
+		RMONAlertsHistory.insert(
+			user_group=user_group, message=message, level=level, port=port, service=service,
+			date=cur_date, rmon_id=check_id, name=check_name
 		).execute()
 	except Exception as e:
 		out_error(e)
@@ -34,8 +34,8 @@ def insert_alerts(user_group, level, ip, port, message, service):
 def delete_alert_history(keep_interval: int, service: str):
 	get_date = roxy_wi_tools.GetDate()
 	cur_date = get_date.return_date('regular', timedelta_minus=keep_interval)
-	query = Alerts.delete().where(
-		(Alerts.date < cur_date) & (Alerts.service == service)
+	query = RMONAlertsHistory.delete().where(
+		(RMONAlertsHistory.date < cur_date) & (RMONAlertsHistory.service == service)
 	)
 	try:
 		query.execute()

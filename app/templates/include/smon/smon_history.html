@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% from 'include/input_macros.html' import select %}
+{% from 'include/input_macros.html' import input, checkbox, select %}
 {% block title %}{{ lang.menu_links.history.title }} {{ smon_name|replace("'","") }}{% endblock %}
 {% block h2 %}{{ lang.menu_links.history.title }} {{ smon_name|replace("'","") }}{% endblock %}
 {% block content %}
-{% set checking_types = {'1': 'TCP', '2': 'HTTP', '4': 'Ping', '5': 'DNS'} %}
+{% set checking_types = {'1': 'TCP', '2': 'HTTP', '3': 'SMTP', '4': 'Ping', '5': 'DNS'} %}
 {% if user_subscription['user_status'] == 0 or user_subscription['user_plan'] == 'home' %}
 	{% include 'include/no_sub.html' %}
 {% else %}
@@ -11,6 +11,7 @@
 <link href="{{ url_for('static', filename='css/smon.css') }}" rel="stylesheet">
 <script src="{{ url_for('static', filename='js/chart.min-4.3.0.js') }}"></script>
 <script src="{{ url_for('static', filename='js/metrics.js') }}"></script>
+<script src="{{ url_for('static', filename='js/agent.js') }}"></script>
 <script src="{{ url_for('static', filename='js/smon.js') }}"></script>
 <div class="row wrap1">
 {% for s in smon %}
@@ -24,6 +25,7 @@
     {% else %}
         {{s.ip}}
     {% endif %}
+    <a class="edit edit-button" title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}" onclick="editSmon('{{s.smon_id.id}}', '{{ s.smon_id.check_type }}')"></a>
     </div>
 </div>
 <div class="row statuses wrap">
@@ -106,4 +108,5 @@
 	}
 	showSmonHistory();
 </script>
+    {% include 'include/smon/add_form.html' %}
 {% endblock %}

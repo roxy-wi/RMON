@@ -11,6 +11,7 @@ const upload_and_restart = translate_div.attr('data-upload_and_restart');
 const edit_word = translate_div.attr('data-edit');
 const delete_word = translate_div.attr('data-delete');
 const back_word = translate_div.attr('data-back');
+const resp_time_word = translate_div.attr('data-resp_time');
 
 // JS scripts URL
 const scriptPath = "/static/js"

@@ -40,7 +40,8 @@ def get_agent(agent_id):
         'http_checks': smon_sql.select_checks_for_agent(agent_id, 'http'),
         'tcp_checks': smon_sql.select_checks_for_agent(agent_id, 'tcp'),
         'dns_checks': smon_sql.select_checks_for_agent(agent_id, 'dns'),
-        'ping_checks': smon_sql.select_checks_for_agent(agent_id, 'ping')
+        'ping_checks': smon_sql.select_checks_for_agent(agent_id, 'ping'),
+        'smtp_checks': smon_sql.select_checks_for_agent(agent_id, 'smtp')
     }
 
     return render_template('smon/agent.html', **kwargs)

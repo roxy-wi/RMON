@@ -85,10 +85,13 @@
             <div class="overview-checks-div">
             {% for check in http_checks %}
                 <div class="overview-check" id="check-{{ check.id }}">
-                    <span class="check-name-tile overview-check-name"><b>{{ lang.words.name|title() }}:</b> {{ check.name }}</span>
+                    <span class="check-name-tile overview-check-name"><b>{{ lang.words.name|title() }}:</b> {{ check.name.replace("'", "") }}</span>
                     <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
                     <span class="check-name-tile overview-check-hostname"><b>URL:</b> <a href="{{ check.url }}" target="_blank">{{ check.url }}</a></span>
                     <span class="overview-check-col"><b>{{ lang.words.method|title() }}:</b> {{ check.method|upper() }}</span>
+                    <span class="overview-check-col">
+                        <a class="edit edit-button-fa" title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}" onclick="editSmon('{{check.id}}', 'http')"></a>
+                    </span>
                 </div>
             {% endfor %}
             </div>
@@ -102,6 +105,9 @@
                     <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
                     <span class="check-name-tile overview-check-hostname"><b>{{ lang.words.Hostname }}:</b> {{ check.ip }}</span>
                     <span class="overview-check-col"><b>{{ lang.words.port|title() }}:</b> {{ check.port }}</span>
+                    <span class="overview-check-col">
+                        <a class="edit edit-button-fa" title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}" onclick="editSmon('{{check.id}}', 'tcp')"></a>
+                    </span>
                 </div>
             {% endfor %}
             </div>
@@ -111,12 +117,15 @@
             <div class="overview-checks-div">
                 {% for check in dns_checks %}
                     <div class="overview-check" id="check-{{ check.id }}">
-                        <b>{{ lang.words.name|title() }}:</b> <span class="check-name-tile overview-check-name"> {{ check.name }}</span>
-                        <b>{{ lang.words.interval|title() }}:</b> <span class="overview-check-col"> {{ check.interval }}</span>
-                        <b>{{ lang.words.record|title() }}:</b> <span class="check-name-tile overview-check-hostname">{{ check.ip }}</span>
-                        <b>Resolver:</b> <span class="overview-check-col"> {{ check.resolver }}</span>
-                        <b>{{ lang.words.record_type|title() }}:</b> <span class="overview-check-col"> {{ check.record_type|upper() }}</span>
-                        <b>{{ lang.words.port|title() }}:</b> <span class="overview-check-col"> {{ check.port }}</span>
+                        <span class="check-name-tile overview-check-name"><b>{{ lang.words.name|title() }}:</b> {{ check.name.replace("'", "") }}</span>
+                        <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
+                        <span class="check-name-tile overview-check-hostname"><b>{{ lang.words.record|title() }}:</b> {{ check.ip }}</span>
+                        <span class="overview-check-col"> <b>Resolver:</b>{{ check.resolver }}</span>
+                        <span class="overview-check-col"><b>{{ lang.words.record_type|title() }}:</b> {{ check.record_type|upper() }}</span>
+                        <span class="overview-check-col"> <b>{{ lang.words.port|title() }}:</b> {{ check.port }}</span>
+                        <span class="overview-check-col">
+                            <a class="edit edit-button-fa" title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}" onclick="editSmon('{{check.id}}', 'dns')"></a>
+                        </span>
                     </div>
                 {% endfor %}
             </div>
@@ -125,10 +134,13 @@
             <div class="overview-check-type">Ping:</div>
             {% for check in ping_checks %}
                 <div class="overview-check" id="check-{{ check.id }}">
-                    <b>{{ lang.words.name|title() }}:</b><span class="check-name-tile overview-check-name"> {{ check.name }}</span>
-                    <b>{{ lang.words.interval|title() }}:</b><span class="overview-check-col"> {{ check.interval }}</span>
-                    <b>{{ lang.words.Hostname }}:</b><span class="check-name-tile overview-check-hostname"> {{ check.ip }} </span>
-                   <b>{{ lang.smon_page.desc.packet_size }}:</b> <span class="overview-check-hostname"> {{ check.packet_size }}</span>
+                    <span class="check-name-tile overview-check-name"><b>{{ lang.words.name|title() }}:</b> {{ check.name }}</span>
+                    <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
+                    <span class="check-name-tile overview-check-hostname"><b>{{ lang.words.Hostname }}:</b> {{ check.ip }} </span>
+                    <span class="overview-check-col"><b>{{ lang.smon_page.desc.packet_size }}:</b> {{ check.packet_size }}</span>
+                    <span class="overview-check-col">
+                        <a class="edit edit-button-fa" title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}" onclick="editSmon('{{check.id}}', 'ping')"></a>
+                    </span>
                 </div>
             {% endfor %}
         {% endif %}
@@ -143,4 +155,5 @@
         getAgent('{{agent.id}}');
     {% endfor %}
 </script>
+    {% include 'include/smon/add_form.html' %}
 {% endblock %}

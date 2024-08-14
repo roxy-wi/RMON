@@ -28,7 +28,7 @@
 				<span class="need-field">*</span>
 			</td>
 			<td>
-				{% set check_types = {'dns': 'DNS', 'ping': 'Ping', 'tcp': 'TCP/UDP', 'http': 'HTTP(s)'} %}
+				{% set check_types = {'dns': 'DNS', 'ping': 'Ping', 'smtp': 'SMTP', 'tcp': 'TCP', 'http': 'HTTP(s)'} %}
 				{{ select('check_type', values=check_types, selected='http') }}
 			</td>
 		</tr>
@@ -68,13 +68,31 @@
 				{{ input('new-smon-resolver-server', value='8.8.8.8', style="width: 240px;") }}
 			</td>
 		</tr>
-		<tr class="smon_tcp_check smon_dns_check">
+		<tr class="smon_tcp_check smon_dns_check smon_smtp_check">
 			<td class="padding20">
 				{{lang.words.port|title()}}
 				<span class="need-field">*</span>
 			</td>
 			<td>
 				{{ input('new-smon-port', type='number', style="width: 240px;") }}
+			</td>
+		</tr>
+		<tr class="smon_smtp_check">
+			<td class="padding20">
+				{{lang.words.username|title()}}
+				<span class="need-field">*</span>
+			</td>
+			<td>
+				{{ input('new-smon-username', placeholder='example@example.com', style="width: 240px;") }}
+			</td>
+		</tr>
+		<tr class="smon_smtp_check">
+			<td class="padding20">
+				{{lang.words.password|title()}}
+				<span class="need-field">*</span>
+			</td>
+			<td>
+				{{ input('new-smon-password', type='password', style="width: 240px;") }}
 			</td>
 		</tr>
 		<tr>

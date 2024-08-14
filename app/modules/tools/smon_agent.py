@@ -86,7 +86,7 @@ def delete_agent(agent_id: int):
 
 
 def update_agent(agent_id: int, data: RmonAgent):
-    json_data = data.model_dump(mode='python', exclude={'reconfigure': True})
+    json_data = data.model_dump(mode='python', exclude={'reconfigure': True, 'uuid': True})
 
     try:
         smon_sql.update_agent(agent_id, **json_data)
@@ -96,6 +96,7 @@ def update_agent(agent_id: int, data: RmonAgent):
     if data.reconfigure:
         agent_uuid = smon_sql.get_agent_uuid(agent_id)
         server_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
+        print('agent_uuid',agent_uuid)
         try:
             inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid, json_data['port'])
             run_ansible(inv, server_ips, 'rmon_agent')
@@ -142,11 +143,11 @@ def delete_check(agent_id: int, server_ip: str, check_id: int) -> bytes:
         req = requests.delete(f'http://{server_ip}:{agent.port}/check/{check_id}', headers=headers, timeout=5)
         return req.content
     except requests.exceptions.HTTPError as e:
-        roxywi_common.logging(server_ip, f'error: Cannot delete check from agent: http error {e}', roxywi=1, login=1)
+        roxywi_common.logging(server_ip, f'error: Cannot delete check from agent: http error {e}', login=1)
     except requests.exceptions.ConnectTimeout:
-        roxywi_common.logging(server_ip, 'error: Cannot delete check from agent: connection timeout', roxywi=1, login=1)
+        roxywi_common.logging(server_ip, 'error: Cannot delete check from agent: connection timeout', login=1)
     except requests.exceptions.ConnectionError:
-        roxywi_common.logging(server_ip, 'error: Cannot delete check from agent: connection error', roxywi=1, login=1)
+        roxywi_common.logging(server_ip, 'error: Cannot delete check from agent: connection error', login=1)
     except Exception as e:
         raise Exception(f'error: Cannot delete check from Agent {server_ip}: {e}')
 
@@ -155,7 +156,7 @@ def send_tcp_checks(agent_id: int, server_ip: str, check_id=None) -> None:
     if check_id:
         checks = smon_sql.select_one_smon(check_id, 1)
     else:
-        checks = smon_sql.select_en_smon_tcp(agent_id)
+        checks = smon_sql.select_en_smon(agent_id, 'tcp')
     for check in checks:
         json_data = {
             'check_type': 'tcp',
@@ -176,7 +177,7 @@ def send_ping_checks(agent_id: int, server_ip: str, check_id=None) -> None:
     if check_id:
         checks = smon_sql.select_one_smon(check_id, 4)
     else:
-        checks = smon_sql.select_en_smon_ping(agent_id)
+        checks = smon_sql.select_en_smon(agent_id, 'ping')
     for check in checks:
         json_data = {
             'check_type': 'ping',
@@ -197,7 +198,7 @@ def send_dns_checks(agent_id: int, server_ip: str, check_id=None) -> None:
     if check_id:
         checks = smon_sql.select_one_smon(check_id, 5)
     else:
-        checks = smon_sql.select_en_smon_dns(agent_id)
+        checks = smon_sql.select_en_smon(agent_id, 'dns')
     for check in checks:
         json_data = {
             'check_type': 'dns',
@@ -220,7 +221,7 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
     if check_id:
         checks = smon_sql.select_one_smon(check_id, 2)
     else:
-        checks = smon_sql.select_en_smon_http(agent_id)
+        checks = smon_sql.select_en_smon(agent_id, 'http')
     for check in checks:
         json_data = {
             'check_type': 'http',
@@ -247,21 +248,48 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             roxywi_common.handle_exceptions(e, 'RMON', 'Cannot send HTTP check')
 
 
+def send_smtp_checks(agent_id: int, server_ip: str, check_id=None) -> None:
+    if check_id:
+        checks = smon_sql.select_one_smon(check_id, 3)
+    else:
+        checks = smon_sql.select_en_smon(agent_id, 'smtp')
+    for check in checks:
+        json_data = {
+            'check_type': 'smtp',
+            'name': check.smon_id.name,
+            'server': check.ip,
+            'port': check.port,
+            'username': check.username,
+            'password': check.password,
+            'interval': check.interval,
+            'timeout': check.smon_id.check_timeout,
+        }
+        api_path = f'check/{check.smon_id}'
+        try:
+            send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
+        except Exception as e:
+            roxywi_common.handle_exceptions(e, 'RMON', 'Cannot send SMTP check')
+
+
 def send_checks(agent_id: int) -> None:
     server_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
     try:
         send_tcp_checks(agent_id, server_ip)
     except Exception as e:
-        roxywi_common.logging(f'Agent ID: {agent_id}', f'error: Cannot send TCP checks: {e}', roxywi=1)
+        roxywi_common.logging(f'Agent ID: {agent_id}', f'error: Cannot send TCP checks: {e}')
     try:
         send_ping_checks(agent_id, server_ip)
     except Exception as e:
-        roxywi_common.logging(f'Agent ID: {agent_id}', f'error: Cannot send Ping checks: {e}', roxywi=1)
+        roxywi_common.logging(f'Agent ID: {agent_id}', f'error: Cannot send Ping checks: {e}')
     try:
         send_dns_checks(agent_id, server_ip)
     except Exception as e:
-        roxywi_common.logging(f'Agent ID: {agent_id}', f'error: Cannot send DNS checks: {e}', roxywi=1)
+        roxywi_common.logging(f'Agent ID: {agent_id}', f'error: Cannot send DNS checks: {e}')
     try:
         send_http_checks(agent_id, server_ip)
     except Exception as e:
-        roxywi_common.logging(f'Agent ID: {agent_id}', f'error: Cannot send HTTP checks: {e}', roxywi=1)
+        roxywi_common.logging(f'Agent ID: {agent_id}', f'error: Cannot send HTTP checks: {e}')
+    try:
+        send_smtp_checks(agent_id, server_ip)
+    except Exception as e:
+        roxywi_common.logging(f'Agent ID: {agent_id}', f'error: Cannot send SMTP checks: {e}')

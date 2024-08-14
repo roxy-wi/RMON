@@ -119,9 +119,16 @@ class DnsCheckRequest(BaseCheckRequest):
     ip: Union[IPvAnyAddress, DomainName]
 
 
+class SmtpCheckRequest(BaseCheckRequest):
+    username: EscapedString
+    password: EscapedString
+    port: Annotated[int, Gt(1), Le(65535)] = 53
+    ip: Union[IPvAnyAddress, DomainName]
+
+
 class PingCheckRequest(BaseCheckRequest):
     ip: Union[IPvAnyAddress, DomainName]
-    packet_size: Annotated[int, Le(16)]
+    packet_size: Annotated[int, Gt(16)]
 
 
 class TcpCheckRequest(BaseCheckRequest):

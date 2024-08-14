@@ -47,14 +47,6 @@ def delete_action_history_for_period():
         history_sql.delete_action_history_for_period()
 
 
-@scheduler.task('interval', id='delete_action_alerts_for_period', minutes=75, misfire_grace_time=None)
-def delete_action_alerts_for_period():
-    app = scheduler.app
-    period = sql.get_setting('checker_keep_history_range')
-    with app.app_context():
-        history_sql.delete_alert_history(period, 'RMON')
-
-
 @scheduler.task('interval', id='delete_old_logs', hours=1, misfire_grace_time=None)
 def delete_old_logs():
     app = scheduler.app

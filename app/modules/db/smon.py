@@ -5,7 +5,8 @@ from typing import Union
 from peewee import fn
 
 from app.modules.db.db_model import (
-	SmonAgent, Server, SMON, SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonHistory, SmonStatusPageCheck, SmonStatusPage, SmonGroup
+	SmonAgent, Server, SMON, SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonHistory, SmonStatusPageCheck,
+	SmonStatusPage, SmonGroup, SmonSMTPCheck
 )
 from app.modules.db.common import out_error
 import app.modules.roxy_wi_tools as roxy_wi_tools
@@ -153,41 +154,49 @@ def select_server_ip_by_agent_id(agent_id: int) -> str:
 		out_error(e)
 
 
-def select_en_smon_tcp(agent_id) -> object:
+# def select_en_smon_tcp(agent_id) -> object:
+# 	try:
+# 		return SmonTcpCheck.select(SmonTcpCheck, SMON).join_from(SmonTcpCheck, SMON).where((SMON.enabled == '1') & (SmonTcpCheck.agent_id == agent_id)).execute()
+# 	except Exception as e:
+# 		out_error(e)
+#
+#
+# def select_en_smon_ping(agent_id) -> object:
+# 	query = SmonPingCheck.select(SmonPingCheck, SMON).join_from(SmonPingCheck, SMON).where((SMON.enabled == '1') & (SmonPingCheck.agent_id == agent_id))
+# 	try:
+# 		query_res = query.execute()
+# 	except Exception as e:
+# 		out_error(e)
+# 	else:
+# 		return query_res
+#
+#
+# def select_en_smon_dns(agent_id) -> object:
+# 	query = SmonDnsCheck.select(SmonDnsCheck, SMON).join_from(SmonDnsCheck, SMON).where((SMON.enabled == '1') & (SmonDnsCheck.agent_id == agent_id))
+# 	try:
+# 		query_res = query.execute()
+# 	except Exception as e:
+# 		out_error(e)
+# 	else:
+# 		return query_res
+#
+#
+# def select_en_smon_http(agent_id) -> object:
+# 	query = SmonHttpCheck.select(SmonHttpCheck, SMON).join_from(SmonHttpCheck, SMON).where((SMON.enabled == '1') & (SmonHttpCheck.agent_id == agent_id))
+# 	try:
+# 		query_res = query.execute()
+# 	except Exception as e:
+# 		out_error(e)
+# 	else:
+# 		return query_res
+
+
+def select_en_smon(agent_id: int, check_type: str) -> Union[SmonTcpCheck, SmonPingCheck, SmonDnsCheck, SmonHttpCheck, SmonSMTPCheck]:
+	model = tool_common.get_model_for_check(check_type=check_type)
 	try:
-		return SmonTcpCheck.select(SmonTcpCheck, SMON).join_from(SmonTcpCheck, SMON).where((SMON.enabled == '1') & (SmonTcpCheck.agent_id == agent_id)).execute()
+		return model.select(model, SMON).join_from(model, SMON).where((SMON.enabled == '1') & (model.agent_id == agent_id)).execute()
 	except Exception as e:
 		out_error(e)
-
-
-def select_en_smon_ping(agent_id) -> object:
-	query = SmonPingCheck.select(SmonPingCheck, SMON).join_from(SmonPingCheck, SMON).where((SMON.enabled == '1') & (SmonPingCheck.agent_id == agent_id))
-	try:
-		query_res = query.execute()
-	except Exception as e:
-		out_error(e)
-	else:
-		return query_res
-
-
-def select_en_smon_dns(agent_id) -> object:
-	query = SmonDnsCheck.select(SmonDnsCheck, SMON).join_from(SmonDnsCheck, SMON).where((SMON.enabled == '1') & (SmonDnsCheck.agent_id == agent_id))
-	try:
-		query_res = query.execute()
-	except Exception as e:
-		out_error(e)
-	else:
-		return query_res
-
-
-def select_en_smon_http(agent_id) -> object:
-	query = SmonHttpCheck.select(SmonHttpCheck, SMON).join_from(SmonHttpCheck, SMON).where((SMON.enabled == '1') & (SmonHttpCheck.agent_id == agent_id))
-	try:
-		query_res = query.execute()
-	except Exception as e:
-		out_error(e)
-	else:
-		return query_res
 
 
 def select_status(smon_id):
@@ -249,7 +258,6 @@ def insert_smon_history_http_metrics(date, **kwargs) -> None:
 
 def select_one_smon(smon_id: int, check_type_id: int) -> tuple:
 	correct_model = tool_common.get_model_for_check(check_type_id=check_type_id)
-
 	try:
 		return correct_model.select(correct_model, SMON).join_from(correct_model, SMON).where(SMON.id == smon_id).execute()
 	except correct_model.DoesNotExist:
@@ -266,7 +274,6 @@ def insert_smon(name, enable, group_id, desc, telegram, slack, pd, mm, user_grou
 		).execute()
 		return last_id
 	except Exception as e:
-		print('error')
 		out_error(e)
 
 
@@ -274,7 +281,15 @@ def insert_smon_ping(smon_id, hostname, packet_size, interval, agent_id):
 	try:
 		SmonPingCheck.insert(smon_id=smon_id, ip=hostname, packet_size=packet_size, interval=interval, agent_id=agent_id).on_conflict('replace').execute()
 	except Exception as e:
-		print('123')
+		out_error(e)
+
+
+def insert_smon_smtp(smon_id, hostname, port, username, password, interval, agent_id):
+	try:
+		SmonSMTPCheck.insert(
+			smon_id=smon_id, ip=hostname, port=port, username=username, password=password, interval=interval, agent_id=agent_id
+		).on_conflict('replace').execute()
+	except Exception as e:
 		out_error(e)
 
 

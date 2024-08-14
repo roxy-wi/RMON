@@ -3,6 +3,7 @@ import time
 
 from flask import render_template, request, jsonify, g, Response, stream_with_context
 from flask_jwt_extended import jwt_required
+from playhouse.shortcuts import model_to_dict
 
 from app.routes.smon import bp
 from app.middleware import get_user_params
@@ -252,17 +253,16 @@ def smon_history():
     return render_template('smon/history.html', **kwargs)
 
 
-@bp.route('/history/host/<server_ip>')
+@bp.route('/history/host/<int:check_id>')
 @jwt_required()
 @get_user_params()
-def smon_host_history(server_ip):
+def smon_host_history(check_id):
     roxywi_common.check_user_group_for_flask()
-    needed_host = common.checkAjaxInput(server_ip)
-    if ' ' in needed_host:
-        needed_host = f"'{needed_host}'"
     smon_status = tools_common.is_tool_active('rmon-server')
-    smon = history_sql.alerts_history('RMON', g.user_params['group_id'], host=needed_host)
+    smon = history_sql.alerts_history('RMON', g.user_params['group_id'], check_id=check_id)
     user_subscription = roxywi_common.return_user_subscription()
+    for s in smon:
+        print(model_to_dict(s))
     kwargs = {
         'lang': g.user_params['lang'],
         'smon': smon,
@@ -340,10 +340,12 @@ def smon_history_metric_chart(check_id, check_type_id):
                 json_metric['avg_res_time'] = avg_res_time
                 json_metric['interval'] = interval
                 json_metric['status'] = str(i.status) if is_enabled else 4
-                if check_type_id == 2:
+                if check_type_id in (2, 3):
                     json_metric['name_lookup'] = str(i.name_lookup)
                     json_metric['connect'] = str(i.connect)
                     json_metric['app_connect'] = str(i.app_connect)
+                    if check_type_id == 3:
+                        continue
                     json_metric['pre_transfer'] = str(i.pre_transfer)
                     if float(i.redirect) <= 0:
                         json_metric['redirect'] = '0'

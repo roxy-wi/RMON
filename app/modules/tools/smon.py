@@ -9,7 +9,7 @@ import app.modules.server.server as server_mod
 import app.modules.tools.smon_agent as smon_agent
 import app.modules.roxywi.common as roxywi_common
 from app.modules.roxywi.exception import RoxywiCheckLimits
-from app.modules.roxywi.class_models import HttpCheckRequest, DnsCheckRequest, PingCheckRequest, TcpCheckRequest
+from app.modules.roxywi.class_models import HttpCheckRequest, DnsCheckRequest, PingCheckRequest, TcpCheckRequest, SmtpCheckRequest
 
 
 def create_check(json_data, user_group, check_type, show_new=1) -> Union[bool, tuple]:
@@ -47,7 +47,7 @@ def create_check(json_data, user_group, check_type, show_new=1) -> Union[bool, t
         return False
 
 
-def send_new_check(last_id: int, data: Union[HttpCheckRequest, DnsCheckRequest, TcpCheckRequest, PingCheckRequest]) -> None:
+def send_new_check(last_id: int, data: Union[HttpCheckRequest, DnsCheckRequest, TcpCheckRequest, PingCheckRequest, SmtpCheckRequest]) -> None:
     agent_ip = smon_sql.select_server_ip_by_agent_id(data.agent_id)
     if isinstance(data, HttpCheckRequest):
         smon_agent.send_http_checks(data.agent_id, agent_ip, last_id)
@@ -57,6 +57,8 @@ def send_new_check(last_id: int, data: Union[HttpCheckRequest, DnsCheckRequest, 
         smon_agent.send_tcp_checks(data.agent_id, agent_ip, last_id)
     elif isinstance(data, PingCheckRequest):
         smon_agent.send_ping_checks(data.agent_id, agent_ip, last_id)
+    elif isinstance(data, SmtpCheckRequest):
+        smon_agent.send_smtp_checks(data.agent_id, agent_ip, last_id)
 
 
 def create_http_check(data: HttpCheckRequest, check_id: int) -> tuple[dict, int]:
@@ -78,6 +80,13 @@ def create_dns_check(data: DnsCheckRequest, last_id: int) -> tuple[dict, int]:
 def create_ping_check(data: PingCheckRequest, last_id: int) -> tuple[dict, int]:
     try:
         smon_sql.insert_smon_ping(last_id, data.ip, data.packet_size, data.interval, data.agent_id)
+    except Exception as e:
+        return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create Ping check')
+
+
+def create_smtp_check(data: SmtpCheckRequest, last_id: int) -> tuple[dict, int]:
+    try:
+        smon_sql.insert_smon_smtp(last_id, data.ip, data.port, data.username, data.password, data.interval, data.agent_id)
     except Exception as e:
         return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create Ping check')
 
@@ -156,37 +165,39 @@ def history_metrics(server_id: int, check_type_id: int) -> dict:
         date_time = common.get_time_zoned_date(i.date, '%H:%M:%S')
         labels += f'{date_time},'
         curr_con += f'{i.response_time},'
-        if check_type_id == 2:
+        if check_type_id in (2, 3):
             name_lookup += f'{i.name_lookup},'
             connect += f'{i.connect},'
             app_connect += f'{i.app_connect},'
-            pre_transfer += f'{i.pre_transfer},'
-            try:
-                if float(i.redirect) <= 0:
+            if check_type_id == 2:
+                pre_transfer += f'{i.pre_transfer},'
+                try:
+                    if float(i.redirect) <= 0:
+                        redirect += '0,'
+                    else:
+                        redirect += f'{i.redirect},'
+                except Exception:
                     redirect += '0,'
-                else:
-                    redirect += f'{i.redirect},'
-            except Exception:
-                redirect += '0,'
-            try:
-                if float(i.start_transfer) <= 0:
+                try:
+                    if float(i.start_transfer) <= 0:
+                        start_transfer += '0,'
+                    else:
+                        start_transfer += f'{i.start_transfer},'
+                except Exception:
                     start_transfer += '0,'
-                else:
-                    start_transfer += f'{i.start_transfer},'
-            except Exception:
-                start_transfer += '0,'
-            download += f'{i.download},'
+                download += f'{i.download},'
 
     metrics['chartData']['labels'] = labels
     metrics['chartData']['curr_con'] = curr_con
-    if check_type_id == 2:
+    if check_type_id in (2, 3):
         metrics['chartData']['name_lookup'] = name_lookup
         metrics['chartData']['connect'] = connect
         metrics['chartData']['app_connect'] = app_connect
-        metrics['chartData']['pre_transfer'] = pre_transfer
-        metrics['chartData']['redirect'] = redirect
-        metrics['chartData']['start_transfer'] = start_transfer
-        metrics['chartData']['download'] = download
+        if check_type_id == 2:
+            metrics['chartData']['pre_transfer'] = pre_transfer
+            metrics['chartData']['redirect'] = redirect
+            metrics['chartData']['start_transfer'] = start_transfer
+            metrics['chartData']['download'] = download
 
     return metrics
 
@@ -302,7 +313,7 @@ def check_checks_limit():
 
 
 def get_check_id_by_name(name: str) -> int:
-    checking_types = {'tcp': '1', 'http': '2', 'ping': '4', 'dns': '5'}
+    checking_types = {'tcp': '1', 'http': '2', 'smtp': '3', 'ping': '4', 'dns': '5'}
     return checking_types[name]
 
 
