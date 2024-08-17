@@ -142,7 +142,7 @@
 		</tr>
 		<tr class="smon_http_check">
 			<td class="padding20">
-				{{lang.phrases.accepted_status_code|title()}}
+				{{lang.phrases.accepted_status_code}}
 				<span class="need-field">*</span>
 			</td>
 			<td>
@@ -153,6 +153,12 @@
 			<td class="padding20">{{lang.words.enable|title()}}</td>
 			<td>
 				{{ checkbox('new-smon-enable', checked='checked') }}
+			</td>
+		</tr>
+		<tr class="smon_http_check smon_smtp_check">
+			<td class="padding20">{{lang.phrases.ignore_ssl_error}}</td>
+			<td>
+				{{ checkbox('new-smon-ignore_ssl_error') }}
 			</td>
 		</tr>
 		<tr class="smon_dns_check">

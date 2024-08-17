@@ -184,6 +184,9 @@ class CheckHttpView(CheckView):
                 body_req:
                   type: 'string'
                   description: 'Body Request'
+                ignore_ssl_error:
+                  type: 'integer'
+                  description: 'Ignore TLS/SSL error'
         """
         return super().get(check_id)
 
@@ -265,6 +268,9 @@ class CheckHttpView(CheckView):
                 type: 'string'
                 description: 'Timeout (optional)'
                 default: 2
+              ignore_ssl_error:
+                type: 'integer'
+                description: 'Ignore TLS/SSL error'
         responses:
           '200':
             description: 'Successful Operation'
@@ -357,6 +363,9 @@ class CheckHttpView(CheckView):
                 type: 'string'
                 description: 'Timeout (optional)'
                 default: 2
+              ignore_ssl_error:
+                type: 'integer'
+                description: 'Ignore TLS/SSL error'
         responses:
           '201':
             description: 'Successful Operation, HTTP Check updated'
@@ -1189,6 +1198,9 @@ class CheckSmtpView(CheckView):
                 agent_id:
                   type: 'integer'
                   description: 'Agent ID'
+                ignore_ssl_error:
+                  type: 'integer'
+                  description: 'Ignore TLS/SSL error'
         """
         return super().get(check_id)
 
@@ -1259,6 +1271,9 @@ class CheckSmtpView(CheckView):
                 type: 'string'
                 description: 'Timeout (optional)'
                 default: 2
+              ignore_ssl_error:
+                type: 'integer'
+                description: 'Ignore TLS/SSL error'
         responses:
           '200':
             description: 'Successful Operation'
@@ -1339,6 +1354,9 @@ class CheckSmtpView(CheckView):
                 type: 'string'
                 description: 'Timeout (optional)'
                 default: 2
+              ignore_ssl_error:
+                type: 'integer'
+                description: 'Ignore TLS/SSL error'
         responses:
           '201':
             description: 'Successful Operation, Ping Check updated'

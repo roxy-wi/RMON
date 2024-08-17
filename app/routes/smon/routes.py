@@ -3,7 +3,6 @@ import time
 
 from flask import render_template, request, jsonify, g, Response, stream_with_context
 from flask_jwt_extended import jwt_required
-from playhouse.shortcuts import model_to_dict
 
 from app.routes.smon import bp
 from app.middleware import get_user_params
@@ -167,61 +166,6 @@ def status_page():
         }
 
         return render_template('smon/manage_status_page.html', **kwargs)
-    elif request.method == 'POST':
-        name = common.checkAjaxInput(request.form.get('name'))
-        slug = common.checkAjaxInput(request.form.get('slug'))
-        desc = common.checkAjaxInput(request.form.get('desc'))
-        checks = json.loads(request.form.get('checks'))
-
-        if not len(checks['checks']):
-            return 'error: Please check Checks for Status page'
-
-        try:
-            return smon_mod.create_status_page(name, slug, desc, checks['checks'])
-        except Exception as e:
-            return f'{e}'
-    elif request.method == 'PUT':
-        page_id = int(request.form.get('page_id'))
-        name = common.checkAjaxInput(request.form.get('name'))
-        slug = common.checkAjaxInput(request.form.get('slug'))
-        desc = common.checkAjaxInput(request.form.get('desc'))
-        checks = json.loads(request.form.get('checks'))
-
-        if not len(checks['checks']):
-            return 'error: Please check Checks for Status page'
-
-        try:
-            return smon_mod.edit_status_page(page_id, name, slug, desc, checks['checks'])
-        except Exception as e:
-            return f'{e}'
-    elif request.method == 'DELETE':
-        page_id = int(request.form.get('page_id'))
-        try:
-            smon_sql.delete_status_page(page_id)
-        except Exception as e:
-            return f'{e}'
-        else:
-            return 'ok'
-
-
-@bp.route('/status/checks/<int:page_id>')
-@jwt_required()
-def get_checks(page_id):
-    """
-    :param page_id: The ID of the page for which to fetch the checks.
-    :return: A JSON response with an array of check IDs.
-
-    """
-    returned_check = []
-    try:
-        checks = smon_sql.select_status_page_checks(page_id)
-    except Exception as e:
-        return f'error: Cannot get checks: {e}'
-
-    for _check in checks:
-        returned_check.append(str(_check.check_id))
-
-    return jsonify(returned_check)
 
 
 @bp.route('/status/<slug>')
@@ -261,8 +205,6 @@ def smon_host_history(check_id):
     smon_status = tools_common.is_tool_active('rmon-server')
     smon = history_sql.alerts_history('RMON', g.user_params['group_id'], check_id=check_id)
     user_subscription = roxywi_common.return_user_subscription()
-    for s in smon:
-        print(model_to_dict(s))
     kwargs = {
         'lang': g.user_params['lang'],
         'smon': smon,

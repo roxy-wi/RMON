@@ -1,8 +1,4 @@
 {% import 'languages/'+lang|default('en')+'.html' as lang %}
-{% set current_ver = versions.0 %}
-{% set new_ver = versions.1 %}
-{% set current_ver_without_dots = versions.2 %}
-{% set new_ver_without_dots = versions.3 %}
 {% set services_name = {
     'rmon-server': { 'link': 'rmon-server', 'name': 'RMON Server', 'desc': lang.admin_page.desc.smon_desc },
     'rmon-socket': { 'link': 'socket', 'name': 'Socket', 'desc': lang.admin_page.desc.socket_desc },
@@ -14,7 +10,7 @@
     </td>
     <td>
         <b
-                {% if new_ver_without_dots > current_ver_without_dots and new_ver != "Sorry cannot get current version" %}
+                {% if versions.need_update %}
                 title=lang.admin_page.desc.a_new_version+" RMON"
                 style="color: var(--red-color)"
                 {% else %}
@@ -22,14 +18,14 @@
                 style="color: var(--green-color)"
                 {% endif %}
         >
-            {{current_ver}}
+            {{versions.current_ver}}
         </b>
     </td>
     <td class="padding10">
-        <b>{{new_ver}}</b>
+        <b>{{versions.new_ver}}</b>
     </td>
     <td>
-        {% if new_ver_without_dots > current_ver_without_dots and new_ver != "Sorry cannot get current version" %}
+        {% if versions.need_update %}
         <a class="ui-button ui-widget ui-corner-all" onclick="updateService('rmon')" title="{{lang.words.w_update|title()}} RMON">{{lang.words.w_update|title()}}</a>
         {% endif %}
     </td>

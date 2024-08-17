@@ -48,6 +48,24 @@ def get_server_group(server_ip):
 		return out_error(e)
 
 
+def get_server_by_id(server_id: int) -> Server:
+	try:
+		return Server.get(Server.server_id == server_id)
+	except Server.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		return out_error(e)
+
+
+def get_server_by_ip(server_ip: str) -> Server:
+	try:
+		return Server.get(Server.ip == server_ip)
+	except Server.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		return out_error(e)
+
+
 def select_server_by_name(name):
 	try:
 		ip = Server.get(Server.hostname == name)

@@ -13,7 +13,7 @@ import app.modules.db.group as group_sql
 import app.modules.db.server as server_sql
 import app.modules.db.history as history_sql
 import app.modules.roxy_wi_tools as roxy_wi_tools
-from app.modules.roxywi.exception import RoxywiResourceNotFound, RoxywiCheckLimits
+from app.modules.roxywi.exception import RoxywiResourceNotFound, RoxywiCheckLimits, RoxywiGroupMismatch
 from app.modules.roxywi.class_models import ErrorResponse
 
 get_config_var = roxy_wi_tools.GetConfigVar()
@@ -266,9 +266,14 @@ def handle_json_exceptions(ex: Exception, message: str, server_ip='RMON server')
 	return ErrorResponse(error=f'{message}: {ex}').model_dump(mode='json')
 
 
-def is_user_has_access_to_group(user_id: int) -> None:
+def is_user_has_access_to_its_group(user_id: int) -> None:
 	if not user_sql.check_user_group(user_id, g.user_params['group_id']) and g.user_params['role'] != 1:
-		raise Exception('User has no access to group')
+		raise RoxywiGroupMismatch
+
+
+def is_user_has_access_to_group(user_id: int, group_id: int) -> None:
+	if not user_sql.check_user_group(user_id, group_id) and g.user_params['role'] != 1:
+		raise RoxywiGroupMismatch
 
 
 def handler_exceptions_for_json_data(ex: Exception, main_ex_mes: str) -> tuple[dict, int]:

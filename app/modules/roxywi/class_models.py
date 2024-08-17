@@ -93,6 +93,7 @@ class HttpCheckRequest(BaseCheckRequest):
     body_req: Optional[str] = None
     body: Optional[EscapedString] = None
     accepted_status_codes: Annotated[int, Gt(99), Le(599)]
+    ignore_ssl_error: Optional[bool] = 0
 
     @field_validator('http_method', mode='before')
     @classmethod
@@ -124,6 +125,7 @@ class SmtpCheckRequest(BaseCheckRequest):
     password: EscapedString
     port: Annotated[int, Gt(1), Le(65535)] = 53
     ip: Union[IPvAnyAddress, DomainName]
+    ignore_ssl_error: Optional[bool] = 0
 
 
 class PingCheckRequest(BaseCheckRequest):
@@ -207,3 +209,12 @@ class ChannelRequest(BaseModel):
 class SettingsRequest(BaseModel):
     param: EscapedString
     value: EscapedString
+
+
+class StatusPageRequest(BaseModel):
+    name: EscapedString
+    slug: EscapedString
+    description: Optional[EscapedString] = None
+    custom_style: Optional[EscapedString] = None
+    checks: list
+    group_id: Optional[int] = None

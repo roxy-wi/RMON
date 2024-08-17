@@ -64,7 +64,8 @@ def send_new_check(last_id: int, data: Union[HttpCheckRequest, DnsCheckRequest, 
 def create_http_check(data: HttpCheckRequest, check_id: int) -> tuple[dict, int]:
     try:
         smon_sql.insert_smon_http(
-            check_id, data.url, data.body, data.http_method, data.interval, data.agent_id, data.body_req, data.header_req, data.accepted_status_codes
+            check_id, data.url, data.body, data.http_method, data.interval, data.agent_id, data.body_req, data.header_req,
+            data.accepted_status_codes, data.ignore_ssl_error
         )
     except Exception as e:
         return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create HTTP check')
@@ -86,7 +87,7 @@ def create_ping_check(data: PingCheckRequest, last_id: int) -> tuple[dict, int]:
 
 def create_smtp_check(data: SmtpCheckRequest, last_id: int) -> tuple[dict, int]:
     try:
-        smon_sql.insert_smon_smtp(last_id, data.ip, data.port, data.username, data.password, data.interval, data.agent_id)
+        smon_sql.insert_smon_smtp(last_id, data.ip, data.port, data.username, data.password, data.interval, data.agent_id, data.ignore_ssl_error)
     except Exception as e:
         return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create Ping check')
 
@@ -226,31 +227,21 @@ def check_uptime(smon_id: int) -> int:
     return uptime
 
 
-def create_status_page(name: str, slug: str, desc: str, checks: list) -> str:
-    group_id = roxywi_common.get_user_group(id=1)
-
+def create_status_page(name: str, slug: str, desc: str, checks: list, styles: str, group_id: int) -> int:
     try:
-        page_id = smon_sql.add_status_page(name, slug, desc, group_id, checks)
+        return smon_sql.add_status_page(name, slug, desc, group_id, checks, styles)
     except Exception as e:
         raise Exception(f'{e}')
 
-    pages = smon_sql.select_status_page_by_id(page_id)
 
-    return render_template('ajax/smon/status_pages.html', pages=pages)
-
-
-def edit_status_page(page_id: int, name: str, slug: str, desc: str, checks: list) -> str:
+def edit_status_page(page_id: int, name: str, slug: str, desc: str, checks: list, styles: str) -> None:
     smon_sql.delete_status_page_checks(page_id)
 
     try:
         smon_sql.add_status_page_checks(page_id, checks)
-        smon_sql.edit_status_page(page_id, name, slug, desc)
+        smon_sql.edit_status_page(page_id, name, slug, desc, styles)
     except Exception as e:
-        return f'error: Cannot update update status page: {e}'
-
-    pages = smon_sql.select_status_page_by_id(page_id)
-
-    return render_template('ajax/smon/status_pages.html', pages=pages)
+        raise e
 
 
 def show_status_page(slug: str) -> str:

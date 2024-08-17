@@ -115,7 +115,7 @@ class UserView(MethodView):
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user')
 
         try:
-            roxywi_common.is_user_has_access_to_group(user_id)
+            roxywi_common.is_user_has_access_to_its_group(user_id)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot find user'), 404
         for user in users:
@@ -263,7 +263,7 @@ class UserView(MethodView):
             description: User not found
         """
         try:
-            roxywi_common.is_user_has_access_to_group(user_id)
+            roxywi_common.is_user_has_access_to_its_group(user_id)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot find user'), 404
         try:

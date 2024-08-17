@@ -26,6 +26,7 @@
         <link href="{{ url_for('static', filename='css/smon.css') }}" rel="stylesheet">
         <script src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/variables.js') }}"></script>
         <script src="{{ url_for('static', filename='js/smon.js') }}"></script>
         <link href="{{ url_for('static', filename='css/toastr-6.3.9.css') }}" rel="stylesheet"/>
 		<script src="{{ url_for('static', filename='js/toastr.js') }}"></script>
@@ -34,8 +35,11 @@
         <script src="{{ url_for('static', filename='js/metrics.js') }}"></script>
     </head>
     <body>
+        <style>
+            {{ p.custom_style|replace("'", "")|replace('"', '') }}
+        </style>
         <h2>Status page - {{p.name|replace("'", "")}}</h2>
-        <h3>{{p.desc|replace("'", "")}}</h3>
+        <h3>{{p.description|replace("'", "")}}</h3>
         <div id="page_status" class="page_cur_status"></div>
         {% for check, value in checks_status.items() %}
         {% if value.uptime|int() > 50 and value.uptime|int() < 90  %}

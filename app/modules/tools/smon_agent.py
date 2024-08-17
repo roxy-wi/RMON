@@ -231,7 +231,8 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             'body': check.body,
             'interval': check.interval,
             'timeout': check.smon_id.check_timeout,
-            'accepted_status_codes': check.accepted_status_codes
+            'accepted_status_codes': check.accepted_status_codes,
+            'ignore_ssl_error': check.ignore_ssl_error
         }
         if check.body_req:
             json_data['body_req'] = json.loads(check.body_req)
@@ -263,6 +264,7 @@ def send_smtp_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             'password': check.password,
             'interval': check.interval,
             'timeout': check.smon_id.check_timeout,
+            'ignore_ssl_error': check.ignore_ssl_error,
         }
         api_path = f'check/{check.smon_id}'
         try:

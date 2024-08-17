@@ -234,7 +234,7 @@ def servers():
 @bp.route('/internal/show_version')
 @cache.cached()
 def show_roxywi_version():
-    return render_template('ajax/check_version.html', versions=roxy.versions())
+    return jsonify(roxy.versions())
 
 
 @bp.route('/portscanner/scan/<int:server_id>', defaults={'server_ip': None})

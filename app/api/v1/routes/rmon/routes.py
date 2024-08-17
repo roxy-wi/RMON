@@ -4,6 +4,7 @@ from app.views.check.views import (
     CheckHttpView, CheckTcpView, CheckDnsView, CheckPingView, ChecksViewHttp, ChecksViewDns, ChecksViewTcp,
     ChecksViewPing, CheckSmtpView, ChecksViewSmtp
 )
+from app.views.check.status_page_views import StatusPageView
 
 
 def register_api(view, endpoint, url, pk='check_id', pk_type='int'):
@@ -25,3 +26,4 @@ register_api(CheckTcpView, 'tcp_check', '/check/tcp', 'check_id')
 register_api(CheckPingView, 'ping_check', '/check/ping', 'check_id')
 register_api(CheckDnsView, 'dns_check', '/check/dns', 'check_id')
 register_api(CheckSmtpView, 'smtp_check', '/check/smtp', 'check_id')
+register_api(StatusPageView, 'status_page', '/status-page', 'page_id')

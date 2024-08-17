@@ -328,6 +328,7 @@ class SmonSMTPCheck(BaseModel):
     use_tls = IntegerField(constraints=[SQL('DEFAULT 1')])
     interval = IntegerField(constraints=[SQL('DEFAULT 120')])
     agent_id = IntegerField(constraints=[SQL('DEFAULT 1')])
+    ignore_ssl_error = IntegerField(constraints=[SQL('DEFAULT 0')])
 
     class Meta:
         table_name = 'smon_smtp_check'
@@ -344,6 +345,7 @@ class SmonHttpCheck(BaseModel):
     agent_id = IntegerField(constraints=[SQL('DEFAULT 1')])
     headers = CharField(null=True)
     body_req = CharField(null=True)
+    ignore_ssl_error = IntegerField(constraints=[SQL('DEFAULT 0')])
 
     class Meta:
         table_name = 'smon_http_check'
@@ -380,9 +382,9 @@ class SmonStatusPage(BaseModel):
     id = AutoField()
     name = CharField()
     slug = CharField(unique=True)
-    desc = CharField(null=True)
+    description = CharField(null=True)
     group_id = IntegerField()
-    style = TextField(null=True)
+    custom_style = TextField(null=True)
 
     class Meta:
         table_name = 'smon_status_pages'

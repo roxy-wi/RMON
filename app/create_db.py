@@ -173,6 +173,8 @@ def update_db_v_1_0_7_1():
 def update_db_v_1_1():
 	try:
 		migrate(
+			migrator.rename_column('smon_status_pages', 'style', 'custom_style'),
+			migrator.rename_column('smon_status_pages', 'desc', 'description'),
 			migrator.rename_column('telegram', 'groups', 'group_id'),
 			migrator.rename_column('slack', 'groups', 'group_id'),
 			migrator.rename_column('mattermost', 'groups', 'group_id'),
@@ -187,7 +189,7 @@ def update_db_v_1_1():
 			migrator.rename_column('cred', 'groups', 'group_id'),
 		)
 	except Exception as e:
-		if e.args[0] == 'no such column: "groups"' or str(e) == '(1060, no such column: "groups")':
+		if e.args[0] == 'no such column: "style"' or str(e) == '(1060, no such column: "style")':
 			print("Updating... DB has been updated to version 1.1")
 		elif e.args[0] == "'bool' object has no attribute 'sql'":
 			print("Updating... DB has been updated to version 1.1")
@@ -195,9 +197,24 @@ def update_db_v_1_1():
 			print("An error occurred:", e)
 
 
+def update_db_v_1_1_2():
+	try:
+		migrate(
+			migrator.add_column('smon_smtp_check', 'ignore_ssl_error', IntegerField(default=0)),
+			migrator.add_column_default('smon_smtp_check', 'ignore_ssl_error', 0),
+			migrator.add_column('smon_http_check', 'ignore_ssl_error', IntegerField(default=0)),
+			migrator.add_column_default('smon_http_check', 'ignore_ssl_error', 0),
+		)
+	except Exception as e:
+		if e.args[0] == 'duplicate column name: ignore_ssl_error' or str(e) == '(1060, "Duplicate column name \'ignore_ssl_error\'")':
+			print('Updating... DB has been updated to version 1.1.2')
+		else:
+			print("An error occurred:", e)
+
+
 def update_ver():
 	try:
-		Version.update(version='1.1.0').execute()
+		Version.update(version='1.1.2').execute()
 	except Exception:
 		print('Cannot update version')
 
@@ -219,6 +236,7 @@ def update_all():
 	update_db_v_1_0_7()
 	update_db_v_1_0_7_1()
 	update_db_v_1_1()
+	update_db_v_1_1_2()
 
 
 if __name__ == "__main__":

@@ -75,7 +75,7 @@ class SettingsView(MethodView):
         try:
             group_id = BaseServer.return_group_id(query)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, f'Cannot get Settings')
+            return roxywi_common.handle_json_exceptions(e, 'Cannot get Settings')
 
         settings = sql.get_setting('', group_id=group_id, section=section, all=1)
 
@@ -132,7 +132,7 @@ class SettingsView(MethodView):
         try:
             group_id = BaseServer.return_group_id(query)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, f'Cannot get Settings')
+            return roxywi_common.handle_json_exceptions(e, 'Cannot get Settings')
         try:
             sql.update_setting(body.param, val, group_id)
         except Exception as e:

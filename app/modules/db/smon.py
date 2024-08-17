@@ -154,43 +154,6 @@ def select_server_ip_by_agent_id(agent_id: int) -> str:
 		out_error(e)
 
 
-# def select_en_smon_tcp(agent_id) -> object:
-# 	try:
-# 		return SmonTcpCheck.select(SmonTcpCheck, SMON).join_from(SmonTcpCheck, SMON).where((SMON.enabled == '1') & (SmonTcpCheck.agent_id == agent_id)).execute()
-# 	except Exception as e:
-# 		out_error(e)
-#
-#
-# def select_en_smon_ping(agent_id) -> object:
-# 	query = SmonPingCheck.select(SmonPingCheck, SMON).join_from(SmonPingCheck, SMON).where((SMON.enabled == '1') & (SmonPingCheck.agent_id == agent_id))
-# 	try:
-# 		query_res = query.execute()
-# 	except Exception as e:
-# 		out_error(e)
-# 	else:
-# 		return query_res
-#
-#
-# def select_en_smon_dns(agent_id) -> object:
-# 	query = SmonDnsCheck.select(SmonDnsCheck, SMON).join_from(SmonDnsCheck, SMON).where((SMON.enabled == '1') & (SmonDnsCheck.agent_id == agent_id))
-# 	try:
-# 		query_res = query.execute()
-# 	except Exception as e:
-# 		out_error(e)
-# 	else:
-# 		return query_res
-#
-#
-# def select_en_smon_http(agent_id) -> object:
-# 	query = SmonHttpCheck.select(SmonHttpCheck, SMON).join_from(SmonHttpCheck, SMON).where((SMON.enabled == '1') & (SmonHttpCheck.agent_id == agent_id))
-# 	try:
-# 		query_res = query.execute()
-# 	except Exception as e:
-# 		out_error(e)
-# 	else:
-# 		return query_res
-
-
 def select_en_smon(agent_id: int, check_type: str) -> Union[SmonTcpCheck, SmonPingCheck, SmonDnsCheck, SmonHttpCheck, SmonSMTPCheck]:
 	model = tool_common.get_model_for_check(check_type=check_type)
 	try:
@@ -284,10 +247,10 @@ def insert_smon_ping(smon_id, hostname, packet_size, interval, agent_id):
 		out_error(e)
 
 
-def insert_smon_smtp(smon_id, hostname, port, username, password, interval, agent_id):
+def insert_smon_smtp(smon_id, hostname, port, username, password, interval, agent_id, ignore_ssl_error):
 	try:
 		SmonSMTPCheck.insert(
-			smon_id=smon_id, ip=hostname, port=port, username=username, password=password, interval=interval, agent_id=agent_id
+			smon_id=smon_id, ip=hostname, port=port, username=username, password=password, interval=interval, agent_id=agent_id, ignore_ssl_error=ignore_ssl_error
 		).on_conflict('replace').execute()
 	except Exception as e:
 		out_error(e)
@@ -309,10 +272,11 @@ def insert_smon_dns(smon_id: int, hostname: str, port: int, resolver: str, recor
 		out_error(e)
 
 
-def insert_smon_http(smon_id, url, body, http_method, interval, agent_id, body_req, header_req, status_code):
+def insert_smon_http(smon_id, url, body, http_method, interval, agent_id, body_req, header_req, status_code, ignore_ssl_error):
 	try:
 		SmonHttpCheck.insert(
-			smon_id=smon_id, url=url, body=body, method=http_method, interval=interval, agent_id=agent_id, body_req=body_req, headers=header_req, accepted_status_codes=status_code
+			smon_id=smon_id, url=url, body=body, method=http_method, interval=interval, agent_id=agent_id, body_req=body_req,
+			headers=header_req, accepted_status_codes=status_code, ignore_ssl_error=ignore_ssl_error
 		).on_conflict('replace').execute()
 	except Exception as e:
 		out_error(e)
@@ -365,9 +329,9 @@ def smon_list(user_group):
 		return query_res
 
 
-def add_status_page(name: str, slug: str, desc: str, group_id: int, checks: list) -> int:
+def add_status_page(name: str, slug: str, desc: str, group_id: int, checks: list, styles: str) -> int:
 	try:
-		last_id = SmonStatusPage.insert(name=name, slug=slug, group_id=group_id, desc=desc).execute()
+		last_id = SmonStatusPage.insert(name=name, slug=slug, group_id=group_id, description=desc, custom_style=styles).execute()
 	except Exception as e:
 		if 'Duplicate entry' in str(e):
 			raise Exception('error: The Slug is already taken, please enter another one')
@@ -378,9 +342,9 @@ def add_status_page(name: str, slug: str, desc: str, group_id: int, checks: list
 		return last_id
 
 
-def edit_status_page(page_id: int, name: str, slug: str, desc: str) -> None:
+def edit_status_page(page_id: int, name: str, slug: str, desc: str, styles: str) -> None:
 	try:
-		SmonStatusPage.update(name=name, slug=slug, desc=desc).where(SmonStatusPage.id == page_id).execute()
+		SmonStatusPage.update(name=name, slug=slug, description=desc, custom_style=styles).where(SmonStatusPage.id == page_id).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -407,6 +371,15 @@ def select_status_pages(group_id: int):
 		return out_error(e)
 	else:
 		return query_res
+
+
+def select_status_page_with_group(page_id: int, group_id: int) -> SmonStatusPage:
+	try:
+		return SmonStatusPage.get((SmonStatusPage.group_id == group_id) & (SmonStatusPage.id == page_id))
+	except SmonStatusPage.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		out_error(e)
 
 
 def select_status_page_by_id(page_id: int):
