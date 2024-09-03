@@ -12,6 +12,7 @@ from app.modules.roxywi.exception import RoxywiResourceNotFound
 from app.modules.roxywi.class_models import BaseResponse, IdResponse, RmonAgent, GroupQuery
 from app.modules.common.common_classes import SupportClass
 
+
 class AgentView(MethodView):
     method_decorators = ["GET", "POST", "PUT", "DELETE"]
     decorators = [jwt_required(), get_user_params(), check_group()]
@@ -93,7 +94,7 @@ class AgentView(MethodView):
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get agent')
         agent_list = []
         for agent in agents:
-            agent_dict = model_to_dict(agent, recurse=False)
+            agent_dict = model_to_dict(agent)
             agent_list.append(agent_dict)
         try:
             if len(agent_list) == 0:
