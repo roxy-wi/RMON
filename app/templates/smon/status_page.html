@@ -51,7 +51,7 @@
         {% else %}
             {% set add_class = 'serverUP' %}
         {% endif %}
-        <div class="check_div" title="{{value.desc}}">
+        <div class="check_div" title="{{value.description}}">
             <div>
                 <span class="{{add_class}} check_uptime">{{value.uptime}}%</span>
                 <span class="check_name">{{value.name|replace("'", "")}}</span>

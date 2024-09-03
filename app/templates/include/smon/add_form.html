@@ -28,7 +28,7 @@
 				<span class="need-field">*</span>
 			</td>
 			<td>
-				{% set check_types = {'dns': 'DNS', 'ping': 'Ping', 'smtp': 'SMTP', 'tcp': 'TCP', 'http': 'HTTP(s)'} %}
+				{% set check_types = {'dns': 'DNS', 'ping': 'Ping', 'smtp': 'SMTP', 'rabbitmq': 'RabbitMQ', 'tcp': 'TCP', 'http': 'HTTP(s)'} %}
 				{{ select('check_type', values=check_types, selected='http') }}
 			</td>
 		</tr>
@@ -68,7 +68,7 @@
 				{{ input('new-smon-resolver-server', value='8.8.8.8', style="width: 240px;") }}
 			</td>
 		</tr>
-		<tr class="smon_tcp_check smon_dns_check smon_smtp_check">
+		<tr class="smon_tcp_check smon_dns_check smon_smtp_check smon_rabbit_check">
 			<td class="padding20">
 				{{lang.words.port|title()}}
 				<span class="need-field">*</span>
@@ -77,7 +77,7 @@
 				{{ input('new-smon-port', type='number', style="width: 240px;") }}
 			</td>
 		</tr>
-		<tr class="smon_smtp_check">
+		<tr class="smon_smtp_check smon_rabbit_check">
 			<td class="padding20">
 				{{lang.words.username|title()}}
 				<span class="need-field">*</span>
@@ -86,13 +86,22 @@
 				{{ input('new-smon-username', placeholder='example@example.com', style="width: 240px;") }}
 			</td>
 		</tr>
-		<tr class="smon_smtp_check">
+		<tr class="smon_smtp_check smon_rabbit_check">
 			<td class="padding20">
 				{{lang.words.password|title()}}
 				<span class="need-field">*</span>
 			</td>
 			<td>
 				{{ input('new-smon-password', type='password', style="width: 240px;") }}
+			</td>
+		</tr>
+		<tr class="smon_rabbit_check">
+			<td class="padding20">
+				VHost
+				<span class="need-field">*</span>
+			</td>
+			<td>
+				{{ input('new-smon-vhost', type='vhost', value='/', style="width: 240px;") }}
 			</td>
 		</tr>
 		<tr>

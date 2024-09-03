@@ -55,7 +55,7 @@ class ErrorResponse(BaseModel):
 
 class BaseCheckRequest(BaseModel):
     name: EscapedString
-    desc: Optional[str] = ''
+    description: Optional[str] = ''
     agent_id: int
     timeout: Annotated[int, Le(59), Gt(1)] = 2
     enabled: Optional[bool] = 1
@@ -128,6 +128,15 @@ class SmtpCheckRequest(BaseCheckRequest):
     ignore_ssl_error: Optional[bool] = 0
 
 
+class RabbitCheckRequest(BaseCheckRequest):
+    username: EscapedString
+    password: EscapedString
+    port: Annotated[int, Gt(1), Le(65535)] = 5672
+    ip: Union[IPvAnyAddress, DomainName]
+    vhost: Optional[EscapedString] = '/'
+    ignore_ssl_error: Optional[bool] = 0
+
+
 class PingCheckRequest(BaseCheckRequest):
     ip: Union[IPvAnyAddress, DomainName]
     packet_size: Annotated[int, Gt(16)]
@@ -159,7 +168,7 @@ class AddUserToGroup(BaseModel):
 
 class RmonAgent(BaseModel):
     name: EscapedString
-    desc: Optional[EscapedString] = None
+    description: Optional[EscapedString] = None
     enabled: Optional[bool] = 1
     shared: Optional[bool] = 0
     port: Annotated[int, Gt(1024), Le(65535)] = 5101
@@ -174,7 +183,7 @@ class GroupQuery(BaseModel):
 
 class GroupRequest(BaseModel):
     name: EscapedString
-    desc: Optional[EscapedString] = None
+    description: Optional[EscapedString] = None
 
 
 class ServerRequest(BaseModel):
@@ -183,7 +192,7 @@ class ServerRequest(BaseModel):
     enabled: Optional[bool] = 1
     creds_id: int
     port: Optional[int] = 22
-    desc: Optional[EscapedString] = None
+    description: Optional[EscapedString] = None
     group_id: Optional[int] = None
 
 

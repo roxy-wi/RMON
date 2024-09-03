@@ -1,4 +1,4 @@
-var check_types = {'tcp': 1, 'http': 2, 'smtp': 3, 'ping': 4, 'dns': 5};
+var check_types = {'tcp': 1, 'http': 2, 'smtp': 3, 'ping': 4, 'dns': 5, 'rabbitmq': 6};
 $(function () {
 	$( "#check_type" ).on('selectmenuchange',function() {
 		check_and_clear_check_type($('#check_type').val());
@@ -70,6 +70,15 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		valid = valid && checkLength($('#new-smon-password'), "Password", 1);
 		valid = valid && checkLength($('#new-smon-ip'), "Hostname", 1);
 	}
+	if (check_type === 'rabbit') {
+		allFields = $([]).add($('#new-smon-ip')).add($('#new-smon-port')).add($('#new-smon-name')).add($('#new-smon-username')).add($('#new-smon-password')).add($('#new-smon-vhost')).add($('#new-smon-interval')).add($('#new-smon-timeout'))
+		allFields.removeClass("ui-state-error");
+		valid = valid && checkLength($('#new-smon-port'), "Port", 1);
+		valid = valid && checkLength($('#new-smon-username'), "Username", 1);
+		valid = valid && checkLength($('#new-smon-password'), "Password", 1);
+		valid = valid && checkLength($('#new-smon-vhost'), "VHost", 1);
+		valid = valid && checkLength($('#new-smon-ip'), "Hostname", 1);
+	}
 	valid = valid && checkLength($('#new-smon-name'), "Name", 1);
 	valid = valid && checkLength($('#new-smon-interval'), "Check interval", 1);
 	valid = valid && checkLength($('#new-smon-timeout'), "Timeout", 1);
@@ -89,11 +98,12 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'record_type': $('#new-smon-dns_record_type').val(),
 		'username': $('#new-smon-username').val(),
 		'password': $('#new-smon-password').val(),
+		'vhost': $('#new-smon-vhost').val(),
 		'enabled': enable,
 		'url': $('#new-smon-url').val(),
 		'body': $('#new-smon-body').val(),
 		'group': $('#new-smon-group').val(),
-		'desc': $('#new-smon-description').val(),
+		'description': $('#new-smon-description').val(),
 		'tg': $('#new-smon-telegram').val(),
 		'slack': $('#new-smon-slack').val(),
 		'pd': $('#new-smon-pd').val(),
@@ -245,8 +255,8 @@ function getCheckSettings(smon_id, check_type) {
 			if (data['group_name']) {
 				$('#new-smon-group').val(data['group_name'].replaceAll("'", ""));
 			}
-			if (data['timeout']) {
-				$('#new-smon-timeout').val(data['timeout']);
+			if (data['smon_id']['check_timeout']) {
+				$('#new-smon-timeout').val(data['smon_id']['check_timeout']);
 			}
 			try {
 				$('#new-smon-body').val(data['body'].replaceAll("'", ""));
@@ -265,13 +275,13 @@ function getCheckSettings(smon_id, check_type) {
 			}
 			$('#new-smon-status-code').val(data['accepted_status_codes']);
 			$('#new-smon-agent-id').val(data['agent_id']).change();
-			$('#new-smon-telegram').val(data['tg']).change();
-			$('#new-smon-slack').val(data['slack']).change();
-			$('#new-smon-pd').val(data['pd']).change();
+			$('#new-smon-telegram').val(data['smon_id']['telegram_channel_id']).change();
+			$('#new-smon-slack').val(data['smon_id']['slack_channel_id']).change();
+			$('#new-smon-pd').val(data['smon_id']['pd_channel_id']).change();
 			$('#new-smon-telegram').selectmenu("refresh");
 			$('#new-smon-slack').selectmenu("refresh");
-			if (data['mm']) {
-				$('#new-smon-mm').val(data['mm']).change();
+			if (data['smon_id']['mm_channel_id']) {
+				$('#new-smon-mm').val(data['smon_id']['mm_channel_id']).change();
 				$('#new-smon-mm').selectmenu("refresh");
 			}
 			if (data['method']) {
@@ -335,6 +345,7 @@ function check_and_clear_check_type(check_type) {
 		$('.smon_ping_check').hide();
 		$('.smon_dns_check').hide();
 		$('.smon_smtp_check').hide();
+		$('.smon_rabbit_check').hide();
 		clear_check_vals();
 		$('.smon_http_check').show();
 	} else if (check_type === 'tcp') {
@@ -343,6 +354,7 @@ function check_and_clear_check_type(check_type) {
 		$('.smon_dns_check').hide();
 		$('.smon_ping_check').hide();
 		$('.smon_smtp_check').hide();
+		$('.smon_rabbit_check').hide();
 		clear_check_vals();
 		$('.smon_tcp_check').show();
 	} else if (check_type === 'dns') {
@@ -351,6 +363,7 @@ function check_and_clear_check_type(check_type) {
 		$('.smon_http_check').hide();
 		$('.smon_ping_check').hide();
 		$('.smon_smtp_check').hide();
+		$('.smon_rabbit_check').hide();
 		clear_check_vals();
 		$('#new-smon-port').val('53');
 		$('.smon_dns_check').show();
@@ -360,22 +373,37 @@ function check_and_clear_check_type(check_type) {
 		$('.smon_http_check').hide();
 		$('.smon_ping_check').hide();
 		$('.smon_dns_check').hide();
+		$('.smon_rabbit_check').hide();
 		clear_check_vals();
 		$('#new-smon-port').val('587');
+		$('#new-smon-username').attr('placeholder', 'examplte@example.com');
 		$('.smon_smtp_check').show();
+	} else if (check_type === 'rabbitmq') {
+		$('.new_smon_hostname').show();
+		$('.smon_tcp_check').hide();
+		$('.smon_http_check').hide();
+		$('.smon_ping_check').hide();
+		$('.smon_dns_check').hide();
+		$('.smon_smtp_check').hide();
+		clear_check_vals();
+		$('#new-smon-port').val('5672');
+		$('#new-smon-vhost').val('/');
+		$('#new-smon-username').attr('placeholder', 'guest');
+		$('.smon_rabbit_check').show();
 	} else {
 		$('.new_smon_hostname').show();
 		$('.smon_http_check').hide();
 		$('.smon_tcp_check').hide();
 		$('.smon_dns_check').hide();
 		$('.smon_smtp_check').hide();
-		$('.smon_ping_check').show();
+		$('.smon_rabbit_check').hide();
 		clear_check_vals();
 		$('#new-smon-packet_size').val('56');
+		$('.smon_ping_check').show();
 	}
 }
 function clear_check_vals() {
-	const inputs_for_clean = ['url', 'body', 'body-req', 'port', 'packet_size', 'ip', 'header-req', 'username', 'password']
+	const inputs_for_clean = ['url', 'body', 'body-req', 'port', 'packet_size', 'ip', 'header-req', 'username', 'password', 'vhost']
 	for (let i of inputs_for_clean) {
 		$('#new-smon-' + i).val('');
 	}
@@ -461,7 +489,6 @@ function createStatusPageStep1(edited=false, page_id=0) {
 			async: false,
 			contentType: "application/json; charset=utf-8",
 			success: function (data) {
-				console.log(data)
 				if (data.status === 'failed') {
 					toastr.error(data.error);
 				} else {
@@ -960,7 +987,6 @@ function renderSMONChartHttp(result, labels, check_id, check_type_id) {
 }
 function renderSMONChartSmtp(result, labels, check_id, check_type_id) {
     const ctx = document.getElementById('metrics_' + check_id);
-	console.log('123' + result)
     // Преобразование данных в массивы
     const labelArray = labels.split(',');
     const name_lookup = result.chartData.name_lookup.split(',');
@@ -1156,40 +1182,43 @@ function renderSMONChart(data, labels, check_id, check_type_id) {
 }
 function stream_chart(chart_id, check_id, check_type_id) {
     const source = new EventSource(`/rmon/history/metrics/stream/${check_id}/${check_type_id}`);
+	let prev_date = '';
     source.onmessage = function (event) {
         const data = JSON.parse(event.data);
-        if (chart_id.data.labels.length >= 40) {
-            chart_id.data.labels.shift();
-			console.log(chart_id.data)
-            chart_id.data.datasets[0].data.shift();
-			if (check_type_id === '2' || check_type_id === '3') {
-				chart_id.data.datasets[1].data.shift();
-				chart_id.data.datasets[2].data.shift();
-				chart_id.data.datasets[3].data.shift();
-				if (check_type_id === '2') {
-					chart_id.data.datasets[4].data.shift();
-					chart_id.data.datasets[5].data.shift();
-					chart_id.data.datasets[6].data.shift();
+		if (prev_date != data.time) {
+			if (chart_id.data.labels.length >= 40) {
+				chart_id.data.labels.shift();
+				chart_id.data.datasets[0].data.shift();
+				if (check_type_id === '2' || check_type_id === '3') {
+					chart_id.data.datasets[1].data.shift();
+					chart_id.data.datasets[2].data.shift();
+					chart_id.data.datasets[3].data.shift();
+					if (check_type_id === '2') {
+						chart_id.data.datasets[4].data.shift();
+						chart_id.data.datasets[5].data.shift();
+						chart_id.data.datasets[6].data.shift();
+					}
 				}
 			}
-        }
-        chart_id.data.labels.push(data.time);
-        chart_id.data.datasets[0].data.push(data.value);
-        if (check_type_id === '2' || check_type_id === '3') {
-            chart_id.data.datasets[1].data.push(data.name_lookup);
-            chart_id.data.datasets[2].data.push(data.connect);
-            chart_id.data.datasets[3].data.push(data.app_connect);
-			if (check_type_id === '2') {
-				chart_id.data.datasets[4].data.push(data.pre_transfer);
-				chart_id.data.datasets[5].data.push(data.redirect);
-				chart_id.data.datasets[6].data.push(data.m_download);
+			chart_id.data.labels.push(data.time);
+			chart_id.data.datasets[0].data.push(data.value);
+			if (check_type_id === '2' || check_type_id === '3') {
+				chart_id.data.datasets[1].data.push(data.name_lookup);
+				chart_id.data.datasets[2].data.push(data.connect);
+				chart_id.data.datasets[3].data.push(data.app_connect);
+				if (check_type_id === '2') {
+					chart_id.data.datasets[4].data.push(data.pre_transfer);
+					chart_id.data.datasets[5].data.push(data.redirect);
+					chart_id.data.datasets[6].data.push(data.m_download);
+				}
 			}
-        }
-		if (data.status === "0") {
-			chart_id.data.datasets[0].fillColor = 'rgb(239,5,59)';
+			if (data.status === "0") {
+				chart_id.data.datasets[0].fillColor = 'rgb(239,5,59)';
+			}
+			chart_id.update();
+			update_cur_statues(check_id, data);
 		}
-        chart_id.update();
-		update_cur_statues(check_id, data);
+		prev_date = data.time;
     }
 }
 function update_cur_statues(check_id, data) {

@@ -13,7 +13,7 @@ from app.middleware import get_user_params, page_for_admin, check_group
 from app.modules.roxywi.class_models import (
     BaseResponse, GroupQuery, SettingsRequest
 )
-from app.views.server.views import BaseServer
+from app.modules.common.common_classes import SupportClass
 
 
 class SettingsView(MethodView):
@@ -51,7 +51,7 @@ class SettingsView(MethodView):
               items:
                 type: object
                 properties:
-                  desc:
+                  description:
                     type: string
                     description: The description of the setting.
                     example: "List of IP addresses or names to connect to the RMON masters. Specified separated by commas"
@@ -73,7 +73,7 @@ class SettingsView(MethodView):
                     example: "10.0.0.75,10.0.0.76"
         """
         try:
-            group_id = BaseServer.return_group_id(query)
+            group_id = SupportClass.return_group_id(query)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot get Settings')
 
@@ -130,7 +130,7 @@ class SettingsView(MethodView):
             val = body.value
 
         try:
-            group_id = BaseServer.return_group_id(query)
+            group_id = SupportClass.return_group_id(query)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot get Settings')
         try:

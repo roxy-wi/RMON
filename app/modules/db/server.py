@@ -6,7 +6,7 @@ from app.modules.roxywi.exception import RoxywiResourceNotFound
 def add_server(hostname, ip, group, enabled, creds_id, port, desc):
 	try:
 		server_id = Server.insert(
-			hostname=hostname, ip=ip, group_id=group, enabled=enabled, creds_id=creds_id, port=port, desc=desc
+			hostname=hostname, ip=ip, group_id=group, enabled=enabled, creds_id=creds_id, port=port, description=desc
 		).execute()
 		return server_id
 	except Exception as e:
@@ -27,7 +27,7 @@ def delete_server(server_id):
 def update_server(hostname, group, enabled, server_id, creds_id, port, desc):
 	try:
 		server_update = Server.update(
-			hostname=hostname, group_id=group, enabled=enabled, creds_id=creds_id, port=port, desc=desc
+			hostname=hostname, group_id=group, enabled=enabled, creds_id=creds_id, port=port, description=desc
 		).where(Server.server_id == server_id)
 		server_update.execute()
 	except Exception as e:

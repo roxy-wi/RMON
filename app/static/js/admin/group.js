@@ -44,7 +44,7 @@ function addGroup(dialog_id) {
     if (valid) {
         let json_data = {
             "name": name,
-            "desc": desc
+            "description": desc
         }
         $.ajax({
             url: api_v_prefix + "/group",
@@ -143,7 +143,7 @@ function updateGroup(id) {
     toastr.clear();
     let json_data = {
         "name": $('#name-' + id).val(),
-        "desc": $('#descript-' + id).val()
+        "description": $('#descript-' + id).val()
     }
     $.ajax({
         url: api_v_prefix + "/group/" + id,

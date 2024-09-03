@@ -12,7 +12,7 @@ import app.modules.roxywi.auth as roxywi_auth
 import app.modules.tools.alerting as alerting
 from app.middleware import get_user_params, check_group
 from app.modules.roxywi.class_models import BaseResponse, IdResponse, IdDataResponse, GroupQuery, ChannelRequest
-from app.views.server.views import BaseServer
+from app.modules.common.common_classes import SupportClass
 
 
 class ChannelView(MethodView):
@@ -69,7 +69,7 @@ class ChannelView(MethodView):
                   example: "Cool channel"
         """
         try:
-            group_id = BaseServer.return_group_id(query)
+            group_id = SupportClass.return_group_id(query)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
 
@@ -144,7 +144,7 @@ class ChannelView(MethodView):
         """
         roxywi_auth.page_for_admin(level=3)
         try:
-            group_id = BaseServer.return_group_id(body)
+            group_id = SupportClass.return_group_id(body)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
 
@@ -209,7 +209,7 @@ class ChannelView(MethodView):
         """
         roxywi_auth.page_for_admin(level=3)
         try:
-            group_id = BaseServer.return_group_id(body)
+            group_id = SupportClass.return_group_id(body)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
 
@@ -253,7 +253,7 @@ class ChannelView(MethodView):
             description: The message has been sent to the channel.
         """
         try:
-            group_id = BaseServer.return_group_id(query)
+            group_id = SupportClass.return_group_id(query)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
 
@@ -301,7 +301,7 @@ class ChannelView(MethodView):
             description: Channel Deleted
         """
         try:
-            group_id = BaseServer.return_group_id(query)
+            group_id = SupportClass.return_group_id(query)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
 
@@ -372,7 +372,7 @@ class ChannelsView(MethodView):
                     example: "'test tg'"
         """
         try:
-            group_id = BaseServer.return_group_id(query)
+            group_id = SupportClass.return_group_id(query)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
 

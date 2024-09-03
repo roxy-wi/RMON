@@ -6,7 +6,8 @@ import app.modules.db.server as server_sql
 import app.modules.common.common as common
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.server.server as server_mod
-from app.views.server.views import ServerView, CredView
+from app.views.server.views import ServerView
+from app.views.server.cred_views import CredView
 
 
 @bp.before_request
@@ -41,7 +42,7 @@ def check_server(server_id):
     status = {
         "status": result,
         'name': server.hostname.replace("'", ""),
-        'desc': server.desc.replace("'", ""),
+        'desc': server.description.replace("'", ""),
         'ip': server.ip,
         'port': server.port,
         'enabled': server.enabled,

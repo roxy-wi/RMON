@@ -75,7 +75,7 @@ function addServer(dialog_id) {
             "group_id": server_group,
             "enabled": enable,
             "creds_id": cred,
-            "desc": $('#desc').val(),
+            "description": $('#desc').val(),
         }
         $.ajax({
             url: "/server",
@@ -157,7 +157,7 @@ function updateServer(id) {
         "group_id": server_group,
         "enabled": enable,
         "creds_id": $('#credentials-' + id + ' option:selected').val(),
-        "desc": $('#desc-' + id).val()
+        "description": $('#desc-' + id).val()
     }
     $.ajax({
         url: api_v_prefix + "/server/" + id,

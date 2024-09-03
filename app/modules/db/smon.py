@@ -6,7 +6,7 @@ from peewee import fn
 
 from app.modules.db.db_model import (
 	SmonAgent, Server, SMON, SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonHistory, SmonStatusPageCheck,
-	SmonStatusPage, SmonGroup, SmonSMTPCheck
+	SmonStatusPage, SmonGroup, SmonSMTPCheck, SmonRabbitCheck
 )
 from app.modules.db.common import out_error
 import app.modules.roxy_wi_tools as roxy_wi_tools
@@ -232,7 +232,7 @@ def select_one_smon(smon_id: int, check_type_id: int) -> tuple:
 def insert_smon(name, enable, group_id, desc, telegram, slack, pd, mm, user_group, check_type, timeout):
 	try:
 		last_id = SMON.insert(
-			name=name, enabled=enable, desc=desc, group_id=group_id, telegram_channel_id=telegram, slack_channel_id=slack,
+			name=name, enabled=enable, description=desc, group_id=group_id, telegram_channel_id=telegram, slack_channel_id=slack,
 			pd_channel_id=pd, mm_channel_id=mm, user_group=user_group, status='3', check_type=check_type, check_timeout=timeout
 		).execute()
 		return last_id
@@ -251,6 +251,16 @@ def insert_smon_smtp(smon_id, hostname, port, username, password, interval, agen
 	try:
 		SmonSMTPCheck.insert(
 			smon_id=smon_id, ip=hostname, port=port, username=username, password=password, interval=interval, agent_id=agent_id, ignore_ssl_error=ignore_ssl_error
+		).on_conflict('replace').execute()
+	except Exception as e:
+		out_error(e)
+
+
+def insert_smon_rabbit(smon_id, hostname, port, username, password, interval, agent_id, ignore_ssl_error, vhost):
+	try:
+		SmonRabbitCheck.insert(
+			smon_id=smon_id, ip=hostname, port=port, username=username, password=password, interval=interval, agent_id=agent_id,
+			ignore_ssl_error=ignore_ssl_error, vhost=vhost
 		).on_conflict('replace').execute()
 	except Exception as e:
 		out_error(e)
@@ -499,15 +509,25 @@ def get_smon_service_name_by_id(smon_id: int) -> str:
 
 def select_smon_history(smon_id: int, limit: int = 40) -> SmonHistory:
 	try:
-		return SmonHistory.select().where(SmonHistory.smon_id == smon_id).limit(limit).order_by(SmonHistory.date.desc()).execute()
+		return SmonHistory.select().where(SmonHistory.smon_id == smon_id).limit(limit).order_by(SmonHistory.date.desc())
 	except Exception as e:
 		out_error(e)
+
+
+def get_history(smon_id: int) -> SmonHistory:
+	try:
+		res = SmonHistory.select().where(SmonHistory.smon_id == smon_id).order_by(SmonHistory.date.desc()).get()
+		return res
+	except Exception as e:
+		out_error(e)
+	finally:
+		del res
 
 
 def update_check(smon_id, name, telegram, slack, pd, mm, group_id, desc, en, timeout):
 	query = (SMON.update(
 		name=name, telegram_channel_id=telegram, slack_channel_id=slack, pd_channel_id=pd, mm_channel_id=mm,
-		group_id=group_id, desc=desc, enabled=en, updated_at=datetime.now(), check_timeout=timeout
+		group_id=group_id, description=desc, enabled=en, updated_at=datetime.now(), check_timeout=timeout
 	).where(SMON.id == smon_id))
 	try:
 		query.execute()

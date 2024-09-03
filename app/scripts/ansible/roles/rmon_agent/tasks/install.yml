@@ -26,6 +26,10 @@
   - "rmon_checks.py"
   - "modules/checks/http_check.py"
   - "modules/checks/smtp_check.py"
+  - "modules/checks/rabbitmq_check.py"
+  - "modules/checks/tcp_check.py"
+  - "modules/checks/dns_check.py"
+  - "modules/checks/ping_check.py"
   - "wsgi.py"
   - "requirements.txt"
   - "modules/db/check_result.py"
@@ -55,7 +59,7 @@
 - name: Try to upgrade pycurl
   pip:
     name: pycurl
-    executable: pip3
+    executable: /usr/local/bin/pip3
     state: latest
     extra_args: --upgrade --ignore-installed
   ignore_errors: yes

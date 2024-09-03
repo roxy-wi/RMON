@@ -250,7 +250,7 @@ def smon_history_metric_chart(check_id, check_type_id):
         while True:
             json_metric = {}
             is_enabled = 1
-            chart_metrics = smon_sql.select_smon_history(check_id, 1)
+            chart_metrics = smon_sql.get_history(check_id)
             uptime = smon_mod.check_uptime(check_id)
             smon = smon_sql.select_one_smon(check_id, check_type_id)
             agents = smon_sql.get_agents(g.user_params['group_id'])
@@ -273,32 +273,31 @@ def smon_history_metric_chart(check_id, check_type_id):
                 else:
                     json_metric['agent'] = 'None'
 
-            for i in chart_metrics.iterator():
-                json_metric['time'] = common.get_time_zoned_date(i.date, '%H:%M:%S')
-                # json_metric['value'] = "{:.3f}".format(i.response_time)
-                json_metric['value'] = i.response_time
-                json_metric['mes'] = str(i.mes)
-                json_metric['uptime'] = uptime
-                json_metric['avg_res_time'] = avg_res_time
-                json_metric['interval'] = interval
-                json_metric['status'] = str(i.status) if is_enabled else 4
-                if check_type_id in (2, 3):
-                    json_metric['name_lookup'] = str(i.name_lookup)
-                    json_metric['connect'] = str(i.connect)
-                    json_metric['app_connect'] = str(i.app_connect)
-                    if check_type_id == 3:
-                        continue
-                    json_metric['pre_transfer'] = str(i.pre_transfer)
-                    if float(i.redirect) <= 0:
-                        json_metric['redirect'] = '0'
-                    else:
-                        json_metric['redirect'] = str(i.redirect)
-                    if float(i.start_transfer) <= 0:
-                        json_metric['start_transfer'] = '0'
-                    else:
-                        json_metric['start_transfer'] = str(i.start_transfer)
-                    json_metric['m_download'] = str(i.download)
+            json_metric['time'] = common.get_time_zoned_date(chart_metrics.date, '%H:%M:%S')
+            json_metric['value'] = chart_metrics.response_time
+            json_metric['mes'] = str(chart_metrics.mes)
+            json_metric['uptime'] = uptime
+            json_metric['avg_res_time'] = avg_res_time
+            json_metric['interval'] = interval
+            json_metric['status'] = str(chart_metrics.status) if is_enabled else 4
+            if check_type_id in (2, 3):
+                json_metric['name_lookup'] = str(chart_metrics.name_lookup)
+                json_metric['connect'] = str(chart_metrics.connect)
+                json_metric['app_connect'] = str(chart_metrics.app_connect)
+                if check_type_id == 3:
+                    continue
+                json_metric['pre_transfer'] = str(chart_metrics.pre_transfer)
+                if float(chart_metrics.redirect) <= 0:
+                    json_metric['redirect'] = '0'
+                else:
+                    json_metric['redirect'] = str(chart_metrics.redirect)
+                if float(chart_metrics.start_transfer) <= 0:
+                    json_metric['start_transfer'] = '0'
+                else:
+                    json_metric['start_transfer'] = str(chart_metrics.start_transfer)
+                json_metric['m_download'] = str(chart_metrics.download)
             yield f"data:{json.dumps(json_metric)}\n\n"
+            del chart_metrics, smon
             time.sleep(interval)
 
     response = Response(stream_with_context(get_chart_data()), mimetype="text/event-stream")

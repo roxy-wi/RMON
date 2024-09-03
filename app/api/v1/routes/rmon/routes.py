@@ -1,9 +1,7 @@
 from app.api.v1.routes.rmon import bp
 from app.views.agent.views import AgentView, AgentsView
-from app.views.check.views import (
-    CheckHttpView, CheckTcpView, CheckDnsView, CheckPingView, ChecksViewHttp, ChecksViewDns, ChecksViewTcp,
-    ChecksViewPing, CheckSmtpView, ChecksViewSmtp
-)
+from app.views.check.views import CheckHttpView, CheckTcpView, CheckDnsView, CheckPingView, CheckSmtpView, CheckRabbitView
+from app.views.check.checks_view import ChecksViewHttp, ChecksViewDns, ChecksViewTcp, ChecksViewPing, ChecksViewSmtp, ChecksViewRabbit
 from app.views.check.status_page_views import StatusPageView
 
 
@@ -19,6 +17,7 @@ bp.add_url_rule('/checks/dns', view_func=ChecksViewDns.as_view('dns_checks'))
 bp.add_url_rule('/checks/tcp', view_func=ChecksViewTcp.as_view('tcp_checks'))
 bp.add_url_rule('/checks/ping', view_func=ChecksViewPing.as_view('ping_checks'))
 bp.add_url_rule('/checks/smtp', view_func=ChecksViewSmtp.as_view('smtp_checks'))
+bp.add_url_rule('/checks/rabbitmq', view_func=ChecksViewRabbit.as_view('rabbit_checks'))
 
 register_api(AgentView, 'agent', '/agent', 'agent_id')
 register_api(CheckHttpView, 'http_check', '/check/http', 'check_id')
@@ -26,4 +25,5 @@ register_api(CheckTcpView, 'tcp_check', '/check/tcp', 'check_id')
 register_api(CheckPingView, 'ping_check', '/check/ping', 'check_id')
 register_api(CheckDnsView, 'dns_check', '/check/dns', 'check_id')
 register_api(CheckSmtpView, 'smtp_check', '/check/smtp', 'check_id')
+register_api(CheckRabbitView, 'rabbit_check', '/check/rabbitmq', 'check_id')
 register_api(StatusPageView, 'status_page', '/status-page', 'page_id')

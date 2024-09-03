@@ -14,10 +14,11 @@
 - name: Upgrade pip3
   pip:
     name: pip
-    executable: pip3
+    executable: /usr/local/bin/pip3
     state: latest
     extra_args: --upgrade --ignore-installed
 
 - name: Install RMON Agent python requirements
   ansible.builtin.pip:
+    executable: /usr/local/bin/pip3
     requirements: /var/lib/rmon/rmon-agent/requirements.txt

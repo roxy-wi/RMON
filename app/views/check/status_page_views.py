@@ -55,7 +55,7 @@ class StatusPageView(MethodView):
                   type: string
                   description: The slug of the status page.
                   example: "test"
-                desc:
+                description:
                   type: string
                   description: The description of the status page.
                   example: "admin"
@@ -87,7 +87,7 @@ class StatusPageView(MethodView):
                       format: date-time
                       description: The check creation time.
                       example: "Fri, 28 Jun 2024 18:08:26 GMT"
-                    desc:
+                    description:
                       type: string
                       description: The description of the check.
                       example: ""

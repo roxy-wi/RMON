@@ -173,6 +173,10 @@ def update_db_v_1_0_7_1():
 def update_db_v_1_1():
 	try:
 		migrate(
+			migrator.rename_column('smon_status_pages', 'desc', 'description'),
+			migrator.rename_column('smon_agents', 'desc', 'description'),
+			migrator.rename_column('servers', 'desc', 'description'),
+			migrator.rename_column('smon', 'desc', 'description'),
 			migrator.rename_column('smon_status_pages', 'style', 'custom_style'),
 			migrator.rename_column('smon_status_pages', 'desc', 'description'),
 			migrator.rename_column('telegram', 'groups', 'group_id'),
@@ -189,7 +193,7 @@ def update_db_v_1_1():
 			migrator.rename_column('cred', 'groups', 'group_id'),
 		)
 	except Exception as e:
-		if e.args[0] == 'no such column: "style"' or str(e) == '(1060, no such column: "style")':
+		if e.args[0] == 'no such column: "desc"' or str(e) == '(1060, no such column: "desc")':
 			print("Updating... DB has been updated to version 1.1")
 		elif e.args[0] == "'bool' object has no attribute 'sql'":
 			print("Updating... DB has been updated to version 1.1")
@@ -214,7 +218,7 @@ def update_db_v_1_1_2():
 
 def update_ver():
 	try:
-		Version.update(version='1.1.2').execute()
+		Version.update(version='1.1.3').execute()
 	except Exception:
 		print('Cannot update version')
 

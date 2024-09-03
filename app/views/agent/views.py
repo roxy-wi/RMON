@@ -10,8 +10,7 @@ import app.modules.tools.smon_agent as smon_agent
 from app.middleware import get_user_params, check_group
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 from app.modules.roxywi.class_models import BaseResponse, IdResponse, RmonAgent, GroupQuery
-from app.views.server.views import BaseServer
-
+from app.modules.common.common_classes import SupportClass
 
 class AgentView(MethodView):
     method_decorators = ["GET", "POST", "PUT", "DELETE"]
@@ -52,7 +51,7 @@ class AgentView(MethodView):
               items:
                 id: Agent
                 properties:
-                  desc:
+                  description:
                     type: string
                     description: A brief description of the Agent
                     example: Agent description
@@ -73,38 +72,7 @@ class AgentView(MethodView):
                     description: The Agent's port
                     example: 5102
                   server_id:
-                    type: object
-                    properties:
-                      alert:
-                        type: integer
-                        example: 0
-                      cred:
-                        type: integer
-                        example: 1
-                      desc:
-                        type: string
-                        example: ""
-                      enable:
-                        type: integer
-                        example: 1
-                      group_id:
-                        type: string
-                        example: "1"
-                      hostname:
-                        type: string
-                        example: "localhost"
-                      ip:
-                        type: string
-                        example: "127.0.0.1"
-                      port:
-                        type: integer
-                        example: 22
-                      pos:
-                        type: integer
-                        example: 0
-                      server_id:
-                        type: integer
-                        example: 1
+                    type: integer
                   shared:
                     type: integer
                     description: Indicates whether the Agent is shared or not
@@ -125,7 +93,7 @@ class AgentView(MethodView):
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get agent')
         agent_list = []
         for agent in agents:
-            agent_dict = model_to_dict(agent)
+            agent_dict = model_to_dict(agent, recurse=False)
             agent_list.append(agent_dict)
         try:
             if len(agent_list) == 0:
@@ -150,7 +118,6 @@ class AgentView(MethodView):
                 - name
                 - server_id
                 - port
-                - desc
                 - enabled
                 - shared
                 - reconfigure
@@ -167,7 +134,7 @@ class AgentView(MethodView):
                   type: string
                   description: The Agent's port
                   example: 5102
-                desc:
+                description:
                   type: string
                   description: A brief description of the Agent
                   example: Agent description
@@ -222,7 +189,6 @@ class AgentView(MethodView):
                 - name
                 - server_id
                 - port
-                - desc
                 - enabled
                 - shared
                 - agent_id
@@ -240,7 +206,7 @@ class AgentView(MethodView):
                   type: string
                   description: The Agent's port
                   example: 5102
-                desc:
+                description:
                   type: string
                   description: A brief description of the Agent
                   example: Agent description
@@ -331,7 +297,7 @@ class AgentsView(MethodView):
               items:
                 id: Agent
                 properties:
-                  desc:
+                  description:
                     type: string
                     description: A brief description of the Agent
                     example: Agent description
@@ -360,7 +326,7 @@ class AgentsView(MethodView):
                       cred:
                         type: integer
                         example: 1
-                      desc:
+                      description:
                         type: string
                         example: ""
                       enable:
@@ -394,7 +360,7 @@ class AgentsView(MethodView):
                     format: uuid
                     example: cf2cc8d2-4c44-48d1-9ed3-f6f49f8327fa
         """
-        group_id = BaseServer.return_group_id(query)
+        group_id = SupportClass.return_group_id(query)
         agents = smon_sql.get_agents(group_id)
         agent_list = []
         for agent in agents:

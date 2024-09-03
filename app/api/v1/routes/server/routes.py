@@ -1,5 +1,6 @@
 from app.api.v1.routes.server import bp
-from app.views.server.views import ServerView, CredView, CredsView
+from app.views.server.views import ServerView
+from app.views.server.cred_views import CredView, CredsView
 
 
 def register_api(view, endpoint, url, pk='check_id', pk_type='int'):
@@ -9,5 +10,5 @@ def register_api(view, endpoint, url, pk='check_id', pk_type='int'):
 
 
 register_api(ServerView, 'server', '', 'server_id')
-register_api(CredView, 'cred', '/cred', 'creds_id')
+register_api(CredView, 'cred', '/cred', 'cred_id')
 bp.add_url_rule('/creds', view_func=CredsView.as_view('creds'))

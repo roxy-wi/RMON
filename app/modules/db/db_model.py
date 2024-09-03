@@ -76,7 +76,7 @@ class Server(BaseModel):
     creds_id = IntegerField(constraints=[SQL('DEFAULT 1')])
     alert = IntegerField(constraints=[SQL('DEFAULT 0')])
     port = IntegerField(constraints=[SQL('DEFAULT 22')])
-    desc = CharField(null=True)
+    description = CharField(null=True)
     pos = IntegerField(constraints=[SQL('DEFAULT 0')])
 
     class Meta:
@@ -194,7 +194,7 @@ class SMON(BaseModel):
     port = IntegerField(null=True)
     status = IntegerField(constraints=[SQL('DEFAULT 1')])
     enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
-    desc = CharField(null=True)
+    description = CharField(null=True)
     response_time = CharField(null=True)
     time_state = DateTimeField(constraints=[SQL('DEFAULT "0000-00-00 00:00:00"')])
     group_id = IntegerField(null=True)
@@ -299,7 +299,7 @@ class SmonAgent(BaseModel):
     name = CharField()
     uuid = CharField()
     enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
-    desc = CharField()
+    description = CharField()
     shared = IntegerField(constraints=[SQL('DEFAULT 0')])
     port = IntegerField(constraints=[SQL('DEFAULT 5701')])
 
@@ -332,6 +332,23 @@ class SmonSMTPCheck(BaseModel):
 
     class Meta:
         table_name = 'smon_smtp_check'
+        primary_key = False
+
+
+class SmonRabbitCheck(BaseModel):
+    smon_id = ForeignKeyField(SMON, on_delete='Cascade', unique=True)
+    ip = CharField()
+    port = IntegerField()
+    username = CharField()
+    password = CharField()
+    use_tls = CharField(constraints=[SQL('DEFAULT 0')])
+    interval = IntegerField(constraints=[SQL('DEFAULT 120')])
+    agent_id = IntegerField(constraints=[SQL('DEFAULT 1')])
+    vhost = CharField(constraints=[SQL('DEFAULT "/"')])
+    ignore_ssl_error = IntegerField(constraints=[SQL('DEFAULT 0')])
+
+    class Meta:
+        table_name = 'smon_rabbit_check'
         primary_key = False
 
 
@@ -418,5 +435,5 @@ def create_tables():
         conn.create_tables(
             [Groups, User, Server, Role, Telegram, Slack, UserGroups, Setting, Cred, Version, ActionHistory,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
-             SmonStatusPage, SmonStatusPageCheck, SMON, SmonGroup, MM, RMONAlertsHistory, SmonSMTPCheck]
+             SmonStatusPage, SmonStatusPageCheck, SMON, SmonGroup, MM, RMONAlertsHistory, SmonSMTPCheck, SmonRabbitCheck]
         )

@@ -96,7 +96,7 @@ function addAgent(dialog_id, agent_id=0, edit=false, reconfigure=false) {
         'name': agent_name.val(),
         'server_id': agent_server_id.val(),
         'port': agent_port.val(),
-        'desc': agent_desc,
+        'description': agent_desc,
         'enabled': agent_enabled,
         'shared': agent_shared
     };
@@ -140,7 +140,7 @@ function getAgentSettings(agent_id) {
 			$('#new-agent-port').val(data['port']);
 			generateSelect('#new-agent-server-id', data['server_id']['server_id'], data['server_id']['hostname'], 'selected')
 			$('#new-agent-server-id').attr('disabled', 'disabled');
-			$('#new-agent-desc').val(data['desc']);
+			$('#new-agent-desc').val(data['description']);
 			$('#new-agent-enabled').checkboxradio("refresh");
 			if (data['enabled'] == '1') {
 				$('#new-agent-enabled').prop('checked', true)

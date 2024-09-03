@@ -5,7 +5,8 @@ import distro
 import app.modules.db.roxy as roxy_sql
 import app.modules.roxywi.roxy as roxywi_mod
 import app.modules.server.server as server_mod
-from app.modules.db.db_model import SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonSMTPCheck
+from app.modules.db.db_model import SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonSMTPCheck, \
+    SmonRabbitCheck
 
 
 def get_services_status(update_cur_ver=0):
@@ -97,7 +98,7 @@ def get_cur_tool_version(tool_name: str) -> str:
 
 def get_model_for_check(
         check_type: str = None, check_type_id: int = None
-) -> Type[Union[SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonSMTPCheck]]:
+) -> Type[Union[SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonSMTPCheck, SmonRabbitCheck]]:
     if check_type:
         check_models = {
             'tcp': SmonTcpCheck,
@@ -105,6 +106,7 @@ def get_model_for_check(
             'dns': SmonDnsCheck,
             'ping': SmonPingCheck,
             'smtp': SmonSMTPCheck,
+            'rabbitmq': SmonRabbitCheck
         }
     elif check_type_id:
         check_type = str(check_type_id)
@@ -114,6 +116,7 @@ def get_model_for_check(
             '3': SmonSMTPCheck,
             '5': SmonDnsCheck,
             '4': SmonPingCheck,
+            '6': SmonRabbitCheck,
         }
     else:
         raise Exception('Wrong check_type')

@@ -37,8 +37,8 @@
     </span>
 </div>
 <div class="desc">
-    {% if s.smon_id.desc %}
-        <b>{{s.smon_id.desc.strip("'")}}</b>
+    {% if s.smon_id.description %}
+        <b>{{s.smon_id.description.strip("'")}}</b>
     {% else %}
         {{lang.words.desc|title()}}: {{lang.words.none}}
     {% endif %}

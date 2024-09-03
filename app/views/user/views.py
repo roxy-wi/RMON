@@ -18,7 +18,7 @@ from app.modules.roxywi.class_models import (
     UserPost, UserPut, IdResponse, IdDataResponse, BaseResponse, AddUserToGroup, GroupQuery
 )
 from app.middleware import get_user_params, page_for_admin, check_group
-from app.views.server.views import BaseServer
+from app.modules.common.common_classes import SupportClass
 
 
 class UserView(MethodView):
@@ -592,7 +592,7 @@ class UsersView(MethodView):
                   type: 'string'
                   description: 'Error message'
         """
-        group_id = BaseServer.return_group_id(query)
+        group_id = SupportClass.return_group_id(query)
         try:
             users = user_sql.get_users_in_group(group_id)
         except Exception as e:

@@ -9,7 +9,8 @@ import app.modules.server.server as server_mod
 import app.modules.tools.smon_agent as smon_agent
 import app.modules.roxywi.common as roxywi_common
 from app.modules.roxywi.exception import RoxywiCheckLimits
-from app.modules.roxywi.class_models import HttpCheckRequest, DnsCheckRequest, PingCheckRequest, TcpCheckRequest, SmtpCheckRequest
+from app.modules.roxywi.class_models import HttpCheckRequest, DnsCheckRequest, PingCheckRequest, TcpCheckRequest, \
+    SmtpCheckRequest, RabbitCheckRequest
 
 
 def create_check(json_data, user_group, check_type, show_new=1) -> Union[bool, tuple]:
@@ -17,7 +18,7 @@ def create_check(json_data, user_group, check_type, show_new=1) -> Union[bool, t
         name = json_data.name
         enable = json_data.enabled
         group = json_data.group
-        desc = json_data.desc
+        desc = json_data.description
         telegram = json_data.tg
         slack = json_data.slack
         pd = json_data.pd
@@ -47,7 +48,10 @@ def create_check(json_data, user_group, check_type, show_new=1) -> Union[bool, t
         return False
 
 
-def send_new_check(last_id: int, data: Union[HttpCheckRequest, DnsCheckRequest, TcpCheckRequest, PingCheckRequest, SmtpCheckRequest]) -> None:
+def send_new_check(
+        last_id: int,
+        data: Union[HttpCheckRequest, DnsCheckRequest, TcpCheckRequest, PingCheckRequest, SmtpCheckRequest, RabbitCheckRequest]
+) -> None:
     agent_ip = smon_sql.select_server_ip_by_agent_id(data.agent_id)
     if isinstance(data, HttpCheckRequest):
         smon_agent.send_http_checks(data.agent_id, agent_ip, last_id)
@@ -59,6 +63,8 @@ def send_new_check(last_id: int, data: Union[HttpCheckRequest, DnsCheckRequest, 
         smon_agent.send_ping_checks(data.agent_id, agent_ip, last_id)
     elif isinstance(data, SmtpCheckRequest):
         smon_agent.send_smtp_checks(data.agent_id, agent_ip, last_id)
+    elif isinstance(data, RabbitCheckRequest):
+        smon_agent.send_rabbit_checks(data.agent_id, agent_ip, last_id)
 
 
 def create_http_check(data: HttpCheckRequest, check_id: int) -> tuple[dict, int]:
@@ -92,6 +98,13 @@ def create_smtp_check(data: SmtpCheckRequest, last_id: int) -> tuple[dict, int]:
         return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create Ping check')
 
 
+def create_rabbit_check(data: RabbitCheckRequest, last_id: int) -> tuple[dict, int]:
+    try:
+        smon_sql.insert_smon_rabbit(last_id, data.ip, data.port, data.username, data.password, data.interval, data.agent_id, data.ignore_ssl_error, data.vhost)
+    except Exception as e:
+        return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create Ping check')
+
+
 def create_tcp_check(data: TcpCheckRequest, last_id: int) -> tuple[dict, int]:
     try:
         smon_sql.insert_smon_tcp(last_id, data.ip, data.port, data.interval, data.agent_id)
@@ -104,7 +117,7 @@ def update_smon(smon_id, json_data, user_group) -> None:
         name = json_data.name
         enabled = json_data.enabled
         group = json_data.group
-        desc = json_data.desc
+        desc = json_data.description
         telegram = json_data.tg
         slack = json_data.slack
         pd = json_data.pd
@@ -266,7 +279,7 @@ def show_status_page(slug: str) -> str:
         en = ''
         for s in smon:
             name = s.name
-            desc = s.desc
+            desc = s.description
             check_type = s.check_type
             en = s.enabled
             if s.group_id:
@@ -274,7 +287,7 @@ def show_status_page(slug: str) -> str:
             else:
                 group = 'No group'
 
-        checks_status[check_id] = {'uptime': uptime, 'name': name, 'desc': desc, 'group': group,
+        checks_status[check_id] = {'uptime': uptime, 'name': name, 'description': desc, 'group': group,
                                    'check_type': check_type, 'en': en}
 
     return render_template('smon/status_page.html', page=page, checks_status=checks_status)
@@ -304,7 +317,7 @@ def check_checks_limit():
 
 
 def get_check_id_by_name(name: str) -> int:
-    checking_types = {'tcp': '1', 'http': '2', 'smtp': '3', 'ping': '4', 'dns': '5'}
+    checking_types = {'tcp': '1', 'http': '2', 'smtp': '3', 'ping': '4', 'dns': '5', 'rabbitmq': '6'}
     return checking_types[name]
 
 

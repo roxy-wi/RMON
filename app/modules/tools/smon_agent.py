@@ -96,7 +96,6 @@ def update_agent(agent_id: int, data: RmonAgent):
     if data.reconfigure:
         agent_uuid = smon_sql.get_agent_uuid(agent_id)
         server_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
-        print('agent_uuid',agent_uuid)
         try:
             inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid, json_data['port'])
             run_ansible(inv, server_ips, 'rmon_agent')
@@ -273,6 +272,31 @@ def send_smtp_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             roxywi_common.handle_exceptions(e, 'RMON', 'Cannot send SMTP check')
 
 
+def send_rabbit_checks(agent_id: int, server_ip: str, check_id=None) -> None:
+    if check_id:
+        checks = smon_sql.select_one_smon(check_id, 6)
+    else:
+        checks = smon_sql.select_en_smon(agent_id, 'rabbitmq')
+    for check in checks:
+        json_data = {
+            'check_type': 'rabbitmq',
+            'name': check.smon_id.name,
+            'server': check.ip,
+            'port': check.port,
+            'username': check.username,
+            'password': check.password,
+            'vhost': check.vhost,
+            'interval': check.interval,
+            'timeout': check.smon_id.check_timeout,
+            'ignore_ssl_error': check.ignore_ssl_error,
+        }
+        api_path = f'check/{check.smon_id}'
+        try:
+            send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
+        except Exception as e:
+            roxywi_common.handle_exceptions(e, 'RMON', 'Cannot send RabbitMQ check')
+
+
 def send_checks(agent_id: int) -> None:
     server_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
     try:
@@ -295,3 +319,7 @@ def send_checks(agent_id: int) -> None:
         send_smtp_checks(agent_id, server_ip)
     except Exception as e:
         roxywi_common.logging(f'Agent ID: {agent_id}', f'error: Cannot send SMTP checks: {e}')
+    try:
+        send_rabbit_checks(agent_id, server_ip)
+    except Exception as e:
+        roxywi_common.logging(f'Agent ID: {agent_id}', f'error: Cannot send RabbitMQ checks: {e}')
