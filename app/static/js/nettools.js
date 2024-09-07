@@ -172,4 +172,44 @@ $( function() {
         });
         event.preventDefault();
     });
+    $("#nettools_ipcalc_form").on("click", ":submit", function (e) {
+        $('#ajax-nettools').html('');
+        let frm = $('#nettools_ipcalc_form');
+        let ip = $('#nettools_address').val();
+        let netmask = $('#nettools_netmask').val();
+        if (ip === '') {
+            toastr.warning('Enter a valid IP address');
+            return false;
+        }
+        if (netmask === '') {
+            toastr.warning('Enter a valid Netmask');
+            return false;
+        }
+        $.ajax({
+            url: frm.attr('action'),
+            data: JSON.stringify({'ip': ip, 'netmask': netmask}),
+            type: frm.attr('method'),
+            contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                // data = JSON.parse(data);
+                if (data.status === 'failed') {
+                    toastr.clear();
+                    toastr.error(data.error);
+                } else {
+                    toastr.clear();
+                    $('#ajax-nettools').html(
+                        '<div class="ping_pre"><b>Address</b>: ' + data.address + '<br />' +
+                        '<b>Netmask</b>: ' + data.netmask + '<br />' +
+                        '<b>Network</b>: ' + data.network + '<br />' +
+                        '<b>Broadcast</b>: ' + data.broadcast + '<br />' +
+                        '<b>Host min</b>: ' + data.min + '<br />' +
+                        '<b>Host max</b>: ' + data.max + '<br />' +
+                        '<b>Hosts</b>: ' + data.hosts +
+                        '</div>'
+                    );
+                }
+            }
+        });
+        event.preventDefault();
+    });
 });

@@ -174,6 +174,17 @@ def nettools_check(check):
             return jsonify(nettools_mod.whois_check(domain_name))
         except Exception as e:
             return str(e)
+    elif check == 'ipcalc':
+        try:
+            ip_add = common.is_ip_or_dns(request.json.get('ip'))
+            netmask = int(request.json.get('netmask'))
+        except Exception as e:
+            return ErrorResponse(error=f'Cannot calc: {e}').model_dump(mode='json'), 500
+
+        try:
+            return jsonify(nettools_mod.ip_calc(ip_add, netmask))
+        except Exception as e:
+            return ErrorResponse(error=f'Cannot calc: {e}').model_dump(mode='json'), 500
     else:
         return 'error: Wrong check'
 

@@ -104,7 +104,7 @@
     </table>
 </form>
 <form name="nettools_portscanner_form" id="nettools_portscanner_form" method="post" action="/nettools/portscan">
-    <table class="overview" style="width: 40%;float: left;">
+    <table class="overview" style="width: 30%;float: left;">
         <caption><h3>Port scanner</h3></caption>
         <tr class="overviewHead">
             <th class="padding10 first-collumn">{{lang.words.server|title()}}</th>
@@ -121,7 +121,7 @@
     </table>
 </form>
 <form name="nettools_whois_form" id="nettools_whois_form" method="post" action="/nettools/whois">
-    <table class="overview" style="width: 60%;">
+    <table class="overview" style="width: 30%;float: left">
         <caption><h3>Whois</h3></caption>
         <tr class="overviewHead">
             <th class="padding10 first-collumn">{{lang.words.name|title()}}</th>
@@ -133,6 +133,27 @@
             </td>
             <td class="padding10" style="width: 0">
                 <button type="submit" title="{{lang.words.check|title()}}" id="nettools_whois" name="nettools_whois" value="nettools_whois">{{lang.words.check|title()}}</button>
+            </td>
+        </tr>
+    </table>
+</form>
+<form name="nettools_ip_calc_form" id="nettools_ipcalc_form" method="post" action="/nettools/ipcalc">
+    <table class="overview" style="width: 40%;">
+        <caption><h3>IP {{lang.words.calculator}}</h3></caption>
+        <tr class="overviewHead">
+            <th class="padding10 first-collumn">IP {{lang.words.address|title()}}</th>
+            <th>{{lang.words.netmask}}</th>
+            <th></th>
+        </tr>
+        <tr>
+            <td class="padding10 first-collumn">
+                {{ input('nettools_address', placeholder='192.168.0.1') }}
+            </td>
+            <td>
+                {{ input('nettools_netmask', placeholder='24', type='number') }}
+            </td>
+            <td class="padding10" style="width: 0">
+                <button type="submit" title="{{lang.words.calculate|title()}}" id="nettools_ipcalc_form" name="nettools_ipcalc_form" value="nettools_ipcalc_form">{{lang.words.calculate|title()}}</button>
             </td>
         </tr>
     </table>
