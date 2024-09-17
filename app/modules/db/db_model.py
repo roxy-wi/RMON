@@ -73,7 +73,7 @@ class Server(BaseModel):
     ip = CharField(constraints=[SQL('UNIQUE')])
     group_id = CharField()
     enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
-    creds_id = IntegerField(constraints=[SQL('DEFAULT 1')])
+    cred_id = IntegerField(constraints=[SQL('DEFAULT 1')])
     alert = IntegerField(constraints=[SQL('DEFAULT 0')])
     port = IntegerField(constraints=[SQL('DEFAULT 22')])
     description = CharField(null=True)

@@ -5,10 +5,10 @@ from app.modules.db.common import out_error, not_unique_error
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 
 
-def add_server(hostname, ip, group, enabled, creds_id, port, desc):
+def add_server(hostname, ip, group, enabled, cred_id, port, desc):
 	try:
 		server_id = Server.insert(
-			hostname=hostname, ip=ip, group_id=group, enabled=enabled, creds_id=creds_id, port=port, description=desc
+			hostname=hostname, ip=ip, group_id=group, enabled=enabled, cred_id=cred_id, port=port, description=desc
 		).execute()
 		return server_id
 	except IntegrityError as e:
@@ -27,10 +27,10 @@ def delete_server(server_id):
 		return True
 
 
-def update_server(hostname, group, enabled, server_id, creds_id, port, desc):
+def update_server(hostname, group, enabled, server_id, cred_id, port, desc):
 	try:
 		server_update = Server.update(
-			hostname=hostname, group_id=group, enabled=enabled, creds_id=creds_id, port=port, description=desc
+			hostname=hostname, group_id=group, enabled=enabled, cred_id=cred_id, port=port, description=desc
 		).where(Server.server_id == server_id)
 		server_update.execute()
 	except Exception as e:

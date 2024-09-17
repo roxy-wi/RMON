@@ -46,7 +46,7 @@ def check_server(server_id):
         'ip': server.ip,
         'port': server.port,
         'enabled': server.enabled,
-        'creds_id': server.creds_id,
+        'cred_id': server.cred_id,
         'group_id': server.group_id
     }
     return jsonify(status)

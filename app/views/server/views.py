@@ -50,7 +50,7 @@ class ServerView(MethodView):
                 alert:
                   type: 'integer'
                   description: 'Alert status of the server'
-                creds_id:
+                cred_id:
                   type: 'integer'
                   description: 'Credentials ID'
                 description:
@@ -101,7 +101,7 @@ class ServerView(MethodView):
                 - hostname
                 - ip
                 - enabled
-                - creds_id
+                - cred_id
                 - port
               properties:
                 hostname:
@@ -113,7 +113,7 @@ class ServerView(MethodView):
                 enabled:
                   type: integer
                   description: If server is enabled or not
-                creds_id:
+                cred_id:
                   type: integer
                   description: The ID of the credentials
                 port:
@@ -167,7 +167,7 @@ class ServerView(MethodView):
               required:
                 - name
                 - enabled
-                - creds_id
+                - cred_id
                 - port
               properties:
                 name:
@@ -176,7 +176,7 @@ class ServerView(MethodView):
                 enabled:
                   type: integer
                   description: If server is enabled or not
-                creds_id:
+                cred_id:
                   type: integer
                   description: The ID of the credentials
                 port:
@@ -251,7 +251,7 @@ class ServersView(MethodView):
                 properties:
                   alert:
                     type: 'integer'
-                  creds_id:
+                  cred_id:
                     type: 'integer'
                   description:
                     type: 'string'

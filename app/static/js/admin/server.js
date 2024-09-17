@@ -246,7 +246,7 @@ function serverIsUp(server_id) {
 			}
 			$('#server_enabled-' + server_id).checkboxradio("refresh");
 			$('#servergroup-' + server_id).val(data.group_id).change();
-			$('#credentials-' + server_id).val(data.creds_id).change();
+			$('#credentials-' + server_id).val(data.cred_id).change();
 			$('#servergroup-' + server_id).selectmenu("refresh");
 			$('#credentials-' + server_id).selectmenu("refresh");
 		}

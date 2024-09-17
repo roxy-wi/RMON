@@ -48,9 +48,8 @@ def return_ssh_keys_path(server_ip: str, **kwargs) -> dict:
 		ssh_settings.setdefault('password', password)
 		ssh_settings.setdefault('key', ssh_key)
 		ssh_settings.setdefault('passphrase', passphrase)
-
 	try:
-		ssh_port = [str(server[10]) for server in server_sql.select_servers(server=server_ip)]
+		ssh_port = [str(server[7]) for server in server_sql.select_servers(server=server_ip)]
 		ssh_settings.setdefault('port', ssh_port[0])
 	except Exception as e:
 		raise Exception(f'error: Cannot get SSH port: {e}')

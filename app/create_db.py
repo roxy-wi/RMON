@@ -183,7 +183,7 @@ def update_db_v_1_1():
 			migrator.rename_column('pd', 'groups', 'group_id'),
 			migrator.rename_column('smon', 'en', 'enabled'),
 			migrator.rename_column('servers', 'groups', 'group_id'),
-			migrator.rename_column('servers', 'cred', 'creds_id'),
+			migrator.rename_column('servers', 'cred', 'cred_id'),
 			migrator.rename_column('servers', 'enable', 'enabled'),
 			migrator.rename_column('user', 'activeuser', 'enabled'),
 			migrator.rename_column('user', 'groups', 'group_id'),
@@ -217,10 +217,11 @@ def update_db_v_1_1_2():
 def update_db_v_1_1_3():
 	try:
 		migrate(
+			migrator.rename_column('servers', 'creds_id', 'cred_id'),
 			migrator.rename_column('servers', 'desc', 'description'),
 		)
 	except Exception as e:
-		if e.args[0] == 'no such column: "desc"' or str(e) == '(1060, no such column: "desc")':
+		if e.args[0] == 'no such column: "creds_id"' or str(e) == '(1060, no such column: "creds_id")':
 			print("Updating... DB has been updated to version 1.3")
 		elif e.args[0] == "'bool' object has no attribute 'sql'":
 			print("Updating... DB has been updated to version 1.3")

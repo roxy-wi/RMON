@@ -1,4 +1,3 @@
-from random import random
 from typing import Union
 
 from flask.views import MethodView
@@ -8,7 +7,6 @@ from flask_pydantic import validate
 from playhouse.shortcuts import model_to_dict
 
 import app.modules.db.smon as smon_sql
-import app.modules.db.region as region_sql
 import app.modules.roxywi.common as roxywi_common
 import app.modules.tools.smon as smon_mod
 from app.middleware import get_user_params, check_group
