@@ -242,9 +242,40 @@ def update_db_v_1_1_3_1():
 			print("An error occurred:", e)
 
 
+def update_db_v_1_1_4():
+	field = ForeignKeyField(Region, field=Region.id, null=True, on_delete='SET NULL')
+	try:
+		migrate(
+			migrator.add_column('smon', 'region_id', field),
+			migrator.add_column('smon_agents', 'region_id', field)
+		)
+	except Exception as e:
+		if e.args[0] == 'duplicate column name: region_id' or str(e) == '(1060, "Duplicate column name \'region_id\'")':
+			print('Updating... DB has been updated to version 1.1.4')
+		else:
+			print("An error occurred:", e)
+
+
+def update_db_v_1_1_4_1():
+	try:
+		if mysql_enable:
+			migrate(
+				migrator.add_column('cred', 'shared', IntegerField(default=0)),
+			)
+		else:
+			migrate(
+				migrator.add_column('cred', 'shared', IntegerField(constraints=[SQL('DEFAULT 0')])),
+			)
+	except Exception as e:
+		if e.args[0] == 'duplicate column name: shared' or str(e) == '(1060, "Duplicate column name \'shared\'")':
+			print('Updating... DB has been updated to version 1.1.4-1')
+		else:
+			print("An error occurred:", e)
+
+
 def update_ver():
 	try:
-		Version.update(version='1.1.3').execute()
+		Version.update(version='1.1.4').execute()
 	except Exception:
 		print('Cannot update version')
 
@@ -269,6 +300,8 @@ def update_all():
 	update_db_v_1_1_2()
 	update_db_v_1_1_3()
 	update_db_v_1_1_3_1()
+	update_db_v_1_1_4()
+	update_db_v_1_1_4_1()
 
 
 if __name__ == "__main__":

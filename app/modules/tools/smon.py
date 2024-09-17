@@ -24,6 +24,7 @@ def create_check(json_data, user_group, check_type, show_new=1) -> Union[bool, t
         pd = json_data.pd
         mm = json_data.mm
         timeout = json_data.timeout
+        region_id = json_data.region_id
     except Exception as e:
         raise e
 
@@ -35,7 +36,7 @@ def create_check(json_data, user_group, check_type, show_new=1) -> Union[bool, t
         smon_group_id = None
 
     try:
-        last_id = smon_sql.insert_smon(name, enable, smon_group_id, desc, telegram, slack, pd, mm, user_group, check_type, timeout)
+        last_id = smon_sql.insert_smon(name, enable, smon_group_id, desc, telegram, slack, pd, mm, user_group, check_type, timeout, region_id)
     except Exception as e:
         return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot create check: {name}')
 
@@ -123,6 +124,7 @@ def update_smon(smon_id, json_data, user_group) -> None:
         pd = json_data.pd
         mm = json_data.mm
         timeout = json_data.timeout
+        region_id = json_data.region_id
     except Exception as e:
         raise e
 
@@ -130,8 +132,8 @@ def update_smon(smon_id, json_data, user_group) -> None:
         agent_id_old = smon_sql.get_agent_id_by_check_id(smon_id)
         agent_ip = smon_sql.get_agent_ip_by_id(agent_id_old)
         smon_agent.delete_check(agent_id_old, agent_ip, smon_id)
-    except Exception as e:
-        raise e
+    except Exception:
+        pass
 
     if group:
         smon_group_id = smon_sql.get_smon_group_by_name(user_group, group)
@@ -141,7 +143,7 @@ def update_smon(smon_id, json_data, user_group) -> None:
         smon_group_id = None
 
     try:
-        smon_sql.update_check(smon_id, name, telegram, slack, pd, mm, smon_group_id, desc, enabled, timeout)
+        smon_sql.update_check(smon_id, name, telegram, slack, pd, mm, smon_group_id, desc, enabled, timeout, region_id)
     except Exception as e:
         raise e
 

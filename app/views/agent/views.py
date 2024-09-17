@@ -32,7 +32,8 @@ class AgentView(MethodView):
         else:
             self.json_data = None
 
-    def get(self, agent_id: int):
+    @staticmethod
+    def get(agent_id: int):
         """
         Get an agent
         ---
@@ -239,7 +240,8 @@ class AgentView(MethodView):
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot update agent')
 
-    def delete(self, agent_id: int):
+    @staticmethod
+    def delete(agent_id: int):
         """
         Remove a specific agent.
         ---
@@ -363,8 +365,5 @@ class AgentsView(MethodView):
         """
         group_id = SupportClass.return_group_id(query)
         agents = smon_sql.get_agents(group_id)
-        agent_list = []
-        for agent in agents:
-            agent_dict = model_to_dict(agent)
-            agent_list.append(agent_dict)
+        agent_list = [model_to_dict(agent, recurse=False) for agent in agents]
         return jsonify(agent_list)

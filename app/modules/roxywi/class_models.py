@@ -56,7 +56,8 @@ class ErrorResponse(BaseModel):
 class BaseCheckRequest(BaseModel):
     name: EscapedString
     description: Optional[str] = ''
-    agent_id: int
+    region_id: Optional[int] = None
+    agent_id: Optional[int] = None
     timeout: Annotated[int, Le(59), Gt(1)] = 2
     enabled: Optional[bool] = 1
     tg: Optional[int] = 0
@@ -83,6 +84,19 @@ class BaseCheckRequest(BaseModel):
                 raise ValueError('interval must be an integer')
         if timeout >= interval:
             raise ValueError('timeout value must be less than interval')
+        return values
+
+    @root_validator(pre=True)
+    @classmethod
+    def region_or_agent_id(cls, values):
+        region_id = None
+        agent_id = None
+        if 'region_id' in values:
+            region_id = values['region_id']
+        if 'agent_id' in values:
+            agent_id = values['agent_id']
+        if region_id is None and agent_id is None:
+            raise ValueError('Region or Agent must be set')
         return values
 
 
@@ -202,6 +216,7 @@ class CredRequest(BaseModel):
     password: Optional[EscapedString] = None
     key_enabled: Optional[bool] = 1
     group_id: Optional[int] = None
+    shared: Optional[int] = 0
 
 
 class CredUploadRequest(BaseModel):
@@ -227,3 +242,12 @@ class StatusPageRequest(BaseModel):
     custom_style: Optional[EscapedString] = None
     checks: list
     group_id: Optional[int] = None
+
+
+class RegionRequest(BaseModel):
+    name: EscapedString
+    description: Optional[EscapedString] = None
+    shared: Optional[bool] = 0
+    enabled: Optional[bool] = 1
+    group_id: Optional[int] = None
+    agents: list[int]

@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}{{ lang.menu_links.monitoring.smon.agent }}{% endblock %}
-{% block h2 %}{{ lang.menu_links.monitoring.smon.agent }}{% endblock %}
 {% block content %}
 {% from 'include/input_macros.html' import input, select %}
 <script src="{{ url_for('static', filename='js/smon.js') }}"></script>
 <script src="{{ url_for('static', filename='js/agent.js') }}"></script>
+<script src="{{ url_for('static', filename='js/region.js') }}"></script>
 <script src="{{ url_for('static', filename='js/jquery.timeago.js') }}" type="text/javascript"></script>
 <link href="{{ url_for('static', filename='css/servers.css') }}" rel="stylesheet"/>
 <link href="{{ url_for('static', filename='css/smon.css') }}" rel="stylesheet"/>
@@ -18,9 +18,19 @@
 </div>
 {% else %}
 {% if g.user_params['role'] <= 2 %}
-<div class="add-button add-button-big" title="{{lang.smon_page.desc.add_agent}}" onclick="addAgentDialog();">+ {{lang.smon_page.desc.add_agent}}</div>
+<div style="margin-top: 10px; margin-bottom: 20px;">
+    <span class="add-button add-button-big" title="{{lang.smon_page.desc.add_agent}}" onclick="addAgentDialog();">+ {{lang.smon_page.desc.add_agent}}</span>
+    <span class="add-button add-button-big" title="{{lang.smon_page.desc.add_region}}" onclick="addRegionDialog();">+ {{lang.smon_page.desc.add_region}}</span>
+</div>
 {% endif %}
-<div class="up-pannel" class="sortable">
+<h2 style="clear: both; margin-bottom: 20px;">{{ lang.words.regions|title() }}</h2>
+<div class="up-pannel" id="regions">
+    {% for region in regions %}
+    <div id="region-{{region.id}}" class="div-server-hapwi animated-background"></div>
+    {% endfor %}
+</div>
+<h2 style="clear: both; margin-bottom: 20px;">{{ lang.words.agents|title() }} Agents</h2>
+<div class="up-pannel" id="agents">
     {% for agent in agents %}
     <div id="agent-{{agent.id}}" class="div-server-hapwi animated-background"></div>
     {% endfor %}
@@ -81,6 +91,46 @@
             </tr>
         </table>
     </div>
+    <div id="add-region-page" style="display: none;">
+        <table class="overview" id="add-region-page-overview"
+               title="{{lang.words.create|title()}} {{lang.words.w_a}} {{lang.words.new2}} {{lang.words.region}}"
+               data-edit="{{lang.words.edit|title()}} {{lang.words.region}}">
+            {% include 'include/tr_validate_tips.html' %}
+            <tr>
+                <td class="padding20" style="width: 50%">
+                    {{lang.words.name|title()}}
+                    <span class="need-field">*</span>
+                </td>
+                <td>
+                    {{ input('new-region-name', autofocus='autofocus') }}
+                </td>
+            </tr>
+            <tr>
+                <td class="padding20">{{lang.words.enable|title()}}</td>
+                <td>
+                    {{ checkbox('new-region-enabled', checked='checked') }}
+                </td>
+            </tr>
+            <tr>
+                <td class="padding20">{{lang.words.shared|title()}}</td>
+                <td>
+                    {{ checkbox('new-region-shared') }}
+                </td>
+            </tr>
+            <tr>
+                <td class="padding20" style="width: 50%">
+                    {{lang.words.desc|title()}}
+                </td>
+                <td>
+                    {{ input('new-region-desc', autofocus='autofocus') }}
+                </td>
+            </tr>
+        </table>
+        <div class="agents">
+            <div id="checked-agents" class="enabled-check"></div>
+            <div id="all-agents"></div>
+        </div>
+    </div>
     <div id="dialog-confirm" style="display: none;">
         <p><span class="ui-icon ui-icon-alert" style="float:left; margin:3px 12px 20px 0;"></span>{{lang.phrases.are_you_sure}}</p>
     </div>
@@ -88,6 +138,9 @@
 <script>
     {% for agent in agents %}
         getAgent('{{agent.id}}');
+    {% endfor %}
+    {% for region in regions %}
+        getRegion('{{region.id}}');
     {% endfor %}
 </script>
 {% include 'include/smon/dialogs.html' %}

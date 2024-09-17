@@ -6,7 +6,7 @@ from peewee import fn
 
 from app.modules.db.db_model import (
 	SmonAgent, Server, SMON, SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonHistory, SmonStatusPageCheck,
-	SmonStatusPage, SmonGroup, SmonSMTPCheck, SmonRabbitCheck
+	SmonStatusPage, SmonGroup, SmonSMTPCheck, SmonRabbitCheck, mysql_enable
 )
 from app.modules.db.common import out_error
 import app.modules.roxy_wi_tools as roxy_wi_tools
@@ -20,6 +20,13 @@ def get_agents(group_id: int):
 			(Server.group_id == group_id) |
 			(SmonAgent.shared == 1)
 		).objects().execute()
+	except Exception as e:
+		out_error(e)
+
+
+def get_agents_by_region(region_id: int):
+	try:
+		return SmonAgent.select(SmonAgent).where(SmonAgent.region_id == region_id).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -147,6 +154,20 @@ def get_agent_id_by_ip(agent_ip) -> int:
 		out_error(e)
 
 
+def get_randon_agent(region_id: int) -> SmonAgent:
+	try:
+		if mysql_enable == '1':
+			agent = SmonAgent.select().where(SmonAgent.region_id == region_id).order_by(fn.Rand())
+			return agent.get()
+		else:
+			agent = SmonAgent.select().where(SmonAgent.region_id == region_id).order_by(fn.Random())
+			return agent.get()
+	except SmonAgent.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		out_error(e)
+
+
 def select_server_ip_by_agent_id(agent_id: int) -> str:
 	try:
 		return Server.get(Server.server_id == SmonAgent.get(SmonAgent.id == agent_id).server_id).ip
@@ -229,11 +250,12 @@ def select_one_smon(smon_id: int, check_type_id: int) -> tuple:
 		out_error(e)
 
 
-def insert_smon(name, enable, group_id, desc, telegram, slack, pd, mm, user_group, check_type, timeout):
+def insert_smon(name, enable, group_id, desc, telegram, slack, pd, mm, user_group, check_type, timeout, region_id):
 	try:
 		last_id = SMON.insert(
 			name=name, enabled=enable, description=desc, group_id=group_id, telegram_channel_id=telegram, slack_channel_id=slack,
-			pd_channel_id=pd, mm_channel_id=mm, user_group=user_group, status='3', check_type=check_type, check_timeout=timeout
+			pd_channel_id=pd, mm_channel_id=mm, user_group=user_group, status='3', check_type=check_type, check_timeout=timeout,
+			region_id=region_id
 		).execute()
 		return last_id
 	except Exception as e:
@@ -524,10 +546,11 @@ def get_history(smon_id: int) -> SmonHistory:
 		del res
 
 
-def update_check(smon_id, name, telegram, slack, pd, mm, group_id, desc, en, timeout):
+def update_check(smon_id, name, telegram, slack, pd, mm, group_id, desc, en, timeout, region_id):
 	query = (SMON.update(
 		name=name, telegram_channel_id=telegram, slack_channel_id=slack, pd_channel_id=pd, mm_channel_id=mm,
-		group_id=group_id, description=desc, enabled=en, updated_at=datetime.now(), check_timeout=timeout
+		group_id=group_id, description=desc, enabled=en, updated_at=datetime.now(), check_timeout=timeout,
+		region_id=region_id
 	).where(SMON.id == smon_id))
 	try:
 		query.execute()

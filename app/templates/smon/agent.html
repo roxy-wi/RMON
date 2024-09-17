@@ -54,6 +54,15 @@
         </tr>
         <tr>
             <td class="padding20" style="width: 50%">
+                {{lang.words.port|title()}}
+                <span class="need-field">*</span>
+            </td>
+            <td>
+                {{ input('new-agent-port', autofocus='autofocus', value='5101') }}
+            </td>
+        </tr>
+        <tr>
+            <td class="padding20" style="width: 50%">
                 {{lang.words.name|title()}}
                 <span class="need-field">*</span>
             </td>
@@ -65,6 +74,12 @@
             <td class="padding20">{{lang.words.enable|title()}}</td>
             <td>
                 {{ checkbox('new-agent-enabled', checked='checked') }}
+            </td>
+        </tr>
+        <tr>
+            <td class="padding20">{{lang.words.shared|title()}}</td>
+            <td>
+                {{ checkbox('new-agent-shared') }}
             </td>
         </tr>
         <tr>

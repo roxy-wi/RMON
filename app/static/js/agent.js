@@ -117,7 +117,7 @@ function addAgent(dialog_id, agent_id=0, edit=false, reconfigure=false) {
 			contentType: "application/json; charset=utf-8",
 			success: function (data) {
 				if (data.status === 'failed') {
-					toastr.error(data);
+					toastr.error(data.error);
 				} else {
 					toastr.clear();
 					$(dialog_id).dialog("close");
@@ -176,7 +176,9 @@ function cleanAgentAddForm() {
 	$('#new-agent-name').val('');
 	$('#new-agent-server-id').val('------').change();
 	$('#new-agent-desc').val('');
+	$('#new-agent-shared').prop('checked', false);
 	$('#new-agent-enabled').prop('checked', true);
+	$('#new-agent-shared').checkboxradio("refresh");
 	$('#new-agent-enabled').checkboxradio("refresh");
 	$('#new-agent-server-id').removeAttr('disabled');
 	$('#new-agent-server-id').selectmenu("refresh");
@@ -190,7 +192,7 @@ function getAgent(agent_id, new_agent=false) {
 				toastr.error(data);
 			} else {
 				if (new_agent) {
-					$('.up-pannel').append(data);
+					$('#agents').append(data);
 				} else {
 					$('#agent-' + agent_id).replaceWith(data);
 				}
@@ -327,7 +329,7 @@ function removeAgent(id, dialog_id) {
 		success: function (data) {
 			if (data) {
 				if (data.status === "failed") {
-					toastr.error(data);
+					toastr.error(data.error);
 				}
 			}
 		}

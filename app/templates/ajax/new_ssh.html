@@ -1,8 +1,10 @@
-w{% import 'languages/'+lang|default('en')+'.html' as lang %}
+{% if adding %}
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+{% endif %}
 {% for ssh in sshs %}
 	<tr style="width: 50%;" id="ssh-table-{{ssh.id}}" class="ssh-table-{{ssh.id}}">
 		<td class="first-collumn padding10">
-			<input type="text" id="ssh_name-{{ssh.id}}" class="form-control" value="{{ssh.name}}" style="margin-bottom: 23px;">	
+			<input type="text" id="ssh_name-{{ssh.id}}" class="form-control" value="{{ssh.name}}" style="margin-bottom: 23px;">
 		</td>
 		<td class="first-collumn" valign="top" style="padding-top: 15px;">
 			{% if ssh.key_enabled == 1 %}
@@ -11,7 +13,7 @@ w{% import 'languages/'+lang|default('en')+'.html' as lang %}
 				<label for="ssh_enable-{{ssh.id}}">{{lang.words.enable|title()}} SSH {{lang.words.key}}</label><input type="checkbox" id="ssh_enable-{{ssh.id}}">
 			{% endif %}
 		</td>
-        {% if g.user_params['role'] <= 1 %}
+		{% if g.user_params['role'] == 1 %}
 			<td>
 				<select id="sshgroup-{{ssh.id}}" name="sshgroup-{{ssh.id}}">
 					{% for group in groups %}
@@ -22,13 +24,20 @@ w{% import 'languages/'+lang|default('en')+'.html' as lang %}
 						{% endif %}
 					{% endfor %}
 				</select>
-			</td>	
+			</td>
 		{% endif %}
+        <td class="first-collumn" valign="top" style="padding-top: 15px;">
+            {% if ssh.shared == 1 %}
+            <label for="ssh_shared-{{ssh.id}}"></label><input type="checkbox" id="ssh_shared-{{ssh.id}}" checked>
+            {% else %}
+            <label for="ssh_shared-{{ssh.id}}"></label><input type="checkbox" id="ssh_shared-{{ssh.id}}">
+            {% endif %}
+        </td>
 		<td style="padding-top: 15px;">
 			<p>
-				<input type="text" id="ssh_user-{{ssh.id}}" class="form-control" value="{{ssh.username}}">
+				<input type="text" id="ssh_user-{{ssh.id}}" class="form-control" value="{{ssh.username.replace("'", "")}}">
 			</p>
-			{% if ssh.enable == 1 %}
+			{% if ssh.key_enabled == 1 %}
 				<input type="password" id="ssh_pass-{{ssh.id}}" class="form-control" placeholder="*****" style="display: none;">
 			{% else %}
 				<input type="password" id="ssh_pass-{{ssh.id}}" class="form-control" placeholder="*****">
@@ -36,7 +45,19 @@ w{% import 'languages/'+lang|default('en')+'.html' as lang %}
 			<br>
 		</td>
 		<td>
-			<a class="delete" onclick="confirmDeleteSsh({{ssh.id}})" title="{{lang.words.delete|title()}} {{ssh.name}}"  style="cursor: pointer;"></a>
+			<a class="delete" onclick="confirmDeleteSsh({{ssh.id}})" title="{{lang.words.delete|title()}} {{ssh.name}}" style="cursor: pointer;"></a>
 		</td>
 	</tr>
+    {% if ssh.shared and g.user_params['group_id']|string() != ssh.group_id|string() %}
+        <script>
+            $( function() {
+                $('#sshgroup-{{ssh.id}}').selectmenu('disable');
+                $('#ssh_shared-{{ssh.id}}').checkboxradio('disable');
+                $('#ssh_enable-{{ssh.id}}').checkboxradio('disable');
+                $('#ssh_name-{{ ssh.id }}').prop('readonly', true);
+                $('#ssh_user-{{ ssh.id }}').prop('readonly', true);
+                $('#ssh_pass-{{ ssh.id }}').prop('readonly', true);
+            });
+        </script>
+    {% endif %}
 {% endfor %}

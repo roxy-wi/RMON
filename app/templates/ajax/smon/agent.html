@@ -38,7 +38,7 @@
         <div>
             <b>{{ lang.words.version|title() }}</b>:
             <span id="agent-version-{{ agent.id }}"></span>
-            <span id="agent-update-{{ agent.id }}" class="tooltip" style="color: var(--red-color); cursor: help; display: none;" title="Need to update">!</span>
+            <span id="agent-update-{{ agent.id }}" class="tooltip" style="color: var(--red-color); cursor: help; display: none;" title="Need to be updated">!</span>
         </div>
         <div>
             <b>{{lang.smon_page.desc.total_checks}}</b>:
@@ -49,9 +49,10 @@
         </div>
         <div>
             <b>{{ lang.words.agent|title() }} ID</b>: {{ agent.id }}
+            <b>{{ lang.words.shared|title() }}</b>: {% if agent.shared %} {{ lang.words.yes|title() }} {% else %} {{ lang.words.no|title() }} {% endif %}
         </div>
         <div>
-            <b>{{ lang.words.shared|title() }}</b>: {% if agent.shared %} {{ lang.words.yes|title() }} {% else %} {{ lang.words.no|title() }} {% endif %}
+            <b>{{ lang.words.region|title() }}</b>: {% if agent.region_id %} {{ agent.region_id.name.replace("'", "") }} {% endif %}
         </div>
     </div>
 </div>

@@ -1,3 +1,4 @@
+from random import random
 from typing import Union
 
 from flask.views import MethodView
@@ -7,6 +8,7 @@ from flask_pydantic import validate
 from playhouse.shortcuts import model_to_dict
 
 import app.modules.db.smon as smon_sql
+import app.modules.db.region as region_sql
 import app.modules.roxywi.common as roxywi_common
 import app.modules.tools.smon as smon_mod
 from app.middleware import get_user_params, check_group
@@ -50,7 +52,7 @@ class CheckView(MethodView):
                 group_name = smon_sql.get_smon_group_name_by_id(check.smon_id.group_id)
             else:
                 group_name = None
-            check_json = model_to_dict(check)
+            check_json = model_to_dict(check, max_depth=1)
             check_json['group_name'] = group_name
             return check_json
         else:
@@ -85,6 +87,12 @@ class CheckView(MethodView):
         except Exception as e:
             raise e
 
+        if data.region_id:
+            try:
+                random_agent_id = smon_sql.get_randon_agent(data.region_id)
+                data.agent_id = random_agent_id
+            except Exception as e:
+                raise Exception(f'Cannot get agent from region: {e}')
         try:
             self.create_func[self.check_type](data, last_id)
             smon_mod.send_new_check(last_id, data)
@@ -98,6 +106,12 @@ class CheckView(MethodView):
             smon_mod.update_smon(check_id, data, self.group_id)
         except Exception as e:
             raise e
+        if data.region_id:
+            try:
+                random_agent_id = smon_sql.get_randon_agent(data.region_id)
+                data.agent_id = random_agent_id
+            except Exception as e:
+                raise Exception(f'Cannot get agent from region: {e}')
         try:
             self.create_func[self.check_type](data, check_id)
             if data.enabled:
@@ -180,6 +194,9 @@ class CheckHttpView(CheckView):
                 agent_id:
                   type: 'integer'
                   description: 'Agent ID'
+                region_id:
+                  type: 'integer'
+                  description: 'Region ID'
                 headers:
                   type: 'string'
                   description: 'Headers'
@@ -255,6 +272,9 @@ class CheckHttpView(CheckView):
               agent_id:
                 type: 'string'
                 description: 'Agent ID'
+              region_id:
+                type: 'integer'
+                description: 'Region ID'
               body_req:
                 type: 'string'
                 description: 'Body Request (optional)'
@@ -350,6 +370,9 @@ class CheckHttpView(CheckView):
               agent_id:
                 type: 'string'
                 description: 'Agent ID'
+              region_id:
+                type: 'integer'
+                description: 'Region ID'
               body_req:
                 type: 'string'
                 description: 'Body Request (optional)'
@@ -451,6 +474,9 @@ class CheckTcpView(CheckView):
                       type: 'string'
                       format: 'date-time'
                       description: 'Time State'
+                    region_id:
+                      type: 'integer'
+                      description: 'Region ID'
                 ip:
                   type: 'string'
                   description: 'IP address to be tested'
@@ -485,7 +511,6 @@ class CheckTcpView(CheckView):
               - ip
               - port
               - enabled
-              - agent_id
             properties:
               name:
                 type: 'string'
@@ -525,6 +550,9 @@ class CheckTcpView(CheckView):
               agent_id:
                 type: 'string'
                 description: 'Agent ID'
+              region_id:
+                type: 'integer'
+                description: 'Region ID'
               timeout:
                 type: 'string'
                 description: 'Timeout (optional)'
@@ -602,6 +630,9 @@ class CheckTcpView(CheckView):
               agent_id:
                 type: 'string'
                 description: 'Agent ID'
+              region_id:
+                type: 'integer'
+                description: 'Region ID'
               timeout:
                 type: 'string'
                 description: 'Timeout (optional)'
@@ -688,6 +719,9 @@ class CheckDnsView(CheckView):
                       type: 'string'
                       format: 'date-time'
                       description: 'Time State'
+                    region_id:
+                      type: 'integer'
+                      description: 'Region ID'
                 ip:
                   type: 'string'
                   description: 'IP address to be tested'
@@ -777,6 +811,9 @@ class CheckDnsView(CheckView):
               agent_id:
                 type: 'string'
                 description: 'Agent ID'
+              region_id:
+                type: 'integer'
+                description: 'Region ID'
               timeout:
                 type: 'string'
                 description: 'Timeout (optional)'
@@ -863,6 +900,9 @@ class CheckDnsView(CheckView):
               agent_id:
                 type: 'string'
                 description: 'Agent ID'
+              region_id:
+                type: 'integer'
+                description: 'Region ID'
               timeout:
                 type: 'string'
                 description: 'Timeout (optional)'
@@ -950,6 +990,9 @@ class CheckPingView(CheckView):
                       type: 'string'
                       format: 'date-time'
                       description: 'Time State'
+                    region_id:
+                      type: 'integer'
+                      description: 'Region ID'
                 ip:
                   type: 'string'
                   description: 'IP address to be tested'
@@ -1023,6 +1066,9 @@ class CheckPingView(CheckView):
               agent_id:
                 type: 'string'
                 description: 'Agent ID'
+              region_id:
+                type: 'integer'
+                description: 'Region ID'
               timeout:
                 type: 'string'
                 description: 'Timeout (optional)'
@@ -1101,6 +1147,9 @@ class CheckPingView(CheckView):
               agent_id:
                 type: 'string'
                 description: 'Agent ID'
+              region_id:
+                type: 'integer'
+                description: 'Region ID'
               timeout:
                 type: 'string'
                 description: 'Timeout (optional)'
@@ -1188,6 +1237,9 @@ class CheckSmtpView(CheckView):
                       type: 'string'
                       format: 'date-time'
                       description: 'Time State'
+                    region_id:
+                      type: 'integer'
+                      description: 'Region ID'
                 ip:
                   type: 'string'
                   description: 'SMTP server to be tested'
@@ -1269,6 +1321,9 @@ class CheckSmtpView(CheckView):
               agent_id:
                 type: 'string'
                 description: 'Agent ID'
+              region_id:
+                type: 'integer'
+                description: 'Region ID'
               timeout:
                 type: 'string'
                 description: 'Timeout (optional)'
@@ -1352,6 +1407,9 @@ class CheckSmtpView(CheckView):
               agent_id:
                 type: 'string'
                 description: 'Agent ID'
+              region_id:
+                type: 'integer'
+                description: 'Region ID'
               timeout:
                 type: 'string'
                 description: 'Timeout (optional)'
@@ -1442,6 +1500,9 @@ class CheckRabbitView(CheckView):
                       type: 'string'
                       format: 'date-time'
                       description: 'Time State'
+                    region_id:
+                      type: 'integer'
+                      description: 'Region ID'
                 ip:
                   type: 'string'
                   description: 'SMTP server to be tested'
@@ -1484,7 +1545,6 @@ class CheckRabbitView(CheckView):
               - username
               - password
               - enabled
-              - agent_id
             properties:
               name:
                 type: 'string'
@@ -1533,6 +1593,9 @@ class CheckRabbitView(CheckView):
               agent_id:
                 type: 'string'
                 description: 'Agent ID'
+              region_id:
+                type: 'integer'
+                description: 'Region ID'
               timeout:
                 type: 'string'
                 description: 'Timeout (optional)'
@@ -1622,6 +1685,9 @@ class CheckRabbitView(CheckView):
               agent_id:
                 type: 'string'
                 description: 'Agent ID'
+              region_id:
+                type: 'integer'
+                description: 'Region ID'
               timeout:
                 type: 'string'
                 description: 'Timeout (optional)'

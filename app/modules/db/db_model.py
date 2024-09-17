@@ -164,6 +164,7 @@ class Cred(BaseModel):
     password = CharField(null=True)
     group_id = IntegerField(constraints=[SQL('DEFAULT 1')])
     passphrase = CharField(null=True)
+    shared = IntegerField(constraints=[SQL('DEFAULT 0')])
 
     class Meta:
         table_name = 'cred'
@@ -186,6 +187,18 @@ class SmonGroup(BaseModel):
     class Meta:
         table_name = 'smon_groups'
         constraints = [SQL('UNIQUE (name, user_group)')]
+
+
+class Region(BaseModel):
+    id = AutoField()
+    name = CharField()
+    description = CharField()
+    group_id = IntegerField(constraints=[SQL('DEFAULT 1')])
+    enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
+    shared = IntegerField(constraints=[SQL('DEFAULT 0')])
+
+    class Meta:
+        table_name = 'regions'
 
 
 class SMON(BaseModel):
@@ -212,6 +225,7 @@ class SMON(BaseModel):
     created_at = DateTimeField(default=datetime.now)
     updated_at = DateTimeField(default=datetime.now)
     check_timeout = IntegerField(constraints=[SQL('DEFAULT 2')])
+    region_id = ForeignKeyField(Region, null=True, on_delete='SET NULL')
 
     class Meta:
         table_name = 'smon'
@@ -302,6 +316,7 @@ class SmonAgent(BaseModel):
     description = CharField()
     shared = IntegerField(constraints=[SQL('DEFAULT 0')])
     port = IntegerField(constraints=[SQL('DEFAULT 5701')])
+    region_id = ForeignKeyField(Region, null=True, on_delete='SET NULL')
 
     class Meta:
         table_name = 'smon_agents'
@@ -433,7 +448,7 @@ def create_tables():
     conn = connect()
     with conn:
         conn.create_tables(
-            [Groups, User, Server, Role, Telegram, Slack, UserGroups, Setting, Cred, Version, ActionHistory,
+            [Groups, User, Server, Role, Telegram, Slack, UserGroups, Setting, Cred, Version, ActionHistory, Region,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
              SmonStatusPage, SmonStatusPageCheck, SMON, SmonGroup, MM, RMONAlertsHistory, SmonSMTPCheck, SmonRabbitCheck]
         )

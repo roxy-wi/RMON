@@ -13,7 +13,30 @@
 		</tr>
 		<tr>
 			<td class="padding20">
-				Agent
+				Place
+				<span class="need-field">*</span>
+			</td>
+			<td>
+                <select name="new-smon-place" id="new-smon-place">
+                    <option value="region">{{ lang.words.region|title() }}</option>
+                    <option value="agent">{{ lang.words.agent|title() }}</option>
+                </select>
+			</td>
+		</tr>
+		<tr id="new-smon-region-tr">
+			<td class="padding20">
+				{{ lang.words.region|title() }}
+				<span class="need-field">*</span>
+			</td>
+			<td>
+                <select name="new-smon-region-id" id="new-smon-region-id">
+                    <option value="------" disabled selected>------</option>
+                </select>
+			</td>
+		</tr>
+		<tr style="display: none;" id="new-smon-agent-tr">
+			<td class="padding20">
+				{{ lang.words.agent|title() }}
 				<span class="need-field">*</span>
 			</td>
 			<td>

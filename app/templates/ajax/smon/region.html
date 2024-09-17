@@ -1,0 +1,53 @@
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+{% from 'include/input_macros.html' import input, checkbox, copy_to_clipboard %}
+<div id="region-{{region.id}}" class="div-server-hapwi">
+    <div class="server-name">
+        <span class="overflow" style="width: 192px;">
+            <span id="region-name-{{region.id}}" style="margin-top: 4px;display: inline-block;">
+                {{region.name.replace("'","")}}
+            </span>
+            <span id="region-desc-{{region.id}}">{% if region.description %} ({{region.description.replace("'", "")}}) {% endif %}</span>
+        </span>
+    {% if g.user_params['group_id']|string() == region.group_id|string() or g.user_params['role'] == 1 %}
+        <span class="server-action">
+            {% if g.user_params['role'] <= 2 %}
+            <a class="edit" onclick="addRegionDialog('{{region.id}}', true)"></a>
+            <a class="delete" onclick="confirmDeleteRegion('{{region.id}}')"></a>
+            {% endif %}
+        </span>
+    {% endif %}
+    </div>
+    <div class="server-desc">
+        <div>
+            <b>{{ lang.words.region|title() }} ID</b>: {{ region.id }}
+        </div>
+        <div>
+            <b>{{ lang.words.shared|title() }}</b>: {% if region.shared %} {{ lang.words.yes|title() }} {% else %} {{ lang.words.no|title() }} {% endif %}
+        </div>
+        <div>
+            <b>{{ lang.words.agents|title() }}</b>: <br />
+            {% for agent in agents %}
+                <a href="/rmon/agent/{{ agent.id }}" title="{{ lang.words.more|title }} {{ lang.words.info }}">{{agent.name.replace("'","")}}</a><br />
+            {% endfor %}
+        </div>
+    </div>
+</div>
+<script>
+    $( function() {
+        $('.copyToClipboard').hover(function () {
+            $.getScript("/static/js/fontawesome.min.js");
+        });
+        $('.copyToClipboard').click(function () {
+            let str = $(this).attr('data-copy');
+            const el = document.createElement('textarea');
+            el.value = str;
+            el.setAttribute('readonly', '');
+            el.style.position = 'absolute';
+            el.style.left = '-9999px';
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+        });
+    })
+</script>

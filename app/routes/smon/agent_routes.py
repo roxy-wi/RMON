@@ -6,6 +6,7 @@ from flask_jwt_extended import jwt_required
 from app.routes.smon import bp
 from app.middleware import get_user_params
 import app.modules.db.smon as smon_sql
+import app.modules.db.region as region_sql
 import app.modules.db.server as server_sql
 import app.modules.common.common as common
 import app.modules.tools.smon_agent as smon_agent
@@ -21,6 +22,7 @@ def agent():
     if request.method == 'GET':
         group_id = g.user_params['group_id']
         kwargs = {
+            'regions': region_sql.select_regions(),
             'agents': smon_sql.get_agents(group_id),
             'lang': roxywi_common.get_user_lang_for_flask(),
             'smon_status': tools_common.is_tool_active('rmon-server'),
@@ -92,6 +94,19 @@ def get_agent_info(agent_id):
         return f'{e}'
 
     return render_template('ajax/smon/agent.html', agents=agent_data, lang=roxywi_common.get_user_lang_for_flask())
+
+
+@bp.get('/region/info/<int:region_id>')
+@jwt_required()
+@get_user_params()
+def get_region_info(region_id):
+    try:
+        region_data = region_sql.get_region(region_id)
+        agents = smon_sql.get_agents_by_region(region_id)
+    except Exception as e:
+        return f'{e}'
+
+    return render_template('ajax/smon/region.html', region=region_data, agents=agents, lang=roxywi_common.get_user_lang_for_flask())
 
 
 @bp.get('/agent/version/<server_ip>')
