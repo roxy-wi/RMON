@@ -311,10 +311,7 @@ function getCheckSettings(smon_id, check_type) {
 				$('#new-smon-place').val('agent').change();
 				$('#new-smon-agent-id').val(data['agent_id']).change();
 			}
-			$('#new-smon-place').trigger('selectmenuchange');
-			$('#new-smon-place').selectmenu("refresh");
-			$('#new-smon-region-id').selectmenu("refresh");
-			$('#new-smon-agent-id').selectmenu("refresh");
+			$('select').selectmenu("refresh");
 			if (data['smon_id']['enabled']) {
 				$('#new-smon-enable').prop('checked', true)
 			} else {

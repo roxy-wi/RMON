@@ -94,9 +94,9 @@ def telegram_send_mess(mess, level, **kwargs):
 		return
 
 	if kwargs.get('channel_id'):
-		telegrams = channel_sql.get_telegram_by_id(kwargs.get('channel_id'))
+		telegrams = channel_sql.get_receiver_by_id('telegram', kwargs.get('channel_id'))
 	else:
-		telegrams = channel_sql.get_telegram_by_ip(kwargs.get('ip'))
+		telegrams = channel_sql.get_receiver_by_ip('slack', kwargs.get('ip'))
 
 	proxy = sql.get_setting('proxy')
 
@@ -129,9 +129,9 @@ def slack_send_mess(mess, level, **kwargs):
 		return
 
 	if kwargs.get('channel_id'):
-		slacks = channel_sql.get_slack_by_id(kwargs.get('channel_id'))
+		slacks = channel_sql.get_receiver_by_id('slack', kwargs.get('channel_id'))
 	else:
-		slacks = channel_sql.get_slack_by_ip(kwargs.get('ip'))
+		slacks = channel_sql.get_receiver_by_ip('slack', kwargs.get('ip'))
 
 	proxy = sql.get_setting('proxy')
 
@@ -163,14 +163,14 @@ def pd_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, 
 
 	if kwargs.get('channel_id'):
 		try:
-			pds = channel_sql.get_pd_by_id(kwargs.get('channel_id'))
+			pds = channel_sql.get_receiver_by_id('pd', kwargs.get('channel_id'))
 		except Exception as e:
-			print(e)
+			roxywi_common.logging('RMON server', str(e), roxywi=1)
 	else:
 		try:
-			pds = channel_sql.get_pd_by_ip(kwargs.get('ip'))
+			pds = channel_sql.get_receiver_by_ip('pd', kwargs.get('ip'))
 		except Exception as e:
-			print(e)
+			roxywi_common.logging('RMON server', str(e), roxywi=1)
 
 	for pd in pds:
 		token = pd.token
@@ -207,12 +207,12 @@ def mm_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, 
 
 	if kwargs.get('channel_id'):
 		try:
-			mms = channel_sql.get_mm_by_id(kwargs.get('channel_id'))
+			mms = channel_sql.get_receiver_by_id('mm', kwargs.get('channel_id'))
 		except Exception as e:
 			print(e)
 	else:
 		try:
-			mms = channel_sql.get_mm_by_ip(kwargs.get('ip'))
+			mms = channel_sql.get_receiver_by_ip('mm', kwargs.get('ip'))
 		except Exception as e:
 			print(e)
 

@@ -7,6 +7,7 @@ from playhouse.shortcuts import model_to_dict
 from flask_jwt_extended import jwt_required
 
 import app.modules.db.sql as sql
+import app.modules.roxywi.roxy as roxy
 import app.modules.roxywi.common as roxywi_common
 import app.modules.tools.smon as smon_mod
 from app.middleware import get_user_params, page_for_admin, check_group
@@ -125,23 +126,20 @@ class SettingsView(MethodView):
             description: OK
         """
         try:
-            val = body.value.replace('92', '/')
-        except Exception:
-            val = body.value
-
-        try:
             group_id = SupportClass.return_group_id(query)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot get Settings')
         try:
-            sql.update_setting(body.param, val, group_id)
+            sql.update_setting(body.param, body.value, group_id)
         except Exception as e:
             roxywi_common.handle_json_exceptions(e, 'Cannot update settings')
-        roxywi_common.logging('Roxy-WI server', f'The {body.param} setting has been changed to: {val}', roxywi=1, login=1)
+        roxywi_common.logging('Roxy-WI server', f'The {body.param} setting has been changed to: {body.value}', login=1)
 
         if body.param == 'master_port':
             try:
-                smon_mod.change_smon_port(int(val))
+                smon_mod.change_smon_port(int(body.value))
             except Exception as e:
                 return f'{e}'
+        if body.param == 'license':
+            roxy.update_plan()
         return BaseResponse().model_dump(mode='json'), 201
