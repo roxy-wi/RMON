@@ -74,7 +74,7 @@ function addServer(dialog_id) {
             "port": $('#new-port').val(),
             "group_id": server_group,
             "enabled": enable,
-            "creds_id": cred,
+            "cred_id": cred,
             "description": $('#desc').val(),
         }
         $.ajax({
@@ -156,7 +156,7 @@ function updateServer(id) {
         "ip": $('#ip-' + id).text(),
         "group_id": server_group,
         "enabled": enable,
-        "creds_id": $('#credentials-' + id + ' option:selected').val(),
+        "cred_id": $('#credentials-' + id + ' option:selected').val(),
         "description": $('#desc-' + id).val()
     }
     $.ajax({
