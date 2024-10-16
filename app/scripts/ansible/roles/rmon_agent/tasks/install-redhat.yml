@@ -5,6 +5,7 @@
   with_items:
     - python3-pycurl
     - epel-release
+    - python3-devel
 
 - name: Install PIP
   yum:
