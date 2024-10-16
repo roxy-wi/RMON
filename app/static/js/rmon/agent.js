@@ -192,7 +192,8 @@ function getAgent(agent_id, new_agent=false) {
 				toastr.error(data);
 			} else {
 				if (new_agent) {
-					$('#agents').append(data);
+					showSmonGroup('agents');
+					$('#smon-group-agents').append(data);
 				} else {
 					$('#agent-' + agent_id).replaceWith(data);
 				}

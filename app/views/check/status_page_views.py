@@ -120,13 +120,13 @@ class StatusPageView(MethodView):
         try:
             group_id = SupportClass.return_group_id(query)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, f'Cannot get Status page group')
+            return roxywi_common.handle_json_exceptions(e, 'Cannot get Status page group')
 
         try:
             page = smon_sql.select_status_page_with_group(page_id, group_id)
             page = model_to_dict(page)
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot get Status page')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get Status page')
 
         try:
             checks = smon_sql.select_status_page_checks(page_id)
@@ -134,7 +134,7 @@ class StatusPageView(MethodView):
             for check in checks:
                 page['checks'].append(model_to_dict(check, exclude=[SmonStatusPageCheck.page_id]))
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot get Status page checks')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get Status page checks')
 
         return jsonify(page)
 
@@ -188,7 +188,7 @@ class StatusPageView(MethodView):
         try:
             group_id = SupportClass.return_group_id(body)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, f'Wrong group')
+            return roxywi_common.handle_json_exceptions(e, 'Wrong group')
 
         if not len(body.checks):
             return ErrorResponse(error='There is must be at least one check'), 500
@@ -197,7 +197,7 @@ class StatusPageView(MethodView):
             page_id = smon_mod.create_status_page(body.name, body.slug, body.description, body.checks, body.custom_style, group_id)
             return IdResponse(id=page_id).model_dump(mode='json'), 201
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot create Status page')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create Status page')
 
     @validate(body=StatusPageRequest)
     def put(self, page_id: int, body: StatusPageRequest):
@@ -254,12 +254,12 @@ class StatusPageView(MethodView):
         try:
             group_id = SupportClass.return_group_id(body)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, f'Wrong group')
+            return roxywi_common.handle_json_exceptions(e, 'Wrong group')
 
         try:
             _ = smon_sql.select_status_page_with_group(page_id, group_id)
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot find Status page')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot find Status page')
 
         if not len(body.checks):
             return ErrorResponse(error='There is must be at least one check'), 500
@@ -268,7 +268,7 @@ class StatusPageView(MethodView):
             smon_mod.edit_status_page(page_id, body.name, body.slug, body.description, body.checks, body.custom_style)
             return BaseResponse().model_dump(mode='json'), 201
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot edit Status page')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot edit Status page')
 
     @validate(query=GroupQuery)
     def delete(self, page_id: int, query: GroupQuery):
@@ -299,15 +299,15 @@ class StatusPageView(MethodView):
         try:
             group_id = SupportClass.return_group_id(query)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, f'Cannot get Status page group')
+            return roxywi_common.handle_json_exceptions(e, 'Cannot get Status page group')
 
         try:
             _ = smon_sql.select_status_page_with_group(page_id, group_id)
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot find Status page')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot find Status page')
 
         try:
             smon_sql.delete_status_page(page_id)
             return BaseResponse().model_dump(mode='json'), 204
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot delete Status page')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot delete Status page')

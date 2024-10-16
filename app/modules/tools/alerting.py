@@ -243,7 +243,7 @@ def mm_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, 
 	values = f'{{"channel": "{channel}", "username": "RMON", "attachments": [{attach}]}}'
 	proxy_dict = common.return_proxy_dict()
 	try:
-		requests.post(token, headers=headers, data=str(values))
+		requests.post(token, headers=headers, data=str(values), timeout=15)
 		return 'ok'
 	except Exception as e:
 		roxywi_common.logging('RMON server', str(e), roxywi=1, proxies=proxy_dict)

@@ -15,7 +15,7 @@ from app.modules.common.common_classes import SupportClass
 
 class CountryView(MethodView):
     method_decorators = ["GET", "POST", "PUT", "DELETE"]
-    decorators = [jwt_required(),  get_user_params(), check_group()]
+    decorators = [jwt_required(), get_user_params(), check_group()]
 
     @validate(query=GroupQuery)
     def get(self, country_id: int, query: GroupQuery):

@@ -336,7 +336,7 @@ def update_db_v_1_2_3():
 			migrator.drop_column('smon_http_check', 'agent_id'),
 			migrator.drop_column('smon_dns_check', 'agent_id'),
 		)
-	except Exception as e:
+	except Exception:
 		pass
 
 
