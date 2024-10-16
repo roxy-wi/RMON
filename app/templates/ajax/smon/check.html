@@ -15,25 +15,16 @@
         {% set additional_classes = 'dis div-server-head-dis' %}
         {% set uptime_desc = '<b>'+lang.words.uptime + '</b>: N/A' %}
     {% endif %}
-<div class="smon_services" id="smon-{{ s.smon_id.id }}">
+<div class="smon_services" id="smon-{{ s.smon_id.multi_check_id }}">
 <div class="ip server-name">
     <span class="check-name-tile overflow">
-        <a href="/rmon/dashboard/{{s.smon_id.id}}/{{check_type_id}}" title="{{lang.words.view|title()}} {{lang.words.history}} {{lang.words.for}} {{s.smon_id.name}} {{lang.words.host}}" class="link" id="smon-name-{{ s.smon_id.id }}">{{s.smon_id.name.strip("'")}}</a>
+        <a href="/rmon/dashboard/{{s.smon_id.multi_check_id}}/{{check_type_id}}" title="{{lang.words.view|title()}} {{lang.words.history}} {{lang.words.for}} {{s.smon_id.name}} {{lang.words.host}}" class="link" id="smon-name-{{ s.smon_id.id }}">{{s.smon_id.name.strip("'")}}</a>
     </span>
-    {% set agent_exist = [] %}
-    {% for a in agents %}
-        {% if a.id|string() == s.agent_id|string() %}
-        {% if agent_exist.append(1) %} {% endif %}
-        {% endif %}
-    {% endfor %}
-    {% if agent_exist|length == 0 %}
-        <span class="tooltip" style="color: var(--red-color); cursor: help" title="{{ lang.smon_page.desc.not_assign_to_agent }}">!</span>
-    {% endif %}
     <span class="server-action">
-        <a class="edit" onclick="editSmon('{{s.smon_id.id}}', '{{ s.smon_id.check_type }}')"></a>
-        <a class="add" onclick="cloneSmom({{s.smon_id.id}}, '{{ s.smon_id.check_type }}')" id="clone-{{s.smon_id.id}}" title="{{lang.words.clone|title()}} {{s.smon_id.name}}" style="cursor: pointer; color: #000;"></a>
-        <a class="delete" onclick="confirmDeleteSmon({{s.smon_id.id}}, '{{ s.smon_id.check_type }}')" title="{{lang.words.delete|title()}} {{s.smon_id.name}}" style="cursor: pointer; color: #000;"></a>
-        <a href="/rmon/history/host/{{s.smon_id.id}}" title="{{lang.words.view|title()}} {{lang.words.alerts}} {{lang.words.history}} {{lang.words.for}} {{s.smon_id.name}} {{lang.words.host}}" class="history"></a>
+        <a class="edit" onclick="editSmon('{{s.smon_id.multi_check_id}}', '{{ s.smon_id.check_type }}')"></a>
+        <a class="add" onclick="cloneSmon({{s.smon_id.multi_check_id}}, '{{ s.smon_id.check_type }}')" id="clone-{{s.smon_id.multi_check_id}}" title="{{lang.words.clone|title()}} {{s.smon_id.name}}" style="cursor: pointer; color: #000;"></a>
+        <a class="delete" onclick="confirmDeleteSmon({{s.smon_id.multi_check_id}}, '{{ s.smon_id.check_type }}')" title="{{lang.words.delete|title()}} {{s.smon_id.name}}" style="cursor: pointer; color: #000;"></a>
+        <a href="/rmon/history/check/{{s.smon_id.multi_check_id}}" title="{{lang.words.view|title()}} {{lang.words.alerts}} {{lang.words.history}} {{lang.words.for}} {{s.smon_id.name}} {{lang.words.host}}" class="history"></a>
     </span>
 </div>
 <div class="desc">
@@ -64,14 +55,8 @@
 </div>
 <div class="res_time">
     <b>{{ lang.smon_page.desc.enabled_checks }}:</b> {{ s.smon_id.check_type|upper }}
-    <b>{{lang.words.agent|title()}}:</b>
-        {% for a in agents %}
-        {% if a.id|string() == s.agent_id|string() %}
-        <a href="/rmon/agent/{{ a.id }}" title="{{ lang.words.agent|title() }} {{ lang.words.overview }}">{{ a.name }}</a>
-        {% endif %}
-        {% endfor %}
 </div>
-    {% if s.smon_id.enabled == 1 and agent_exist|length > 0 %}
+    {% if s.smon_id.enabled == 1 %}
      {% if s.smon_id.status == 1 and s.smon_id.body_status == 1 %}
         <div class="up">
             {{lang.smon_page.desc.UP}}
@@ -93,10 +78,6 @@
             {{lang.smon_page.desc.DOWN}}
         </div>
      {% endif %}
-    {% elif agent_exist|length == 0 %}
-        <div class="unknown">
-            {{lang.smon_page.desc.UNKNOWN}}
-        </div>
     {% else %}
     <div class="disable">
         {{lang.smon_page.desc.DISABLED}}

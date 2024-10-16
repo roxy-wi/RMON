@@ -36,23 +36,6 @@ jQuery.expr[':'].regex = function(elem, index, match) {
         regex = new RegExp(matchParams.join('').replace(/^\s+|\s+$/g,''), regexFlags);
     return regex.test(jQuery(elem)[attr.method](attr.property));
 }
-window.onblur= function() {
-	window.onfocus= function () {
-		if(sessionStorage.getItem('auto-refresh-pause') == "0" && sessionStorage.getItem('auto-refresh') > 5000) {
-			if (cur_url[0] == "logs") {
-				showLog();
-			} else if (cur_url[0] == "/") {
-				showOverview();
-			} else if (cur_url[0] == "internal") {
-				viewLogs();
-			} else if (cur_url[3] == "rmon" && cur_url[4] == "dashboard" && !cur_url[5]) {
-				showSmon('refresh');
-			} else if (cur_url[3] == "rmon" && cur_url[4] == "dashboard" && cur_url[5]) {
-				showSmonHistory();
-			}
-		}
-	}
-};
 $( document ).ajaxSend(function( event, request, settings ) {
 	NProgress.start();
 });
@@ -63,17 +46,17 @@ $.ajaxSetup({
 	headers: {"X-CSRF-TOKEN": csrf_token},
 });
 $(document).ajaxError(function myErrorHandler(event, xhr, ajaxOptions, thrownError) {
-	if (xhr.status != 401) {
+	if (xhr.status != 401 && xhr.status != 404) {
 		toastr.error(xhr.responseJSON.error);
 	}
 
 });
 function showLog() {
-	var waf = cur_url[2];
-	var file = $('#log_files').val();
-	var serv = $("#serv").val();
-	if ((file === undefined || file === null) && (waf == '' || waf === undefined)) {
-		var file_from_get = findGetParameter('file');
+	let waf = cur_url[2];
+	let file = $('#log_files').val();
+	let serv = $("#serv").val();
+	if ((file === undefined || file === null) && (waf === '' || waf === undefined)) {
+		let file_from_get = findGetParameter('file');
 		if (file_from_get === undefined || file_from_get === null) {
 			toastr.warning('Select a log file first')
 			return false;
@@ -81,22 +64,22 @@ function showLog() {
 			file = file_from_get;
 		}
 	}
-	var rows = $('#rows').val();
-	var grep = $('#grep').val();
-	var exgrep = $('#exgrep').val();
-	var hour = $('#time_range_out_hour').val();
-	var minute = $('#time_range_out_minut').val();
-	var hour1 = $('#time_range_out_hour1').val();
-	var minute1 = $('#time_range_out_minut1').val();
-	var service = $('#service').val();
-	if (service == 'None') {
+	let rows = $('#rows').val();
+	let grep = $('#grep').val();
+	let exgrep = $('#exgrep').val();
+	let hour = $('#time_range_out_hour').val();
+	let minute = $('#time_range_out_minut').val();
+	let hour1 = $('#time_range_out_hour1').val();
+	let minute1 = $('#time_range_out_minut1').val();
+	let service = $('#service').val();
+	if (service === 'None') {
 		service = 'haproxy';
 	}
 	if (waf) {
-		var url = "/logs/" + service + "/waf/" + serv + "/" + rows;
+		let url = "/logs/" + service + "/waf/" + serv + "/" + rows;
 		waf = 1;
 	} else {
-		var url = "/logs/" + service + "/" + serv + "/" + rows;
+		let url = "/logs/" + service + "/" + serv + "/" + rows;
 	}
 	$.ajax( {
 		url: url,
@@ -166,9 +149,9 @@ function findGetParameter(parameterName) {
     return result;
 }
 function viewLogs() {
-	var viewlogs = $('#viewlogs').val();
-	if (viewlogs == '------' || viewlogs === null) { return false; }
-	if(viewlogs == 'rmon.error.log' || viewlogs == 'rmon.access.log' || viewlogs == 'fail2ban.log') {
+	let viewlogs = $('#viewlogs').val();
+	if (viewlogs === '------' || viewlogs === null) { return false; }
+	if(viewlogs === 'rmon.error.log' || viewlogs === 'rmon.access.log' || viewlogs === 'fail2ban.log') {
 		showApacheLog(viewlogs);
 	} else {
 		var rows = $('#rows').val();
@@ -207,10 +190,9 @@ function viewLogs() {
 $( function() {
 	$('a').click(function (e) {
 		try {
-			var cur_path = window.location.pathname;
-			var attr = $(this).attr('href');
-			if (cur_path == '/add/haproxy' || cur_path == '/add/nginx' || cur_path == '/servers' ||
-				cur_path == '/admin' || cur_path == '/install' || cur_path == '/runtimeapi') {
+			let cur_path = window.location.pathname;
+			let attr = $(this).attr('href');
+			if (cur_path === '/admin') {
 				if (typeof attr !== typeof undefined && attr !== false) {
 					$('title').text($(this).attr('title'));
 					history.pushState({}, '', $(this).attr('href'));
@@ -273,7 +255,7 @@ $( function() {
 		sessionStorage.setItem('hide_menu', 'show');
 	});
 	var hideMenu = sessionStorage.getItem('hide_menu');
-	if (hideMenu == "show") {
+	if (hideMenu === "show") {
 		$(".top-menu").show("drop", "fast");
 		$(".container").css("max-width", "100%");
 		$(".container").css("margin-left", "207px");
@@ -282,7 +264,7 @@ $( function() {
 		$("#hide_menu").show();
 		$(".show_menu").hide();
 	}
-	if (hideMenu == "hide") {
+	if (hideMenu === "hide") {
 		$(".top-menu").hide();
 		$(".container").css("max-width", "97%");
 		$(".container").css("margin-left", "1%");
@@ -361,18 +343,6 @@ $( function() {
 	} else {
 		$('#time_range_out_minut1').val(date2_minute);
 	}
-
-	$('#0').click(function () {
-		$('.auto-refresh-div').show("blind", "fast");
-		$('#0').css("display", "none");
-		$('#1').css("display", "inline");
-	});
-
-	$('#1').click(function () {
-		$('.auto-refresh-div').hide("blind", "fast");
-		$('#1').css("display", "none");
-		$('#0').css("display", "inline");
-	});
 	$('#auth').submit(function () {
 		let next_url = findGetParameter('next');
 		let json_data = {
@@ -422,11 +392,6 @@ $( function() {
 		viewLogs();
 		return false;
 	});
-
-	var user_settings_tabel_title = $("#show-user-settings-table").attr('title');
-	var change_word = $('#translate').attr('data-change');
-	var password_word = $('#translate').attr('data-password');
-	var change_pass_word = change_word + ' ' + password_word
 
 	var cur_url = window.location.href.split('/').pop();
 	cur_url = cur_url.split('/');
@@ -756,8 +721,8 @@ function changePassword() {
 	});
 }
 function changeUserPasswordItOwn(d) {
-	var pass = $('#change-password').val();
-	var pass2 = $('#change2-password').val();
+	let pass = $('#change-password').val();
+	let pass2 = $('#change2-password').val();
 	if (pass != pass2) {
 		$('#missmatchpass').show();
 	} else {

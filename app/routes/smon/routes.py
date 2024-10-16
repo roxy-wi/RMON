@@ -1,7 +1,7 @@
 import json
 import time
 
-from flask import render_template, request, jsonify, g, Response, stream_with_context
+from flask import render_template, request, g, Response, stream_with_context
 from flask_jwt_extended import jwt_required
 
 from app.routes.smon import bp
@@ -27,10 +27,11 @@ def smon_main_dashboard():
     """
     roxywi_common.check_user_group_for_flask()
     group_id = g.user_params['group_id']
+    multi_checks = smon_sql.select_multi_checks(group_id)
 
     kwargs = {
         'lang': g.user_params['lang'],
-        'smon': smon_sql.smon_list(group_id),
+        'multi_checks': multi_checks,
         'group': group_id,
         'smon_groups': smon_sql.select_smon_groups(group_id),
         'smon_status': tools_common.is_tool_active('rmon-server'),
@@ -75,7 +76,9 @@ def smon_dashboard(smon_id, check_id):
     9. Renders the RMON history template ('include/smon/smon_history.html') using the `render_template` function from Flask, passing the `kwargs` dictionary as keyword arguments.
     """
     roxywi_common.check_user_group_for_flask()
-    smon = smon_sql.select_one_smon(smon_id, check_id)
+    multi_check = smon_sql.get_multi_check(smon_id, g.user_params['group_id'])
+    smon = smon_sql.select_one_smon(multi_check.id, check_id)
+    all_checks = smon_sql.select_multi_check(smon_id, g.user_params['group_id'])
     cert_day_diff = 'N/A'
     avg_res_time = smon_mod.get_average_response_time(smon_id, check_id)
 
@@ -100,7 +103,7 @@ def smon_dashboard(smon_id, check_id):
         'check_type_id': check_id,
         'dashboard_id': smon_id,
         'last_resp_time': last_resp_time,
-        'agents': smon_sql.get_agents(g.user_params['group_id'])
+        'all_checks': all_checks
     }
 
     return render_template('include/smon/smon_history.html', **kwargs)
@@ -159,7 +162,7 @@ def status_page():
     if request.method == 'GET':
         kwargs = {
             'lang': g.user_params['lang'],
-            'smon': smon_sql.smon_list(g.user_params['group_id']),
+            'smon': smon_sql.select_multi_checks(g.user_params['group_id']),
             'pages': smon_sql.select_status_pages(g.user_params['group_id']),
             'smon_status': tools_common.is_tool_active('rmon-server'),
             'user_subscription': roxywi_common.return_user_subscription()
@@ -188,7 +191,7 @@ def smon_history():
 
     kwargs = {
         'lang': g.user_params['lang'],
-        'smon': history_sql.alerts_history('RMON', g.user_params['group_id']),
+        'history': history_sql.alerts_history('RMON', g.user_params['group_id']),
         'smon_status': tools_common.is_tool_active('rmon-server'),
         'user_subscription': roxywi_common.return_user_subscription(),
         'action': 'smon'
@@ -203,11 +206,11 @@ def smon_history():
 def smon_host_history(check_id):
     roxywi_common.check_user_group_for_flask()
     smon_status = tools_common.is_tool_active('rmon-server')
-    smon = history_sql.alerts_history('RMON', g.user_params['group_id'], check_id=check_id)
+    history = history_sql.alerts_history('RMON', g.user_params['group_id'], check_id=check_id)
     user_subscription = roxywi_common.return_user_subscription()
     kwargs = {
         'lang': g.user_params['lang'],
-        'smon': smon,
+        'history': history,
         'smon_status': smon_status,
         'user_subscription': user_subscription,
         'action': 'smon'
@@ -216,9 +219,23 @@ def smon_host_history(check_id):
     return render_template('smon/history.html', **kwargs)
 
 
-@bp.route('/history/metric/<int:check_id>/<int:check_type_id>')
-def smon_history_metric(check_id, check_type_id):
-    return jsonify(smon_mod.history_metrics(check_id, check_type_id))
+@bp.route('/history/check/<int:multi_check_id>')
+@jwt_required()
+@get_user_params()
+def smon_multi_check_history(multi_check_id):
+    roxywi_common.check_user_group_for_flask()
+    smon_status = tools_common.is_tool_active('rmon-server')
+    history = history_sql.rmon_multi_check_history(multi_check_id, g.user_params['group_id'])
+    user_subscription = roxywi_common.return_user_subscription()
+    kwargs = {
+        'lang': g.user_params['lang'],
+        'history': history,
+        'smon_status': smon_status,
+        'user_subscription': user_subscription,
+        'action': 'smon'
+    }
+
+    return render_template('smon/history.html', **kwargs)
 
 
 @bp.route('/history/metrics/stream/<int:check_id>/<int:check_type_id>')
@@ -253,7 +270,6 @@ def smon_history_metric_chart(check_id, check_type_id):
             chart_metrics = smon_sql.get_history(check_id)
             uptime = smon_mod.check_uptime(check_id)
             smon = smon_sql.select_one_smon(check_id, check_type_id)
-            agents = smon_sql.get_agents(g.user_params['group_id'])
             avg_res_time = smon_mod.get_average_response_time(check_id, check_type_id)
 
             for s in smon:
@@ -266,15 +282,8 @@ def smon_history_metric_chart(check_id, check_type_id):
                 else:
                     json_metric['ssl_expire_date'] = 'N/A'
 
-                for agent in agents:
-                    if agent.id == s.agent_id:
-                        json_metric['agent'] = agent.name
-                        break
-                else:
-                    json_metric['agent'] = 'None'
-
             json_metric['time'] = common.get_time_zoned_date(chart_metrics.date, '%H:%M:%S')
-            json_metric['value'] = chart_metrics.response_time
+            json_metric['response_time'] = chart_metrics.response_time
             json_metric['mes'] = str(chart_metrics.mes)
             json_metric['uptime'] = uptime
             json_metric['avg_res_time'] = avg_res_time
@@ -304,14 +313,3 @@ def smon_history_metric_chart(check_id, check_type_id):
     response.headers["Cache-Control"] = "no-cache"
     response.headers["X-Accel-Buffering"] = "no"
     return response
-
-
-@bp.route('/history/statuses/<int:dashboard_id>')
-def smon_history_statuses(dashboard_id):
-    return smon_mod.history_statuses(dashboard_id)
-
-
-@bp.route('/history/cur_status/<int:dashboard_id>/<int:check_id>')
-@jwt_required()
-def smon_history_cur_status(dashboard_id, check_id):
-    return smon_mod.history_cur_status(dashboard_id, check_id)

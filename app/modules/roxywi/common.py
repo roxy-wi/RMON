@@ -120,10 +120,7 @@ def logging(server_ip: str, action: str, **kwargs) -> None:
 	except Exception:
 		ip = ''
 
-	# if kwargs.get('login'):
 	mess = f"{cur_date_in_log} from {ip} user: {login.username}, group: {user_group}, {action} on: {server_ip}\n"
-	# else:
-	# 	mess = f"{cur_date_in_log} {action} from {ip}\n"
 
 	if kwargs.get('keep_history'):
 		try:

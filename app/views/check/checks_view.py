@@ -79,6 +79,15 @@ class ChecksViewHttp(ChecksView):
                         type: 'string'
                         format: 'date-time'
                         description: 'Time State'
+                  place:
+                    type: 'string'
+                    description: Where checks must be deployed
+                    enum: ['all', 'country', 'region', 'agent']
+                  entities:
+                    type: 'array'
+                    description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                    items:
+                      type: 'integer'
                   url:
                     type: 'string'
                     description: 'URL to be tested'
@@ -94,9 +103,6 @@ class ChecksViewHttp(ChecksView):
                   interval:
                     type: 'integer'
                     description: 'Timeout interval'
-                  agent_id:
-                    type: 'integer'
-                    description: 'Agent ID'
                   headers:
                     type: 'string'
                     description: 'Headers'
@@ -137,9 +143,15 @@ class ChecksViewDns(ChecksView):
               items:
                 type: 'object'
                 properties:
-                  agent_id:
-                    type: 'integer'
-                    description: 'ID of the agent for the check'
+                  place:
+                    type: 'string'
+                    description: Where checks must be deployed
+                    enum: ['all', 'country', 'region', 'agent']
+                  entities:
+                    type: 'array'
+                    description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                    items:
+                      type: 'integer'
                   interval:
                     type: 'integer'
                     description: 'Check interval, in seconds'
@@ -169,7 +181,7 @@ class ChecksViewDns(ChecksView):
                         type: 'string'
                       enabled:
                         type: 'string'
-                      group_id:
+                      check_group_id:
                         type: 'integer'
                       id:
                         type: 'integer'
@@ -191,7 +203,7 @@ class ChecksViewDns(ChecksView):
                         type: 'string'
                       updated_at:
                         type: 'string'
-                      user_group:
+                      group_id:
                         type: 'integer'
         """
         checks = super().get(query)
@@ -230,9 +242,15 @@ class ChecksViewTcp(ChecksView):
               items:
                 type: 'object'
                 properties:
-                  agent_id:
-                    type: 'integer'
-                    description: 'ID of the agent for the check'
+                  place:
+                    type: 'string'
+                    description: Where checks must be deployed
+                    enum: ['all', 'country', 'region', 'agent']
+                  entities:
+                    type: 'array'
+                    description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                    items:
+                      type: 'integer'
                   interval:
                     type: 'integer'
                     description: 'Check interval, in seconds'
@@ -256,7 +274,7 @@ class ChecksViewTcp(ChecksView):
                         type: 'string'
                       enabled:
                         type: 'string'
-                      group_id:
+                      check_group_id:
                         type: 'integer'
                       id:
                         type: 'integer'
@@ -278,7 +296,7 @@ class ChecksViewTcp(ChecksView):
                         type: 'string'
                       updated_at:
                         type: 'string'
-                      user_group:
+                      group_id:
                         type: 'integer'
         """
         checks = super().get(query)
@@ -318,9 +336,15 @@ class ChecksViewPing(ChecksView):
               items:
                 type: 'object'
                 properties:
-                  agent_id:
-                    type: 'integer'
-                    description: 'ID of the agent for the check'
+                  place:
+                    type: 'string'
+                    description: Where checks must be deployed
+                    enum: ['all', 'country', 'region', 'agent']
+                  entities:
+                    type: 'array'
+                    description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                    items:
+                      type: 'integer'
                   interval:
                     type: 'integer'
                     description: 'Check interval, in seconds'
@@ -344,7 +368,7 @@ class ChecksViewPing(ChecksView):
                         type: 'string'
                       enabled:
                         type: 'string'
-                      group_id:
+                      check_group_id:
                         type: 'integer'
                       id:
                         type: 'integer'
@@ -366,7 +390,7 @@ class ChecksViewPing(ChecksView):
                         type: 'string'
                       updated_at:
                         type: 'string'
-                      user_group:
+                      group_id:
                         type: 'integer'
         """
         checks = super().get(query)
@@ -406,9 +430,15 @@ class ChecksViewSmtp(ChecksView):
               items:
                 type: 'object'
                 properties:
-                  agent_id:
-                    type: 'integer'
-                    description: 'ID of the agent for the check'
+                  place:
+                    type: 'string'
+                    description: Where checks must be deployed
+                    enum: ['all', 'country', 'region', 'agent']
+                  entities:
+                    type: 'array'
+                    description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                    items:
+                      type: 'integer'
                   interval:
                     type: 'integer'
                     description: 'Check interval, in seconds'
@@ -432,7 +462,7 @@ class ChecksViewSmtp(ChecksView):
                         type: 'string'
                       enabled:
                         type: 'string'
-                      group_id:
+                      check_group_id:
                         type: 'integer'
                       id:
                         type: 'integer'
@@ -454,7 +484,7 @@ class ChecksViewSmtp(ChecksView):
                         type: 'string'
                       updated_at:
                         type: 'string'
-                      user_group:
+                      group_id:
                         type: 'integer'
         """
         checks = super().get(query)
@@ -493,9 +523,15 @@ class ChecksViewRabbit(ChecksView):
               items:
                 type: 'object'
                 properties:
-                  agent_id:
-                    type: 'integer'
-                    description: 'ID of the agent for the check'
+                  place:
+                    type: 'string'
+                    description: Where checks must be deployed
+                    enum: ['all', 'country', 'region', 'agent']
+                  entities:
+                    type: 'array'
+                    description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                    items:
+                      type: 'integer'
                   interval:
                     type: 'integer'
                     description: 'Check interval, in seconds'
@@ -530,7 +566,7 @@ class ChecksViewRabbit(ChecksView):
                         type: 'string'
                       enabled:
                         type: 'string'
-                      group_id:
+                      check_group_id:
                         type: 'integer'
                       id:
                         type: 'integer'
@@ -552,7 +588,7 @@ class ChecksViewRabbit(ChecksView):
                         type: 'string'
                       updated_at:
                         type: 'string'
-                      user_group:
+                      group_id:
                         type: 'integer'
         """
         checks = super().get(query)

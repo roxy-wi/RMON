@@ -5,7 +5,7 @@ from flask import g
 import app.modules.db.server as server_sql
 import app.modules.roxywi.common as roxywi_common
 from app.modules.roxywi.class_models import ServerRequest, GroupQuery, CredRequest, ChannelRequest, StatusPageRequest, \
-    RegionRequest
+    RegionRequest, CountryRequest
 from app.middleware import get_user_params
 
 
@@ -37,7 +37,11 @@ class SupportClass:
 
     @staticmethod
     @get_user_params()
-    def return_group_id(body: Union[ServerRequest, CredRequest, GroupQuery, ChannelRequest, StatusPageRequest, RegionRequest]):
+    def return_group_id(
+            body: Union[
+                ServerRequest, CredRequest, GroupQuery, ChannelRequest, StatusPageRequest, RegionRequest, CountryRequest
+            ]
+    ):
         if body.group_id:
             if g.user_params['role'] == 1:
                 return body.group_id

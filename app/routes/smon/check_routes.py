@@ -1,4 +1,4 @@
-from flask import render_template, request, jsonify, g
+from flask import render_template, request, jsonify
 from flask_jwt_extended import jwt_required
 
 from app.routes.smon import bp
@@ -10,24 +10,23 @@ import app.modules.tools.smon_agent as agent_mod
 import app.modules.roxywi.common as roxywi_common
 
 
-@bp.route('/check/<int:smon_id>/<int:check_type_id>')
+@bp.route('/check/<int:multi_check_id>/<int:check_type_id>')
 @jwt_required()
 @get_user_params()
-def get_check(smon_id, check_type_id):
+def get_check(multi_check_id, check_type_id):
     """
     Get the check for the given RMON ID and check type ID.
 
     Parameters:
-    - smon_id (int): The ID of the RMON.
+    - multi_check_id (int): The ID of the RMON multi check.
     - check_type_id (int): The ID of the check type.
 
     Returns:
     - flask.Response: The rendered template for the check page.
     """
-    smon = smon_sql.select_one_smon(smon_id, check_type_id)
+    smon = smon_sql.select_one_multi_check_join(multi_check_id, check_type_id)
     lang = roxywi_common.get_user_lang_for_flask()
-    agents = smon_sql.get_agents(g.user_params['group_id'])
-    return render_template('ajax/smon/check.html', smon=smon, lang=lang, check_type_id=check_type_id, agents=agents)
+    return render_template('ajax/smon/check.html', smon=smon, lang=lang, check_type_id=check_type_id)
 
 
 @bp.get('/checks/count')
@@ -50,12 +49,12 @@ def move_checks():
     checks = {}
 
     try:
-        for check_type in ('http', 'tcp', 'dns', 'ping'):
-            got_checks = smon_sql.select_checks_for_agent(old_agent, check_type)
+        for check_type in ('http', 'tcp', 'dns', 'ping', 'smtp', 'rabbitmq'):
+            got_checks = smon_sql.select_checks_for_agent(old_agent)
             for c in got_checks:
-                checks[c.smon_id] = check_type
-                agent_mod.delete_check(old_agent, old_agent_ip, c.smon_id)
-                smon_sql.update_check_agent(c.smon_id, new_agent, check_type)
+                checks[c.id] = check_type
+                agent_mod.delete_check(old_agent, old_agent_ip, c.id)
+                smon_sql.update_check_agent(c.id, new_agent)
     except Exception as e:
         roxywi_common.handle_json_exceptions(e, 'Cannot get checks')
 

@@ -1,8 +1,7 @@
 <html lang="{{lang|default('en')}}">
 {% import 'languages/'+lang|default('en')+'.html' as lang %}
-{% for p in page %}
     <head>
-        <title>{{p.name}}</title>
+        <title>{{page.name}}</title>
         <meta charset="UTF-8">
 		<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 		<meta http-equiv="Pragma" content="no-cache" />
@@ -26,8 +25,11 @@
         <link href="{{ url_for('static', filename='css/smon.css') }}" rel="stylesheet">
         <script src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/js.cookie.min.js') }}"></script>
         <script src="{{ url_for('static', filename='js/variables.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/smon.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/rmon/smon.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/rmon/status_page.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/rmon/check.js') }}"></script>
         <link href="{{ url_for('static', filename='css/toastr-6.3.9.css') }}" rel="stylesheet"/>
 		<script src="{{ url_for('static', filename='js/toastr.js') }}"></script>
         <link href="{{ url_for('static', filename='css/awesome-6.3.9.css') }}" rel="stylesheet">
@@ -36,10 +38,10 @@
     </head>
     <body>
         <style>
-            {{ p.custom_style|replace("'", "")|replace('"', '') }}
+            {{ page.custom_style|replace("'", "")|replace('"', '') }}
         </style>
-        <h2>Status page - {{p.name|replace("'", "")}}</h2>
-        <h3>{{p.description|replace("'", "")}}</h3>
+        <h2>Status page - {{page.name|replace("'", "")}}</h2>
+        <h3>{{page.description|replace("'", "")}}</h3>
         <div id="page_status" class="page_cur_status"></div>
         {% for check, value in checks_status.items() %}
         {% if value.uptime|int() > 50 and value.uptime|int() < 90  %}
@@ -71,7 +73,6 @@
         </div>
         <script>show_smon_history_statuses('{{check}}', '#history-{{check}}');</script>
         {% endfor %}
-        <script>smon_status_page_avg_status('{{p.id}}');</script>
+        <script>smon_status_page_avg_status('{{page.id}}');</script>
     </body>
 </html>
-{% endfor %}

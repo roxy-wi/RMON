@@ -2,13 +2,13 @@ import uuid
 from datetime import datetime
 from typing import Union
 
-from peewee import fn
+from peewee import fn, IntegrityError
 
 from app.modules.db.db_model import (
 	SmonAgent, Server, SMON, SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonHistory, SmonStatusPageCheck,
-	SmonStatusPage, SmonGroup, SmonSMTPCheck, SmonRabbitCheck, mysql_enable
+	SmonStatusPage, SmonGroup, SmonSMTPCheck, SmonRabbitCheck, mysql_enable, MultiCheck
 )
-from app.modules.db.common import out_error
+from app.modules.db.common import out_error, resource_not_empty
 import app.modules.roxy_wi_tools as roxy_wi_tools
 import app.modules.tools.common as tool_common
 from app.modules.roxywi.exception import RoxywiResourceNotFound
@@ -102,6 +102,8 @@ def add_agent(**kwargs) -> int:
 def delete_agent(agent_id: int):
 	try:
 		SmonAgent.delete().where(SmonAgent.id == agent_id).execute()
+	except IntegrityError:
+		resource_not_empty()
 	except Exception as e:
 		out_error(e)
 
@@ -138,9 +140,9 @@ def get_agent_ip_by_id(agent_id: int):
 		raise RoxywiResourceNotFound
 
 
-def get_agent_id_by_uuid(agent_uuid: int) -> int:
+def get_agent_by_uuid(agent_uuid: int) -> SmonAgent:
 	try:
-		return SmonAgent.get(SmonAgent.uuid == agent_uuid).id
+		return SmonAgent.get(SmonAgent.uuid == agent_uuid)
 	except Exception as e:
 		out_error(e)
 
@@ -178,7 +180,7 @@ def select_server_ip_by_agent_id(agent_id: int) -> str:
 def select_en_smon(agent_id: int, check_type: str) -> Union[SmonTcpCheck, SmonPingCheck, SmonDnsCheck, SmonHttpCheck, SmonSMTPCheck]:
 	model = tool_common.get_model_for_check(check_type=check_type)
 	try:
-		return model.select(model, SMON).join_from(model, SMON).where((SMON.enabled == '1') & (model.agent_id == agent_id)).execute()
+		return model.select(model, SMON).join_from(model, SMON).where((SMON.enabled == '1') & (SMON.agent_id == agent_id)).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -204,9 +206,8 @@ def change_status(status, smon_id):
 
 
 def response_time(time, smon_id):
-	query = SMON.update(response_time=time).where(SMON.id == smon_id)
 	try:
-		query.execute()
+		SMON.update(response_time=time).where(SMON.id == smon_id).execute()
 	except Exception as e:
 		out_error(e)
 		return False
@@ -250,64 +251,73 @@ def select_one_smon(smon_id: int, check_type_id: int) -> tuple:
 		out_error(e)
 
 
-def insert_smon(name, enable, group_id, desc, telegram, slack, pd, mm, user_group, check_type, timeout, region_id):
+def select_check_with_group(check_id: int, group_id: int) -> SMON:
+	try:
+		return SMON.get((SMON.group_id == group_id) & (SMON.id == check_id))
+	except SMON.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		out_error(e)
+
+
+def insert_smon(name, enable, check_group_id, desc, telegram, slack, pd, mm, group_id, check_type, timeout, agent_id, region_id, country_id, multi_check_id):
 	try:
 		last_id = SMON.insert(
-			name=name, enabled=enable, description=desc, group_id=group_id, telegram_channel_id=telegram, slack_channel_id=slack,
-			pd_channel_id=pd, mm_channel_id=mm, user_group=user_group, status='3', check_type=check_type, check_timeout=timeout,
-			region_id=region_id
+			name=name, enabled=enable, description=desc, check_group_id=check_group_id, telegram_channel_id=telegram, slack_channel_id=slack,
+			pd_channel_id=pd, mm_channel_id=mm, group_id=group_id, status='3', check_type=check_type, check_timeout=timeout,
+			region_id=region_id, country_id=country_id, multi_check_id=multi_check_id, agent_id=agent_id
 		).execute()
 		return last_id
 	except Exception as e:
 		out_error(e)
 
 
-def insert_smon_ping(smon_id, hostname, packet_size, interval, agent_id):
+def insert_smon_ping(smon_id, hostname, packet_size, interval):
 	try:
-		SmonPingCheck.insert(smon_id=smon_id, ip=hostname, packet_size=packet_size, interval=interval, agent_id=agent_id).on_conflict('replace').execute()
+		SmonPingCheck.insert(smon_id=smon_id, ip=hostname, packet_size=packet_size, interval=interval).on_conflict('replace').execute()
 	except Exception as e:
 		out_error(e)
 
 
-def insert_smon_smtp(smon_id, hostname, port, username, password, interval, agent_id, ignore_ssl_error):
+def insert_smon_smtp(smon_id, hostname, port, username, password, interval, ignore_ssl_error):
 	try:
 		SmonSMTPCheck.insert(
-			smon_id=smon_id, ip=hostname, port=port, username=username, password=password, interval=interval, agent_id=agent_id, ignore_ssl_error=ignore_ssl_error
+			smon_id=smon_id, ip=hostname, port=port, username=username, password=password, interval=interval, ignore_ssl_error=ignore_ssl_error
 		).on_conflict('replace').execute()
 	except Exception as e:
 		out_error(e)
 
 
-def insert_smon_rabbit(smon_id, hostname, port, username, password, interval, agent_id, ignore_ssl_error, vhost):
+def insert_smon_rabbit(smon_id, hostname, port, username, password, interval, ignore_ssl_error, vhost):
 	try:
 		SmonRabbitCheck.insert(
-			smon_id=smon_id, ip=hostname, port=port, username=username, password=password, interval=interval, agent_id=agent_id,
+			smon_id=smon_id, ip=hostname, port=port, username=username, password=password, interval=interval,
 			ignore_ssl_error=ignore_ssl_error, vhost=vhost
 		).on_conflict('replace').execute()
 	except Exception as e:
 		out_error(e)
 
 
-def insert_smon_tcp(smon_id, hostname, port, interval, agent_id):
+def insert_smon_tcp(smon_id, hostname, port, interval):
 	try:
-		SmonTcpCheck.insert(smon_id=smon_id, ip=hostname, port=port, interval=interval, agent_id=agent_id).on_conflict('replace').execute()
+		SmonTcpCheck.insert(smon_id=smon_id, ip=hostname, port=port, interval=interval).on_conflict('replace').execute()
 	except Exception as e:
 		out_error(e)
 
 
-def insert_smon_dns(smon_id: int, hostname: str, port: int, resolver: str, record_type: str, interval: int, agent_id: int) -> None:
+def insert_smon_dns(smon_id: int, hostname: str, port: int, resolver: str, record_type: str, interval: int) -> None:
 	try:
 		SmonDnsCheck.insert(
-			smon_id=smon_id, ip=hostname, port=port, resolver=resolver, record_type=record_type, interval=interval, agent_id=agent_id
+			smon_id=smon_id, ip=hostname, port=port, resolver=resolver, record_type=record_type, interval=interval
 		).on_conflict('replace').execute()
 	except Exception as e:
 		out_error(e)
 
 
-def insert_smon_http(smon_id, url, body, http_method, interval, agent_id, body_req, header_req, status_code, ignore_ssl_error):
+def insert_smon_http(smon_id, url, body, http_method, interval, body_req, header_req, status_code, ignore_ssl_error):
 	try:
 		SmonHttpCheck.insert(
-			smon_id=smon_id, url=url, body=body, method=http_method, interval=interval, agent_id=agent_id, body_req=body_req,
+			smon_id=smon_id, url=url, body=body, method=http_method, interval=interval, body_req=body_req,
 			headers=header_req, accepted_status_codes=status_code, ignore_ssl_error=ignore_ssl_error
 		).on_conflict('replace').execute()
 	except Exception as e:
@@ -317,7 +327,7 @@ def insert_smon_http(smon_id, url, body, http_method, interval, agent_id, body_r
 def select_smon_checks(check_type: str, group_id: int) -> Union[SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck]:
 	correct_model = tool_common.get_model_for_check(check_type=check_type)
 	try:
-		query = correct_model.select().join(SMON).where(SMON.user_group == group_id)
+		query = correct_model.select().join(SMON).where(SMON.group_id == group_id)
 		return query.execute()
 	except correct_model.DoesNotExist:
 		raise RoxywiResourceNotFound
@@ -335,30 +345,72 @@ def select_smon_by_id(last_id):
 		return query_res
 
 
-def delete_smon(smon_id, user_group):
+def delete_multi_check(check_id: int, group_id: int) -> None:
 	try:
-		SMON.delete().where((SMON.id == smon_id) & (SMON.user_group == user_group)).execute()
-	except SMON.DoesNotExist:
+		MultiCheck.delete().where(
+			(MultiCheck.id == check_id) &
+			(MultiCheck.group_id == group_id)
+		).execute()
+	except MultiCheck.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
-		return False
-	else:
-		return True
 
 
-def smon_list(user_group):
-	if user_group == 1:
-		query = (SMON.select().order_by(SMON.group_id))
-	else:
-		query = (SMON.select().where(SMON.user_group == user_group).order_by(SMON.group_id))
+# def smon_list(group_id):
+# 	if group_id == 1:
+# 		query = (SMON.select().where(SMON.multi_check_id.is_null(True)).order_by(SMON.group_id))
+# 	else:
+# 		query = (SMON.select().where(
+# 			(SMON.group_id == group_id) &
+# 			(SMON.multi_check_id.is_null(True))
+# 		).order_by(SMON.group_id))
+#
+# 	try:
+# 		query_res = query.execute()
+# 	except Exception as e:
+# 		out_error(e)
+# 	else:
+# 		return query_res
 
+
+def select_multi_check(multi_check_id: int, group_id: int) -> SMON:
 	try:
-		query_res = query.execute()
+		return SMON.select().join(MultiCheck).where(
+			(SMON.group_id == group_id) &
+			(SMON.multi_check_id == multi_check_id)
+		).order_by(SMON.check_group_id)
 	except Exception as e:
 		out_error(e)
-	else:
-		return query_res
+
+
+def select_multi_checks(group_id: int) -> SMON:
+	try:
+		return SMON.select().join(MultiCheck).where(SMON.group_id == group_id).order_by(SMON.check_group_id).group_by(SMON.multi_check_id)
+	except Exception as e:
+		out_error(e)
+
+
+def select_one_multi_check_join(multi_check_id: int, check_type_id: int) -> SMON:
+	correct_model = tool_common.get_model_for_check(check_type_id=check_type_id)
+	try:
+		return correct_model.select(correct_model, SMON).join_from(correct_model, SMON).where(
+			SMON.multi_check_id == multi_check_id
+		).group_by(SMON.multi_check_id)
+	except correct_model.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		out_error(e)
+
+
+def get_multi_check(check_id: int, group_id: int) -> SMON:
+	try:
+		return SMON.get(
+			(SMON.group_id == group_id) &
+			(SMON.multi_check_id == check_id)
+		)
+	except Exception as e:
+		out_error(e)
 
 
 def add_status_page(name: str, slug: str, desc: str, group_id: int, checks: list, styles: str) -> int:
@@ -423,13 +475,11 @@ def select_status_page_by_id(page_id: int):
 		return query_res
 
 
-def select_status_page(slug: str):
+def get_status_page(slug: str) -> SmonStatusPage:
 	try:
-		query_res = SmonStatusPage.select().where(SmonStatusPage.slug == slug).execute()
+		return SmonStatusPage.get(SmonStatusPage.slug == slug)
 	except Exception as e:
 		out_error(e)
-	else:
-		return query_res
 
 
 def select_status_page_checks(page_id: int):
@@ -538,19 +588,17 @@ def select_smon_history(smon_id: int, limit: int = 40) -> SmonHistory:
 
 def get_history(smon_id: int) -> SmonHistory:
 	try:
-		res = SmonHistory.select().where(SmonHistory.smon_id == smon_id).order_by(SmonHistory.date.desc()).get()
-		return res
+		return SmonHistory.select().where(SmonHistory.smon_id == smon_id).order_by(SmonHistory.date.desc()).get()
+	except SmonHistory.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
-	finally:
-		del res
 
 
-def update_check(smon_id, name, telegram, slack, pd, mm, group_id, desc, en, timeout, region_id):
+def update_check(smon_id, name, telegram, slack, pd, mm, check_group_id, desc, en, timeout):
 	query = (SMON.update(
 		name=name, telegram_channel_id=telegram, slack_channel_id=slack, pd_channel_id=pd, mm_channel_id=mm,
-		group_id=group_id, description=desc, enabled=en, updated_at=datetime.now(), check_timeout=timeout,
-		region_id=region_id
+		check_group_id=check_group_id, description=desc, enabled=en, updated_at=datetime.now(), check_timeout=timeout
 	).where(SMON.id == smon_id))
 	try:
 		query.execute()
@@ -558,64 +606,11 @@ def update_check(smon_id, name, telegram, slack, pd, mm, group_id, desc, en, tim
 		out_error(e)
 
 
-def update_check_agent(smon_id: int, agent_id: int, check_type: str) -> None:
-	correct_model = tool_common.get_model_for_check(check_type=check_type)
+def update_check_agent(smon_id: int, agent_id: int) -> None:
 	try:
-		return correct_model.update(agent_id=agent_id).where(correct_model.smon_id == smon_id).execute()
+		return SMON.update(agent_id=agent_id).where(SMON.id == smon_id).execute()
 	except Exception as e:
 		out_error(e)
-
-
-def update_check_http(smon_id, url, body, method, interval, agent_id, body_req, header_req, status_code):
-	try:
-		SmonHttpCheck.update(
-			url=url, body=body, method=method, interval=interval, agent_id=agent_id, body_req=body_req, headers=header_req, accepted_status_codes=status_code
-		).where(SmonHttpCheck.smon_id == smon_id).execute()
-		return True
-	except Exception as e:
-		out_error(e)
-		return False
-
-
-def update_check_tcp(smon_id, ip, port, interval, agent_id):
-	try:
-		SmonTcpCheck.update(ip=ip, port=port, interval=interval, agent_id=agent_id).where(SmonTcpCheck.smon_id == smon_id).execute()
-		return True
-	except Exception as e:
-		out_error(e)
-		return False
-
-
-def update_check_ping(smon_id, ip, packet_size, interval, agent_id):
-	try:
-		SmonPingCheck.update(ip=ip, packet_size=packet_size, interval=interval, agent_id=agent_id).where(SmonPingCheck.smon_id == smon_id).execute()
-		return True
-	except Exception as e:
-		out_error(e)
-		return False
-
-
-def update_check_dns(smon_id: int, ip: str, port: int, resolver: str, record_type: str, interval: int, agent_id: int):
-	try:
-		SmonDnsCheck.update(ip=ip, port=port, resolver=resolver, record_type=record_type, interval=interval,
-							agent_id=agent_id).where(SmonDnsCheck.smon_id == smon_id).execute()
-		return True
-	except Exception as e:
-		out_error(e)
-		return False
-
-
-def select_smon(user_group):
-	if user_group == 1:
-		query = SMON.select()
-	else:
-		query = SMON.select().where(SMON.user_group == user_group)
-	try:
-		query_res = query.execute()
-	except Exception as e:
-		out_error(e)
-	else:
-		return query_res
 
 
 def get_avg_resp_time(smon_id: int, check_id: int) -> int:
@@ -697,44 +692,58 @@ def count_checks() -> int:
 def delete_smon_history():
 	get_date = roxy_wi_tools.GetDate()
 	cur_date = get_date.return_date('regular', timedelta_minus=1)
-	query = SmonHistory.delete().where(SmonHistory.date < cur_date)
 	try:
-		query.execute()
+		SmonHistory.delete().where(SmonHistory.date < cur_date).execute()
 	except Exception as e:
 		out_error(e)
 
 
-def select_checks_for_agent(agent_id: int, check_type: str) -> dict:
-	correct_model = tool_common.get_model_for_check(check_type=check_type)
+def delete_smon(smon_id: int, group_id: int) -> None:
 	try:
-		return correct_model.select(correct_model, SMON).join(SMON).where(correct_model.agent_id == agent_id).objects().execute()
+		SMON.delete().where((SMON.id == smon_id) & (SMON.group_id == group_id)).execute()
+	except SMON.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 
 
-def get_smon_group_by_name(user_group: int, name: str) -> int:
+def select_checks_for_agent(agent_id: int) -> dict:
 	try:
-		return SmonGroup.select().where((SmonGroup.name == name) & (SmonGroup.user_group == user_group)).get().id
+		return SMON.select().where(SMON.agent_id == agent_id).execute()
+	except Exception as e:
+		out_error(e)
+
+
+def get_smon_group_by_name(group_id: int, name: str) -> int:
+	try:
+		return SmonGroup.select().where((SmonGroup.name == name) & (SmonGroup.group_id == group_id)).get().id
 	except Exception:
 		return 0
 
 
-def get_smon_group_name_by_id(group_id: int) -> str:
+def get_smon_group_name_by_id(check_group_id: int) -> str:
 	try:
-		return SmonGroup.get(SmonGroup.id == group_id).name
+		return SmonGroup.get(SmonGroup.id == check_group_id).name
 	except Exception as e:
 		out_error(e)
 
 
-def add_smon_group(user_group: int, name: str) -> int:
+def add_smon_group(group_id: int, name: str) -> int:
 	try:
-		return SmonGroup.insert(name=name, user_group=user_group).on_conflict('replace').execute()
+		return SmonGroup.insert(name=name, group_id=group_id).on_conflict('replace').execute()
 	except Exception as e:
 		out_error(e)
 
 
-def select_smon_groups(user_group: int) -> object:
+def select_smon_groups(group_id: int) -> object:
 	try:
-		return SmonGroup.select().where(SmonGroup.user_group == user_group)
+		return SmonGroup.select().where(SmonGroup.group_id == group_id)
+	except Exception as e:
+		out_error(e)
+
+
+def create_mutli_check(group_id: int, entity_type: str) -> int:
+	try:
+		return MultiCheck.insert(group_id=group_id, entity_type=entity_type).execute()
 	except Exception as e:
 		out_error(e)

@@ -20,3 +20,7 @@ def not_unique_error(error):
 	else:
 		col = error.args[0].split(': ')[-1]
 	raise RoxywiConflictError(f'{col} must be uniq')
+
+
+def resource_not_empty():
+	raise RoxywiConflictError('Resource is not empty, delete Checks and/or Agents and try again')

@@ -1,7 +1,8 @@
-from app.modules.db.db_model import ActionHistory, RMONAlertsHistory
+from app.modules.db.db_model import ActionHistory, RMONAlertsHistory, SMON
 from app.modules.db.sql import get_setting
 from app.modules.db.common import out_error
 import app.modules.roxy_wi_tools as roxy_wi_tools
+from app.modules.roxywi.exception import RoxywiResourceNotFound
 
 
 def alerts_history(service, user_group, **kwargs):
@@ -15,6 +16,20 @@ def alerts_history(service, user_group, **kwargs):
 		query = RMONAlertsHistory.select().where(RMONAlertsHistory.service == service)
 	try:
 		return query.execute()
+	except Exception as e:
+		out_error(e)
+
+
+def rmon_multi_check_history(multi_check_id: int, group_id: int):
+	query = RMONAlertsHistory.select().join(SMON).where(
+			(RMONAlertsHistory.service == 'RMON') &
+			(RMONAlertsHistory.user_group == group_id) &
+			(SMON.multi_check_id == multi_check_id)
+	)
+	try:
+		return query.execute()
+	except RMONAlertsHistory.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 

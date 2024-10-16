@@ -14,7 +14,7 @@
 - name: Upgrade pip3
   pip:
     name: pip
-    executable: /usr/local/bin/pip3
+    executable: pip3
     state: latest
     extra_args: --upgrade --ignore-installed
 

@@ -4,37 +4,32 @@ from flask import jsonify
 from playhouse.shortcuts import model_to_dict
 from flask_pydantic import validate
 
-import app.modules.db.smon as smon_sql
 import app.modules.db.region as region_sql
+import app.modules.db.country as country_sql
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.common as roxywi_common
 from app.middleware import get_user_params, check_group
-from app.modules.roxywi.class_models import BaseResponse, IdResponse, GroupQuery, RegionRequest
+from app.modules.roxywi.class_models import BaseResponse, IdResponse, GroupQuery, CountryRequest
 from app.modules.common.common_classes import SupportClass
 
 
-class RegionView(MethodView):
+class CountryView(MethodView):
     method_decorators = ["GET", "POST", "PUT", "DELETE"]
     decorators = [jwt_required(),  get_user_params(), check_group()]
 
     @validate(query=GroupQuery)
-    def get(self, region_id: int, query: GroupQuery):
+    def get(self, country_id: int, query: GroupQuery):
         """
-        Retrieve region information based on the provided region_id.
+        Retrieve country information based on the provided country_id.
         ---
         tags:
-         - Region
+         - Country
         parameters:
-          - name: region_id
+          - name: country_id
             in: path
             type: integer
             required: true
             description: The identifier of the region
-          - name: group_id
-            in: query
-            description: This parameter is used only for the superAdmin role.
-            required: false
-            type: integer
         responses:
           200:
             description: Successfully retrieved country information
@@ -47,10 +42,10 @@ class RegionView(MethodView):
                   description: The identifier of the country (can be null)
                 description:
                   type: string
-                  description: Description of the region
+                  description: Description of the country
                 enabled:
                   type: integer
-                  description: Region enabled flag (1 - enabled, 0 - disabled)
+                  description: Country enabled flag (1 - enabled, 0 - disabled)
                 group_id:
                   type: integer
                   description: The identifier of the group
@@ -66,19 +61,19 @@ class RegionView(MethodView):
         """
         group_id = SupportClass.return_group_id(query)
         try:
-            region = region_sql.get_region_with_group(region_id, group_id)
+            country = country_sql.get_country_with_group(country_id, group_id)
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot find the region')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot find the country')
 
-        return jsonify(model_to_dict(region, recurse=False))
+        return jsonify(model_to_dict(country))
 
-    @validate(body=RegionRequest)
-    def post(self, body: RegionRequest):
+    @validate(body=CountryRequest)
+    def post(self, body: CountryRequest):
         """
-        Create a new region with the provided information.
+        Create a new country with the provided information.
         ---
         tags:
-        - Region
+        - Country
         parameters:
           - name: body
             in: body
@@ -93,21 +88,21 @@ class RegionView(MethodView):
                   example: "test"
                 description:
                   type: string
-                  description: Description of the region
+                  description: Description of the country
                   example: ""
                 enabled:
                   type: integer
-                  description: Region enabled flag (1 - enabled, 0 - disabled)
+                  description: Country enabled flag (1 - enabled, 0 - disabled)
                   example: 1
                 shared:
                   type: integer
                   description: Shared flag (1 - shared, 0 - not shared)
                   example: 0
-                agents:
+                regions:
                   type: array
                   items:
                     type: string
-                  description: List of agents associated with the region
+                  description: List of regions associated with the country
                   example: []
         responses:
           201:
@@ -117,31 +112,31 @@ class RegionView(MethodView):
         group_id = SupportClass.return_group_id(body)
         body.group_id = group_id
         try:
-            last_id = region_sql.create_region(body)
+            last_id = country_sql.create_country(body)
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create the region')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create the country')
         try:
-            if body.agents:
-                for agent in body.agents:
-                    smon_sql.update_agent(agent, region_id=last_id)
+            if body.regions:
+                for region in body.regions:
+                    region_sql.add_region_to_country(region, last_id)
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot add agents to the new region')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot add regions to the new country')
 
         return IdResponse(id=last_id).model_dump(mode='json'), 201
 
-    @validate(body=RegionRequest)
-    def put(self, region_id: int, body: RegionRequest):
+    @validate(body=CountryRequest)
+    def put(self, country_id: int, body: CountryRequest):
         """
-        Update an existing region with the provided information.
+        Update an existing country with the provided information.
         ---
         tags:
-        - Region
+        - Country
         parameters:
-          - name: region_id
+          - name: country_id
             in: path
             type: integer
             required: true
-            description: The identifier of the region to be updated
+            description: The identifier of the country to be updated
           - name: body
             in: body
             required: true
@@ -151,11 +146,11 @@ class RegionView(MethodView):
               properties:
                 name:
                   type: string
-                  description: Name of the region
-                  example: "DT"
+                  description: Name of the country
+                  example: "Italy"
                 description:
                   type: string
-                  description: Description of the region
+                  description: Description of the country
                   example: ""
                 enabled:
                   type: integer
@@ -165,11 +160,11 @@ class RegionView(MethodView):
                   type: integer
                   description: Shared flag (1 - shared, 0 - not shared)
                   example: 0
-                agents:
+                regions:
                   type: array
                   items:
                     type: string
-                  description: List of agents associated with the region
+                  description: List of regions associated with the country
                   example:
                     - "1"
                     - "2"
@@ -181,127 +176,121 @@ class RegionView(MethodView):
         group_id = SupportClass.return_group_id(body)
         body.group_id = group_id
         try:
-            region_sql.update_region(body, region_id)
+            country_sql.update_country(body, country_id)
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create the region')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create the country')
 
         try:
-            agents = smon_sql.get_agents_by_region(region_id)
-            for agent in agents:
-                smon_sql.update_agent(agent, region_id=None)
+            regions = region_sql.get_regions_by_country(country_id)
+            for region in regions:
+                region_sql.add_region_to_country(region.id, None)
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot update agents')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot update regions')
 
         try:
-            if body.agents:
-                for agent in body.agents:
-                    smon_sql.update_agent(agent, region_id=region_id)
+            if body.regions:
+                for region in body.regions:
+                    region_sql.add_region_to_country(region, country_id)
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot add agents to the region')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot add agents to the country')
 
         return BaseResponse().model_dump(mode='json'), 201
 
     @staticmethod
     @validate(query=GroupQuery)
-    def delete(region_id: int, query: GroupQuery):
+    def delete(country_id: int, query: GroupQuery):
         """
-        Delete a region based on the provided region_id.
+        Delete a country based on the provided country_id.
         ---
         tags:
-        - Region
+        - Country
         parameters:
-          - name: region_id
+          - name: country_id
             in: path
             type: integer
             required: true
-            description: The identifier of the region to be deleted
+            description: The identifier of the country to be deleted
         responses:
           204:
-            description: Successfully deleted the region
+            description: Successfully deleted the country
           404:
             description: Region not found
         """
         roxywi_auth.page_for_admin(level=2)
         group_id = SupportClass.return_group_id(query)
         try:
-            region_sql.get_region_with_group(region_id, group_id)
+            country_sql.get_country_with_group(country_id, group_id)
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot find the region')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot find the country')
 
         try:
-            region_sql.delete_region(region_id)
+            country_sql.delete_country(country_id)
             return BaseResponse().model_dump(mode='json'), 204
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot delete the region')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot delete the country')
 
 
-class RegionListView(MethodView):
+class CountryListView(MethodView):
     method_decorators = ["GET"]
     decorators = [jwt_required(), get_user_params(), check_group()]
 
     @validate(query=GroupQuery)
     def get(self, query: GroupQuery):
         """
-        Retrieve a list of regions.
+        Retrieve a list of countries.
         ---
         tags:
-        - Region
+        - Country
         responses:
           200:
-            description: Successfully retrieved list of regions
+            description: Successfully retrieved list of countries
             schema:
               type: array
               items:
                 type: object
                 properties:
-                  country_id:
-                    type: integer
-                    nullable: true
-                    description: The identifier of the country (can be null)
                   description:
                     type: string
-                    description: Description of the region
+                    description: Description of the country
                   enabled:
                     type: integer
-                    description: Region enabled flag (1 - enabled, 0 - disabled)
+                    description: Country enabled flag (1 - enabled, 0 - disabled)
                   group_id:
                     type: integer
                     description: The identifier of the group
                   id:
                     type: integer
-                    description: The identifier of the region in the system
+                    description: The identifier of the country in the system
                   name:
                     type: string
-                    description: Name of the region
+                    description: Name of the country
                   shared:
                     type: integer
                     description: Shared flag (1 - shared, 0 - not shared)
             examples:
               application/json: [
                 {
-                  "country_id": null,
                   "description": "",
                   "enabled": 1,
                   "group_id": 1,
                   "id": 1,
-                  "name": "DT",
+                  "name": "Malta",
                   "shared": 0
                 },
                 {
-                  "country_id": null,
                   "description": "",
                   "enabled": 1,
                   "group_id": 1,
                   "id": 2,
-                  "name": "test",
+                  "name": "Spain",
                   "shared": 0
                 }
               ]
         """
         group_id = SupportClass.return_group_id(query)
         try:
-            regions = region_sql.select_regions_by_group(group_id)
+            countries = country_sql.select_countries_by_group(group_id)
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get regions')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get countries')
 
-        return jsonify([model_to_dict(region, recurse=False) for region in regions])
+        return jsonify([model_to_dict(country) for country in countries])

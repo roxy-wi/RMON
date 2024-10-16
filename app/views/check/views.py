@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Tuple
 
 from flask.views import MethodView
 from flask_jwt_extended import jwt_required
@@ -7,14 +7,16 @@ from flask_pydantic import validate
 from playhouse.shortcuts import model_to_dict
 
 import app.modules.db.smon as smon_sql
+import app.modules.db.region as region_sql
+import app.modules.db.country as country_sql
 import app.modules.roxywi.common as roxywi_common
 import app.modules.tools.smon as smon_mod
+import app.modules.tools.smon_agent as smon_agent
 from app.middleware import get_user_params, check_group
-from app.modules.db.db_model import SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonSMTPCheck, \
-    SmonRabbitCheck
+from app.modules.common.common_classes import SupportClass
 from app.modules.roxywi.class_models import (
     IdResponse, HttpCheckRequest, DnsCheckRequest, TcpCheckRequest, PingCheckRequest, BaseResponse, SmtpCheckRequest,
-    RabbitCheckRequest
+    RabbitCheckRequest, GroupQuery
 )
 
 
@@ -31,8 +33,13 @@ class CheckView(MethodView):
             in: path
             type: string
         """
-        self.group_id = g.user_params['group_id']
         self.check_type = None
+        self.group_id = g.user_params['group_id']
+        self.multi_check_func = {
+            'country': self._create_country_check,
+            'region': self._create_region_check,
+            'agent': self._create_agent_check,
+        }
         self.create_func = {
             'http': smon_mod.create_http_check,
             'tcp': smon_mod.create_tcp_check,
@@ -42,87 +49,177 @@ class CheckView(MethodView):
             'rabbitmq': smon_mod.create_rabbit_check,
         }
 
-    def get(self, check_id: int) -> Union[SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonSMTPCheck, SmonRabbitCheck]:
+    def get(self, multi_check_id: int, query: GroupQuery) -> object:
+        group_id = SupportClass.return_group_id(query)
         check_type_id = smon_mod.get_check_id_by_name(self.check_type)
-        checks = smon_sql.select_one_smon(check_id, check_type_id=check_type_id)
-        for check in checks:
-            if check.smon_id.group_id:
-                group_name = smon_sql.get_smon_group_name_by_id(check.smon_id.group_id)
-            else:
-                group_name = None
-            check_json = model_to_dict(check, max_depth=1)
-            check_json['group_name'] = group_name
+        multi_check = smon_sql.select_multi_check(multi_check_id, group_id)
+        entities = []
+        check_json = {'checks': []}
+        if multi_check:
+            for m in multi_check:
+                place = m.multi_check_id.entity_type
+                check_id = m.id
+                if m.country_id:
+                    entities.append(m.country_id.id)
+                elif m.region_id:
+                    entities.append(m.region_id.id)
+                elif m.agent_id:
+                    entities.append(m.agent_id.id)
+                checks = smon_sql.select_one_smon(check_id, check_type_id=check_type_id)
+                for check in checks:
+                    if check.smon_id.check_group_id:
+                        group_name = smon_sql.get_smon_group_name_by_id(check.smon_id.group_id)
+                    else:
+                        group_name = None
+                    check_json['checks'].append(model_to_dict(check, max_depth=1))
+                    check_json['group_name'] = group_name
+                    check_json['entities'] = entities
+                    check_json['place'] = place
             return check_json
         else:
             abort(404, f'{self.check_type} check not found')
 
     def post(self, data) -> int:
         """
-        post(self, data) -> Union[int, tuple]:
 
-        This method is responsible for handling a POST request with the provided data.
+        Handles the post request to create multiple checks.
 
-        Parameters:
-        - data: The data to be processed.
+        Args:
+            data: An object containing the required data to create checks.
 
         Returns:
-        - int: The last ID of the created check if successful.
-        - tuple: An exception message and an empty string if an error occurs during the process.
+            The identifier for the created multi-check.
 
-        Note:
-        - This method internally calls 'check_checks_limit()' and 'create_check()' methods from 'smon_mod' module.
-        - If any exception occurs during the process, the 'handler_exceptions_for_json_data' function from 'roxywi_common' module is used to handle and return the exception message.
-        - In case of success, the last ID of the created check is returned.
-        - If an error occurs, a tuple with the exception message and an error message specific to the check type is returned.
+        Raises:
+            Exception: If there is an issue with checking the checks limit.
         """
+        self.group_id = SupportClass.return_group_id(data)
         try:
             smon_mod.check_checks_limit()
         except Exception as e:
             raise e
 
-        try:
-            last_id = smon_mod.create_check(data, self.group_id, self.check_type)
-        except Exception as e:
-            raise e
+        multi_check_id = smon_sql.create_mutli_check(self.group_id, data.place)
+        if data.place == 'all':
+            self._create_all_checks(data, multi_check_id)
+        for entity_id in data.entities:
+            self.multi_check_func[data.place](data, multi_check_id, entity_id)
 
-        if data.region_id:
-            try:
-                random_agent_id = smon_sql.get_randon_agent(data.region_id)
-                data.agent_id = random_agent_id
-            except Exception as e:
-                raise Exception(f'Cannot get agent from region: {e}')
-        try:
-            self.create_func[self.check_type](data, last_id)
-            smon_mod.send_new_check(last_id, data)
-        except Exception as e:
-            raise e
+        return multi_check_id
 
-        return last_id
+    def put(self, multi_check_id: int, data) -> None:
+        group_id = SupportClass.return_group_id(data)
+        new_entities = []
+        place = data.place
+        if data.place == 'all':
+            countries = country_sql.select_enabled_countries_by_group(group_id)
+            place = 'country'
+            for country in countries:
+                regions = region_sql.get_enabled_regions_by_country_with_group(country.id, group_id)
+                for _ in regions:
+                    new_entities.append(country.id)
+        else:
+            new_entities = data.entities
+        old_entities = []
+        entity_id_check_id = {}
+        checks = smon_sql.select_multi_check(multi_check_id, group_id)
+        for check in checks:
+            entity_id, details = self._extract_entity_details(check, data.place)
+            old_entities.append(entity_id)
+            if entity_id not in entity_id_check_id:
+                entity_id_check_id[entity_id] = []
+            entity_id_check_id[entity_id].append(details)
 
-    def put(self, check_id: int, data) -> None:
-        try:
-            smon_mod.update_smon(check_id, data, self.group_id)
-        except Exception as e:
-            raise e
-        if data.region_id:
-            try:
-                random_agent_id = smon_sql.get_randon_agent(data.region_id)
-                data.agent_id = random_agent_id
-            except Exception as e:
-                raise Exception(f'Cannot get agent from region: {e}')
-        try:
-            self.create_func[self.check_type](data, check_id)
-            if data.enabled:
-                smon_mod.send_new_check(check_id, data)
-        except Exception as e:
-            raise e
+        need_to_delete = list(set(old_entities) - set(new_entities))
+        need_to_create = list(set(new_entities) - set(old_entities))
+        need_to_update = list(set(old_entities) & set(new_entities))
+        for entity_id in need_to_delete:
+            for check in entity_id_check_id[entity_id]:
+                smon_sql.delete_smon(check['check_id'], group_id)
+                agent_ip = smon_sql.get_agent_ip_by_id(check['agent_id'])
+                smon_agent.delete_check(check['agent_id'], agent_ip, check['check_id'])
+                roxywi_common.logging('RMON server', f'Check {check["check_id"]} has been deleted from Agent {check["agent_id"]}')
+        for entity_id in need_to_update:
+            for check in entity_id_check_id[entity_id]:
+                try:
+                    smon_mod.update_smon(check['check_id'], data, self.group_id)
+                    self._create_agent_check(
+                        data,
+                        multi_check_id,
+                        check['agent_id'],
+                        check['region_id'],
+                        check['country_id'],
+                        check_id=check['check_id']
+                    )
+                except Exception as e:
+                    raise Exception(f'Cannot update {self.check_type}, id {check["id"]}: {e}')
+        for entity_id in need_to_create:
+            if place == 'all':
+                self._create_all_checks(data, multi_check_id)
+            else:
+                try:
+                    self.multi_check_func[place](data, multi_check_id, entity_id)
+                except Exception as e:
+                    raise Exception(f'here: {e}')
 
-    def delete(self, check_id: int) -> Union[int, tuple]:
+    def delete(self, check_id: int, query: GroupQuery) -> Union[int, tuple]:
+        group_id = SupportClass.return_group_id(query)
         try:
-            smon_mod.delete_smon(check_id, self.group_id)
+            smon_mod.delete_multi_check(check_id, group_id)
             return BaseResponse(status='Ok').model_dump(mode='json'), 204
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot delete {self.check_type} check')
+
+    def _create_all_checks(self, data, multi_check_id: int):
+        countries = country_sql.select_enabled_countries_by_group(self.group_id)
+        for c in countries:
+            self._create_country_check(data, multi_check_id, c.id)
+            roxywi_common.logging('RMON server', f'A new check {data.name} has been created on Country {c.name}')
+
+    def _create_country_check(self, data, multi_check_id: int, country_id: int):
+        regions = region_sql.get_enabled_regions_by_country_with_group(country_id, self.group_id)
+        for region in regions:
+            self._create_region_check(data, multi_check_id, region.id, country_id)
+            roxywi_common.logging('RMON server', f'A new check {data.name} has been created on Region {region.name}')
+
+    def _create_region_check(self, data, multi_check_id: int, region_id: int, country_id: int = None):
+        try:
+            random_agent_id = smon_sql.get_randon_agent(region_id)
+        except Exception as e:
+            raise Exception(f'Cannot get agent from region: {e}')
+        self._create_agent_check(data, multi_check_id, random_agent_id, region_id, country_id)
+
+    def _create_agent_check(self, data, multi_check_id: int, agent_id, region_id: int = None, country_id: int = None, check_id: int = None):
+        if check_id is None:
+            try:
+                last_id = smon_mod.create_check(data, self.group_id, self.check_type, multi_check_id, agent_id, region_id, country_id)
+            except Exception as e:
+                raise Exception(f' here 2 {e}')
+        else:
+            last_id = check_id
+
+        try:
+            self.create_func[self.check_type](data, last_id)
+            smon_mod.send_new_check(last_id, data, agent_id)
+        except Exception as e:
+            raise e
+
+    @staticmethod
+    def _extract_entity_details(check, data_place: str) -> Tuple[int, dict]:
+        country_id = check.country_id.id if check.country_id else None
+        region_id = check.region_id.id if check.region_id else None
+        if data_place in ('all', 'country'):
+            entity_id = check.country_id.id
+        elif data_place == 'region':
+            entity_id = check.region_id.id
+        elif data_place == 'agent':
+            entity_id = check.agent_id.id
+        return entity_id, {
+            'check_id': check.id,
+            'country_id': country_id,
+            'region_id': region_id,
+            'agent_id': check.agent_id.id
+        }
 
 
 class CheckHttpView(CheckView):
@@ -130,7 +227,8 @@ class CheckHttpView(CheckView):
         super().__init__()
         self.check_type = 'http'
 
-    def get(self, check_id: int) -> SmonHttpCheck:
+    @validate(query=GroupQuery)
+    def get(self, check_id: int, query: GroupQuery) -> object:
         """
         Get HTTP check.
         ---
@@ -142,70 +240,163 @@ class CheckHttpView(CheckView):
           description: 'ID of the check to retrieve'
           required: true
           type: 'integer'
+        - name: group_id
+          in: query
+          description: This parameter is used only for the superAdmin role.
+          required: false
+          type: integer
         responses:
           '200':
             description: 'Successful Operation'
             schema:
               id: 'HttpCheck'
               properties:
-                smon_id:
-                  type: 'object'
-                  description: 'RMON object'
-                  properties:
-                    id:
-                      type: 'integer'
-                      description: 'RMON ID'
-                    name:
-                      type: 'string'
-                      description: 'Name'
-                    port:
-                      type: 'integer'
-                      description: 'Port'
-                    status:
-                      type: 'integer'
-                      description: 'Status'
-                    enabled:
-                      type: 'integer'
-                      description: 'EN'
-                    description:
-                      type: 'string'
-                      description: 'Description'
-                    time_state:
-                      type: 'string'
-                      format: 'date-time'
-                      description: 'Time State'
-                url:
+                checks:
+                  type: 'array'
+                  description: 'List of checks inside multicheck'
+                  items:
+                    type: 'object'
+                    properties:
+                      accepted_status_codes:
+                        type: 'string'
+                        description: 'Expected status code'
+                      body:
+                        type: 'string'
+                        description: 'Body content'
+                      body_req:
+                        type: 'string'
+                        description: 'Body Request'
+                      headers:
+                        type: 'string'
+                        description: 'Headers'
+                      ignore_ssl_error:
+                        type: 'integer'
+                        description: 'Ignore TLS/SSL error'
+                      interval:
+                        type: 'integer'
+                        description: 'Timeout interval'
+                      method:
+                        type: 'string'
+                        description: 'HTTP Method to be used'
+                      smon_id:
+                        type: 'object'
+                        description: 'RMON object'
+                        properties:
+                          place:
+                            type: 'string'
+                            description: Where checks must be deployed
+                            enum: ['all', 'country', 'region', 'agent']
+                          entities:
+                            type: 'array'
+                            description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                            items:
+                              type: 'integer'
+                          body_status:
+                            type: 'integer'
+                            description: 'Body Status'
+                          check_timeout:
+                            type: 'integer'
+                            description: 'Check Timeout'
+                          check_type:
+                            type: 'string'
+                            description: 'Check Type'
+                          country_id:
+                            type: 'integer'
+                            description: 'Country ID'
+                          created_at:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'Creation Time'
+                          description:
+                            type: 'string'
+                            description: 'Description'
+                          enabled:
+                            type: 'integer'
+                            description: 'Enabled status'
+                          check_group_id:
+                            type: 'integer'
+                            description: 'Group ID'
+                            nullable: true
+                          http:
+                            type: 'string'
+                            description: 'HTTP'
+                            nullable: true
+                          id:
+                            type: 'integer'
+                            description: 'ID'
+                          mm_channel_id:
+                            type: 'integer'
+                            description: 'MM Channel ID'
+                          multi_check_id:
+                            type: 'integer'
+                            description: 'Multi-check ID'
+                          name:
+                            type: 'string'
+                            description: 'Name'
+                          pd_channel_id:
+                            type: 'integer'
+                            description: 'PD Channel ID'
+                          port:
+                            type: 'integer'
+                            description: 'Port'
+                            nullable: true
+                          region_id:
+                            type: 'integer'
+                            description: 'Region ID'
+                          response_time:
+                            type: 'string'
+                            description: 'Response Time'
+                          slack_channel_id:
+                            type: 'integer'
+                            description: 'Slack Channel ID'
+                          ssl_expire_critical_alert:
+                            type: 'integer'
+                            description: 'SSL Expire Critical Alert'
+                          ssl_expire_date:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'SSL Expiry Date'
+                          ssl_expire_warning_alert:
+                            type: 'integer'
+                            description: 'SSL Expire Warning Alert'
+                          status:
+                            type: 'integer'
+                            description: 'Status'
+                          telegram_channel_id:
+                            type: 'integer'
+                            description: 'Telegram Channel ID'
+                          time_state:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'Time State'
+                          updated_at:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'Update Time'
+                          group_id:
+                            type: 'integer'
+                            description: 'User Group'
+                      url:
+                        type: 'string'
+                        description: 'URL to be tested'
+                enabled:
                   type: 'string'
-                  description: 'URL to be tested'
-                method:
+                  description: 'Enable status (1 for enabled)'
+                place:
                   type: 'string'
-                  description: 'HTTP Method to be used'
-                accepted_status_codes:
+                  description: 'Where checks must be deployed'
+                  enum: ['all', 'country', 'region', 'agent']
+                entities:
+                  type: 'array'
+                  description: 'List of agents, regions, or countries. What exactly will be chosen depends on the place parameter'
+                  items:
+                    type: 'integer'
+                group_name:
                   type: 'string'
-                  description: 'Expected status code'
-                body:
-                  type: 'string'
-                  description: 'Body content'
-                interval:
-                  type: 'integer'
-                  description: 'Timeout interval'
-                agent_id:
-                  type: 'integer'
-                  description: 'Agent ID'
-                region_id:
-                  type: 'integer'
-                  description: 'Region ID'
-                headers:
-                  type: 'string'
-                  description: 'Headers'
-                body_req:
-                  type: 'string'
-                  description: 'Body Request'
-                ignore_ssl_error:
-                  type: 'integer'
-                  description: 'Ignore TLS/SSL error'
+                  description: 'Group Name'
+                  nullable: true
         """
-        return super().get(check_id)
+        return super().get(check_id, query)
 
     @validate(body=HttpCheckRequest)
     def post(self, body: HttpCheckRequest) -> Union[dict, tuple]:
@@ -227,7 +418,8 @@ class CheckHttpView(CheckView):
               - enabled
               - url
               - http_method
-              - agent_id
+              - place
+              - entities
             properties:
               name:
                 type: 'string'
@@ -235,6 +427,15 @@ class CheckHttpView(CheckView):
               enabled:
                 type: 'string'
                 description: 'Enable status (1 for enabled)'
+              place:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['all', 'country', 'region', 'agent']
+              entities:
+                 type: 'array'
+                 description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                 items:
+                   type: 'integer'
               url:
                 type: 'string'
                 description: 'URL to be tested'
@@ -260,19 +461,13 @@ class CheckHttpView(CheckView):
                 type: 'string'
                 description: 'Mattermost channel ID (optional)'
               http_method:
-                  type: 'string'
-                  description: 'HTTP method'
-                  enum: ['get', 'post', 'put', 'patch', 'delete', 'head', 'options']
-              interval:
                 type: 'string'
+                description: 'HTTP method'
+                enum: ['get', 'post', 'put', 'patch', 'delete', 'head', 'options']
+              interval:
+                type: 'integer'
                 description: 'Interval check (optional)'
                 default: 120
-              agent_id:
-                type: 'string'
-                description: 'Agent ID'
-              region_id:
-                type: 'integer'
-                description: 'Region ID'
               body_req:
                 type: 'string'
                 description: 'Body Request (optional)'
@@ -280,12 +475,12 @@ class CheckHttpView(CheckView):
                 type: 'string'
                 description: 'Header Request (optional)'
               accepted_status_codes:
-                type: 'string'
+                type: 'integer'
                 description: 'Expected status code (default to 200, optional)'
                 minimum: 100
                 maximum: 599
               timeout:
-                type: 'string'
+                type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
               ignore_ssl_error:
@@ -333,6 +528,15 @@ class CheckHttpView(CheckView):
               enabled:
                 type: 'string'
                 description: 'Enable status (1 for enabled)'
+              place:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['all', 'country', 'region', 'agent']
+              entities:
+                 type: 'array'
+                 description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                 items:
+                   type: 'integer'
               url:
                 type: 'string'
                 description: 'URL to be tested'
@@ -362,15 +566,9 @@ class CheckHttpView(CheckView):
                   description: 'HTTP method'
                   enum: ['get', 'post', 'put', 'patch', 'delete', 'head', 'options']
               interval:
-                type: 'string'
+                type: 'integer'
                 description: 'Interval check (optional)'
                 default: 120
-              agent_id:
-                type: 'string'
-                description: 'Agent ID'
-              region_id:
-                type: 'integer'
-                description: 'Region ID'
               body_req:
                 type: 'string'
                 description: 'Body Request (optional)'
@@ -378,12 +576,12 @@ class CheckHttpView(CheckView):
                 type: 'string'
                 description: 'Header Request (optional)'
               accepted_status_codes:
-                type: 'string'
+                type: 'integer'
                 description: 'Expected status code (default to 200, optional)'
                 minimum: 100
                 maximum: 599
               timeout:
-                type: 'string'
+                type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
               ignore_ssl_error:
@@ -401,8 +599,8 @@ class CheckHttpView(CheckView):
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot update {self.check_type} check')
 
-    @validate()
-    def delete(self, check_id: int) -> Union[dict, tuple]:
+    @validate(query=GroupQuery)
+    def delete(self, check_id: int, query: GroupQuery) -> Union[dict, tuple]:
         """
         Delete check
         ---
@@ -414,13 +612,18 @@ class CheckHttpView(CheckView):
           description: 'ID of the check to delete'
           required: true
           type: 'integer'
+        - name: group_id
+          in: query
+          description: This parameter is used only for the superAdmin role.
+          required: false
+          type: integer
         responses:
           '204':
             description: 'Successful Deletion'
           '404':
             description: 'Check Not Found'
         """
-        return super().delete(check_id)
+        return super().delete(check_id, query)
 
 
 class CheckTcpView(CheckView):
@@ -428,7 +631,8 @@ class CheckTcpView(CheckView):
         super().__init__()
         self.check_type = 'tcp'
 
-    def get(self, check_id: int) -> SmonTcpCheck:
+    @validate(query=GroupQuery)
+    def get(self, check_id: int, query: GroupQuery) -> object:
         """
         Get TCP check.
         ---
@@ -440,55 +644,146 @@ class CheckTcpView(CheckView):
           description: 'ID of the check to retrieve'
           required: true
           type: 'integer'
+        - name: group_id
+          in: query
+          description: This parameter is used only for the superAdmin role.
+          required: false
+          type: integer
         responses:
           '200':
             description: 'Successful Operation'
             schema:
-              id: 'SmonTcpCheck'
+              id: 'TcpCheck'
               properties:
-                smon_id:
-                  type: 'object'
-                  description: 'RMON object'
-                  properties:
-                    id:
-                      type: 'integer'
-                      description: 'RMON ID'
-                    name:
-                      type: 'string'
-                      description: 'Name'
-                    port:
-                      type: 'integer'
-                      description: 'Port'
-                    status:
-                      type: 'integer'
-                      description: 'Status'
-                    enabled:
-                      type: 'integer'
-                      description: 'EN'
-                    description:
-                      type: 'string'
-                      description: 'Description'
-                    time_state:
-                      type: 'string'
-                      format: 'date-time'
-                      description: 'Time State'
-                    region_id:
-                      type: 'integer'
-                      description: 'Region ID'
-                ip:
+                checks:
+                  type: 'array'
+                  description: 'List of checks inside multicheck'
+                  items:
+                    type: 'object'
+                    properties:
+                      interval:
+                        type: 'integer'
+                        description: 'Timeout interval'
+                      ip:
+                        type: 'string'
+                        description: 'IP address to be tested'
+                      port:
+                        type: 'integer'
+                        description: 'Port to be tested'
+                      smon_id:
+                        type: 'object'
+                        description: 'RMON object'
+                        properties:
+                          place:
+                            type: 'string'
+                            description: Where checks must be deployed
+                            enum: ['all', 'country', 'region', 'agent']
+                          entities:
+                            type: 'array'
+                            description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                            items:
+                              type: 'integer'
+                          body_status:
+                            type: 'integer'
+                            description: 'Body Status'
+                          check_timeout:
+                            type: 'integer'
+                            description: 'Check Timeout'
+                          check_type:
+                            type: 'string'
+                            description: 'Check Type'
+                          country_id:
+                            type: 'integer'
+                            description: 'Country ID'
+                          created_at:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'Creation Time'
+                          description:
+                            type: 'string'
+                            description: 'Description'
+                          enabled:
+                            type: 'integer'
+                            description: 'Enabled status'
+                          check_group_id:
+                            type: 'integer'
+                            description: 'Group ID'
+                            nullable: true
+                          http:
+                            type: 'string'
+                            description: 'HTTP'
+                            nullable: true
+                          id:
+                            type: 'integer'
+                            description: 'ID'
+                          mm_channel_id:
+                            type: 'integer'
+                            description: 'MM Channel ID'
+                          multi_check_id:
+                            type: 'integer'
+                            description: 'Multi-check ID'
+                          name:
+                            type: 'string'
+                            description: 'Name'
+                          pd_channel_id:
+                            type: 'integer'
+                            description: 'PD Channel ID'
+                          port:
+                            type: 'integer'
+                            description: 'Port'
+                            nullable: true
+                          region_id:
+                            type: 'integer'
+                            description: 'Region ID'
+                          response_time:
+                            type: 'string'
+                            description: 'Response Time'
+                          slack_channel_id:
+                            type: 'integer'
+                            description: 'Slack Channel ID'
+                          ssl_expire_critical_alert:
+                            type: 'integer'
+                            description: 'SSL Expire Critical Alert'
+                          ssl_expire_date:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'SSL Expiry Date'
+                            nullable: true
+                          ssl_expire_warning_alert:
+                            type: 'integer'
+                            description: 'SSL Expire Warning Alert'
+                          status:
+                            type: 'integer'
+                            description: 'Status'
+                          telegram_channel_id:
+                            type: 'integer'
+                            description: 'Telegram Channel ID'
+                          time_state:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'Time State'
+                          updated_at:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'Update Time'
+                          group_id:
+                            type: 'integer'
+                            description: 'User Group'
+                entities:
+                  type: 'array'
+                  description: 'List of agents, regions, or countries. What exactly will be chosen depends on the place parameter'
+                  items:
+                    type: 'integer'
+                group_name:
                   type: 'string'
-                  description: 'IP address to be tested'
-                port:
-                  type: 'integer'
-                  description: 'Port to be tested'
-                interval:
-                  type: 'integer'
-                  description: 'Check interval'
-                agent_id:
-                  type: 'integer'
-                  description: 'Agent ID'
+                  description: 'Group Name'
+                  nullable: true
+                place:
+                  type: 'string'
+                  description: 'Where checks must be deployed'
+                  enum: ['all', 'country', 'region', 'agent']
         """
-        return super().get(check_id)
+        return super().get(check_id, query)
 
     @validate(body=TcpCheckRequest)
     def post(self, body: TcpCheckRequest) -> Union[dict, tuple]:
@@ -509,6 +804,8 @@ class CheckTcpView(CheckView):
               - ip
               - port
               - enabled
+              - place
+              - entities
             properties:
               name:
                 type: 'string'
@@ -524,6 +821,15 @@ class CheckTcpView(CheckView):
               enabled:
                 type: 'string'
                 description: 'Enable status (1 for enabled)'
+              place:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['all', 'country', 'region', 'agent']
+              entities:
+                 type: 'array'
+                 description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                 items:
+                   type: 'integer'
               group:
                 type: 'string'
                 description: 'Group (optional)'
@@ -543,16 +849,10 @@ class CheckTcpView(CheckView):
                 type: 'string'
                 description: 'Mattermost channel ID (optional)'
               interval:
-                type: 'string'
-                description: 'Interval check (default to 120, optional)'
-              agent_id:
-                type: 'string'
-                description: 'Agent ID'
-              region_id:
                 type: 'integer'
-                description: 'Region ID'
+                description: 'Interval check (default to 120, optional)'
               timeout:
-                type: 'string'
+                type: 'integer'
                 description: 'Timeout (optional)'
         responses:
           '200':
@@ -604,6 +904,15 @@ class CheckTcpView(CheckView):
               enabled:
                 type: 'string'
                 description: 'Enable status (1 for enabled)'
+              place:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['all', 'country', 'region', 'agent']
+              entities:
+                 type: 'array'
+                 description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                 items:
+                   type: 'integer'
               group:
                 type: 'string'
                 description: 'Group (optional)'
@@ -623,16 +932,10 @@ class CheckTcpView(CheckView):
                 type: 'string'
                 description: 'Mattermost channel ID (optional)'
               interval:
-                type: 'string'
-                description: 'Interval check (default to 120, optional)'
-              agent_id:
-                type: 'string'
-                description: 'Agent ID'
-              region_id:
                 type: 'integer'
-                description: 'Region ID'
+                description: 'Interval check (default to 120, optional)'
               timeout:
-                type: 'string'
+                type: 'integer'
                 description: 'Timeout (optional)'
         responses:
           '201':
@@ -646,8 +949,8 @@ class CheckTcpView(CheckView):
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot update {self.check_type} check')
 
-    @validate()
-    def delete(self, check_id: int) -> Union[dict, tuple]:
+    @validate(query=GroupQuery)
+    def delete(self, check_id: int, query: GroupQuery) -> Union[dict, tuple]:
         """
         Delete check
         ---
@@ -659,13 +962,18 @@ class CheckTcpView(CheckView):
           description: 'ID of the check to delete'
           required: true
           type: 'integer'
+        - name: group_id
+          in: query
+          description: This parameter is used only for the superAdmin role.
+          required: false
+          type: integer
         responses:
           '204':
             description: 'Successful Deletion'
           '404':
             description: 'Check Not Found'
         """
-        return super().delete(check_id)
+        return super().delete(check_id, query)
 
 
 class CheckDnsView(CheckView):
@@ -673,7 +981,8 @@ class CheckDnsView(CheckView):
         super().__init__()
         self.check_type = 'dns'
 
-    def get(self, check_id: int) -> SmonDnsCheck:
+    @validate(query=GroupQuery)
+    def get(self, check_id: int, query: GroupQuery) -> object:
         """
         Get DNS check or list of DNS checks, if without {check_id}.
         ---
@@ -685,6 +994,11 @@ class CheckDnsView(CheckView):
           description: 'ID of the check to retrieve'
           required: true
           type: 'integer'
+        - name: group_id
+          in: query
+          description: This parameter is used only for the superAdmin role.
+          required: false
+          type: integer
         responses:
           '200':
             description: 'Successful Operation'
@@ -720,6 +1034,15 @@ class CheckDnsView(CheckView):
                     region_id:
                       type: 'integer'
                       description: 'Region ID'
+                place:
+                  type: 'string'
+                  description: Where checks must be deployed
+                  enum: ['all', 'country', 'region', 'agent']
+                entities:
+                   type: 'array'
+                   description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                   items:
+                     type: 'integer'
                 ip:
                   type: 'string'
                   description: 'IP address to be tested'
@@ -735,11 +1058,8 @@ class CheckDnsView(CheckView):
                 interval:
                   type: 'integer'
                   description: 'Check interval'
-                agent_id:
-                  type: 'integer'
-                  description: 'Agent ID'
         """
-        return super().get(check_id)
+        return super().get(check_id, query)
 
     @validate(body=DnsCheckRequest)
     def post(self, body: DnsCheckRequest) -> Union[dict, tuple]:
@@ -761,11 +1081,21 @@ class CheckDnsView(CheckView):
               - resolver
               - record_type
               - enabled
-              - agent_id
+              - place
+              - entities
             properties:
               name:
                 type: 'string'
                 description: 'Name of the test dns'
+              place:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['all', 'country', 'region', 'agent']
+              entities:
+                 type: 'array'
+                 description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                 items:
+                   type: 'integer'
               ip:
                 type: 'string'
                 description: 'Resolver IP address or domain name'
@@ -803,17 +1133,11 @@ class CheckDnsView(CheckView):
                 type: 'string'
                 description: 'Mattermost channel ID (optional)'
               interval:
-                type: 'string'
+                type: 'integer'
                 description: 'Interval check (optional)'
                 default: 120
-              agent_id:
-                type: 'string'
-                description: 'Agent ID'
-              region_id:
-                type: 'integer'
-                description: 'Region ID'
               timeout:
-                type: 'string'
+                type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
         responses:
@@ -855,6 +1179,15 @@ class CheckDnsView(CheckView):
               name:
                 type: 'string'
                 description: 'Name of the test dns'
+              place:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['all', 'country', 'region', 'agent']
+              entities:
+                type: 'array'
+                description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                items:
+                  type: 'integer'
               ip:
                 type: 'string'
                 description: 'Resolver IP address or domain name'
@@ -892,17 +1225,11 @@ class CheckDnsView(CheckView):
                 type: 'string'
                 description: 'Mattermost channel ID (optional)'
               interval:
-                type: 'string'
+                type: 'integer'
                 description: 'Interval check (optional)'
                 default: 120
-              agent_id:
-                type: 'string'
-                description: 'Agent ID'
-              region_id:
-                type: 'integer'
-                description: 'Region ID'
               timeout:
-                type: 'string'
+                type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
         responses:
@@ -917,8 +1244,8 @@ class CheckDnsView(CheckView):
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot update {self.check_type} check')
 
-    @validate()
-    def delete(self, check_id: int) -> Union[dict, tuple]:
+    @validate(query=GroupQuery)
+    def delete(self, check_id: int, query: GroupQuery) -> Union[dict, tuple]:
         """
         Delete check
         ---
@@ -930,13 +1257,18 @@ class CheckDnsView(CheckView):
           description: 'ID of the check to delete'
           required: true
           type: 'integer'
+        - name: group_id
+          in: query
+          description: This parameter is used only for the superAdmin role.
+          required: false
+          type: integer
         responses:
           '204':
             description: 'Successful Deletion'
           '404':
             description: 'Check Not Found'
         """
-        return super().delete(check_id)
+        return super().delete(check_id, query)
 
 
 class CheckPingView(CheckView):
@@ -944,7 +1276,8 @@ class CheckPingView(CheckView):
         super().__init__()
         self.check_type = 'ping'
 
-    def get(self, check_id: int) -> SmonPingCheck:
+    @validate(query=GroupQuery)
+    def get(self, check_id: int, query: GroupQuery) -> object:
         """
         Get Ping check or list of Ping checks, if without {check_id}.
         ---
@@ -956,6 +1289,11 @@ class CheckPingView(CheckView):
           description: 'ID of the check to retrieve'
           required: true
           type: 'integer'
+        - name: group_id
+          in: query
+          description: This parameter is used only for the superAdmin role.
+          required: false
+          type: integer
         responses:
           '200':
             description: 'Successful Operation'
@@ -991,6 +1329,15 @@ class CheckPingView(CheckView):
                     region_id:
                       type: 'integer'
                       description: 'Region ID'
+                place:
+                  type: 'string'
+                  description: Where checks must be deployed
+                  enum: ['all', 'country', 'region', 'agent']
+                entities:
+                  type: 'array'
+                  description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                  items:
+                    type: 'integer'
                 ip:
                   type: 'string'
                   description: 'IP address to be tested'
@@ -1000,11 +1347,8 @@ class CheckPingView(CheckView):
                 interval:
                   type: 'integer'
                   description: 'Ping interval'
-                agent_id:
-                  type: 'integer'
-                  description: 'Agent ID'
         """
-        return super().get(check_id)
+        return super().get(check_id, query)
 
     @validate(body=PingCheckRequest)
     def post(self, body: PingCheckRequest) -> Union[dict, tuple]:
@@ -1024,11 +1368,21 @@ class CheckPingView(CheckView):
               - name
               - ip
               - enabled
-              - agent_id
+              - place
+              - entities
             properties:
               name:
                 type: 'string'
                 description: 'Check name'
+              place:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['all', 'country', 'region', 'agent']
+              entities:
+                type: 'array'
+                description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                items:
+                  type: 'integer'
               ip:
                 type: 'string'
                 description: 'IP address or domain name for Ping check'
@@ -1054,21 +1408,18 @@ class CheckPingView(CheckView):
                 type: 'string'
                 description: 'Mattermost channel ID (optional)'
               packet_size:
-                type: 'string'
+                type: 'integer'
                 description: 'Packet size (optional)'
                 default: 56
               interval:
-                type: 'string'
+                type: 'integer'
                 description: 'Interval check (optional)'
                 default: 120
-              agent_id:
-                type: 'string'
-                description: 'Agent ID'
               region_id:
                 type: 'integer'
                 description: 'Region ID'
               timeout:
-                type: 'string'
+                type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
         responses:
@@ -1110,6 +1461,15 @@ class CheckPingView(CheckView):
               name:
                 type: 'string'
                 description: 'Check name'
+              place:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['all', 'country', 'region', 'agent']
+              entities:
+                type: 'array'
+                description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                items:
+                  type: 'integer'
               ip:
                 type: 'string'
                 description: 'IP address or domain name for Ping check'
@@ -1135,21 +1495,18 @@ class CheckPingView(CheckView):
                 type: 'string'
                 description: 'Mattermost channel ID (optional)'
               packet_size:
-                type: 'string'
+                type: 'integer'
                 description: 'Packet size (optional)'
                 default: 56
               interval:
-                type: 'string'
+                type: 'integer'
                 description: 'Interval check (optional)'
                 default: 120
-              agent_id:
-                type: 'string'
-                description: 'Agent ID'
               region_id:
                 type: 'integer'
                 description: 'Region ID'
               timeout:
-                type: 'string'
+                type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
         responses:
@@ -1164,8 +1521,8 @@ class CheckPingView(CheckView):
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot update {self.check_type} check')
 
-    @validate()
-    def delete(self, check_id: int) -> Union[dict, tuple]:
+    @validate(query=GroupQuery)
+    def delete(self, check_id: int, query: GroupQuery) -> Union[dict, tuple]:
         """
         Delete check
         ---
@@ -1177,13 +1534,18 @@ class CheckPingView(CheckView):
           description: 'ID of the check to delete'
           required: true
           type: 'integer'
+        - name: group_id
+          in: query
+          description: This parameter is used only for the superAdmin role.
+          required: false
+          type: integer
         responses:
           '204':
             description: 'Successful Deletion'
           '404':
             description: 'Check Not Found'
         """
-        return super().delete(check_id)
+        return super().delete(check_id, query)
 
 
 class CheckSmtpView(CheckView):
@@ -1191,7 +1553,8 @@ class CheckSmtpView(CheckView):
         super().__init__()
         self.check_type = 'smtp'
 
-    def get(self, check_id: int) -> SmonSMTPCheck:
+    @validate(query=GroupQuery)
+    def get(self, check_id: int, query: GroupQuery) -> object:
         """
         Get SMTP check or list of SMTP checks, if without {check_id}.
         ---
@@ -1203,6 +1566,11 @@ class CheckSmtpView(CheckView):
           description: 'ID of the check to retrieve'
           required: true
           type: 'integer'
+        - name: group_id
+          in: query
+          description: This parameter is used only for the superAdmin role.
+          required: false
+          type: integer
         responses:
           '200':
             description: 'Successful Operation'
@@ -1238,6 +1606,15 @@ class CheckSmtpView(CheckView):
                     region_id:
                       type: 'integer'
                       description: 'Region ID'
+                place:
+                  type: 'string'
+                  description: Where checks must be deployed
+                  enum: ['all', 'country', 'region', 'agent']
+                entities:
+                  type: 'array'
+                  description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                  items:
+                    type: 'integer'
                 ip:
                   type: 'string'
                   description: 'SMTP server to be tested'
@@ -1247,14 +1624,11 @@ class CheckSmtpView(CheckView):
                 interval:
                   type: 'integer'
                   description: 'Ping interval'
-                agent_id:
-                  type: 'integer'
-                  description: 'Agent ID'
                 ignore_ssl_error:
                   type: 'integer'
                   description: 'Ignore TLS/SSL error'
         """
-        return super().get(check_id)
+        return super().get(check_id, query)
 
     @validate(body=SmtpCheckRequest)
     def post(self, body: SmtpCheckRequest) -> Union[dict, tuple]:
@@ -1277,11 +1651,21 @@ class CheckSmtpView(CheckView):
               - username
               - password
               - enabled
-              - agent_id
+              - place
+              - entities
             properties:
               name:
                 type: 'string'
                 description: 'Check name'
+              place:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['all', 'country', 'region', 'agent']
+              entities:
+                type: 'array'
+                description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                items:
+                  type: 'integer'
               ip:
                 type: 'string'
                 description: 'IP address or domain name for SMTP server check'
@@ -1313,17 +1697,11 @@ class CheckSmtpView(CheckView):
                 type: 'string'
                 description: 'Password to connect to the SMTP server'
               interval:
-                type: 'string'
+                type: 'integer'
                 description: 'Interval check (optional)'
                 default: 120
-              agent_id:
-                type: 'string'
-                description: 'Agent ID'
-              region_id:
-                type: 'integer'
-                description: 'Region ID'
               timeout:
-                type: 'string'
+                type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
               ignore_ssl_error:
@@ -1368,6 +1746,15 @@ class CheckSmtpView(CheckView):
               name:
                 type: 'string'
                 description: 'Check name'
+              place:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['all', 'country', 'region', 'agent']
+              entities:
+                type: 'array'
+                description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                items:
+                  type: 'integer'
               ip:
                 type: 'string'
                 description: 'IP address or domain of SMTP server check'
@@ -1399,17 +1786,11 @@ class CheckSmtpView(CheckView):
                 type: 'string'
                 description: 'Password to connect to the SMTP server'
               interval:
-                type: 'string'
+                type: 'integer'
                 description: 'Interval check (optional)'
                 default: 120
-              agent_id:
-                type: 'string'
-                description: 'Agent ID'
-              region_id:
-                type: 'integer'
-                description: 'Region ID'
               timeout:
-                type: 'string'
+                type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
               ignore_ssl_error:
@@ -1427,8 +1808,8 @@ class CheckSmtpView(CheckView):
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot update {self.check_type} check')
 
-    @validate()
-    def delete(self, check_id: int) -> Union[dict, tuple]:
+    @validate(query=GroupQuery)
+    def delete(self, check_id: int, query: GroupQuery) -> Union[dict, tuple]:
         """
         Delete check
         ---
@@ -1440,13 +1821,18 @@ class CheckSmtpView(CheckView):
           description: 'ID of the check to delete'
           required: true
           type: 'integer'
+        - name: group_id
+          in: query
+          description: This parameter is used only for the superAdmin role.
+          required: false
+          type: integer
         responses:
           '204':
             description: 'Successful Deletion'
           '404':
             description: 'Check Not Found'
         """
-        return super().delete(check_id)
+        return super().delete(check_id, query)
 
 
 class CheckRabbitView(CheckView):
@@ -1454,7 +1840,8 @@ class CheckRabbitView(CheckView):
         super().__init__()
         self.check_type = 'rabbitmq'
 
-    def get(self, check_id: int) -> SmonRabbitCheck:
+    @validate(query=GroupQuery)
+    def get(self, check_id: int, query: GroupQuery) -> object:
         """
         Get RabbitMQ check or list of RabbitMQ checks, if without {check_id}.
         ---
@@ -1466,6 +1853,11 @@ class CheckRabbitView(CheckView):
           description: 'ID of the check to retrieve'
           required: true
           type: 'integer'
+        - name: group_id
+          in: query
+          description: This parameter is used only for the superAdmin role.
+          required: false
+          type: integer
         responses:
           '200':
             description: 'Successful Operation'
@@ -1501,6 +1893,15 @@ class CheckRabbitView(CheckView):
                     region_id:
                       type: 'integer'
                       description: 'Region ID'
+                place:
+                  type: 'string'
+                  description: Where checks must be deployed
+                  enum: ['all', 'country', 'region', 'agent']
+                entities:
+                  type: 'array'
+                  description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                  items:
+                    type: 'integer'
                 ip:
                   type: 'string'
                   description: 'SMTP server to be tested'
@@ -1513,14 +1914,11 @@ class CheckRabbitView(CheckView):
                 interval:
                   type: 'integer'
                   description: 'Ping interval'
-                agent_id:
-                  type: 'integer'
-                  description: 'Agent ID'
                 ignore_ssl_error:
                   type: 'integer'
                   description: 'Ignore TLS/SSL error'
         """
-        return super().get(check_id)
+        return super().get(check_id, query)
 
     @validate(body=RabbitCheckRequest)
     def post(self, body: RabbitCheckRequest) -> Union[dict, tuple]:
@@ -1543,10 +1941,21 @@ class CheckRabbitView(CheckView):
               - username
               - password
               - enabled
+              - place
+              - entities
             properties:
               name:
                 type: 'string'
                 description: 'Check name'
+              place:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['all', 'country', 'region', 'agent']
+              entities:
+                type: 'array'
+                description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                items:
+                  type: 'integer'
               ip:
                 type: 'string'
                 description: 'IP address or domain name for RabbitMQ server check'
@@ -1585,17 +1994,11 @@ class CheckRabbitView(CheckView):
                 type: 'string'
                 description: 'VHost to connect to the RabbitMQ server'
               interval:
-                type: 'string'
+                type: 'integer'
                 description: 'Interval check (optional)'
                 default: 120
-              agent_id:
-                type: 'string'
-                description: 'Agent ID'
-              region_id:
-                type: 'integer'
-                description: 'Region ID'
               timeout:
-                type: 'string'
+                type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
               ignore_ssl_error:
@@ -1640,6 +2043,15 @@ class CheckRabbitView(CheckView):
               name:
                 type: 'string'
                 description: 'Check name'
+              place:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['all', 'country', 'region', 'agent']
+              entities:
+                 type: 'array'
+                 description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                 items:
+                   type: 'integer'
               ip:
                 type: 'string'
                 description: 'IP address or domain of RabbitMQ server check'
@@ -1677,17 +2089,14 @@ class CheckRabbitView(CheckView):
                 type: 'string'
                 description: 'VHost to connect to the RabbitMQ server'
               interval:
-                type: 'string'
+                type: 'integer'
                 description: 'Interval check (optional)'
                 default: 120
-              agent_id:
-                type: 'string'
-                description: 'Agent ID'
               region_id:
                 type: 'integer'
                 description: 'Region ID'
               timeout:
-                type: 'string'
+                type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
               ignore_ssl_error:
@@ -1705,8 +2114,8 @@ class CheckRabbitView(CheckView):
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot update {self.check_type} check')
 
-    @validate()
-    def delete(self, check_id: int) -> Union[dict, tuple]:
+    @validate(query=GroupQuery)
+    def delete(self, check_id: int, query: GroupQuery) -> Union[dict, tuple]:
         """
         Delete check
         ---
@@ -1718,10 +2127,15 @@ class CheckRabbitView(CheckView):
           description: 'ID of the check to delete'
           required: true
           type: 'integer'
+        - name: group_id
+          in: query
+          description: This parameter is used only for the superAdmin role.
+          required: false
+          type: integer
         responses:
           '204':
             description: 'Successful Deletion'
           '404':
             description: 'Check Not Found'
         """
-        return super().delete(check_id)
+        return super().delete(check_id, query)

@@ -1,6 +1,6 @@
 import re
 from annotated_types import Gt, Le
-from typing import Optional, Annotated, Union, Literal, Any
+from typing import Optional, Annotated, Union, Literal, Any, List
 
 from shlex import quote
 from pydantic_core import CoreSchema, core_schema
@@ -56,8 +56,8 @@ class ErrorResponse(BaseModel):
 class BaseCheckRequest(BaseModel):
     name: EscapedString
     description: Optional[str] = ''
-    region_id: Optional[int] = None
-    agent_id: Optional[int] = None
+    place: Literal['all', 'country', 'region', 'agent']
+    entities: List[int]
     timeout: Annotated[int, Le(59), Gt(1)] = 2
     enabled: Optional[bool] = 1
     tg: Optional[int] = 0
@@ -65,7 +65,8 @@ class BaseCheckRequest(BaseModel):
     mm: Optional[int] = 0
     slack: Optional[int] = 0
     interval: Optional[int] = 120
-    group: Optional[EscapedString] = None
+    check_group_id: Optional[EscapedString] = None
+    group_id: Optional[int] = None
 
     @root_validator(pre=True)
     @classmethod
@@ -84,19 +85,6 @@ class BaseCheckRequest(BaseModel):
                 raise ValueError('interval must be an integer')
         if timeout >= interval:
             raise ValueError('timeout value must be less than interval')
-        return values
-
-    @root_validator(pre=True)
-    @classmethod
-    def region_or_agent_id(cls, values):
-        region_id = None
-        agent_id = None
-        if 'region_id' in values:
-            region_id = values['region_id']
-        if 'agent_id' in values:
-            agent_id = values['agent_id']
-        if region_id is None and agent_id is None:
-            raise ValueError('Region or Agent must be set')
         return values
 
 
@@ -189,6 +177,7 @@ class RmonAgent(BaseModel):
     server_id: int
     uuid: Optional[UUID4] = ''
     reconfigure: Optional[bool] = 0
+    region_id: Optional[int] = None
 
 
 class GroupQuery(BaseModel):
@@ -204,7 +193,7 @@ class ServerRequest(BaseModel):
     hostname: EscapedString
     ip: Union[IPvAnyAddress, DomainName]
     enabled: Optional[bool] = 1
-    creds_id: int
+    cred_id: int
     port: Optional[int] = 22
     description: Optional[EscapedString] = None
     group_id: Optional[int] = None
@@ -250,4 +239,14 @@ class RegionRequest(BaseModel):
     shared: Optional[bool] = 0
     enabled: Optional[bool] = 1
     group_id: Optional[int] = None
-    agents: list[int]
+    country_id: Optional[int] = None
+    agents: Optional[list[int]] = None
+
+
+class CountryRequest(BaseModel):
+    name: EscapedString
+    description: Optional[EscapedString] = None
+    shared: Optional[bool] = 0
+    enabled: Optional[bool] = 1
+    group_id: Optional[int] = None
+    regions: Optional[list[int]] = None

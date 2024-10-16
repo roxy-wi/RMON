@@ -11,9 +11,48 @@
 <link href="{{ url_for('static', filename='css/smon.css') }}" rel="stylesheet">
 <script src="{{ url_for('static', filename='js/chart.min-4.3.0.js') }}"></script>
 <script src="{{ url_for('static', filename='js/metrics.js') }}"></script>
-<script src="{{ url_for('static', filename='js/agent.js') }}"></script>
-<script src="{{ url_for('static', filename='js/smon.js') }}"></script>
-<script src="{{ url_for('static', filename='js/region.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rmon/agent.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rmon/smon.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rmon/region.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rmon/country.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rmon/check.js') }}"></script>
+    <script>
+    // ждем полной загрузки страницы
+    window.onload = () => {
+        // устанавливаем настройки
+        const options = {
+            // родитель целевого элемента - область просмотра
+            root: null,
+            // без отступов
+            rootMargin: '0px',
+            // процент пересечения - половина изображения
+            threshold: 0.1
+        }
+
+        // создаем наблюдатель
+        const observer = new IntersectionObserver((entries, observer) => {
+            // для каждой записи-целевого элемента
+            entries.forEach(entry => {
+                // если элемент является наблюдаемым
+                if (entry.isIntersecting) {
+                    const check = entry.target
+                    let checkId = check.getAttribute('data-check-id')
+                    let checkType = check.getAttribute('data-check-type')
+                    // меняем фон контейнера
+                    getSmonHistoryCheckData(checkId, checkType)
+                    // прекращаем наблюдение
+                    observer.unobserve(check)
+                }
+            })
+        }, options)
+
+        // с помощью цикла следим за всеми check на странице
+        const arr = document.querySelectorAll('.chart-container_overview')
+        arr.forEach(i => {
+            observer.observe(i)
+        })
+    }
+    </script>
 <div class="row wrap1">
 {% for s in smon %}
     <div id="smon_name" class="col-md-8">
@@ -26,25 +65,41 @@
     {% else %}
         {{s.ip}}
     {% endif %}
-    <a class="edit edit-button" title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}" onclick="editSmon('{{s.smon_id.id}}', '{{ s.smon_id.check_type }}')"></a>
+        <a class="edit edit-button"
+           title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}"
+           onclick="editSmon('{{s.smon_id.multi_check_id}}', '{{ s.smon_id.check_type }}')"></a>
+        <a href="/rmon/history/check/{{s.smon_id.multi_check_id}}"
+           title="{{lang.words.view|title()}} {{lang.words.alerts}} {{lang.words.history}} {{lang.words.for}} {{s.smon_id.name}} {{lang.words.host}}"
+           class="history" style="font-size: 14px;"></a>
     </div>
 </div>
 <div class="row statuses wrap">
     <div class="col-md-8" style="transform: translateX(0px);">
-        <div id="smon_history_statuses"></div>
-        <div id="check_interval">
+        {% for check in all_checks %}
+            <span class="gray_text">
+        {% if check.country_id %}
+            <b>{{ lang.words.country|title() }}</b> {{ check.country_id.name }}
+        {% endif %}
+        {% if check.region_id %}
+            <b>{{ lang.words.region|title() }}</b> {{ check.region_id.name }}
+        {% endif %}
+        {% if check.agent_id %}
+            <b>{{ lang.words.agent|title() }}</b> {{ check.agent_id.name }}:
+        {% endif %}
+        </span>
+        <div id="smon_history_statuses-{{ check.id }}"></div>
+        {% endfor %}
+        <div id="check_interval" class="gray_text">
             {{lang.words.checking|title()}} {{lang.words.every}} <span id="interval">{{s.interval}}</span> {{lang.words.seconds2}},
-            {{ lang.words.agent|title() }}
-            {% for a in agents %}
-            {% if a.id|string() == s.agent_id|string() %}
-                <span id="agent">{{ a.name }}</span>,
-            {% endif %}
-            {% endfor %}
             {{ lang.words.created_at }}: {{ s.smon_id.created_at|strftime }},
             {{ lang.words.updated_at }}: <span id="updated_at">{{ s.smon_id.updated_at|strftime }}</span>
         </div>
     </div>
-    <div class="col-md-4" id="cur_status"></div>
+    <div class="col-md-4" id="cur_status">
+    {% for check in all_checks %}
+    <div id="cur_status-{{ check.id }}" style="margin-top: 15px;"></div>
+    {% endfor %}
+    </div>
 </div>
 <div class="row statuses wrap">
     <div class="col">
@@ -93,19 +148,36 @@
     </div>
     {% endfor %}
 </div>
-<div class="chart-container_overview" style="width: 98%;">
-    <canvas id="metrics_{{ dashboard_id }}" role="img"></canvas>
-</div>
+    {% for check in all_checks %}
+        <div class="chart-container_overview" style="width: 98%;" data-check-id="{{ check.id }}" data-check-type="{{ check.check_type }}">
+        <span class="gray_text">
+        {% if check.country_id %}
+            <b>{{ lang.words.country|title() }}</b> {{ check.country_id.name }}
+        {% endif %}
+        {% if check.region_id %}
+            <b>{{ lang.words.region|title() }}</b> {{ check.region_id.name }}
+        {% endif %}
+        {% if check.agent_id %}
+            <b>{{ lang.words.agent|title() }}</b> {{ check.agent_id.name }}
+        {% endif %}
+        </span>
+        <canvas id="metrics_{{ check.id }}" role="img"></canvas>
+        </div>
+    {% endfor %}
 {% endif %}
+{#    {% include 'ajax/alerts_history.html' %}#}
 <script>
     function showSmonHistory() {
 		let metrics = new Promise(
 			(resolve, reject) => {
 				removeData();
-				getSmonHistoryCheckData('{{dashboard_id}}', '{{ check_type_id }}');
+                {% for check in all_checks %}
+				{#getSmonHistoryCheckData('{{check.id}}', '{{ check_type_id }}');#}
+				updateCurrentStatusRequest('{{check.id}}');
+                show_smon_history_statuses('{{check.id}}', '#smon_history_statuses-{{ check.id }}');
+                {% endfor %}
 			});
 		metrics.then();
-        show_statuses('{{dashboard_id}}', '{{check_type_id}}', '#smon_history_statuses');
 	}
 	showSmonHistory();
 </script>

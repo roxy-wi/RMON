@@ -7,6 +7,7 @@ from app.routes.smon import bp
 from app.middleware import get_user_params
 import app.modules.db.smon as smon_sql
 import app.modules.db.region as region_sql
+import app.modules.db.country as country_sql
 import app.modules.db.server as server_sql
 import app.modules.common.common as common
 import app.modules.tools.smon_agent as smon_agent
@@ -22,7 +23,8 @@ def agent():
     if request.method == 'GET':
         group_id = g.user_params['group_id']
         kwargs = {
-            'regions': region_sql.select_regions(),
+            'countries': country_sql.select_countries_by_group(group_id),
+            'regions': region_sql.select_regions_by_group(group_id),
             'agents': smon_sql.get_agents(group_id),
             'lang': roxywi_common.get_user_lang_for_flask(),
             'smon_status': tools_common.is_tool_active('rmon-server'),
@@ -52,9 +54,9 @@ def get_agent(agent_id):
 @bp.post('/agent/hello')
 def agent_get_checks():
     json_data = request.json
-    agent_id = smon_sql.get_agent_id_by_uuid(json_data['uuid'])
+    agent_id = smon_sql.get_agent_by_uuid(json_data['uuid'])
     try:
-        smon_agent.send_checks(agent_id)
+        smon_agent.send_checks(agent_id.id)
     except Exception as e:
         return f'{e}'
     return 'ok'
@@ -101,12 +103,25 @@ def get_agent_info(agent_id):
 @get_user_params()
 def get_region_info(region_id):
     try:
-        region_data = region_sql.get_region(region_id)
+        region_data = region_sql.get_region_with_group(region_id, g.user_params['group_id'])
         agents = smon_sql.get_agents_by_region(region_id)
     except Exception as e:
         return f'{e}'
 
     return render_template('ajax/smon/region.html', region=region_data, agents=agents, lang=roxywi_common.get_user_lang_for_flask())
+
+
+@bp.get('/country/info/<int:country_id>')
+@jwt_required()
+@get_user_params()
+def get_country_info(country_id):
+    try:
+        country_data = country_sql.get_country_with_group(country_id, g.user_params['group_id'])
+        regions = region_sql.get_regions_by_country(country_id)
+    except Exception as e:
+        return f'{e}'
+
+    return render_template('ajax/smon/country.html', country=country_data, regions=regions, lang=roxywi_common.get_user_lang_for_flask())
 
 
 @bp.get('/agent/version/<server_ip>')

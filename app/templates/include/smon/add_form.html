@@ -1,3 +1,9 @@
+<script src="{{ url_for('static', filename='js/rmon/check.js') }}"></script>
+<style>
+    .check-name {
+        width: 210px;
+    }
+</style>
 <div id="smon-add-table" style="display: none;">
 	<table class="overview" id="smon-add-table-overview" title="{{lang.words.create|title()}} {{lang.words.w_a}} {{lang.words.new}} {{lang.words.server}} {{lang.words.for}} {{lang.words.monitoring}}"
     data-edit="{{lang.words.edit|title()}} {{lang.words.w_a}} {{lang.words.new}} {{lang.words.server}} {{lang.words.for}} {{lang.words.monitoring}}">
@@ -18,33 +24,21 @@
 			</td>
 			<td>
                 <select name="new-smon-place" id="new-smon-place">
-                    <option value="region">{{ lang.words.region|title() }}</option>
-                    <option value="agent">{{ lang.words.agent|title() }}</option>
+                    <option value="all">{{ lang.words.all|title() }} {{ lang.words.regions }}</option>
+                    <option value="country">{{ lang.words.countries|title() }}</option>
+                    <option value="region">{{ lang.words.regions|title() }}</option>
+                    <option value="agent">{{ lang.words.agents|title() }}</option>
                 </select>
 			</td>
 		</tr>
-		<tr id="new-smon-region-tr">
-			<td class="padding20">
-				{{ lang.words.region|title() }}
-				<span class="need-field">*</span>
-			</td>
-			<td>
-                <select name="new-smon-region-id" id="new-smon-region-id">
-                    <option value="------" disabled selected>------</option>
-                </select>
-			</td>
-		</tr>
-		<tr style="display: none;" id="new-smon-agent-tr">
-			<td class="padding20">
-				{{ lang.words.agent|title() }}
-				<span class="need-field">*</span>
-			</td>
-			<td>
-                <select name="new-smon-agent-id" id="new-smon-agent-id">
-                    <option value="------" disabled selected>------</option>
-                </select>
-			</td>
-		</tr>
+        <tr style="display: none;" id="agent_tr">
+            <td colspan="2">
+            <div class="country">
+                <div id="checked-entities" class="enabled-check" style="height: auto"></div>
+                <div id="all-entities" style="height: auto"></div>
+            </div>
+            </td>
+        </tr>
 		<tr>
 			<td class="padding20">
 				{{lang.words.checking|title()}}

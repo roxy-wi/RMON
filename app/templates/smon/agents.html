@@ -2,9 +2,10 @@
 {% block title %}{{ lang.menu_links.monitoring.smon.agent }}{% endblock %}
 {% block content %}
 {% from 'include/input_macros.html' import input, select %}
-<script src="{{ url_for('static', filename='js/smon.js') }}"></script>
-<script src="{{ url_for('static', filename='js/agent.js') }}"></script>
-<script src="{{ url_for('static', filename='js/region.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rmon/agent.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rmon/smon.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rmon/region.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rmon/country.js') }}"></script>
 <script src="{{ url_for('static', filename='js/jquery.timeago.js') }}" type="text/javascript"></script>
 <link href="{{ url_for('static', filename='css/servers.css') }}" rel="stylesheet"/>
 <link href="{{ url_for('static', filename='css/smon.css') }}" rel="stylesheet"/>
@@ -21,19 +22,46 @@
 <div style="margin-top: 10px; margin-bottom: 20px;">
     <span class="add-button add-button-big" title="{{lang.smon_page.desc.add_agent}}" onclick="addAgentDialog();">+ {{lang.smon_page.desc.add_agent}}</span>
     <span class="add-button add-button-big" title="{{lang.smon_page.desc.add_region}}" onclick="addRegionDialog();">+ {{lang.smon_page.desc.add_region}}</span>
+    <span class="add-button add-button-big" title="{{lang.smon_page.desc.add_region}}" onclick="addCountryDialog();">+ {{lang.smon_page.desc.add_country}}</span>
 </div>
 {% endif %}
-<h2 style="clear: both; margin-bottom: 20px;">{{ lang.words.regions|title() }}</h2>
-<div class="up-pannel" id="regions">
-    {% for region in regions %}
-    <div id="region-{{region.id}}" class="div-server-hapwi animated-background"></div>
-    {% endfor %}
-</div>
-<h2 style="clear: both; margin-bottom: 20px;">{{ lang.words.agents|title() }} Agents</h2>
-<div class="up-pannel" id="agents">
-    {% for agent in agents %}
-    <div id="agent-{{agent.id}}" class="div-server-hapwi animated-background"></div>
-    {% endfor %}
+<div class="up-pannel" id="countries">
+    <div class="smon_group">
+        <div class="group_name">
+            <span class="smon_group_name entity_grouping">{{ lang.words.countries|title() }}</span>
+            <span id="show-smon-group-countries" class="plus switcher_table_metric smon_group_switcher" onclick="showSmonGroup('countries')" title="{{lang.words.open|title()}} {{lang.words.group}}"></span>
+            <span id="hide-smon-group-countries" class="minus switcher_table_metric smon_group_switcher" onclick="hideSmonGroup('countries')" style="display: none;" title="{{lang.words.hide}}"></span>
+        </div>
+        <div class="smon_named_group" id="smon-group-countries">
+            {% for country in countries %}
+            <div id="country-{{country.id}}" class="div-server-hapwi animated-background"></div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="smon_group">
+        <div class="group_name">
+            <span class="smon_group_name entity_grouping">{{ lang.words.regions|title() }}</span>
+            <span id="show-smon-group-regions" class="plus switcher_table_metric smon_group_switcher" onclick="showSmonGroup('regions')" title="{{lang.words.open|title()}} {{lang.words.group}}"></span>
+            <span id="hide-smon-group-regions" class="minus switcher_table_metric smon_group_switcher" onclick="hideSmonGroup('regions')" style="display: none;" title="{{lang.words.hide}}"></span>
+        </div>
+        <div class="smon_named_group" id="smon-group-regions">
+            {% for region in regions %}
+            <div id="region-{{region.id}}" class="div-server-hapwi animated-background"></div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="smon_group">
+        <div class="group_name">
+            <span class="smon_group_name entity_grouping">{{ lang.words.agents|title() }}</span>
+            <span id="show-smon-group-agents" class="plus switcher_table_metric smon_group_switcher" onclick="showSmonGroup('agents')" title="{{lang.words.open|title()}} {{lang.words.group}}"></span>
+            <span id="hide-smon-group-agents" class="minus switcher_table_metric smon_group_switcher" onclick="hideSmonGroup('agents')" style="display: none;" title="{{lang.words.hide}}"></span>
+        </div>
+        <div class="smon_named_group" id="smon-group-agents">
+            {% for agent in agents %}
+            <div id="agent-{{agent.id}}" class="div-server-hapwi animated-background"></div>
+            {% endfor %}
+        </div>
+    </div>
 </div>
     <div id="add-agent-page" style="display: none;">
         <table class="overview" id="add-agent-page-overview"
@@ -131,6 +159,46 @@
             <div id="all-agents"></div>
         </div>
     </div>
+    <div id="add-country-page" style="display: none;">
+        <table class="overview" id="add-region-page-overview"
+               title="{{lang.words.create|title()}} {{lang.words.w_a}} {{lang.words.new2}} {{lang.words.country}}"
+               data-edit="{{lang.words.edit|title()}} {{lang.words.country}}">
+            {% include 'include/tr_validate_tips.html' %}
+            <tr>
+                <td class="padding20" style="width: 50%">
+                    {{lang.words.name|title()}}
+                    <span class="need-field">*</span>
+                </td>
+                <td>
+                    {{ input('new-country-name', autofocus='autofocus') }}
+                </td>
+            </tr>
+            <tr>
+                <td class="padding20">{{lang.words.enable|title()}}</td>
+                <td>
+                    {{ checkbox('new-country-enabled', checked='checked') }}
+                </td>
+            </tr>
+            <tr>
+                <td class="padding20">{{lang.words.shared|title()}}</td>
+                <td>
+                    {{ checkbox('new-country-shared') }}
+                </td>
+            </tr>
+            <tr>
+                <td class="padding20" style="width: 50%">
+                    {{lang.words.desc|title()}}
+                </td>
+                <td>
+                    {{ input('new-country-desc', autofocus='autofocus') }}
+                </td>
+            </tr>
+        </table>
+        <div class="country">
+            <div id="checked-regions" class="enabled-check"></div>
+            <div id="all-regions"></div>
+        </div>
+    </div>
     <div id="dialog-confirm" style="display: none;">
         <p><span class="ui-icon ui-icon-alert" style="float:left; margin:3px 12px 20px 0;"></span>{{lang.phrases.are_you_sure}}</p>
     </div>
@@ -141,6 +209,12 @@
     {% endfor %}
     {% for region in regions %}
         getRegion('{{region.id}}');
+    {% endfor %}
+    {% for country in countries %}
+        getCountry('{{country.id}}');
+    {% endfor %}
+    {% for entity in ('agents', 'regions', 'countries') %}
+    isSmonGroupShowed('{{ entity }}')
     {% endfor %}
 </script>
 {% include 'include/smon/dialogs.html' %}

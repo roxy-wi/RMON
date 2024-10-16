@@ -129,7 +129,7 @@ class ServerView(MethodView):
         group_id = SupportClass.return_group_id(body)
 
         try:
-            last_id = server_mod.create_server(body.hostname, body.ip, group_id, body.enabled, body.creds_id, body.port, body.description)
+            last_id = server_mod.create_server(body.hostname, body.ip, group_id, body.enabled, body.cred_id, body.port, body.description)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot create a server')
 
@@ -192,7 +192,7 @@ class ServerView(MethodView):
         group_id = SupportClass.return_group_id(body)
 
         try:
-            server_sql.update_server(body.hostname, group_id, body.enabled, server_id, body.creds_id, body.port, body.description)
+            server_sql.update_server(body.hostname, group_id, body.enabled, server_id, body.cred_id, body.port, body.description)
             server_ip = server_sql.select_server_ip_by_id(server_id)
             roxywi_common.logging(server_ip, f'The server {body.hostname} has been update', roxywi=1, login=1, keep_history=1, service='server')
         except Exception as e:
@@ -414,9 +414,9 @@ class ServerGroupView(MethodView):
             return roxywi_common.handle_json_exceptions(e, 'Cannot get user or group'), 404
         try:
             group_mod.delete_group(group_id)
-            return jsonify({'status': 'Ok'}), 204
+            return BaseResponse().model_dump(mode='json'), 204
         except Exception as e:
-            roxywi_common.handle_json_exceptions(e, 'Cannot delete group')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot delete group')
 
     @staticmethod
     def _check_is_user_and_group(group_id: int):

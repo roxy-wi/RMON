@@ -95,7 +95,7 @@ class AgentView(MethodView):
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get agent')
         agent_list = []
         for agent in agents:
-            agent_dict = model_to_dict(agent)
+            agent_dict = model_to_dict(agent, recurse=False)
             agent_list.append(agent_dict)
         try:
             if len(agent_list) == 0:

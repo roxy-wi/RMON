@@ -274,9 +274,91 @@ def update_db_v_1_1_4_1():
 			print("An error occurred:", e)
 
 
+def update_db_v_1_1_6():
+	field = ForeignKeyField(Country, field=Country.id, null=True, on_delete='SET NULL')
+	try:
+		migrate(
+			migrator.add_column('regions', 'country_id', field),
+		)
+	except Exception as e:
+		if e.args[0] == 'duplicate column name: country_id' or str(e) == '(1060, "Duplicate column name \'country_id\'")':
+			print('Updating... DB has been updated to version 1.1.6')
+		else:
+			print("An error occurred:", e)
+
+
+def update_db_v_1_2():
+	field = ForeignKeyField(Country, field=Country.id, null=True, on_delete='SET NULL')
+	try:
+		migrate(
+			migrator.add_column('smon', 'country_id', field),
+		)
+	except Exception as e:
+		if e.args[0] == 'duplicate column name: country_id' or str(e) == '(1060, "Duplicate column name \'country_id\'")':
+			print('Updating... DB has been updated to version 1.2')
+		else:
+			print("An error occurred:", e)
+
+
+def update_db_v_1_2_1():
+	field = ForeignKeyField(SmonAgent, field=SmonAgent.id, null=True, on_delete='RESTRICT')
+	try:
+		migrate(
+			migrator.add_column('smon', 'agent_id', field),
+		)
+	except Exception as e:
+		if e.args[0] == 'duplicate column name: agent_id' or str(e) == '(1060, "Duplicate column name \'agent_id\'")':
+			print('Updating... DB has been updated to version 1.2')
+		else:
+			print("An error occurred:", e)
+
+
+def update_db_v_1_2_2():
+	field = ForeignKeyField(MultiCheck, field=MultiCheck.id, null=True, on_delete='CASCADE')
+	try:
+		migrate(
+			migrator.add_column('smon', 'multi_check_id', field),
+		)
+	except Exception as e:
+		if e.args[0] == 'duplicate column name: multi_check_id' or str(e) == '(1060, "Duplicate column name \'multi_check_id\'")':
+			print('Updating... DB has been updated to version 1.2')
+		else:
+			print("An error occurred:", e)
+
+
+def update_db_v_1_2_3():
+	try:
+		migrate(
+			migrator.drop_column('smon_smtp_check', 'agent_id'),
+			migrator.drop_column('smon_tcp_check', 'agent_id'),
+			migrator.drop_column('smon_rabbit_check', 'agent_id'),
+			migrator.drop_column('smon_ping_check', 'agent_id'),
+			migrator.drop_column('smon_http_check', 'agent_id'),
+			migrator.drop_column('smon_dns_check', 'agent_id'),
+		)
+	except Exception as e:
+		pass
+
+
+def update_db_v_1_2_4():
+	try:
+		migrate(
+			migrator.rename_column('smon_groups', 'user_group', 'group_id'),
+			migrator.rename_column('smon', 'group_id', 'check_group_id'),
+			migrator.rename_column('smon', 'user_group', 'group_id')
+		)
+	except Exception as e:
+		if e.args[0] == 'no such column: "user_group"' or str(e) == '(1060, no such column: "user_group")':
+			print("Updating... DB has been updated to version 1.2")
+		elif e.args[0] == "'bool' object has no attribute 'sql'":
+			print("Updating... DB has been updated to version 1.2")
+		else:
+			print("An error occurred:", e)
+
+
 def update_ver():
 	try:
-		Version.update(version='1.1.4').execute()
+		Version.update(version='1.2.0').execute()
 	except Exception:
 		print('Cannot update version')
 
@@ -303,6 +385,12 @@ def update_all():
 	update_db_v_1_1_3_1()
 	update_db_v_1_1_4()
 	update_db_v_1_1_4_1()
+	update_db_v_1_1_6()
+	update_db_v_1_2()
+	update_db_v_1_2_1()
+	update_db_v_1_2_2()
+	update_db_v_1_2_3()
+	update_db_v_1_2_4()
 
 
 if __name__ == "__main__":

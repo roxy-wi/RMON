@@ -182,11 +182,23 @@ class Version(BaseModel):
 class SmonGroup(BaseModel):
     id = AutoField()
     name = CharField()
-    user_group = IntegerField(constraints=[SQL('DEFAULT 1')])
+    group_id = IntegerField(constraints=[SQL('DEFAULT 1')])
 
     class Meta:
         table_name = 'smon_groups'
-        constraints = [SQL('UNIQUE (name, user_group)')]
+        constraints = [SQL('UNIQUE (name, group_id)')]
+
+
+class Country(BaseModel):
+    id = AutoField()
+    name = CharField()
+    description = CharField()
+    group_id = IntegerField(constraints=[SQL('DEFAULT 1')])
+    enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
+    shared = IntegerField(constraints=[SQL('DEFAULT 0')])
+
+    class Meta:
+        table_name = 'countries'
 
 
 class Region(BaseModel):
@@ -196,9 +208,34 @@ class Region(BaseModel):
     group_id = IntegerField(constraints=[SQL('DEFAULT 1')])
     enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
     shared = IntegerField(constraints=[SQL('DEFAULT 0')])
+    country_id = ForeignKeyField(Country, null=True, on_delete='SET NULL')
 
     class Meta:
         table_name = 'regions'
+
+
+class SmonAgent(BaseModel):
+    id = AutoField()
+    server_id = ForeignKeyField(Server, on_delete='Cascade')
+    name = CharField()
+    uuid = CharField()
+    enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
+    description = CharField()
+    shared = IntegerField(constraints=[SQL('DEFAULT 0')])
+    port = IntegerField(constraints=[SQL('DEFAULT 5701')])
+    region_id = ForeignKeyField(Region, null=True, on_delete='SET NULL')
+
+    class Meta:
+        table_name = 'smon_agents'
+
+
+class MultiCheck(BaseModel):
+    id = AutoField
+    entity_type = CharField()
+    group_id = ForeignKeyField(Groups, on_delete='RESTRICT')
+
+    class Meta:
+        table_name = 'multi_check'
 
 
 class SMON(BaseModel):
@@ -210,11 +247,11 @@ class SMON(BaseModel):
     description = CharField(null=True)
     response_time = CharField(null=True)
     time_state = DateTimeField(constraints=[SQL('DEFAULT "0000-00-00 00:00:00"')])
-    group_id = IntegerField(null=True)
+    check_group_id = IntegerField(null=True)
     http = CharField(null=True)
     body_status = IntegerField(constraints=[SQL('DEFAULT 1')])
     telegram_channel_id = IntegerField(null=True)
-    user_group = IntegerField()
+    group_id = IntegerField()
     slack_channel_id = IntegerField(null=True)
     ssl_expire_warning_alert = IntegerField(constraints=[SQL('DEFAULT 0')])
     ssl_expire_critical_alert = IntegerField(constraints=[SQL('DEFAULT 0')])
@@ -226,6 +263,9 @@ class SMON(BaseModel):
     updated_at = DateTimeField(default=datetime.now)
     check_timeout = IntegerField(constraints=[SQL('DEFAULT 2')])
     region_id = ForeignKeyField(Region, null=True, on_delete='SET NULL')
+    country_id = ForeignKeyField(Country, null=True, on_delete='SET NULL')
+    agent_id = ForeignKeyField(SmonAgent, null=True, on_delete='RESTRICT')
+    multi_check_id = ForeignKeyField(MultiCheck, null=True, on_delete='CASCADE')
 
     class Meta:
         table_name = 'smon'
@@ -307,27 +347,11 @@ class SmonHistory(BaseModel):
         primary_key = False
 
 
-class SmonAgent(BaseModel):
-    id = AutoField()
-    server_id = ForeignKeyField(Server, on_delete='Cascade')
-    name = CharField()
-    uuid = CharField()
-    enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
-    description = CharField()
-    shared = IntegerField(constraints=[SQL('DEFAULT 0')])
-    port = IntegerField(constraints=[SQL('DEFAULT 5701')])
-    region_id = ForeignKeyField(Region, null=True, on_delete='SET NULL')
-
-    class Meta:
-        table_name = 'smon_agents'
-
-
 class SmonTcpCheck(BaseModel):
     smon_id = ForeignKeyField(SMON, on_delete='Cascade', unique=True)
     ip = CharField()
     port = IntegerField()
     interval = IntegerField(constraints=[SQL('DEFAULT 120')])
-    agent_id = IntegerField(constraints=[SQL('DEFAULT 1')])
 
     class Meta:
         table_name = 'smon_tcp_check'
@@ -342,7 +366,6 @@ class SmonSMTPCheck(BaseModel):
     password = CharField()
     use_tls = IntegerField(constraints=[SQL('DEFAULT 1')])
     interval = IntegerField(constraints=[SQL('DEFAULT 120')])
-    agent_id = IntegerField(constraints=[SQL('DEFAULT 1')])
     ignore_ssl_error = IntegerField(constraints=[SQL('DEFAULT 0')])
 
     class Meta:
@@ -358,7 +381,6 @@ class SmonRabbitCheck(BaseModel):
     password = CharField()
     use_tls = CharField(constraints=[SQL('DEFAULT 0')])
     interval = IntegerField(constraints=[SQL('DEFAULT 120')])
-    agent_id = IntegerField(constraints=[SQL('DEFAULT 1')])
     vhost = CharField(constraints=[SQL('DEFAULT "/"')])
     ignore_ssl_error = IntegerField(constraints=[SQL('DEFAULT 0')])
 
@@ -374,7 +396,6 @@ class SmonHttpCheck(BaseModel):
     accepted_status_codes = CharField(constraints=[SQL('DEFAULT "200"')])
     body = CharField(null=True)
     interval = IntegerField(constraints=[SQL('DEFAULT 120')])
-    agent_id = IntegerField(constraints=[SQL('DEFAULT 1')])
     headers = CharField(null=True)
     body_req = CharField(null=True)
     ignore_ssl_error = IntegerField(constraints=[SQL('DEFAULT 0')])
@@ -389,7 +410,6 @@ class SmonPingCheck(BaseModel):
     ip = CharField()
     packet_size = IntegerField(constraints=[SQL('DEFAULT 56')])
     interval = IntegerField(constraints=[SQL('DEFAULT 120')])
-    agent_id = IntegerField(constraints=[SQL('DEFAULT 1')])
 
     class Meta:
         table_name = 'smon_ping_check'
@@ -403,7 +423,6 @@ class SmonDnsCheck(BaseModel):
     resolver = CharField()
     record_type = CharField()
     interval = IntegerField(constraints=[SQL('DEFAULT 120')])
-    agent_id = IntegerField(constraints=[SQL('DEFAULT 1')])
 
     class Meta:
         table_name = 'smon_dns_check'
@@ -450,5 +469,6 @@ def create_tables():
         conn.create_tables(
             [Groups, User, Server, Role, Telegram, Slack, UserGroups, Setting, Cred, Version, ActionHistory, Region,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
-             SmonStatusPage, SmonStatusPageCheck, SMON, SmonGroup, MM, RMONAlertsHistory, SmonSMTPCheck, SmonRabbitCheck]
+             SmonStatusPage, SmonStatusPageCheck, SMON, SmonGroup, MM, RMONAlertsHistory, SmonSMTPCheck, SmonRabbitCheck,
+             Country, MultiCheck]
         )

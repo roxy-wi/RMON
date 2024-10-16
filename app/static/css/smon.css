@@ -34,7 +34,7 @@ h4 {
 #smon_name {
     font-size: 25px;
 }
-#check_interval {
+.gray_text {
     color: #aaa;
     font-size: 14px;
     padding-top: 10px;
@@ -277,4 +277,17 @@ h4 {
 }
 .edit-button .fa-edit {
     margin-bottom: 2px;
+}
+.up-pannel {
+    margin-left: var(--indent);
+}
+.entity_grouping {
+    font-weight: bold;
+    color: var(--color-blue);
+}
+.region-list {
+    display: flex;
+    gap: 1px 20px;
+    width: 330px;
+    flex-flow: row wrap;
 }

@@ -11,18 +11,20 @@ RMON (remote monitoring) is an easy to understand and use geo-distributed monito
 2. Checking DNS records availability
 3. Checking the availability of TCP and UDP ports
 4. Checking HTTP statuses
-5. Checking the BODY of HTTP(S) responses
+5. Checking the BODY of HTTP(s) responses
 6. Checking the SSL expiration date
-7. Sending Telegram, Slack, PagerDuty and Email notifications
-8. Real-time alerting via RMON web interface
-9. Checking network connectivity
-10. Providing information upon response time
-11. Providing information upon servers uptime and downtime
-12. Storing the alarm history
-13. Storing the history of events for each host
-14. Status pages
-15. RMON Agents 
-16. Network tools
+7. Checking SMTP service
+8. Checking RabbitMQ service
+9. Sending Telegram, Slack, PagerDuty and Email notifications
+10. Real-time alerting via RMON web interface
+11. Checking network connectivity
+12. Providing information upon response time
+13. Providing information upon servers uptime and downtime
+14. Storing the alarm history
+15. Storing the history of events for each host
+16. Status pages
+17. RMON Agents 
+18. Network tools
 
 # Install
 

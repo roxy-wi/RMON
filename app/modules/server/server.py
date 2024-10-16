@@ -408,10 +408,8 @@ def create_server(hostname, ip, group, enable, cred, port, desc, **kwargs) -> in
 
 
 def update_server_after_creating(hostname: str, ip: str) -> None:
-	print('sysinfo 123', ip)
 	try:
 		get_system_info(ip)
-		print('sysinfo')
 	except Exception as e:
 		roxywi_common.handle_exceptions(e, hostname, f'Cannot get info from server {hostname}', login=1)
 

@@ -1,6 +1,7 @@
-from app.modules.db.db_model import Groups, Setting, UserGroups
-from app.modules.db.common import out_error
+from peewee import IntegrityError
 
+from app.modules.db.db_model import Groups, Setting, UserGroups
+from app.modules.db.common import out_error, resource_not_empty
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 
 
@@ -67,12 +68,11 @@ def delete_group(group_id):
 	try:
 		Groups.delete().where(Groups.group_id == group_id).execute()
 		UserGroups.delete().where(UserGroups.user_group_id == group_id).execute()
+		delete_group_settings(group_id)
+	except IntegrityError:
+		resource_not_empty()
 	except Exception as e:
 		out_error(e)
-		return False
-	else:
-		delete_group_settings(group_id)
-		return True
 
 
 def delete_group_settings(group_id):
@@ -81,8 +81,6 @@ def delete_group_settings(group_id):
 		group_for_delete.execute()
 	except Exception as e:
 		out_error(e)
-	else:
-		return True
 
 
 def update_group(name, descript, group_id):

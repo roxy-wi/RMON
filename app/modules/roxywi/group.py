@@ -11,11 +11,7 @@ def update_group(group_id: int, group_name: str, desc: str) -> None:
 
 
 def delete_group(group_id: int) -> None:
-    group = group_sql.select_groups(id=group_id)
-    group_name = ''
+    group_name = group_sql.get_group_name_by_id(group_id)
 
-    for g in group:
-        group_name = g.name
-
-    if group_sql.delete_group(group_id):
-        roxywi_common.logging('RMON server', f'The {group_name} has been deleted', roxywi=1, login=1)
+    group_sql.delete_group(group_id)
+    roxywi_common.logging('RMON server', f'The {group_name} has been deleted', roxywi=1, login=1)

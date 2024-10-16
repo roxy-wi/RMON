@@ -1,4 +1,3 @@
-var check_types = {'tcp': 1, 'http': 2, 'smtp': 3, 'ping': 4, 'dns': 5, 'rabbitmq': 6};
 $(function () {
 	$( "#check_type" ).on('selectmenuchange',function() {
 		check_and_clear_check_type($('#check_type').val());
@@ -17,15 +16,6 @@ $(function () {
 		select: function (event, ui) {
 			$('#new-smon-group').focus();
 		},
-	});
-	$( "#new-smon-place" ).on('selectmenuchange',function() {
-		if ($('#new-smon-place option:selected').val() === 'region') {
-			$('#new-smon-agent-tr').hide();
-			$('#new-smon-region-tr').show();
-		} else {
-			$('#new-smon-agent-tr').show();
-			$('#new-smon-region-tr').hide();
-		}
 	});
 });
 function sort_by_status() {
@@ -99,12 +89,11 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 	if ($('#new-smon-ignore_ssl_error').is(':checked')) {
 		ignore_ssl_error = '1';
 	}
-	let agent_id = null;
-	let region_id = $('#new-smon-region-id').val();
-	if ($('#new-smon-place option:selected').val() === 'agent') {
-		agent_id = $('#new-smon-agent-id').val();
-		region_id = null;
-	}
+	let entities = [];
+	$("#checked-entities > div").each((index, elem) => {
+		let entity_id = elem.id.split('-')[1]
+		entities.push(entity_id);
+	});
 	let jsonData = {
 		'name': $('#new-smon-name').val(),
 		'ip': $('#new-smon-ip').val(),
@@ -117,7 +106,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'enabled': enable,
 		'url': $('#new-smon-url').val(),
 		'body': $('#new-smon-body').val(),
-		'group': $('#new-smon-group').val(),
+		'check_group_id': $('#new-smon-group').val(),
 		'description': $('#new-smon-description').val(),
 		'tg': $('#new-smon-telegram').val(),
 		'slack': $('#new-smon-slack').val(),
@@ -126,8 +115,8 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'packet_size': $('#new-smon-packet_size').val(),
 		'http_method': $('#new-smon-method').val(),
 		'interval': $('#new-smon-interval').val(),
-		'region_id': region_id,
-		'agent_id': agent_id,
+		'entities': entities,
+		'place': $('#new-smon-place option:selected').val(),
 		'body_req': $('#new-smon-body-req').val(),
 		'header_req': $('#new-smon-header-req').val(),
 		'accepted_status_codes': $('#new-smon-status-code').val(),
@@ -201,22 +190,28 @@ function removeSmon(smon_id, check_type) {
 }
 function openSmonDialog(check_type, smon_id=0, edit=false) {
 	check_and_clear_check_type(check_type);
+	$('#checked-entities').empty();
+	$('#all-entities').empty();
+	$('#new-smon-place').val('all').change();
+	$('#new-smon-place').selectmenu('refresh');
 	let smon_add_tabel_title = $("#smon-add-table-overview").attr('title');
 	if (edit) {
 		add_word = $('#translate').attr('data-edit');
 		smon_add_tabel_title = $("#smon-add-table-overview").attr('data-edit');
 		$('#check_type').attr('disabled', 'disabled');
+		$('#new-smon-place').attr('disabled', 'disabled');
 		$('#check_type').selectmenu("refresh");
+		$('#new-smon-place').selectmenu("refresh");
 	} else {
 		if (!checkChecksLimit()) {
 			return false;
 		}
 		$('#check_type').removeAttr('disabled');
+		$('#new-smon-place').removeAttr('disabled');
 		$('#check_type').selectmenu("refresh");
+		$('#new-smon-place').selectmenu("refresh");
 		$('#new-smon-name').val('');
 	}
-	getAgents('#new-smon-agent-id');
-	getRegions('#new-smon-region-id');
 	let addSmonServer = $("#smon-add-table").dialog({
 		autoOpen: false,
 		resizable: false,
@@ -258,66 +253,66 @@ function getCheckSettings(smon_id, check_type) {
 		async: false,
 		dataType: "json",
 		success: function (data) {
-			$('#new-smon-name').val(data['smon_id']['name'].replaceAll("'", ""));
-			$('#new-smon-ip').val(data['ip']);
-			$('#new-smon-port').val(data['port']);
-			$('#new-smon-resolver-server').val(data['resolver']);
-			$('#new-smon-dns_record_typer').val(data['record_type']);
-			$('#new-smon-url').val(data['url']);
-			$('#new-smon-description').val(data['smon_id']['description'].replaceAll("'", ""))
-			$('#new-smon-packet_size').val(data['packet_size']);
-			$('#new-smon-interval').val(data['interval']);
-			$('#new-smon-username').val(data['username']);
-			$('#new-smon-password').val(data['password']);
+			$('#new-smon-name').val(data['checks'][0]['smon_id']['name'].replaceAll("'", ""));
+			$('#new-smon-ip').val(data['checks'][0]['ip']);
+			$('#new-smon-port').val(data['checks'][0]['port']);
+			$('#new-smon-resolver-server').val(data['checks'][0]['resolver']);
+			$('#new-smon-dns_record_typer').val(data['checks'][0]['record_type']);
+			$('#new-smon-url').val(data['checks'][0]['url']);
+			$('#new-smon-description').val(data['checks'][0]['smon_id']['description'].replaceAll("'", ""))
+			$('#new-smon-packet_size').val(data['checks'][0]['packet_size']);
+			$('#new-smon-interval').val(data['checks'][0]['interval']);
+			$('#new-smon-username').val(data['checks'][0]['username']);
+			$('#new-smon-password').val(data['checks'][0]['password']);
 			if (data['group_name']) {
 				$('#new-smon-group').val(data['group_name'].replaceAll("'", ""));
 			}
-			if (data['smon_id']['check_timeout']) {
-				$('#new-smon-timeout').val(data['smon_id']['check_timeout']);
+			if (data['checks'][0]['smon_id']['check_timeout']) {
+				$('#new-smon-timeout').val(data['checks'][0]['smon_id']['check_timeout']);
 			}
 			try {
-				$('#new-smon-body').val(data['body'].replaceAll("'", ""));
+				$('#new-smon-body').val(data['checks'][0]['body'].replaceAll("'", ""));
 			} catch (e) {
-				$('#new-smon-body').val(data['body']);
+				$('#new-smon-body').val(data['checks'][0]['body']);
 			}
 			try {
-				$('#new-smon-body-req').val(data['body_req'].replaceAll("'", ""));
+				$('#new-smon-body-req').val(data['checks'][0]['body_req'].replaceAll("'", ""));
 			} catch (e) {
-				$('#new-smon-body-req').val(data['body_req']);
+				$('#new-smon-body-req').val(data['checks'][0]['body_req']);
 			}
 			try {
-				$('#new-smon-header-req').val(data['header_req'].replaceAll("'", ""));
+				$('#new-smon-header-req').val(data['checks'][0]['header_req'].replaceAll("'", ""));
 			} catch (e) {
-				$('#new-smon-header-req').val(data['header_req']);
+				$('#new-smon-header-req').val(data['checks'][0]['header_req']);
 			}
-			$('#new-smon-status-code').val(data['accepted_status_codes']);
-			$('#new-smon-telegram').val(data['smon_id']['telegram_channel_id']).change();
-			$('#new-smon-slack').val(data['smon_id']['slack_channel_id']).change();
-			$('#new-smon-pd').val(data['smon_id']['pd_channel_id']).change();
+			$('#new-smon-status-code').val(data['checks'][0]['accepted_status_codes']);
+			$('#new-smon-telegram').val(data['checks'][0]['smon_id']['telegram_channel_id']).change();
+			$('#new-smon-slack').val(data['checks'][0]['smon_id']['slack_channel_id']).change();
+			$('#new-smon-pd').val(data['checks'][0]['smon_id']['pd_channel_id']).change();
+			$('#new-smon-place').val(data['place']).change();
 			$('#new-smon-telegram').selectmenu("refresh");
+			$('#new-smon-place').trigger('selectmenuchange');
 			$('#new-smon-slack').selectmenu("refresh");
-			if (data['smon_id']['mm_channel_id']) {
-				$('#new-smon-mm').val(data['smon_id']['mm_channel_id']).change();
+			if (data['place'] != 'all') {
+				for (let entity_id of data['entities']) {
+					getEntityJson(entity_id, data['place']);
+				}
+			}
+			if (data['checks'][0]['smon_id']['mm_channel_id']) {
+				$('#new-smon-mm').val(data['checks'][0]['smon_id']['mm_channel_id']).change();
 				$('#new-smon-mm').selectmenu("refresh");
 			}
-			if (data['method']) {
-				$('#new-smon-method').val(data['method']).change();
+			if (data['checks'][0]['method']) {
+				$('#new-smon-method').val(data['checks'][0]['method']).change();
 				$('#new-smon-method').selectmenu("refresh");
 			}
-			if (data['smon_id']['region_id']) {
-				$('#new-smon-place').val('region').change();
-				$('#new-smon-region-id').val(data['smon_id']['region_id']).change();
-			} else {
-				$('#new-smon-place').val('agent').change();
-				$('#new-smon-agent-id').val(data['agent_id']).change();
-			}
 			$('select').selectmenu("refresh");
-			if (data['smon_id']['enabled']) {
+			if (data['checks'][0]['smon_id']['enabled']) {
 				$('#new-smon-enable').prop('checked', true)
 			} else {
 				$('#new-smon-enable').prop('checked', false)
 			}
-			if (data['ignore_ssl_error']) {
+			if (data['checks'][0]['ignore_ssl_error']) {
 				$('#new-smon-ignore_ssl_error').prop('checked', true)
 			} else {
 				$('#new-smon-ignore_ssl_error').prop('checked', false)
@@ -333,7 +328,7 @@ function editSmon(smon_id, check_type) {
 	getCheckSettings(smon_id, check_type);
 
 }
-function cloneSmom(id, check_type) {
+function cloneSmon(id, check_type) {
 	check_and_clear_check_type(check_type);
 	getCheckSettings(id, check_type);
 	openSmonDialog(check_type);
@@ -431,27 +426,20 @@ function clear_check_vals() {
 		$('#new-smon-' + i).val('');
 	}
 }
-function show_statuses(dashboard_id, check_id, id_for_history_replace) {
-	show_smon_history_statuses(dashboard_id, id_for_history_replace);
+function show_smon_history_statuses(check_id, id_for_history_replace) {
 	$.ajax({
-		url: "/rmon/history/cur_status/" + dashboard_id + "/" + check_id,
+		url: api_v_prefix + "/rmon/check/" + check_id + "/statuses",
+		contentType: "application/json; charset=utf-8",
 		success: function (data) {
-			data = data.replace(/\s+/g, ' ');
-			if (data.indexOf('error:') != '-1' || data.indexOf('unique') != '-1') {
-				toastr.error(data);
-			} else {
-				toastr.clear();
-				$("#cur_status").html(data);
+			let statuses = '';
+			for (let status of data.reverse()) {
+				let add_class = 'serverUp';
+				if (status.status === 0) {
+					add_class = 'serverDown'
+				}
+				statuses += '<div class="smon_server_statuses ' + add_class + '" title="" data-help="' + status.date + ' ' + status.error + '"></div>';
 			}
-		}
-	});
-}
-function show_smon_history_statuses(dashboard_id, id_for_history_replace) {
-	$.ajax({
-		url: "/rmon/history/statuses/" + dashboard_id,
-		success: function (data) {
-			data = data.replace(/\s+/g, ' ');
-			$(id_for_history_replace).html(data);
+			$(id_for_history_replace).html(statuses);
 			$("[title]").tooltip({
 				"content": function () {
 					return $(this).attr("data-help");
@@ -459,322 +447,6 @@ function show_smon_history_statuses(dashboard_id, id_for_history_replace) {
 				show: {"delay": 1000}
 			});
 			$.getScript("/static/js/fontawesome.min.js");
-		}
-	});
-}
-function smon_status_page_avg_status(page_id) {
-	$.ajax({
-		url: "/rmon/status/avg/" + page_id,
-		success: function (data) {
-			data = data.replace(/\s+/g, ' ');
-			if (data.indexOf('error:') != '-1' || data.indexOf('unique') != '-1') {
-				toastr.error(data);
-			} else {
-				toastr.clear();
-				if (data == '1') {
-					$('#page_status').html('<i class="far fa-check-circle page_icon page_icon_all_ok"></i><span>All Systems Operational</span>');
-				} else {
-					$('#page_status').html('<i class="far fa-times-circle page_icon page_icon_not_ok"></i><span>Not all Systems Operational</span>')
-				}
-			}
-		}
-	});
-}
-function smon_manage_status_page_avg_status(page_id) {
-	$.ajax({
-		url: "/rmon/status/avg/" + page_id,
-		success: function (data) {
-			data = data.replace(/\s+/g, ' ');
-			if (data.indexOf('error:') != '-1' || data.indexOf('unique') != '-1') {
-				toastr.error(data);
-			} else {
-				toastr.clear();
-				if (data == '1') {
-					$('#page_status-'+page_id).html('<i class="far fa-check-circle status-page-icon status-page-icon-ok"></i>');
-				} else {
-					$('#page_status-'+page_id).html('<i class="far fa-times-circle status-page-icon status-page-icon-not-ok"></i>')
-				}
-			}
-		}
-	});
-}
-function createStatusPageStep1(edited=false, page_id=0) {
-	clearStatusPageDialog();
-	let next_word = $('#translate').attr('data-next');
-	let smon_add_tabel_title = $("#create-status-page-step-1-overview").attr('title');
-	if (edited) {
-		smon_add_tabel_title = $("#create-status-page-step-1-overview").attr('data-edit');
-		$('#new-status-page-name').val($('#page_name-' + page_id).text());
-		$('#new-status-page-slug').val($('#page_slug-' + page_id).text().split('/').pop());
-		$('#new-status-page-desc').val($('#page_desc-' + page_id).text().replace('(', '').replace(')', ''));
-		$.ajax({
-			url: api_v_prefix + '/rmon/status-page/' + page_id,
-			async: false,
-			contentType: "application/json; charset=utf-8",
-			success: function (data) {
-				if (data.status === 'failed') {
-					toastr.error(data.error);
-				} else {
-					for (let i = 0; i < data.checks.length; i++) {
-						addCheckToStatus(data.checks[i]['check_id']['id']);
-					}
-					$('#new-status-page-style').val(data.custom_style.replaceAll("'", ""));
-				}
-			}
-		});
-	}
-	let regx = /^[a-z0-9_-]+$/;
-	let addSmonStatus = $("#create-status-page-step-1").dialog({
-		autoOpen: false,
-		resizable: false,
-		height: "auto",
-		width: 630,
-		modal: true,
-		title: smon_add_tabel_title,
-		show: {
-			effect: "fade",
-			duration: 200
-		},
-		hide: {
-			effect: "fade",
-			duration: 200
-		},
-		buttons: [{
-			text: next_word,
-			click: function () {
-				if ($('#new-status-page-name').val() == '') {
-					toastr.error('error: Fill in the Name field');
-					return false;
-				}
-				if (!regx.test($('#new-status-page-slug').val())) {
-					toastr.error('error: Incorrect Slug');
-					return false;
-				}
-				if ($('#new-status-page-slug').val().indexOf('--') != '-1') {
-					toastr.error('error: "--" are prohibeted in Slug');
-					return false;
-				}
-				if ($('#new-status-page-slug').val() == '') {
-					toastr.error('error: Fill in the Slug field');
-					return false;
-				}
-				createStatusPageStep2(edited, page_id);
-				$(this).dialog("close");
-				toastr.clear();
-			}
-		}, {
-			text: cancel_word,
-			click: function () {
-				clearStatusPageDialog();
-				$(this).dialog("close");
-			}
-		}]
-	});
-	addSmonStatus.dialog('open');
-}
-function createStatusPageStep2(edited, page_id) {
-	let smon_add_tabel_title = $("#create-status-page-step-2-overview").attr('title');
-	if (edited) {
-		smon_add_tabel_title = $("#create-status-page-step-2-overview").attr('data-edit');
-		add_word = $('#translate').attr('data-edit');
-	}
-	let addSmonStatus = $("#create-status-page-step-2").dialog({
-		autoOpen: false,
-		resizable: false,
-		height: "auto",
-		width: 630,
-		modal: true,
-		title: smon_add_tabel_title,
-		show: {
-			effect: "fade",
-			duration: 200
-		},
-		hide: {
-			effect: "fade",
-			duration: 200
-		},
-		buttons: [{
-			text: add_word,
-			click: function () {
-				if (edited) {
-					editStatusPage($(this), page_id);
-				} else {
-					createStatusPage($(this));
-				}
-			}
-		}, {
-			text: back_word,
-			click: function () {
-				$(this).dialog("close");
-				createStatusPageStep1(edited, page_id);
-			}
-		}, {
-			text: cancel_word,
-			click: function () {
-				clearStatusPageDialog();
-				$(this).dialog("close");
-			}
-		}]
-	});
-	addSmonStatus.dialog('open');
-}
-function clearStatusPageDialog() {
-	clearTips();
-	$('#new-status-page-name').val('');
-	$('#new-status-page-slug').val('');
-	$('#new-status-page-desc').val('');
-	$('#new-status-page-style').val('');
-	$("#enabled-check > div").each((index, elem) => {
-		check_id = elem.id.split('-')[1]
-		removeCheckFromStatus(check_id);
-	});
-}
-function createJsonData() {
-	let name = $('#new-status-page-name').val();
-	let slug = $('#new-status-page-slug').val();
-	let desc = $('#new-status-page-desc').val();
-	let checks = [];
-	let check_id = '';
-	$("#enabled-check > div").each((index, elem) => {
-		check_id = elem.id.split('-')[1]
-		checks.push(check_id);
-	});
-	return {
-		"name": name,
-		"slug": slug,
-		"description": desc,
-		"custom_style": $('#new-status-page-style').val(),
-		"checks": checks
-	};
-}
-function createStatusPage(dialog_id) {
-	let json_data = createJsonData();
-	$.ajax({
-		url: api_v_prefix + '/rmon/status-page',
-		type: 'POST',
-		data: JSON.stringify(json_data),
-		contentType: "application/json; charset=utf-8",
-		success: function (data) {
-			if (data.status === 'failed') {
-				toastr.error(data);
-			} else {
-				let id = data.id;
-				let new_page = elem("div", {"id":"page_"+id,"class":"page_div"}, [
-					elem("a", {"href":"/rmon/status/"+json_data['slug'],"id":"page_link-"+id,"class":"page_link","target":"_blank","title":"Open status page"}, [
-						elem("span", {"id":"page_status-"+id}),
-						elem("div", null, [
-							elem("span", {"class":"page_name","id":"page_name-"+id}, json_data['name']),
-							elem("span", {"class":"page_desc","id":"page_desc-"+id}, "("+json_data['description']+")"),
-						]),
-						elem("div", {"class":"page_slug","id":"page_slug-"+id}, "/rmon/status/"+json_data['slug'])
-					]),
-					elem("div", {"class":"edit status_page-edit","onclick":"createStatusPageStep1('true', '"+id+"')"}),
-					elem("div", {"class":"delete","onclick":"confirmDeleteStatusPage('"+id+"')"})
-				])
-				$("#pages").append(new_page);
-				smon_manage_status_page_avg_status(id);
-				$(dialog_id).dialog('close');
-				$.getScript("/static/js/fontawesome.min.js");
-			}
-		}
-	});
-}
-function editStatusPage(dialog_id, page_id) {
-	let json_data = createJsonData();
-	$.ajax({
-		url: api_v_prefix + '/rmon/status-page/' + page_id,
-		type: 'PUT',
-		data: JSON.stringify(json_data),
-		contentType: "application/json; charset=utf-8",
-		success: function (data) {
-			if (data.status === 'failed') {
-				toastr.error(data);
-			} else {
-				clearStatusPageDialog();
-				$(dialog_id).dialog("close");
-				$("#page_name-" + page_id).text(json_data['name']);
-				$("#page_slug-" + page_id).text('/rmon/status/' + json_data['slug']);
-				$("#page_link-" + page_id).attr('href', '/rmon/status/' + json_data['slug']);
-				if (json_data['description']) {
-					$("#page_desc-" + page_id).text('(' + json_data['description'] + ')');
-				}
-				$("#page_" + page_id).addClass("update", 1000);
-				setTimeout(function () {
-					$("#page_" + page_id).removeClass("update");
-				}, 2500);
-				$.getScript("/static/js/fontawesome.min.js");
-			}
-		}
-	});
-}
-function addCheckToStatus(service_id) {
-	var service_name = $('#add_check-' + service_id).attr('data-service_name');
-	var service_word = $('#translate').attr('data-service');
-	var length_tr = $('#all-checks').length;
-	var tr_class = 'odd';
-	if (length_tr % 2 != 0) {
-		tr_class = 'even';
-	}
-	var html_tag = '<div class="' + tr_class + '" id="remove_check-' + service_id + '" data-service_name="' + service_name + '">' +
-		'<div class="check-name">' + service_name + '</div>' +
-		'<div class="add_user_group check-button" onclick="removeCheckFromStatus(' + service_id + ')" title="' + delete_word + ' ' + service_word + '">-</div></div>';
-	$('#add_check-' + service_id).remove();
-	$("#enabled-check").append(html_tag);
-}
-function removeCheckFromStatus(service_id) {
-	var service_name = $('#remove_check-' + service_id).attr('data-service_name');
-	var service_word = $('#translate').attr('data-service');
-	var length_tr = $('#all_services tbody tr').length;
-	var tr_class = 'odd';
-	if (length_tr % 2 != 0) {
-		tr_class = 'even';
-	}
-	var html_tag = '<div class="' + tr_class + ' all-checks" id="add_check-' + service_id + '" data-service_name="' + service_name + '">' +
-		'<div class="check-name">' + service_name + '</div>' +
-		'<div class="add_user_group check-button" onclick="addCheckToStatus(' + service_id + ')" title="' + add_word + ' ' + service_word + '">+</div></div>';
-	$('#remove_check-' + service_id).remove();
-	$("#all-checks").append(html_tag);
-}
-function confirmDeleteStatusPage(id) {
-	$("#dialog-confirm").dialog({
-		resizable: false,
-		height: "auto",
-		width: 400,
-		modal: true,
-		title: delete_word + " " + $('#page_name-' + id).text() + "?",
-		buttons: [{
-			text: delete_word,
-			click: function () {
-				$(this).dialog("close");
-				deleteStatusPage(id);
-			}
-		}, {
-			text: cancel_word,
-			click: function () {
-				$(this).dialog("close");
-			}
-		}]
-	});
-}
-function deleteStatusPage(page_id) {
-	$.ajax({
-		url: api_v_prefix + '/rmon/status-page/' + page_id,
-		type: 'DELETE',
-		contentType: "application/json; charset=utf-8",
-		statusCode: {
-			204: function (xhr) {
-				$("#page_" + page_id).remove();
-			},
-			404: function (xhr) {
-				$("#page_" + page_id).remove();
-			}
-		},
-		success: function (data) {
-			if (data) {
-				if (data.status === "failed") {
-					toastr.error(data);
-				}
-			}
 		}
 	});
 }
@@ -795,27 +467,6 @@ function checkChecksLimit() {
 	return return_value;
 }
 var charts = []
-function getSmonHistoryCheckDataStatusPage(server, check_type_id) {
-	let check_types = {'ping': '1', 'http': '2', 'smtp': '3', 'tcp': '4', 'dns': '5'}
-	$.ajax({
-		url: "/rmon/history/metric/" + server + "/" + check_types[check_type_id],
-		success: function (result) {
-			let data = [];
-			data.push(result.chartData.curr_con);
-			let labels = result.chartData.labels;
-			renderSMONChart(data[0], labels, server);
-			$('#en_table_metric-' + server).css('display', 'none');
-			$('#dis_table_metric-' + server).css('display', 'inline');
-			$('#history-status-' + server).show();
-		}
-	});
-}
-function hideSmonHistoryCheckDataStatusPage(server) {
-	$('#en_table_metric-' + server).css('display', 'inline');
-	$('#dis_table_metric-' + server).css('display', 'none');
-	Chart.getChart('metrics_' + server).destroy();
-	$('#history-status-' + server).hide();
-}
 function showSmonGroup(group_id) {
 	$('#show-smon-group-' + group_id).css('display', 'none');
 	$('#hide-smon-group-' + group_id).css('display', 'block');
@@ -833,22 +484,22 @@ function isSmonGroupShowed(group_id) {
 		showSmonGroup(group_id);
 	}
 }
-function getSmonHistoryCheckData(check_id, check_type_id) {
-    $.ajax({
-        url: "/rmon/history/metric/" + check_id + "/" + check_type_id,
-        success: function (result) {
+function getSmonHistoryCheckData(check_id, check_type) {
+	$.ajax({
+		url: api_v_prefix + "/rmon/check/" + check_type + "/" + check_id + "/metrics",
+		success: function (result) {
 			let labels = result.chartData.labels;
-			if (check_type_id === '2') {
-				renderSMONChartHttp(result, labels, check_id, check_type_id);
-			} else if (check_type_id === '3') {
-				renderSMONChartSmtp(result, labels, check_id, check_type_id);
+			if (check_type === 'http') {
+				renderSMONChartHttp(result, labels, check_id, check_type);
+			} else if (check_type === 'smtp') {
+				renderSMONChartSmtp(result, labels, check_id, check_type);
 			} else {
 				let data = [];
-				data.push(result.chartData.curr_con);
-				renderSMONChart(data[0], labels, check_id, check_type_id);
+				data.push(result.chartData.response_time);
+				renderSMONChart(data[0], labels, check_id, check_types[check_type]);
 			}
 		}
-    });
+	});
 }
 function renderSMONChartHttp(result, labels, check_id, check_type_id) {
     const ctx = document.getElementById('metrics_' + check_id);
@@ -862,7 +513,7 @@ function renderSMONChartHttp(result, labels, check_id, check_type_id) {
     const redirect = result.chartData.redirect.split(',');
     const start_transfer = result.chartData.start_transfer.split(',');
     const download = result.chartData.download.split(',');
-    const curr_con = result.chartData.curr_con.split(',');
+    const response_time = result.chartData.response_time.split(',');
 
     // Удаление последнего пустого элемента в каждом массиве
     labelArray.pop();
@@ -873,12 +524,12 @@ function renderSMONChartHttp(result, labels, check_id, check_type_id) {
     redirect.pop();
     start_transfer.pop();
     download.pop();
-    curr_con.pop();
+    response_time.pop();
 
     // Создание объекта dataset
     const dataset = [{
         label: resp_time_word + ' (ms)',
-        data: curr_con,
+        data: response_time,
         borderColor: 'rgba(41, 115, 147, 0.5)',
         backgroundColor: 'rgba(49, 175, 225, 0.5)',
         tension: 0.4,
@@ -1015,19 +666,19 @@ function renderSMONChartSmtp(result, labels, check_id, check_type_id) {
     const name_lookup = result.chartData.name_lookup.split(',');
     const connect = result.chartData.connect.split(',');
     const app_connect = result.chartData.app_connect.split(',');
-    const curr_con = result.chartData.curr_con.split(',');
+    const response_time = result.chartData.response_time.split(',');
 
     // Удаление последнего пустого элемента в каждом массиве
     labelArray.pop();
     name_lookup.pop();
     connect.pop();
     app_connect.pop();
-    curr_con.pop();
+    response_time.pop();
 
     // Создание объекта dataset
     const dataset = [{
         label: resp_time_word + ' (ms)',
-        data: curr_con,
+        data: response_time,
         borderColor: 'rgba(41, 115, 147, 0.5)',
         backgroundColor: 'rgba(49, 175, 225, 0.5)',
         tension: 0.4,
@@ -1224,7 +875,7 @@ function stream_chart(chart_id, check_id, check_type_id) {
 				}
 			}
 			chart_id.data.labels.push(data.time);
-			chart_id.data.datasets[0].data.push(data.value);
+			chart_id.data.datasets[0].data.push(data.response_time);
 			if (check_type_id === '2' || check_type_id === '3') {
 				chart_id.data.datasets[1].data.push(data.name_lookup);
 				chart_id.data.datasets[2].data.push(data.connect);
@@ -1245,48 +896,25 @@ function stream_chart(chart_id, check_id, check_type_id) {
     }
 }
 function update_cur_statues(check_id, data) {
-	let status = data.status;
-	if (status === "4") {
+	if (data.status === "4") {
 		return false;
 	}
-	let last_resp_time = data.value;
-	let time = data.time;
-	let mes = data.mes;
-	let add_class = 'serverUp';
-	let cur_status = 'UP';
-	if (status === "0") {
-		add_class = 'serverDown';
-		cur_status = 'DOWN';
-	} else if (status === "4") {
-		add_class = 'serverNone';
-		cur_status = 'DISABLED';
-	}
+	let last_resp_time = data.response_time;
 	if (last_resp_time.length === 0) {
 		last_resp_time = 'N/A';
 	} else {
 		last_resp_time = last_resp_time + 'ms'
 	}
-	let title_text = `${$('#translate').attr('data-history_of')} ${data.name.replaceAll("'", "")}`
-	let div_cur_status = '<span class="' + add_class + ' cur_status" style="font-size: 30px; border-radius: 50rem!important;min-width: 62px;">' + cur_status + '</span>'
-	let div_server_statuses = '<div class="smon_server_statuses ' + add_class + '" title="" data-help="' + time + ' ' + mes + '" style="margin-left: 4px;"></div>'
-	$('#cur_status').html(div_cur_status);
+	if ($('#translate').attr('data-history_of')) {
+		let title_text = `${$('#translate').attr('data-history_of')} ${data.name.replaceAll("'", "")}`
+		$('title').text(title_text);
+		$('h2').text(title_text);
+	}
 	$('#last_resp_time').html(last_resp_time);
 	$('#uptime').html(data.uptime + '%');
 	$('#avg_res_time').html(data.avg_res_time + 'ms');
 	$('#interval').text(data.interval);
 	$('#updated_at').text(data.updated_at);
-	$('#agent').text(data.agent);
-	$('title').text(title_text);
-	$('h2').text(title_text);
 	$('#ssl_expire_date').text(data.ssl_expire_date);
-	if ($('#smon_history_statuses').children().length == 40) {
-		$('#smon_history_statuses').find('div:first').remove()
-	}
-	$('#smon_history_statuses').append(div_server_statuses);
-	$("[title]").tooltip({
-		"content": function () {
-			return $(this).attr("data-help");
-		},
-		show: {"delay": 1000}
-	});
+	updateCurrentStatus(check_id, data);
 }
