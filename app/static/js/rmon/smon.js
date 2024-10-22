@@ -120,7 +120,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'body_req': $('#new-smon-body-req').val(),
 		'header_req': $('#new-smon-header-req').val(),
 		'accepted_status_codes': $('#new-smon-status-code').val(),
-		'timeout': $('#new-smon-timeout').val(),
+		'check_timeout': $('#new-smon-timeout').val(),
 		'ignore_ssl_error': ignore_ssl_error
 	}
 	let method = "post";
@@ -264,8 +264,8 @@ function getCheckSettings(smon_id, check_type) {
 			$('#new-smon-interval').val(data['checks'][0]['interval']);
 			$('#new-smon-username').val(data['checks'][0]['username']);
 			$('#new-smon-password').val(data['checks'][0]['password']);
-			if (data['group_name']) {
-				$('#new-smon-group').val(data['group_name'].replaceAll("'", ""));
+			if (data['check_group']) {
+				$('#new-smon-group').val(data['check_group'].replaceAll("'", ""));
 			}
 			if (data['checks'][0]['smon_id']['check_timeout']) {
 				$('#new-smon-timeout').val(data['checks'][0]['smon_id']['check_timeout']);
@@ -490,9 +490,9 @@ function getSmonHistoryCheckData(check_id, check_type) {
 		success: function (result) {
 			let labels = result.chartData.labels;
 			if (check_type === 'http') {
-				renderSMONChartHttp(result, labels, check_id, check_type);
+				renderSMONChartHttp(result, labels, check_id, check_types[check_type]);
 			} else if (check_type === 'smtp') {
-				renderSMONChartSmtp(result, labels, check_id, check_type);
+				renderSMONChartSmtp(result, labels, check_id, check_types[check_type]);
 			} else {
 				let data = [];
 				data.push(result.chartData.response_time);

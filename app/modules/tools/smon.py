@@ -19,13 +19,13 @@ def create_check(
     try:
         name = json_data.name
         enable = json_data.enabled
-        group = json_data.check_group_id
+        group = json_data.check_group
         desc = json_data.description
         telegram = json_data.tg
         slack = json_data.slack
         pd = json_data.pd
         mm = json_data.mm
-        timeout = json_data.timeout
+        timeout = json_data.check_timeout
     except Exception as e:
         raise e
 
@@ -121,13 +121,13 @@ def update_smon(smon_id, json_data, group_id) -> None:
     try:
         name = json_data.name
         enabled = json_data.enabled
-        group = json_data.check_group_id
+        group = json_data.check_group
         desc = json_data.description
         telegram = json_data.tg
         slack = json_data.slack
         pd = json_data.pd
         mm = json_data.mm
-        timeout = json_data.timeout
+        timeout = json_data.check_timeout
     except Exception as e:
         raise Exception(f'wrong data: {e}')
 

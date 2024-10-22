@@ -136,11 +136,12 @@ function getAgentSettings(agent_id) {
 		url: api_v_prefix + "/rmon/agent/" + agent_id,
 		async: false,
 		success: function (data) {
-			$('#new-agent-name').val(data['name']);
+			$('#new-agent-name').val(data['name'].replaceAll("'", ""));
 			$('#new-agent-port').val(data['port']);
-			generateSelect('#new-agent-server-id', data['server_id']['server_id'], data['server_id']['hostname'], 'selected')
+			$('#new-agent-select-tr').hide();
+			generateSelect('#new-agent-server-id', data['server_id'], data['server_id'], 'selected')
 			$('#new-agent-server-id').attr('disabled', 'disabled');
-			$('#new-agent-desc').val(data['description']);
+			$('#new-agent-desc').val(data['description'].replaceAll("'", ""));
 			$('#new-agent-enabled').checkboxradio("refresh");
 			if (data['enabled'] == '1') {
 				$('#new-agent-enabled').prop('checked', true)
@@ -182,6 +183,7 @@ function cleanAgentAddForm() {
 	$('#new-agent-enabled').checkboxradio("refresh");
 	$('#new-agent-server-id').removeAttr('disabled');
 	$('#new-agent-server-id').selectmenu("refresh");
+	$('#new-agent-select-tr').show();
 }
 function getAgent(agent_id, new_agent=false) {
 	$.ajax({

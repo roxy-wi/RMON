@@ -288,7 +288,7 @@ def smon_history_metric_chart(check_id, check_type_id):
             json_metric['uptime'] = uptime
             json_metric['avg_res_time'] = avg_res_time
             json_metric['interval'] = interval
-            json_metric['status'] = str(chart_metrics.status) if is_enabled else 4
+            json_metric['status'] = int(chart_metrics.status) if is_enabled else 4
             if check_type_id in (2, 3):
                 json_metric['name_lookup'] = str(chart_metrics.name_lookup)
                 json_metric['connect'] = str(chart_metrics.connect)

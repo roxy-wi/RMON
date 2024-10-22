@@ -8,6 +8,11 @@ import app.modules.roxy_wi_tools as roxy_wi_tools
 get_config = roxy_wi_tools.GetConfigVar()
 mysql_enable = get_config.get_config_var('mysql', 'enable')
 
+if mysql_enable == '1':
+    from playhouse.mysql_ext import JSONField
+else:
+    from playhouse.sqlite_ext import JSONField
+
 
 class ReconnectMySQLDatabase(ReconnectMixin, MySQLDatabase):
     pass
@@ -15,12 +20,14 @@ class ReconnectMySQLDatabase(ReconnectMixin, MySQLDatabase):
 
 def connect(get_migrator=None):
     if mysql_enable == '1':
-        mysql_user = get_config.get_config_var('mysql', 'mysql_user')
-        mysql_password = get_config.get_config_var('mysql', 'mysql_password')
         mysql_db = get_config.get_config_var('mysql', 'mysql_db')
-        mysql_host = get_config.get_config_var('mysql', 'mysql_host')
-        mysql_port = get_config.get_config_var('mysql', 'mysql_port')
-        conn = ReconnectMySQLDatabase(mysql_db, user=mysql_user, password=mysql_password, host=mysql_host, port=int(mysql_port))
+        kwargs = {
+            "user": get_config.get_config_var('mysql', 'mysql_user'),
+            "password": get_config.get_config_var('mysql', 'mysql_password'),
+            "host": get_config.get_config_var('mysql', 'mysql_host'),
+            "port": int(get_config.get_config_var('mysql', 'mysql_port'))
+        }
+        conn = ReconnectMySQLDatabase(mysql_db, **kwargs)
         migrator = MySQLMigrator(conn)
     else:
         db = "/var/lib/rmon/rmon.db"
@@ -241,14 +248,12 @@ class MultiCheck(BaseModel):
 class SMON(BaseModel):
     id = AutoField()
     name = CharField(null=True)
-    port = IntegerField(null=True)
     status = IntegerField(constraints=[SQL('DEFAULT 1')])
     enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
     description = CharField(null=True)
     response_time = CharField(null=True)
     time_state = DateTimeField(constraints=[SQL('DEFAULT "0000-00-00 00:00:00"')])
     check_group_id = IntegerField(null=True)
-    http = CharField(null=True)
     body_status = IntegerField(constraints=[SQL('DEFAULT 1')])
     telegram_channel_id = IntegerField(null=True)
     group_id = IntegerField()
@@ -269,7 +274,6 @@ class SMON(BaseModel):
 
     class Meta:
         table_name = 'smon'
-        constraints = [SQL('UNIQUE (name, port)')]
 
 
 class RMONAlertsHistory(BaseModel):
@@ -396,8 +400,8 @@ class SmonHttpCheck(BaseModel):
     accepted_status_codes = CharField(constraints=[SQL('DEFAULT "200"')])
     body = CharField(null=True)
     interval = IntegerField(constraints=[SQL('DEFAULT 120')])
-    headers = CharField(null=True)
-    body_req = CharField(null=True)
+    headers = JSONField(null=True)
+    body_req = JSONField(null=True)
     ignore_ssl_error = IntegerField(constraints=[SQL('DEFAULT 0')])
 
     class Meta:

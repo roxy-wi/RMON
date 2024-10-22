@@ -58,14 +58,14 @@ class BaseCheckRequest(BaseModel):
     description: Optional[str] = ''
     place: Literal['all', 'country', 'region', 'agent']
     entities: List[int]
-    timeout: Annotated[int, Le(59), Gt(1)] = 2
+    check_timeout: Annotated[int, Le(59), Gt(1)] = 2
     enabled: Optional[bool] = 1
     tg: Optional[int] = 0
     pd: Optional[int] = 0
     mm: Optional[int] = 0
     slack: Optional[int] = 0
     interval: Optional[int] = 120
-    check_group_id: Optional[EscapedString] = None
+    check_group: Optional[EscapedString] = None
     group_id: Optional[int] = None
 
     @root_validator(pre=True)
@@ -73,11 +73,11 @@ class BaseCheckRequest(BaseModel):
     def timeout_must_be_lower_interval(cls, values):
         timeout = 2
         interval = 120
-        if 'timeout' in values:
+        if 'check_timeout' in values:
             try:
-                timeout = int(values['timeout'])
+                timeout = int(values['check_timeout'])
             except ValueError:
-                raise ValueError('timeout must be an integer')
+                raise ValueError('check_timeout must be an integer')
         if 'interval' in values:
             try:
                 interval = int(values['interval'])

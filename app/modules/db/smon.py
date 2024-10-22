@@ -79,16 +79,11 @@ def get_agent_data(agent_id: int) -> SmonAgent:
 
 def get_agent_id_by_check_id(check_id: int):
 	try:
-		check_type = SMON.get(SMON.id == check_id).check_type
+		return SMON.get(SMON.id == check_id).agent_id
 	except SMON.DoesNotExist:
 		raise RoxywiResourceNotFound(f'Id {check_id} not found')
-
-	correct_model = tool_common.get_model_for_check(check_type=check_type)
-
-	try:
-		return correct_model.get(correct_model.smon_id == check_id).agent_id
-	except correct_model.DoesNotExist:
-		raise RoxywiResourceNotFound(f'{check_type} not found with id {check_id}')
+	except Exception as e:
+		out_error(e)
 
 
 def add_agent(**kwargs) -> int:
@@ -187,11 +182,11 @@ def select_en_smon(agent_id: int, check_type: str) -> Union[SmonTcpCheck, SmonPi
 
 def select_status(smon_id):
 	try:
-		query_res = SMON.get(SMON.id == smon_id).status
+		return SMON.get(SMON.id == smon_id).status
+	except SMON.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
-	else:
-		return int(query_res)
 
 
 def change_status(status, smon_id):
@@ -355,23 +350,6 @@ def delete_multi_check(check_id: int, group_id: int) -> None:
 		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
-
-
-# def smon_list(group_id):
-# 	if group_id == 1:
-# 		query = (SMON.select().where(SMON.multi_check_id.is_null(True)).order_by(SMON.group_id))
-# 	else:
-# 		query = (SMON.select().where(
-# 			(SMON.group_id == group_id) &
-# 			(SMON.multi_check_id.is_null(True))
-# 		).order_by(SMON.group_id))
-#
-# 	try:
-# 		query_res = query.execute()
-# 	except Exception as e:
-# 		out_error(e)
-# 	else:
-# 		return query_res
 
 
 def select_multi_check(multi_check_id: int, group_id: int) -> SMON:

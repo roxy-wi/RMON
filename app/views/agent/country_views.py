@@ -30,6 +30,11 @@ class CountryView(MethodView):
             type: integer
             required: true
             description: The identifier of the region
+          - in: 'query'
+            name: 'group_id'
+            description: 'ID of the group to list countries. For superAdmin only'
+            required: false
+            type: 'integer'
         responses:
           200:
             description: Successfully retrieved country information
@@ -210,6 +215,11 @@ class CountryView(MethodView):
             type: integer
             required: true
             description: The identifier of the country to be deleted
+          - in: 'query'
+            name: 'group_id'
+            description: 'ID of the group to list countries. For superAdmin only'
+            required: false
+            type: 'integer'
         responses:
           204:
             description: Successfully deleted the country
@@ -241,6 +251,12 @@ class CountryListView(MethodView):
         ---
         tags:
         - Country
+        parameters:
+          - in: 'query'
+            name: 'group_id'
+            description: 'ID of the group to list countries. For superAdmin only'
+            required: false
+            type: 'integer'
         responses:
           200:
             description: Successfully retrieved list of countries

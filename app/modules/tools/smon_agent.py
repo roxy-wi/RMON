@@ -1,5 +1,4 @@
 import uuid
-import json
 from typing import Union
 
 import requests
@@ -231,16 +230,11 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             'interval': check.interval,
             'timeout': check.smon_id.check_timeout,
             'accepted_status_codes': check.accepted_status_codes,
-            'ignore_ssl_error': check.ignore_ssl_error
+            'ignore_ssl_error': check.ignore_ssl_error,
+            'body_req': check.body_req,
+            'headers': check.headers,
         }
-        if check.body_req:
-            json_data['body_req'] = json.loads(check.body_req)
-        else:
-            json_data['body_req'] = ''
-        if check.headers:
-            json_data['header_req'] = json.dumps(check.headers)
-        else:
-            json_data['header_req'] = ''
+
         api_path = f'check/{check.smon_id}'
         try:
             send_post_request_to_agent(agent_id, server_ip, api_path, json_data)

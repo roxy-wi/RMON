@@ -1,6 +1,7 @@
 from typing import Union, Tuple
 
 from flask.views import MethodView
+from flask_apscheduler.json import jsonify
 from flask_jwt_extended import jwt_required
 from flask import g, abort
 from flask_pydantic import validate
@@ -18,6 +19,7 @@ from app.modules.roxywi.class_models import (
     IdResponse, HttpCheckRequest, DnsCheckRequest, TcpCheckRequest, PingCheckRequest, BaseResponse, SmtpCheckRequest,
     RabbitCheckRequest, GroupQuery
 )
+from app.modules.roxywi.exception import RoxywiResourceNotFound
 
 
 class CheckView(MethodView):
@@ -67,15 +69,18 @@ class CheckView(MethodView):
                     entities.append(m.agent_id.id)
                 checks = smon_sql.select_one_smon(check_id, check_type_id=check_type_id)
                 for check in checks:
+                    group_name = None
                     if check.smon_id.check_group_id:
-                        group_name = smon_sql.get_smon_group_name_by_id(check.smon_id.group_id)
-                    else:
-                        group_name = None
+                        group_name = smon_sql.get_smon_group_name_by_id(check.smon_id.check_group_id)
+
                     check_json['checks'].append(model_to_dict(check, max_depth=1))
-                    check_json['group_name'] = group_name
+                    check_json['check_group'] = group_name
                     check_json['entities'] = entities
                     check_json['place'] = place
-            return check_json
+                    smon_id = model_to_dict(check, max_depth=1)
+                    check_json.update(smon_id['smon_id'])
+                    check_json.update(model_to_dict(check, recurse=False))
+            return jsonify(check_json)
         else:
             abort(404, f'{self.check_type} check not found')
 
@@ -152,7 +157,7 @@ class CheckView(MethodView):
                         check_id=check['check_id']
                     )
                 except Exception as e:
-                    raise Exception(f'Cannot update {self.check_type}, id {check["id"]}: {e}')
+                    raise Exception(f'Cannot update {self.check_type}, id {multi_check_id}: {e}')
         for entity_id in need_to_create:
             if place == 'all':
                 self._create_all_checks(data, multi_check_id)
@@ -185,9 +190,14 @@ class CheckView(MethodView):
     def _create_region_check(self, data, multi_check_id: int, region_id: int, country_id: int = None):
         try:
             random_agent_id = smon_sql.get_randon_agent(region_id)
+        except RoxywiResourceNotFound:
+            if not country_id:
+                raise RoxywiResourceNotFound(f'Cannot find any agent in the region: {region_id}')
+            pass
         except Exception as e:
             raise Exception(f'Cannot get agent from region: {e}')
-        self._create_agent_check(data, multi_check_id, random_agent_id, region_id, country_id)
+        else:
+            self._create_agent_check(data, multi_check_id, random_agent_id, region_id, country_id)
 
     def _create_agent_check(self, data, multi_check_id: int, agent_id, region_id: int = None, country_id: int = None, check_id: int = None):
         if check_id is None:
@@ -313,9 +323,9 @@ class CheckHttpView(CheckView):
                           enabled:
                             type: 'integer'
                             description: 'Enabled status'
-                          check_group_id:
-                            type: 'integer'
-                            description: 'Group ID'
+                          check_group:
+                            type: 'string'
+                            description: 'Name of the check group'
                             nullable: true
                           http:
                             type: 'string'
@@ -442,23 +452,23 @@ class CheckHttpView(CheckView):
               body:
                 type: 'string'
                 description: 'Body content (optional)'
-              group:
+              check_group:
                 type: 'string'
-                description: 'Group (optional)'
+                description: 'Name of check group (optional)'
               description:
                 type: 'string'
                 description: 'Description (optional)'
               tg:
-                type: 'string'
+                type: 'integer'
                 description: 'Telegram channel ID (optional)'
               slack:
-                type: 'string'
+                type: 'integer'
                 description: 'Slack channel ID (optional)'
               pd:
-                type: 'string'
+                type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
               mm:
-                type: 'string'
+                type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               http_method:
                 type: 'string'
@@ -479,7 +489,7 @@ class CheckHttpView(CheckView):
                 description: 'Expected status code (default to 200, optional)'
                 minimum: 100
                 maximum: 599
-              timeout:
+              check_timeout:
                 type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
@@ -526,7 +536,7 @@ class CheckHttpView(CheckView):
                 type: 'string'
                 description: 'Check name'
               enabled:
-                type: 'string'
+                type: 'integer'
                 description: 'Enable status (1 for enabled)'
               place:
                 type: 'string'
@@ -543,23 +553,23 @@ class CheckHttpView(CheckView):
               body:
                 type: 'string'
                 description: 'Body content (optional)'
-              group:
+              check_group:
                 type: 'string'
-                description: 'Group (optional)'
+                description: 'Name of check group (optional)'
               description:
                 type: 'string'
                 description: 'Description (optional)'
               tg:
-                type: 'string'
+                type: 'integer'
                 description: 'Telegram channel ID (optional)'
               slack:
-                type: 'string'
+                type: 'integer'
                 description: 'Slack channel ID (optional)'
               pd:
-                type: 'string'
+                type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
               mm:
-                type: 'string'
+                type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               http_method:
                   type: 'string'
@@ -580,7 +590,7 @@ class CheckHttpView(CheckView):
                 description: 'Expected status code (default to 200, optional)'
                 minimum: 100
                 maximum: 599
-              timeout:
+              check_timeout:
                 type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
@@ -705,9 +715,9 @@ class CheckTcpView(CheckView):
                           enabled:
                             type: 'integer'
                             description: 'Enabled status'
-                          check_group_id:
-                            type: 'integer'
-                            description: 'Group ID'
+                          check_group:
+                            type: 'string'
+                            description: 'Name of check group (optional)'
                             nullable: true
                           http:
                             type: 'string'
@@ -814,12 +824,12 @@ class CheckTcpView(CheckView):
                 type: 'string'
                 description: 'IP address or domain name for the TCP check'
               port:
-                type: 'string'
+                type: 'integer'
                 description: 'Port number'
                 minimum: 1
                 maximum: 65535
               enabled:
-                type: 'string'
+                type: 'integer'
                 description: 'Enable status (1 for enabled)'
               place:
                 type: 'string'
@@ -830,28 +840,28 @@ class CheckTcpView(CheckView):
                  description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
                  items:
                    type: 'integer'
-              group:
+              check_group:
                 type: 'string'
-                description: 'Group (optional)'
+                description: 'Name of check group (optional)'
               description:
                 type: 'string'
                 description: 'Description (optional)'
               tg:
-                type: 'string'
+                type: 'integer'
                 description: 'Telegram channel ID (optional)'
               slack:
-                type: 'string'
+                type: 'integer'
                 description: 'Slack channel ID (optional)'
               pd:
-                type: 'string'
+                type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
               mm:
-                type: 'string'
+                type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               interval:
                 type: 'integer'
                 description: 'Interval check (default to 120, optional)'
-              timeout:
+              check_timeout:
                 type: 'integer'
                 description: 'Timeout (optional)'
         responses:
@@ -897,12 +907,12 @@ class CheckTcpView(CheckView):
                 type: 'string'
                 description: 'IP address or domain name for the TCP check'
               port:
-                type: 'string'
+                type: 'integer'
                 description: 'Port number'
                 minimum: 1
                 maximum: 65535
               enabled:
-                type: 'string'
+                type: 'integer'
                 description: 'Enable status (1 for enabled)'
               place:
                 type: 'string'
@@ -913,28 +923,28 @@ class CheckTcpView(CheckView):
                  description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
                  items:
                    type: 'integer'
-              group:
+              check_group:
                 type: 'string'
-                description: 'Group (optional)'
+                description: 'Name of check group (optional)'
               description:
                 type: 'string'
                 description: 'Description (optional)'
               tg:
-                type: 'string'
+                type: 'integer'
                 description: 'Telegram channel ID (optional)'
               slack:
-                type: 'string'
+                type: 'integer'
                 description: 'Slack channel ID (optional)'
               pd:
-                type: 'string'
+                type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
               mm:
-                type: 'string'
+                type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               interval:
                 type: 'integer'
                 description: 'Interval check (default to 120, optional)'
-              timeout:
+              check_timeout:
                 type: 'integer'
                 description: 'Timeout (optional)'
         responses:
@@ -1100,7 +1110,7 @@ class CheckDnsView(CheckView):
                 type: 'string'
                 description: 'Resolver IP address or domain name'
               port:
-                type: 'string'
+                type: 'integer'
                 description: 'Port number for DNS resolver (default to 53, optional)'
                 minimum: 1
                 maximum: 65535
@@ -1112,31 +1122,31 @@ class CheckDnsView(CheckView):
                 type: 'string'
                 description: 'DNS record type (a, aaa, caa, cname, mx, ns, ptr, sao, src, txt)'
               enabled:
-                type: 'string'
+                type: 'integer'
                 description: 'Enable status (1 for enabled)'
-              group:
+              check_group:
                 type: 'string'
-                description: 'Group (optional)'
+                description: 'Name of check group (optional)'
               description:
                 type: 'string'
                 description: 'Description (optional)'
               tg:
-                type: 'string'
+                type: 'integer'
                 description: 'Telegram channel ID (optional)'
               slack:
-                type: 'string'
+                type: 'integer'
                 description: 'Slack channel ID (optional)'
               pd:
-                type: 'string'
+                type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
               mm:
-                type: 'string'
+                type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               interval:
                 type: 'integer'
                 description: 'Interval check (optional)'
                 default: 120
-              timeout:
+              check_timeout:
                 type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
@@ -1192,7 +1202,7 @@ class CheckDnsView(CheckView):
                 type: 'string'
                 description: 'Resolver IP address or domain name'
               port:
-                type: 'string'
+                type: 'integer'
                 description: 'Port number for DNS resolver (default to 53, optional)'
                 minimum: 1
                 maximum: 65535
@@ -1204,31 +1214,31 @@ class CheckDnsView(CheckView):
                 type: 'string'
                 description: 'DNS record type (a, aaa, caa, cname, mx, ns, ptr, sao, src, txt)'
               enabled:
-                type: 'string'
+                type: 'integer'
                 description: 'Enable status (1 for enabled)'
-              group:
+              check_group:
                 type: 'string'
-                description: 'Group (optional)'
+                description: 'Name of check group (optional)'
               description:
                 type: 'string'
                 description: 'Description (optional)'
               tg:
-                type: 'string'
+                type: 'integer'
                 description: 'Telegram channel ID (optional)'
               slack:
-                type: 'string'
+                type: 'integer'
                 description: 'Slack channel ID (optional)'
               pd:
-                type: 'string'
+                type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
               mm:
-                type: 'string'
+                type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               interval:
                 type: 'integer'
                 description: 'Interval check (optional)'
                 default: 120
-              timeout:
+              check_timeout:
                 type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
@@ -1387,25 +1397,25 @@ class CheckPingView(CheckView):
                 type: 'string'
                 description: 'IP address or domain name for Ping check'
               enabled:
-                type: 'string'
+                type: 'integer'
                 description: 'Enable status (1 for enabled)'
-              group:
+              check_group:
                 type: 'string'
-                description: 'Group (optional)'
+                description: 'Name of check group (optional)'
               description:
                 type: 'string'
                 description: 'Description (optional)'
               tg:
-                type: 'string'
+                type: 'integer'
                 description: 'Telegram channel ID (optional)'
               slack:
-                type: 'string'
+                type: 'integer'
                 description: 'Slack channel ID (optional)'
               pd:
-                type: 'string'
+                type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
               mm:
-                type: 'string'
+                type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               packet_size:
                 type: 'integer'
@@ -1415,10 +1425,7 @@ class CheckPingView(CheckView):
                 type: 'integer'
                 description: 'Interval check (optional)'
                 default: 120
-              region_id:
-                type: 'integer'
-                description: 'Region ID'
-              timeout:
+              check_timeout:
                 type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
@@ -1429,7 +1436,7 @@ class CheckPingView(CheckView):
               id: 'CheckPingResponse'
               properties:
                 id:
-                  type: 'string'
+                  type: 'integer'
                   description: 'ID of the created test case'
         """
         try:
@@ -1474,25 +1481,25 @@ class CheckPingView(CheckView):
                 type: 'string'
                 description: 'IP address or domain name for Ping check'
               enabled:
-                type: 'string'
+                type: 'integer'
                 description: 'Enable status (1 for enabled)'
-              group:
+              check_group:
                 type: 'string'
-                description: 'Group (optional)'
+                description: 'Name of check group (optional)'
               description:
                 type: 'string'
                 description: 'Description (optional)'
               tg:
-                type: 'string'
+                type: 'integer'
                 description: 'Telegram channel ID (optional)'
               slack:
-                type: 'string'
+                type: 'integer'
                 description: 'Slack channel ID (optional)'
               pd:
-                type: 'string'
+                type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
               mm:
-                type: 'string'
+                type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               packet_size:
                 type: 'integer'
@@ -1505,7 +1512,7 @@ class CheckPingView(CheckView):
               region_id:
                 type: 'integer'
                 description: 'Region ID'
-              timeout:
+              check_timeout:
                 type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
@@ -1643,7 +1650,7 @@ class CheckSmtpView(CheckView):
           description: 'SMTP Check Details'
           required: true
           schema:
-            id: 'CheckPingDetails'
+            id: 'CheckSMTPDetails'
             required:
               - name
               - ip
@@ -1669,26 +1676,30 @@ class CheckSmtpView(CheckView):
               ip:
                 type: 'string'
                 description: 'IP address or domain name for SMTP server check'
+              port:
+                type: 'integer'
+                description: 'Port of SMTP server'
+                default: 587
               enabled:
-                type: 'string'
+                type: 'integer'
                 description: 'Enable status (1 for enabled)'
-              group:
+              check_group:
                 type: 'string'
-                description: 'Group (optional)'
+                description: 'Name of check group (optional)'
               description:
                 type: 'string'
                 description: 'Description (optional)'
               tg:
-                type: 'string'
+                type: 'integer'
                 description: 'Telegram channel ID (optional)'
               slack:
-                type: 'string'
+                type: 'integer'
                 description: 'Slack channel ID (optional)'
               pd:
-                type: 'string'
+                type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
               mm:
-                type: 'string'
+                type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               username:
                 type: 'string'
@@ -1700,7 +1711,7 @@ class CheckSmtpView(CheckView):
                 type: 'integer'
                 description: 'Interval check (optional)'
                 default: 120
-              timeout:
+              check_timeout:
                 type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
@@ -1758,26 +1769,30 @@ class CheckSmtpView(CheckView):
               ip:
                 type: 'string'
                 description: 'IP address or domain of SMTP server check'
+              port:
+                type: 'integer'
+                description: 'Port of SMTP server'
+                default: 587
               enabled:
-                type: 'string'
+                type: 'integer'
                 description: 'Enable status (1 for enabled)'
-              group:
+              check_group:
                 type: 'string'
-                description: 'Group (optional)'
+                description: 'Name of check group (optional)'
               description:
                 type: 'string'
                 description: 'Description (optional)'
               tg:
-                type: 'string'
+                type: 'integer'
                 description: 'Telegram channel ID (optional)'
               slack:
-                type: 'string'
+                type: 'integer'
                 description: 'Slack channel ID (optional)'
               pd:
-                type: 'string'
+                type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
               mm:
-                type: 'string'
+                type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               username:
                 type: 'string'
@@ -1789,7 +1804,7 @@ class CheckSmtpView(CheckView):
                 type: 'integer'
                 description: 'Interval check (optional)'
                 default: 120
-              timeout:
+              check_timeout:
                 type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
@@ -1964,25 +1979,25 @@ class CheckRabbitView(CheckView):
                 description: 'Port address or domain name for RabbitMQ server check'
                 default: 5672
               enabled:
-                type: 'string'
+                type: 'integer'
                 description: 'Enable status (1 for enabled)'
-              group:
+              check_group:
                 type: 'string'
-                description: 'Group (optional)'
+                description: 'Name of check group (optional)'
               description:
                 type: 'string'
                 description: 'Description (optional)'
               tg:
-                type: 'string'
+                type: 'integer'
                 description: 'Telegram channel ID (optional)'
               slack:
-                type: 'string'
+                type: 'integer'
                 description: 'Slack channel ID (optional)'
               pd:
-                type: 'string'
+                type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
               mm:
-                type: 'string'
+                type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               username:
                 type: 'string'
@@ -1997,7 +2012,7 @@ class CheckRabbitView(CheckView):
                 type: 'integer'
                 description: 'Interval check (optional)'
                 default: 120
-              timeout:
+              check_timeout:
                 type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
@@ -2056,10 +2071,11 @@ class CheckRabbitView(CheckView):
                 type: 'string'
                 description: 'IP address or domain of RabbitMQ server check'
               port:
-                type: 'string'
-                description: 'Port address or domain of RabbitMQ server check'
+                type: 'integer'
+                description: 'Port address or domain name for RabbitMQ server check'
+                default: 5672
               enabled:
-                type: 'string'
+                type: 'integer'
                 description: 'Enable status (1 for enabled)'
               group:
                 type: 'string'
@@ -2095,7 +2111,7 @@ class CheckRabbitView(CheckView):
               region_id:
                 type: 'integer'
                 description: 'Region ID'
-              timeout:
+              check_timeout:
                 type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
