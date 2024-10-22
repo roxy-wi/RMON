@@ -11,6 +11,7 @@ import app.modules.db.group as group_sql
 import app.modules.db.server as server_sql
 import app.modules.common.common as common
 from app.modules.server import ssh_connection
+from app.modules.db.db_model import Cred
 import app.modules.roxywi.common as roxywi_common
 import app.modules.roxy_wi_tools as roxy_wi_tools
 from app.modules.roxywi.class_models import IdResponse, IdDataResponse, CredRequest
@@ -19,10 +20,10 @@ error_mess = common.error_mess
 get_config = roxy_wi_tools.GetConfigVar()
 
 
-def return_ssh_keys_path(server_ip: str, **kwargs) -> dict:
+def return_ssh_keys_path(server_ip: str, cred_id: int = None) -> dict:
 	ssh_settings = {}
-	if kwargs.get('id'):
-		sshs = cred_sql.select_ssh(id=kwargs.get('id'))
+	if cred_id:
+		sshs = cred_sql.select_ssh(id=cred_id)
 	else:
 		sshs = cred_sql.select_ssh(serv=server_ip)
 
@@ -48,8 +49,9 @@ def return_ssh_keys_path(server_ip: str, **kwargs) -> dict:
 		ssh_settings.setdefault('password', password)
 		ssh_settings.setdefault('key', ssh_key)
 		ssh_settings.setdefault('passphrase', passphrase)
+
 	try:
-		ssh_port = [str(server[7]) for server in server_sql.select_servers(server=server_ip)]
+		ssh_port = [str(server[10]) for server in server_sql.select_servers(server=server_ip)]
 		ssh_settings.setdefault('port', ssh_port[0])
 	except Exception as e:
 		raise Exception(f'error: Cannot get SSH port: {e}')
@@ -83,7 +85,8 @@ def create_ssh_cred(name: str, password: str, group: int, username: str, enable:
 	if is_api:
 		return IdResponse(id=last_id).model_dump(mode='json')
 	else:
-		data = render_template('ajax/new_ssh.html', groups=group_sql.select_groups(), sshs=cred_sql.select_ssh(name=name), lang=lang, adding=1)
+		data = render_template('ajax/new_ssh.html',
+							   groups=group_sql.select_groups(), sshs=cred_sql.select_ssh(name=name), lang=lang, adding=1)
 		return IdDataResponse(id=last_id, data=data).model_dump(mode='json')
 
 
@@ -210,10 +213,20 @@ def get_creds(group_id: int = None, cred_id: int = None, not_shared: bool = Fals
 		creds = cred_sql.select_ssh()
 
 	for cred in creds:
-		cred_dict = model_to_dict(cred)
+		if cred.shared and group_id != cred.group_id:
+			cred_dict = model_to_dict(cred, exclude={Cred.password, Cred.passphrase})
+		else:
+			cred_dict = model_to_dict(cred)
+			if cred_dict['password']:
+				try:
+					cred_dict['password'] = decrypt_password(cred_dict['password'])
+				except Exception:
+					pass
+			if cred_dict['passphrase']:
+				cred_dict['passphrase'] = decrypt_password(cred_dict['passphrase'])
 		cred_dict['name'] = cred_dict['name'].replace("'", "")
 
-		if cred.key_enabled == 1:
+		if cred.key_enabled == 1 and group_id == cred.group_id:
 			ssh_key_file = _return_correct_ssh_file(cred)
 			if os.path.isfile(ssh_key_file):
 				with open(ssh_key_file, 'rb') as key:
@@ -222,13 +235,6 @@ def get_creds(group_id: int = None, cred_id: int = None, not_shared: bool = Fals
 				cred_dict['private_key'] = ''
 		else:
 			cred_dict['private_key'] = ''
-		if cred_dict['password']:
-			try:
-				cred_dict['password'] = decrypt_password(cred_dict['password'])
-			except Exception:
-				pass
-		if cred_dict['passphrase']:
-			cred_dict['passphrase'] = decrypt_password(cred_dict['passphrase'])
 		json_data.append(cred_dict)
 	return json_data
 
