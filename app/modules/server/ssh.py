@@ -20,12 +20,9 @@ error_mess = common.error_mess
 get_config = roxy_wi_tools.GetConfigVar()
 
 
-def return_ssh_keys_path(server_ip: str, cred_id: int = None) -> dict:
+def return_ssh_keys_path(server_ip: str) -> dict:
 	ssh_settings = {}
-	if cred_id:
-		sshs = cred_sql.select_ssh(id=cred_id)
-	else:
-		sshs = cred_sql.select_ssh(serv=server_ip)
+	sshs = cred_sql.select_ssh(serv=server_ip)
 
 	for ssh in sshs:
 		if ssh.password:
@@ -51,8 +48,8 @@ def return_ssh_keys_path(server_ip: str, cred_id: int = None) -> dict:
 		ssh_settings.setdefault('passphrase', passphrase)
 
 	try:
-		ssh_port = [str(server[10]) for server in server_sql.select_servers(server=server_ip)]
-		ssh_settings.setdefault('port', ssh_port[0])
+		server = server_sql.get_server_by_ip(server_ip)
+		ssh_settings.setdefault('port', server.port)
 	except Exception as e:
 		raise Exception(f'error: Cannot get SSH port: {e}')
 
@@ -85,8 +82,13 @@ def create_ssh_cred(name: str, password: str, group: int, username: str, enable:
 	if is_api:
 		return IdResponse(id=last_id).model_dump(mode='json')
 	else:
-		data = render_template('ajax/new_ssh.html',
-							   groups=group_sql.select_groups(), sshs=cred_sql.select_ssh(name=name), lang=lang, adding=1)
+		kwargs = {
+			'groups': group_sql.select_groups(),
+			'sshs': cred_sql.select_ssh(name=name),
+			'lang': lang,
+			'adding': 1
+		}
+		data = render_template('ajax/new_ssh.html', **kwargs)
 		return IdDataResponse(id=last_id, data=data).model_dump(mode='json')
 
 
@@ -225,16 +227,13 @@ def get_creds(group_id: int = None, cred_id: int = None, not_shared: bool = Fals
 			if cred_dict['passphrase']:
 				cred_dict['passphrase'] = decrypt_password(cred_dict['passphrase'])
 		cred_dict['name'] = cred_dict['name'].replace("'", "")
+		cred_dict['private_key'] = ''
 
 		if cred.key_enabled == 1 and group_id == cred.group_id:
 			ssh_key_file = _return_correct_ssh_file(cred)
 			if os.path.isfile(ssh_key_file):
 				with open(ssh_key_file, 'rb') as key:
 					cred_dict['private_key'] = base64.b64encode(key.read()).decode('utf-8')
-			else:
-				cred_dict['private_key'] = ''
-		else:
-			cred_dict['private_key'] = ''
 		json_data.append(cred_dict)
 	return json_data
 
