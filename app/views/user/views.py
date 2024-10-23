@@ -15,7 +15,7 @@ import app.modules.roxywi.common as roxywi_common
 from app.modules.db.db_model import User as User_DB
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 from app.modules.roxywi.class_models import (
-    UserPost, UserPut, IdResponse, IdDataResponse, BaseResponse, AddUserToGroup, GroupQuery
+    UserPost, UserPut, IdResponse, IdDataResponse, BaseResponse, AddUserToGroup, UserSearchRequest
 )
 from app.middleware import get_user_params, page_for_admin, check_group
 from app.modules.common.common_classes import SupportClass
@@ -535,10 +535,10 @@ class UserGroupView(MethodView):
 
 class UsersView(MethodView):
     methods = ["GET", "POST", "PUT", "DELETE"]
-    decorators = [jwt_required(), get_user_params(), page_for_admin(), check_group()]
+    decorators = [jwt_required(), get_user_params(), page_for_admin(level=2), check_group()]
 
-    @validate(query=GroupQuery)
-    def get(self, query: GroupQuery):
+    @validate(query=UserSearchRequest)
+    def get(self, query: UserSearchRequest):
         """
         Get users information by Group ID.
         ---
@@ -547,9 +547,24 @@ class UsersView(MethodView):
         parameters:
         - in: 'query'
           name: 'group_id'
-          description: 'GroupQuery to filter servers. Only for superAdmin role'
+          description: 'Find users by user's group_id. Only for superAdmin role'
           required: false
           type: 'integer'
+        - in: 'query'
+          name: 'group_name'
+          description: 'Find users by user's group_name. Only for superAdmin role'
+          required: false
+          type: 'string'
+        - in: 'query'
+          name: 'username'
+          description: 'Find user by its username.'
+          required: false
+          type: 'string'
+        - in: 'query'
+          name: 'email'
+          description: 'Find user by user's email address.'
+          required: false
+          type: 'string'
         responses:
           '200':
             description: 'Successful operation'
@@ -592,16 +607,21 @@ class UsersView(MethodView):
                   type: 'string'
                   description: 'Error message'
         """
-        group_id = SupportClass.return_group_id(query)
+        if any((v for k, v in query.model_dump(mode='json', exclude={'group_id': True}).items())):
+            if query.group_id or g.user_params['role'] > 1:
+                group_id = SupportClass.return_group_id(query)
+            else:
+                group_id = None
+            if query.group_name and g.user_params['role'] > 1:
+                query.group_name = None
+        else:
+            group_id = SupportClass.return_group_id(query)
         try:
-            users = user_sql.get_users_in_group(group_id)
+            users = user_sql.get_users_in_group(group_id, query.email, query.username, query.group_name)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get group')
+            return roxywi_common.handle_json_exceptions(e, 'Cannot get users')
 
-        json_data = []
-        for user in users:
-            json_data.append(model_to_dict(user, exclude=[User_DB.password, User_DB.user_services]))
-        return jsonify(json_data)
+        return jsonify([model_to_dict(user, exclude=[User_DB.password, User_DB.user_services], recurse=False) for user in users])
 
 
 class UserRoles(MethodView):

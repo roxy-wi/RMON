@@ -279,8 +279,23 @@ def get_user_id(user_id: int) -> User:
 		out_error(e)
 
 
-def get_users_in_group(group_id: int) -> User:
+def get_users_in_group(group_id: int = None, email: str = None, username: str = None, group_name: str = None) -> User:
+	group_query = (UserGroups.user_group_id == group_id)
+	if email and group_id:
+		where_query = (group_query & (User.email == email))
+	elif email and not group_id:
+		where_query = (User.email == email)
+	elif username and group_id:
+		where_query = (group_query & (User.username == username))
+	elif username and not group_id:
+		where_query = (User.username == username)
+	elif group_name and group_id:
+		where_query = (group_query & (Groups.name == group_name))
+	elif group_name and not group_id:
+		where_query = (Groups.name == group_name)
+	else:
+		where_query = group_query
 	try:
-		return User.select().join(UserGroups).where(UserGroups.user_group_id == group_id).execute()
+		return User.select().join(UserGroups).join(Groups).where(where_query).group_by(User.username).execute()
 	except Exception as e:
 		out_error(e)

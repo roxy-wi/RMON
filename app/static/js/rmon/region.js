@@ -110,7 +110,7 @@ function addRegion(dialog_id, region_id=0, edit=false) {
                     if (edit) {
                         getRegion(region_id, false);
                     } else {
-                        getRegion(data.id, new_agent = true);
+                        getRegion(data.id, true);
                     }
                 }
             }
@@ -178,7 +178,7 @@ function getRegion(agent_id, new_region=false) {
 				toastr.error(data);
 			} else {
 				if (new_region) {
-					$('#smon-groups-regions').append(data);
+					$('#smon-group-regions').append(data);
 				} else {
 					$('#region-' + agent_id).replaceWith(data);
 				}

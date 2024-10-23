@@ -184,6 +184,12 @@ class GroupQuery(BaseModel):
     group_id: Optional[int] = None
 
 
+class UserSearchRequest(GroupQuery):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    group_name: Optional[str] = None
+
+
 class GroupRequest(BaseModel):
     name: EscapedString
     description: Optional[EscapedString] = None
