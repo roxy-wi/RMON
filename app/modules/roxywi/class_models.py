@@ -87,6 +87,19 @@ class BaseCheckRequest(BaseModel):
             raise ValueError('timeout value must be less than interval')
         return values
 
+    @root_validator(pre=True)
+    @classmethod
+    def check_must_has_entities_if_not_all_place(cls, values):
+        place = ''
+        entities = []
+        if 'place' in values:
+            place = values['place']
+        if 'entities' in values:
+            entities = values['entities']
+        if place != 'all' and len(entities) == 0:
+            raise ValueError('Check must have at least on entity, if place is not "All"')
+        return values
+
 
 class HttpCheckRequest(BaseCheckRequest):
     url: AnyUrl

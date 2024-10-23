@@ -14,3 +14,4 @@ class Configuration(object):
     JWT_IDENTITY_CLAIM = 'user_id'
     JWT_ERROR_MESSAGE_KEY = 'error'
     FLASK_PYDANTIC_VALIDATION_ERROR_RAISE = True
+    JSONIFY_PRETTYPRINT_REGULAR = False

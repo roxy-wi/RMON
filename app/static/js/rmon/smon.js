@@ -94,6 +94,12 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		let entity_id = elem.id.split('-')[1]
 		entities.push(entity_id);
 	});
+	if ($('#new-smon-place option:selected').val() !== 'all') {
+		if (entities.length === 0) {
+			toastr.warning('Check must have at least one entity');
+			return false;
+		}
+	}
 	let jsonData = {
 		'name': $('#new-smon-name').val(),
 		'ip': $('#new-smon-ip').val(),
@@ -106,7 +112,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'enabled': enable,
 		'url': $('#new-smon-url').val(),
 		'body': $('#new-smon-body').val(),
-		'check_group_id': $('#new-smon-group').val(),
+		'check_group': $('#new-smon-group').val(),
 		'description': $('#new-smon-description').val(),
 		'tg': $('#new-smon-telegram').val(),
 		'slack': $('#new-smon-slack').val(),

@@ -276,8 +276,8 @@ def show_status_page(slug: str) -> str:
             check_type = s.check_type
             en = s.enabled
             multi_check_id = s.multi_check_id
-            if s.group_id:
-                group = smon_sql.get_smon_group_name_by_id(s.group_id)
+            if s.check_group_id:
+                group = smon_sql.get_smon_group_name_by_id(s.check_group_id)
             else:
                 group = 'No group'
 
