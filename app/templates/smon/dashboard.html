@@ -40,4 +40,15 @@
 	</div>
 {% endif %}
 {% include 'include/smon/add_form.html' %}
+<div id="check-group-edit-table" style="display: none;">
+	<table class="overview" id="check-group-edit-table-overview" title="{{lang.words.edit|title()}} {{lang.words.group}}">
+    <tr>
+        <td class="padding20">
+            {{ lang.words.name|title() }}
+            <span class="need-field">*</span>
+        </td>
+        <td>{{ input('check-group-name') }}</td>
+    </tr>
+    </table>
+</div>
 {% endblock %}

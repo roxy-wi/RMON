@@ -69,9 +69,9 @@
     <div class="smon_group" id="check-group-{{ group.id }}">
         <div class="group_name">
             <span class="smon_group_name">
-                {{ group.name.replace("'", "") }}
+                <span id="smon_group_name-{{ group.id }}">{{ group.name.replace("'", "") }}</span>
                 <div style="display: inline;font-size: 13px;">
-                    <a class="edit" onclick="editCheckGroup('{{group.id}}')"></a>
+                    <a class="edit" onclick="editCheckGroupDialog('{{group.id}}')"></a>
                     <a class="delete" onclick="confirmDeleteCheckGroup('{{group.id}}')" title="{{lang.words.delete|title()}}" style="cursor: pointer; color: #000;font-size: 14px;"></a>
                 </div>
             </span>

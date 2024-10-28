@@ -183,7 +183,7 @@ function confirmDeleteCheckGroup(check_group_id) {
 		height: "auto",
 		width: 400,
 		modal: true,
-		title: delete_word + " ?",
+		title: delete_word + "?",
 		buttons: [{
 			text: delete_word,
 			click: function () {
@@ -211,6 +211,55 @@ function removeCheckGroup(check_group_id) {
 				if (data.status === 'failed') {
 					toastr.error(data);
 				}
+			}
+		}
+	});
+}
+function editCheckGroupDialog(check_group_id) {
+	$('#check-group-name').val();
+	let smon_add_tabel_title = $("#check-group-edit-table-overview").attr('title');
+	$('#check-group-name').val($('#smon_group_name-' + check_group_id).text());
+	let addSmonServer1 = $("#check-group-edit-table").dialog({
+		autoOpen: false,
+		resizable: false,
+		height: "auto",
+		width: 400,
+		modal: true,
+		title: smon_add_tabel_title,
+		show: {
+			effect: "fade",
+			duration: 200
+		},
+		hide: {
+			effect: "fade",
+			duration: 200
+		},
+		buttons: [{
+			text: edit_word,
+			click: function () {
+				editCheckGroup(this, check_group_id);
+			}
+		}, {
+			text: cancel_word,
+			click: function () {
+				$(this).dialog("close");
+			}
+		}]
+	});
+	addSmonServer1.dialog('open');
+}
+function editCheckGroup(dialogId, check_group_id) {
+	$.ajax({
+		url: api_v_prefix + "/rmon/check-group/" + check_group_id,
+		type: "PUT",
+		contentType: "application/json; charset=utf-8",
+		data: JSON.stringify({'name': $('#check-group-name').val()}),
+		success: function (data, statusText, xhr) {
+			if (data.status === 'failed') {
+				toastr.error(data);
+			} else {
+				$('#smon_group_name-' + check_group_id).text($('#check-group-name').val());
+				$(dialogId).dialog('close');
 			}
 		}
 	});

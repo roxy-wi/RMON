@@ -128,9 +128,9 @@ function addUser(dialog_id) {
 	if ($('#enabled').is(':checked')) {
 		enabled = '1';
 	}
-	let user_group = $('#new-group').val();
-	if (user_group === undefined || user_group === null) {
-		user_group = $('#new-sshgroup').val();
+	let group_id = $('#new-group').val();
+	if (group_id === undefined || group_id === null) {
+		group_id = $('#new-sshgroup').val();
 	}
 	if (valid) {
 		let jsonData = {
@@ -139,7 +139,7 @@ function addUser(dialog_id) {
 			"email": email_div.val(),
 			"role": $('#new-role').val(),
 			"enabled": enabled,
-			"user_group": user_group,
+			"group_id": group_id,
 		}
 		$.ajax({
 			url: "/user",
