@@ -8,6 +8,7 @@ from app.views.check.check_metric_view import (ChecksMetricViewHttp, ChecksMetri
                                                ChecksMetricViewPing, ChecksMetricViewSMTP, ChecksMetricViewRabbitmq,
                                                CheckStatusesView, CheckStatusView)
 from app.views.check.status_page_views import StatusPageView
+from app.views.check.group_views import CheckGroupView, CheckGroupsView
 
 
 def register_api(view, endpoint, url, pk='check_id', pk_type='int'):
@@ -33,6 +34,7 @@ bp.add_url_rule('/check/smtp/<int:check_id>/metrics', view_func=ChecksMetricView
 bp.add_url_rule('/check/rabbitmq/<int:check_id>/metrics', view_func=ChecksMetricViewRabbitmq.as_view('rabbitmq_metric'))
 bp.add_url_rule('/check/<int:check_id>/statuses', view_func=CheckStatusesView.as_view('check_statuses'))
 bp.add_url_rule('/check/<int:check_id>/status', view_func=CheckStatusView.as_view('check_status'))
+bp.add_url_rule('/check-groups', view_func=CheckGroupsView.as_view('check_groups'))
 
 register_api(AgentView, 'agent', '/agent', 'agent_id')
 register_api(RegionView, 'region', '/region', 'region_id')
@@ -44,3 +46,4 @@ register_api(CheckDnsView, 'dns_check', '/check/dns', 'check_id')
 register_api(CheckSmtpView, 'smtp_check', '/check/smtp', 'check_id')
 register_api(CheckRabbitView, 'rabbit_check', '/check/rabbitmq', 'check_id')
 register_api(StatusPageView, 'status_page', '/status-page', 'page_id')
+register_api(CheckGroupView, 'check_group', '/check-group', 'check_group_id')

@@ -140,7 +140,7 @@ class UserView(MethodView):
                 - role
                 - username
                 - enabled
-                - user_group
+                - group_id
               properties:
                 email:
                   type: string
@@ -159,7 +159,7 @@ class UserView(MethodView):
                   description: 'Enable status (1 for enabled)'
                 group_id:
                   type: integer
-                  description: The ID of the user's group
+                  description: The ID of the its group
         responses:
           200:
             description: user created
@@ -176,7 +176,7 @@ class UserView(MethodView):
         if g.user_params['role'] > body.role:
             return roxywi_common.handle_json_exceptions('Wrong role', 'Cannot create user')
         try:
-            user_id = roxywi_user.create_user(body.username, body.email, body.password, body.role, body.enabled, body.user_group)
+            user_id = roxywi_user.create_user(body.username, body.email, body.password, body.role, body.enabled, body.group_id)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot create a new user')
         else:
@@ -299,7 +299,7 @@ class UserGroupView(MethodView):
           type: 'integer'
         responses:
           200:
-            description: A list of user's groups
+            description: A list of its groups
             schema:
               type: array
               items:
@@ -307,7 +307,7 @@ class UserGroupView(MethodView):
                 properties:
                   email:
                     type: string
-                    description: The user's email
+                    description: The its email
                     example: "admin@localhost1"
                   enabled:
                     type: integer
@@ -547,12 +547,12 @@ class UsersView(MethodView):
         parameters:
         - in: 'query'
           name: 'group_id'
-          description: 'Find users by user's group_id. Only for superAdmin role'
+          description: 'Find users by its group_id. Only for superAdmin role'
           required: false
           type: 'integer'
         - in: 'query'
           name: 'group_name'
-          description: 'Find users by user's group_name. Only for superAdmin role'
+          description: 'Find users by its group_name. Only for superAdmin role'
           required: false
           type: 'string'
         - in: 'query'
@@ -562,7 +562,7 @@ class UsersView(MethodView):
           type: 'string'
         - in: 'query'
           name: 'email'
-          description: 'Find user by user's email address.'
+          description: 'Find user by its email address.'
           required: false
           type: 'string'
         responses:

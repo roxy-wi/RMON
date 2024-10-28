@@ -5,9 +5,14 @@ $(function () {
 	$("#new-smon-group").autocomplete({
 		source: function (request, response) {
 			$.ajax({
-				url: "/rmon/groups",
+				url: api_v_prefix + "/rmon/check-groups",
+				contentType: "application/json",
 				success: function (data) {
-					response(data.split("\n"));
+					let names = '';
+					for (let name in data) {
+						names += data[name]['name'].replaceAll("'", "") + ', ';
+					}
+					response(names.split(','));
 				}
 			});
 		},
@@ -38,6 +43,7 @@ function showSmon(action) {
 function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 	let valid = true;
 	let check_type = $('#check_type').val();
+	let allFields = '';
 	if (check_type === 'tcp') {
 		allFields = $([]).add($('#new-smon-ip')).add($('#new-smon-port')).add($('#new-smon-name')).add($('#new-smon-interval')).add($('#new-smon-timeout'))
 		allFields.removeClass("ui-state-error");

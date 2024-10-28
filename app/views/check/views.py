@@ -61,6 +61,11 @@ class CheckView(MethodView):
             for m in multi_check:
                 place = m.multi_check_id.entity_type
                 check_id = m.id
+                if m.multi_check_id.check_group_id:
+                    group_name = smon_sql.get_smon_group_by_id(m.multi_check_id.check_group_id.name).name
+                else:
+                    group_name = None
+                check_json['check_group'] = group_name
                 if m.country_id:
                     entities.append(m.country_id.id)
                 elif m.region_id:
@@ -69,12 +74,7 @@ class CheckView(MethodView):
                     entities.append(m.agent_id.id)
                 checks = smon_sql.select_one_smon(check_id, check_type_id=check_type_id)
                 for check in checks:
-                    group_name = None
-                    if check.smon_id.check_group_id:
-                        group_name = smon_sql.get_smon_group_name_by_id(check.smon_id.check_group_id)
-
                     check_json['checks'].append(model_to_dict(check, max_depth=1))
-                    check_json['check_group'] = group_name
                     check_json['entities'] = entities
                     check_json['place'] = place
                     smon_id = model_to_dict(check, max_depth=1)
@@ -103,8 +103,8 @@ class CheckView(MethodView):
             smon_mod.check_checks_limit()
         except Exception as e:
             raise e
-
-        multi_check_id = smon_sql.create_mutli_check(self.group_id, data.place)
+        check_group_id = self._get_check_group_id(data.check_group)
+        multi_check_id = smon_sql.create_mutli_check(self.group_id, data.place, check_group_id)
         if data.place == 'all':
             self._create_all_checks(data, multi_check_id)
         for entity_id in data.entities:
@@ -116,6 +116,8 @@ class CheckView(MethodView):
         group_id = SupportClass.return_group_id(data)
         new_entities = []
         place = data.place
+        check_group_id = self._get_check_group_id(data.check_group)
+        smon_sql.update_multi_check_group_id(multi_check_id, check_group_id)
         if data.place == 'all':
             countries = country_sql.select_enabled_countries_by_group(group_id)
             place = 'country'
@@ -147,7 +149,7 @@ class CheckView(MethodView):
         for entity_id in need_to_update:
             for check in entity_id_check_id[entity_id]:
                 try:
-                    smon_mod.update_smon(check['check_id'], data, self.group_id)
+                    smon_mod.update_smon(check['check_id'], data)
                     self._create_agent_check(
                         data,
                         multi_check_id,
@@ -230,6 +232,16 @@ class CheckView(MethodView):
             'region_id': region_id,
             'agent_id': check.agent_id.id
         }
+
+    def _get_check_group_id(self, check_group_name: str) -> Union[int, None]:
+        if check_group_name:
+            check_group_id = smon_sql.get_smon_group_by_name(self.group_id, check_group_name)
+            if not check_group_id:
+                return smon_sql.add_smon_group(self.group_id, check_group_name)
+            else:
+                return check_group_id
+        else:
+            return None
 
 
 class CheckHttpView(CheckView):

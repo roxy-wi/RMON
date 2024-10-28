@@ -104,8 +104,8 @@ def default_values():
 
 	data_source = [
 		{'name': 'superAdmin', 'description': 'Has the highest level of administrative permissions and controls the actions of all other users'},
-		{'name': 'admin', 'description': 'Has access everywhere except the Admin area'},
-		{'name': 'user', 'description': 'Has the same rights as the admin but has no access to the Servers page'},
+		{'name': 'admin', 'description': 'Has admin access to its groups'},
+		{'name': 'user', 'description': 'Has the same rights as the admin but has no access to the Admin area'},
 		{'name': 'guest', 'description': 'Read-only access'}
 	]
 
@@ -356,9 +356,31 @@ def update_db_v_1_2_4():
 			print("An error occurred:", e)
 
 
+def update_db_v_1_2_5():
+	try:
+		migrate(
+			migrator.drop_column('smon', 'check_group_id'),
+		)
+	except Exception:
+		pass
+
+
+def update_db_v_1_2_6():
+	field = ForeignKeyField(SmonGroup, field=SmonGroup.id, null=True, on_delete='SET NULL')
+	try:
+		migrate(
+			migrator.add_column('multi_check', 'check_group_id', field),
+		)
+	except Exception as e:
+		if e.args[0] == 'duplicate column name: check_group_id' or str(e) == '(1060, "Duplicate column name \'check_group_id\'")':
+			print('Updating... DB has been updated to version 1.2')
+		else:
+			print("An error occurred:", e)
+
+
 def update_ver():
 	try:
-		Version.update(version='1.2.0').execute()
+		Version.update(version='1.2.1').execute()
 	except Exception:
 		print('Cannot update version')
 
@@ -391,6 +413,8 @@ def update_all():
 	update_db_v_1_2_2()
 	update_db_v_1_2_3()
 	update_db_v_1_2_4()
+	update_db_v_1_2_5()
+	update_db_v_1_2_6()
 
 
 if __name__ == "__main__":

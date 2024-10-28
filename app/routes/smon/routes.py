@@ -28,7 +28,6 @@ def smon_main_dashboard():
     roxywi_common.check_user_group_for_flask()
     group_id = g.user_params['group_id']
     multi_checks = smon_sql.select_multi_checks(group_id)
-
     kwargs = {
         'lang': g.user_params['lang'],
         'multi_checks': multi_checks,
@@ -107,18 +106,6 @@ def smon_dashboard(smon_id, check_id):
     }
 
     return render_template('include/smon/smon_history.html', **kwargs)
-
-
-@bp.get('/groups')
-@jwt_required()
-@get_user_params()
-def get_groups():
-    groups = smon_sql.select_smon_groups(g.user_params['group_id'])
-    smon_groups = ''
-    for group in groups:
-        group_name = group.name.replace("'", "")
-        smon_groups += f'{group_name}\n'
-    return smon_groups
 
 
 @bp.route('/status-page', methods=['GET', 'POST', 'DELETE', 'PUT'])

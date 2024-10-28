@@ -66,15 +66,21 @@
 </div>
 <div id="dashboards">
 {% for group in smon_groups %}
-    <div class="smon_group">
+    <div class="smon_group" id="check-group-{{ group.id }}">
         <div class="group_name">
-            <span class="smon_group_name">{{ group.name.replace("'", "") }}</span>
+            <span class="smon_group_name">
+                {{ group.name.replace("'", "") }}
+                <div style="display: inline;font-size: 13px;">
+                    <a class="edit" onclick="editCheckGroup('{{group.id}}')"></a>
+                    <a class="delete" onclick="confirmDeleteCheckGroup('{{group.id}}')" title="{{lang.words.delete|title()}}" style="cursor: pointer; color: #000;font-size: 14px;"></a>
+                </div>
+            </span>
             <span id="show-smon-group-{{ group.id }}" class="plus switcher_table_metric smon_group_switcher" onclick="showSmonGroup('{{ group.id }}')" title="{{lang.words.open|title()}} {{lang.words.group}}"></span>
             <span id="hide-smon-group-{{ group.id }}" class="minus switcher_table_metric smon_group_switcher" onclick="hideSmonGroup('{{ group.id }}')" style="display: none;" title="{{lang.words.hide}}"></span>
         </div>
         <div class="smon_named_group" id="smon-group-{{ group.id }}">
         {%- for s in multi_checks -%}
-            {% if s.check_group_id|string() == group.id|string() %}
+            {% if s.multi_check_id.check_group_id|string() == group.id|string() %}
                 <div class="smon_services {{additional_classes}} animated-background" id="smon-{{ s.multi_check_id }}" data-check-id="{{ s.multi_check_id }}" data-check-type="{{ checking_types[s.check_type] }}"></div>
             {% endif %}
         {% endfor %}
@@ -87,7 +93,7 @@
             {{ lang.words.without|title() }} {{ lang.words.group3 }}
         </div>
         {%- for s in multi_checks -%}
-            {% if not s.check_group_id %}
+            {% if not s.multi_check_id.check_group_id %}
                 <div class="smon_services {{additional_classes}} animated-background" id="smon-{{ s.multi_check_id }}" data-check-id="{{ s.multi_check_id }}" data-check-type="{{ checking_types[s.check_type] }}"></div>
             {% endif %}
         {% endfor %}

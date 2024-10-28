@@ -38,12 +38,6 @@ function getAgentsForCheck() {
 						continue;
 					}
                     removeEntityFromStatus(agent.id, agent.name);
-                    // if (agent.enabled === 1 && !agent.region_id) {
-                    //     removeCheckFromStatus(agent.id, agent.name);
-                    // }
-                    // if (agent.enabled === 1 && Number(agent.region_id) === Number(region_id)) {
-                    //     addCheckToStatus(agent.id, agent.name);
-                    // }
                 }
 			}
 		}
@@ -65,12 +59,6 @@ function getRegionsForCheck() {
 						continue;
 					}
                     removeEntityFromStatus(agent.id, agent.name);
-                    // if (agent.enabled === 1 && !agent.region_id) {
-                    //     removeCheckFromStatus(agent.id, agent.name);
-                    // }
-                    // if (agent.enabled === 1 && Number(agent.region_id) === Number(region_id)) {
-                    //     addCheckToStatus(agent.id, agent.name);
-                    // }
                 }
 			}
 		}
@@ -188,4 +176,42 @@ function updateCurrentStatus(check_id, data) {
 	}
 	let div_cur_status = '<span class="' + add_class + ' cur_status" style="font-size: 15px; border-radius: 50rem!important;min-width: 62px;">' + cur_status + '</span>'
 	$('#cur_status-' + check_id).html(div_cur_status);
+}
+function confirmDeleteCheckGroup(check_group_id) {
+	$("#dialog-confirm").dialog({
+		resizable: false,
+		height: "auto",
+		width: 400,
+		modal: true,
+		title: delete_word + " ?",
+		buttons: [{
+			text: delete_word,
+			click: function () {
+				$(this).dialog("close");
+				removeCheckGroup(check_group_id);
+			}
+		}, {
+			text: cancel_word,
+			click: function () {
+				$(this).dialog("close");
+			}
+		}]
+	});
+}
+function removeCheckGroup(check_group_id) {
+	$.ajax({
+		url: api_v_prefix + "/rmon/check-group/" + check_group_id,
+		type: "DELETE",
+		contentType: "application/json; charset=utf-8",
+		success: function (data, statusText, xhr) {
+			if (xhr.status === 204) {
+				$('#smon-group-' + check_group_id).appendTo('#smon-group-')
+				$("#check-group-" + check_group_id).remove();
+			} else {
+				if (data.status === 'failed') {
+					toastr.error(data);
+				}
+			}
+		}
+	});
 }

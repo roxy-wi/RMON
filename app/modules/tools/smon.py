@@ -19,7 +19,6 @@ def create_check(
     try:
         name = json_data.name
         enable = json_data.enabled
-        group = json_data.check_group
         desc = json_data.description
         telegram = json_data.tg
         slack = json_data.slack
@@ -29,16 +28,9 @@ def create_check(
     except Exception as e:
         raise e
 
-    if group:
-        smon_group_id = smon_sql.get_smon_group_by_name(group_id, group)
-        if not smon_group_id:
-            smon_group_id = smon_sql.add_smon_group(group_id, group)
-    else:
-        smon_group_id = None
-
     try:
         last_id = smon_sql.insert_smon(
-            name, enable, smon_group_id, desc, telegram, slack, pd, mm, group_id, check_type, timeout, agent_id, region_id, country_id, multi_check_id
+            name, enable, desc, telegram, slack, pd, mm, group_id, check_type, timeout, agent_id, region_id, country_id, multi_check_id
         )
     except Exception as e:
         return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot create check: {name}')
@@ -117,11 +109,10 @@ def create_tcp_check(data: TcpCheckRequest, last_id: int) -> tuple[dict, int]:
         return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create TCP check')
 
 
-def update_smon(smon_id, json_data, group_id) -> None:
+def update_smon(smon_id, json_data) -> None:
     try:
         name = json_data.name
         enabled = json_data.enabled
-        group = json_data.check_group
         desc = json_data.description
         telegram = json_data.tg
         slack = json_data.slack
@@ -138,15 +129,8 @@ def update_smon(smon_id, json_data, group_id) -> None:
     except Exception:
         pass
 
-    if group:
-        check_group_id = smon_sql.get_smon_group_by_name(group_id, group)
-        if not check_group_id:
-            check_group_id = smon_sql.add_smon_group(group_id, group)
-    else:
-        check_group_id = None
-
     try:
-        smon_sql.update_check(smon_id, name, telegram, slack, pd, mm, check_group_id, desc, enabled, timeout)
+        smon_sql.update_check(smon_id, name, telegram, slack, pd, mm, desc, enabled, timeout)
     except Exception as e:
         raise Exception(f'here: {e}')
 
@@ -277,7 +261,7 @@ def show_status_page(slug: str) -> str:
             en = s.enabled
             multi_check_id = s.multi_check_id
             if s.check_group_id:
-                group = smon_sql.get_smon_group_name_by_id(s.check_group_id)
+                group = smon_sql.get_smon_group_by_id(s.check_group_id).name
             else:
                 group = 'No group'
 

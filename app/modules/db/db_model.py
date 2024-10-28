@@ -240,6 +240,7 @@ class MultiCheck(BaseModel):
     id = AutoField
     entity_type = CharField()
     group_id = ForeignKeyField(Groups, on_delete='RESTRICT')
+    check_group_id = ForeignKeyField(SmonGroup, null=True, on_delete='SET NULL')
 
     class Meta:
         table_name = 'multi_check'
@@ -253,7 +254,6 @@ class SMON(BaseModel):
     description = CharField(null=True)
     response_time = CharField(null=True)
     time_state = DateTimeField(constraints=[SQL('DEFAULT "0000-00-00 00:00:00"')])
-    check_group_id = IntegerField(null=True)
     body_status = IntegerField(constraints=[SQL('DEFAULT 1')])
     telegram_channel_id = IntegerField(null=True)
     group_id = IntegerField()

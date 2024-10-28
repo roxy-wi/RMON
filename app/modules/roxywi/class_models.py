@@ -167,7 +167,7 @@ class UserPost(BaseModel):
     password: str
     email: EscapedString
     enabled: Optional[bool] = 1
-    user_group: int
+    group_id: int
     role: Annotated[int, Gt(0), Le(4)] = 4
 
 
@@ -269,3 +269,8 @@ class CountryRequest(BaseModel):
     enabled: Optional[bool] = 1
     group_id: Optional[int] = None
     regions: Optional[list[int]] = None
+
+
+class CheckGroup(BaseModel):
+    name: EscapedString
+    group_id: Optional[int] = None
