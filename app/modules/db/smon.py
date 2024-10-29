@@ -31,17 +31,6 @@ def get_agents_by_region(region_id: int):
 		out_error(e)
 
 
-def get_enabled_agents(group_id: int):
-	try:
-		return SmonAgent.select(SmonAgent, Server).join(Server).where(
-			(Server.group_id == group_id) &
-			(SmonAgent.enabled == True) |
-			(SmonAgent.shared == 1)
-		).objects().execute()
-	except Exception as e:
-		out_error(e)
-
-
 def get_free_servers_for_agent(group_id: int):
 	try:
 		query = Server.select().where(
@@ -451,15 +440,6 @@ def select_status_page_with_group(page_id: int, group_id: int) -> SmonStatusPage
 		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
-
-
-def select_status_page_by_id(page_id: int):
-	try:
-		query_res = SmonStatusPage.select().where(SmonStatusPage.id == page_id).execute()
-	except Exception as e:
-		return out_error(e)
-	else:
-		return query_res
 
 
 def get_status_page(slug: str) -> SmonStatusPage:

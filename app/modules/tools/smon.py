@@ -260,13 +260,13 @@ def show_status_page(slug: str) -> str:
             check_type = s.check_type
             en = s.enabled
             multi_check_id = s.multi_check_id
-            if s.check_group_id:
-                group = smon_sql.get_smon_group_by_id(s.check_group_id).name
+            if multi_check_id.check_group_id:
+                group = smon_sql.get_smon_group_by_id(multi_check_id.check_group_id).name
             else:
                 group = 'No group'
 
         checks_status[check_id] = {'uptime': uptime, 'name': name, 'description': desc, 'group': group,
-                                   'check_type': check_type, 'en': en, 'multi_check_id': multi_check_id}
+                                   'check_type': check_type, 'en': en, 'multi_check_id': multi_check_id.id}
 
     return render_template('smon/status_page.html', page=page, checks_status=checks_status)
 
