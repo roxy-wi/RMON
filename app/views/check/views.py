@@ -57,32 +57,36 @@ class CheckView(MethodView):
         multi_check = smon_sql.select_multi_check(multi_check_id, group_id)
         entities = []
         check_json = {'checks': []}
-        if multi_check:
-            for m in multi_check:
-                place = m.multi_check_id.entity_type
-                check_id = m.id
-                if m.multi_check_id.check_group_id:
-                    group_name = smon_sql.get_smon_group_by_id(m.multi_check_id.check_group_id.name).name
-                else:
-                    group_name = None
-                check_json['check_group'] = group_name
-                if m.country_id:
-                    entities.append(m.country_id.id)
-                elif m.region_id:
-                    entities.append(m.region_id.id)
-                elif m.agent_id:
-                    entities.append(m.agent_id.id)
-                checks = smon_sql.select_one_smon(check_id, check_type_id=check_type_id)
-                for check in checks:
-                    check_json['checks'].append(model_to_dict(check, max_depth=1))
-                    check_json['entities'] = entities
-                    check_json['place'] = place
-                    smon_id = model_to_dict(check, max_depth=1)
-                    check_json.update(smon_id['smon_id'])
-                    check_json.update(model_to_dict(check, recurse=False))
-            return jsonify(check_json)
-        else:
+
+        for m in multi_check:
+            place = m.multi_check_id.entity_type
+            check_id = m.id
+            if m.multi_check_id.check_group_id:
+                group_name = smon_sql.get_smon_group_by_id(m.multi_check_id.check_group_id).name
+            else:
+                group_name = None
+            check_json['check_group'] = group_name
+            if m.country_id:
+                entities.append(m.country_id.id)
+            elif m.region_id:
+                entities.append(m.region_id.id)
+            elif m.agent_id:
+                entities.append(m.agent_id.id)
+            checks = smon_sql.select_one_smon(check_id, check_type_id=check_type_id)
+            for check in checks:
+                check_dict = model_to_dict(check, max_depth=1)
+                check_dict['average_response_time'] = smon_mod.get_average_response_time(check_id, check_type_id)
+                check_json['checks'].append(check_dict)
+                check_json['entities'] = entities
+                check_json['place'] = place
+                # check_json['avg_res_time'] = smon_mod.get_average_response_time(check_id, check_type_id)
+                smon_id = model_to_dict(check, max_depth=1)
+                check_json.update(smon_id['smon_id'])
+                check_json.update(model_to_dict(check, recurse=False))
+        if len(check_json['checks']) == 0:
             abort(404, f'{self.check_type} check not found')
+
+        return jsonify(check_json)
 
     def post(self, data) -> int:
         """
@@ -304,15 +308,6 @@ class CheckHttpView(CheckView):
                         type: 'object'
                         description: 'RMON object'
                         properties:
-                          place:
-                            type: 'string'
-                            description: Where checks must be deployed
-                            enum: ['all', 'country', 'region', 'agent']
-                          entities:
-                            type: 'array'
-                            description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
-                            items:
-                              type: 'integer'
                           body_status:
                             type: 'integer'
                             description: 'Body Status'
@@ -339,10 +334,6 @@ class CheckHttpView(CheckView):
                             type: 'string'
                             description: 'Name of the check group'
                             nullable: true
-                          http:
-                            type: 'string'
-                            description: 'HTTP'
-                            nullable: true
                           id:
                             type: 'integer'
                             description: 'ID'
@@ -358,10 +349,6 @@ class CheckHttpView(CheckView):
                           pd_channel_id:
                             type: 'integer'
                             description: 'PD Channel ID'
-                          port:
-                            type: 'integer'
-                            description: 'Port'
-                            nullable: true
                           region_id:
                             type: 'integer'
                             description: 'Region ID'
@@ -692,22 +679,13 @@ class CheckTcpView(CheckView):
                       port:
                         type: 'integer'
                         description: 'Port to be tested'
+                      average_response_time:
+                        type: 'integer'
+                        description: 'Average response time in ms'
                       smon_id:
                         type: 'object'
                         description: 'RMON object'
                         properties:
-                          place:
-                            type: 'string'
-                            description: Where checks must be deployed
-                            enum: ['all', 'country', 'region', 'agent']
-                          entities:
-                            type: 'array'
-                            description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
-                            items:
-                              type: 'integer'
-                          body_status:
-                            type: 'integer'
-                            description: 'Body Status'
                           check_timeout:
                             type: 'integer'
                             description: 'Check Timeout'
@@ -731,10 +709,6 @@ class CheckTcpView(CheckView):
                             type: 'string'
                             description: 'Name of check group (optional)'
                             nullable: true
-                          http:
-                            type: 'string'
-                            description: 'HTTP'
-                            nullable: true
                           id:
                             type: 'integer'
                             description: 'ID'
@@ -750,10 +724,6 @@ class CheckTcpView(CheckView):
                           pd_channel_id:
                             type: 'integer'
                             description: 'PD Channel ID'
-                          port:
-                            type: 'integer'
-                            description: 'Port'
-                            nullable: true
                           region_id:
                             type: 'integer'
                             description: 'Region ID'
@@ -763,17 +733,6 @@ class CheckTcpView(CheckView):
                           slack_channel_id:
                             type: 'integer'
                             description: 'Slack Channel ID'
-                          ssl_expire_critical_alert:
-                            type: 'integer'
-                            description: 'SSL Expire Critical Alert'
-                          ssl_expire_date:
-                            type: 'string'
-                            format: 'date-time'
-                            description: 'SSL Expiry Date'
-                            nullable: true
-                          ssl_expire_warning_alert:
-                            type: 'integer'
-                            description: 'SSL Expire Warning Alert'
                           status:
                             type: 'integer'
                             description: 'Status'
@@ -1027,35 +986,92 @@ class CheckDnsView(CheckView):
             schema:
               id: 'SmonDnsCheck'
               properties:
-                smon_id:
-                  type: 'object'
-                  description: 'RMON object'
-                  properties:
-                    id:
-                      type: 'integer'
-                      description: 'RMON ID'
-                    name:
-                      type: 'string'
-                      description: 'Name'
-                    port:
-                      type: 'integer'
-                      description: 'Port'
-                    status:
-                      type: 'integer'
-                      description: 'Status'
-                    enabled:
-                      type: 'integer'
-                      description: 'EN'
-                    description:
-                      type: 'string'
-                      description: 'Description'
-                    time_state:
-                      type: 'string'
-                      format: 'date-time'
-                      description: 'Time State'
-                    region_id:
-                      type: 'integer'
-                      description: 'Region ID'
+                checks:
+                  type: 'array'
+                  description: 'List of checks inside multicheck'
+                  items:
+                    type: 'object'
+                    properties:
+                      interval:
+                        type: 'integer'
+                        description: 'Timeout interval'
+                      ip:
+                        type: 'string'
+                        description: 'IP address to be tested'
+                      port:
+                        type: 'integer'
+                        description: 'Port to be tested'
+                      average_response_time:
+                        type: 'integer'
+                        description: 'Average response time in ms'
+                      smon_id:
+                        type: 'object'
+                        description: 'RMON object'
+                        properties:
+                          check_timeout:
+                            type: 'integer'
+                            description: 'Check Timeout'
+                          check_type:
+                            type: 'string'
+                            description: 'Check Type'
+                          country_id:
+                            type: 'integer'
+                            description: 'Country ID'
+                          created_at:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'Creation Time'
+                          description:
+                            type: 'string'
+                            description: 'Description'
+                          enabled:
+                            type: 'integer'
+                            description: 'Enabled status'
+                          check_group:
+                            type: 'string'
+                            description: 'Name of check group (optional)'
+                            nullable: true
+                          id:
+                            type: 'integer'
+                            description: 'ID'
+                          mm_channel_id:
+                            type: 'integer'
+                            description: 'MM Channel ID'
+                          multi_check_id:
+                            type: 'integer'
+                            description: 'Multi-check ID'
+                          name:
+                            type: 'string'
+                            description: 'Name'
+                          pd_channel_id:
+                            type: 'integer'
+                            description: 'PD Channel ID'
+                          region_id:
+                            type: 'integer'
+                            description: 'Region ID'
+                          response_time:
+                            type: 'string'
+                            description: 'Response Time'
+                          slack_channel_id:
+                            type: 'integer'
+                            description: 'Slack Channel ID'
+                          status:
+                            type: 'integer'
+                            description: 'Status'
+                          telegram_channel_id:
+                            type: 'integer'
+                            description: 'Telegram Channel ID'
+                          time_state:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'Time State'
+                          updated_at:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'Update Time'
+                          group_id:
+                            type: 'integer'
+                            description: 'User Group'
                 place:
                   type: 'string'
                   description: Where checks must be deployed
@@ -1322,35 +1338,92 @@ class CheckPingView(CheckView):
             schema:
               id: 'PingCheckDetails'
               properties:
-                smon_id:
-                  type: 'object'
-                  description: 'RMON object'
-                  properties:
-                    id:
-                      type: 'integer'
-                      description: 'RMON ID'
-                    name:
-                      type: 'string'
-                      description: 'Name'
-                    port:
-                      type: 'integer'
-                      description: 'Port'
-                    status:
-                      type: 'integer'
-                      description: 'Status'
-                    enabled:
-                      type: 'integer'
-                      description: 'EN'
-                    description:
-                      type: 'string'
-                      description: 'Description'
-                    time_state:
-                      type: 'string'
-                      format: 'date-time'
-                      description: 'Time State'
-                    region_id:
-                      type: 'integer'
-                      description: 'Region ID'
+                checks:
+                  type: 'array'
+                  description: 'List of checks inside multicheck'
+                  items:
+                    type: 'object'
+                    properties:
+                      interval:
+                        type: 'integer'
+                        description: 'Timeout interval'
+                      ip:
+                        type: 'string'
+                        description: 'IP address to be tested'
+                      port:
+                        type: 'integer'
+                        description: 'Port to be tested'
+                      average_response_time:
+                        type: 'integer'
+                        description: 'Average response time in ms'
+                      smon_id:
+                        type: 'object'
+                        description: 'RMON object'
+                        properties:
+                          check_timeout:
+                            type: 'integer'
+                            description: 'Check Timeout'
+                          check_type:
+                            type: 'string'
+                            description: 'Check Type'
+                          country_id:
+                            type: 'integer'
+                            description: 'Country ID'
+                          created_at:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'Creation Time'
+                          description:
+                            type: 'string'
+                            description: 'Description'
+                          enabled:
+                            type: 'integer'
+                            description: 'Enabled status'
+                          check_group:
+                            type: 'string'
+                            description: 'Name of check group (optional)'
+                            nullable: true
+                          id:
+                            type: 'integer'
+                            description: 'ID'
+                          mm_channel_id:
+                            type: 'integer'
+                            description: 'MM Channel ID'
+                          multi_check_id:
+                            type: 'integer'
+                            description: 'Multi-check ID'
+                          name:
+                            type: 'string'
+                            description: 'Name'
+                          pd_channel_id:
+                            type: 'integer'
+                            description: 'PD Channel ID'
+                          region_id:
+                            type: 'integer'
+                            description: 'Region ID'
+                          response_time:
+                            type: 'string'
+                            description: 'Response Time'
+                          slack_channel_id:
+                            type: 'integer'
+                            description: 'Slack Channel ID'
+                          status:
+                            type: 'integer'
+                            description: 'Status'
+                          telegram_channel_id:
+                            type: 'integer'
+                            description: 'Telegram Channel ID'
+                          time_state:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'Time State'
+                          updated_at:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'Update Time'
+                          group_id:
+                            type: 'integer'
+                            description: 'User Group'
                 place:
                   type: 'string'
                   description: Where checks must be deployed
@@ -1596,35 +1669,92 @@ class CheckSmtpView(CheckView):
             schema:
               id: 'SMTPCheckDetails'
               properties:
-                smon_id:
-                  type: 'object'
-                  description: 'RMON object'
-                  properties:
-                    id:
-                      type: 'integer'
-                      description: 'RMON ID'
-                    name:
-                      type: 'string'
-                      description: 'Name'
-                    port:
-                      type: 'integer'
-                      description: 'Port'
-                    status:
-                      type: 'integer'
-                      description: 'Status'
-                    enabled:
-                      type: 'integer'
-                      description: 'EN'
-                    description:
-                      type: 'string'
-                      description: 'Description'
-                    time_state:
-                      type: 'string'
-                      format: 'date-time'
-                      description: 'Time State'
-                    region_id:
-                      type: 'integer'
-                      description: 'Region ID'
+                checks:
+                  type: 'array'
+                  description: 'List of checks inside multicheck'
+                  items:
+                    type: 'object'
+                    properties:
+                      interval:
+                        type: 'integer'
+                        description: 'Timeout interval'
+                      ip:
+                        type: 'string'
+                        description: 'IP address to be tested'
+                      port:
+                        type: 'integer'
+                        description: 'Port to be tested'
+                      average_response_time:
+                        type: 'integer'
+                        description: 'Average response time in ms'
+                      smon_id:
+                        type: 'object'
+                        description: 'RMON object'
+                        properties:
+                          check_timeout:
+                            type: 'integer'
+                            description: 'Check Timeout'
+                          check_type:
+                            type: 'string'
+                            description: 'Check Type'
+                          country_id:
+                            type: 'integer'
+                            description: 'Country ID'
+                          created_at:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'Creation Time'
+                          description:
+                            type: 'string'
+                            description: 'Description'
+                          enabled:
+                            type: 'integer'
+                            description: 'Enabled status'
+                          check_group:
+                            type: 'string'
+                            description: 'Name of check group (optional)'
+                            nullable: true
+                          id:
+                            type: 'integer'
+                            description: 'ID'
+                          mm_channel_id:
+                            type: 'integer'
+                            description: 'MM Channel ID'
+                          multi_check_id:
+                            type: 'integer'
+                            description: 'Multi-check ID'
+                          name:
+                            type: 'string'
+                            description: 'Name'
+                          pd_channel_id:
+                            type: 'integer'
+                            description: 'PD Channel ID'
+                          region_id:
+                            type: 'integer'
+                            description: 'Region ID'
+                          response_time:
+                            type: 'string'
+                            description: 'Response Time'
+                          slack_channel_id:
+                            type: 'integer'
+                            description: 'Slack Channel ID'
+                          status:
+                            type: 'integer'
+                            description: 'Status'
+                          telegram_channel_id:
+                            type: 'integer'
+                            description: 'Telegram Channel ID'
+                          time_state:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'Time State'
+                          updated_at:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'Update Time'
+                          group_id:
+                            type: 'integer'
+                            description: 'User Group'
                 place:
                   type: 'string'
                   description: Where checks must be deployed
@@ -1891,35 +2021,96 @@ class CheckRabbitView(CheckView):
             schema:
               id: 'RabbitMQCheckDetails'
               properties:
-                smon_id:
-                  type: 'object'
-                  description: 'RMON object'
-                  properties:
-                    id:
-                      type: 'integer'
-                      description: 'RMON ID'
-                    name:
-                      type: 'string'
-                      description: 'Name'
-                    port:
-                      type: 'integer'
-                      description: 'Port'
-                    status:
-                      type: 'integer'
-                      description: 'Status'
-                    enabled:
-                      type: 'integer'
-                      description: 'EN'
-                    description:
-                      type: 'string'
-                      description: 'Description'
-                    time_state:
-                      type: 'string'
-                      format: 'date-time'
-                      description: 'Time State'
-                    region_id:
-                      type: 'integer'
-                      description: 'Region ID'
+                checks:
+                  type: 'array'
+                  description: 'List of checks inside multicheck'
+                  items:
+                    type: 'object'
+                    properties:
+                      interval:
+                        type: 'integer'
+                        description: 'Timeout interval'
+                      ip:
+                        type: 'string'
+                        description: 'IP address to be tested'
+                      port:
+                        type: 'integer'
+                        description: 'Port to be tested'
+                      average_response_time:
+                        type: 'integer'
+                        description: 'Average response time in ms'
+                      smon_id:
+                        type: 'object'
+                        description: 'RMON object'
+                        properties:
+                          check_timeout:
+                            type: 'integer'
+                            description: 'Check Timeout'
+                          check_type:
+                            type: 'string'
+                            description: 'Check Type'
+                          country_id:
+                            type: 'integer'
+                            description: 'Country ID'
+                          created_at:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'Creation Time'
+                          description:
+                            type: 'string'
+                            description: 'Description'
+                          enabled:
+                            type: 'integer'
+                            description: 'Enabled status'
+                          check_group:
+                            type: 'string'
+                            description: 'Name of check group (optional)'
+                            nullable: true
+                          id:
+                            type: 'integer'
+                            description: 'ID'
+                          mm_channel_id:
+                            type: 'integer'
+                            description: 'MM Channel ID'
+                          multi_check_id:
+                            type: 'integer'
+                            description: 'Multi-check ID'
+                          name:
+                            type: 'string'
+                            description: 'Name'
+                          pd_channel_id:
+                            type: 'integer'
+                            description: 'PD Channel ID'
+                          port:
+                            type: 'integer'
+                            description: 'Port'
+                            nullable: true
+                          region_id:
+                            type: 'integer'
+                            description: 'Region ID'
+                          response_time:
+                            type: 'string'
+                            description: 'Response Time'
+                          slack_channel_id:
+                            type: 'integer'
+                            description: 'Slack Channel ID'
+                          status:
+                            type: 'integer'
+                            description: 'Status'
+                          telegram_channel_id:
+                            type: 'integer'
+                            description: 'Telegram Channel ID'
+                          time_state:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'Time State'
+                          updated_at:
+                            type: 'string'
+                            format: 'date-time'
+                            description: 'Update Time'
+                          group_id:
+                            type: 'integer'
+                            description: 'User Group'
                 place:
                   type: 'string'
                   description: Where checks must be deployed

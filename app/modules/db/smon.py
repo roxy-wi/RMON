@@ -178,15 +178,11 @@ def select_status(smon_id):
 		out_error(e)
 
 
-def change_status(status, smon_id):
-	query = SMON.update(status=status).where(SMON.id == smon_id)
+def change_status(status: int, smon_id: int) -> None:
 	try:
-		query.execute()
+		SMON.update(status=status).where(SMON.id == smon_id).execute()
 	except Exception as e:
 		out_error(e)
-		return False
-	else:
-		return True
 
 
 def response_time(time, smon_id):
@@ -194,9 +190,6 @@ def response_time(time, smon_id):
 		SMON.update(response_time=time).where(SMON.id == smon_id).execute()
 	except Exception as e:
 		out_error(e)
-		return False
-	else:
-		return True
 
 
 def add_sec_to_state_time(time, smon_id):
@@ -691,6 +684,8 @@ def get_smon_group_by_name(group_id: int, name: str) -> int:
 def get_smon_group_by_id(check_group_id: int) -> SmonGroup:
 	try:
 		return SmonGroup.get(SmonGroup.id == check_group_id)
+	except SmonAgent.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 

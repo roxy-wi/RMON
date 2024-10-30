@@ -199,7 +199,6 @@ def pd_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, 
 
 
 def mm_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, **kwargs):
-	print('send mess to mm', kwargs.get('channel_id'))
 	token = ''
 
 	if kwargs.get('channel_id') == 0:
