@@ -43,7 +43,6 @@ class CountryView(MethodView):
               properties:
                 country_id:
                   type: integer
-                  nullable: true
                   description: The identifier of the country (can be null)
                 description:
                   type: string
