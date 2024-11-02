@@ -332,7 +332,6 @@ class CheckHttpView(CheckView):
                           check_group:
                             type: 'string'
                             description: 'Name of the check group'
-                            nullable: true
                           id:
                             type: 'integer'
                             description: 'ID'
@@ -402,7 +401,6 @@ class CheckHttpView(CheckView):
                 group_name:
                   type: 'string'
                   description: 'Group Name'
-                  nullable: true
         """
         return super().get(check_id, query)
 
@@ -707,7 +705,6 @@ class CheckTcpView(CheckView):
                           check_group:
                             type: 'string'
                             description: 'Name of check group (optional)'
-                            nullable: true
                           id:
                             type: 'integer'
                             description: 'ID'
@@ -757,7 +754,6 @@ class CheckTcpView(CheckView):
                 group_name:
                   type: 'string'
                   description: 'Group Name'
-                  nullable: true
                 place:
                   type: 'string'
                   description: 'Where checks must be deployed'
@@ -1029,7 +1025,6 @@ class CheckDnsView(CheckView):
                           check_group:
                             type: 'string'
                             description: 'Name of check group (optional)'
-                            nullable: true
                           id:
                             type: 'integer'
                             description: 'ID'
@@ -1381,7 +1376,6 @@ class CheckPingView(CheckView):
                           check_group:
                             type: 'string'
                             description: 'Name of check group (optional)'
-                            nullable: true
                           id:
                             type: 'integer'
                             description: 'ID'
@@ -1712,7 +1706,6 @@ class CheckSmtpView(CheckView):
                           check_group:
                             type: 'string'
                             description: 'Name of check group (optional)'
-                            nullable: true
                           id:
                             type: 'integer'
                             description: 'ID'
@@ -2064,7 +2057,6 @@ class CheckRabbitView(CheckView):
                           check_group:
                             type: 'string'
                             description: 'Name of check group (optional)'
-                            nullable: true
                           id:
                             type: 'integer'
                             description: 'ID'
@@ -2083,7 +2075,6 @@ class CheckRabbitView(CheckView):
                           port:
                             type: 'integer'
                             description: 'Port'
-                            nullable: true
                           region_id:
                             type: 'integer'
                             description: 'Region ID'

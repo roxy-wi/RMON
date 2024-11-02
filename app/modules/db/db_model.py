@@ -28,7 +28,7 @@ def connect(get_migrator=None):
             "port": int(get_config.get_config_var('mysql', 'mysql_port'))
         }
         conn = ReconnectMySQLDatabase(mysql_db, **kwargs)
-        migrator = MySQLMigrator(conn)
+        migration = MySQLMigrator(conn)
     else:
         db = "/var/lib/rmon/rmon.db"
         conn = SqliteExtDatabase(db, pragmas=(
@@ -36,9 +36,9 @@ def connect(get_migrator=None):
                 ('journal_mode', 'wal'),  # Use WAL-mode (you should always use this!).
                 ('foreign_keys', 1)
             ))
-        migrator = SqliteMigrator(conn)
+        migration = SqliteMigrator(conn)
     if get_migrator:
-        return migrator
+        return migration
     else:
         return conn
 
@@ -64,10 +64,10 @@ class User(BaseModel):
     password = CharField(null=True)
     role = CharField()
     group_id = ForeignKeyField(Groups, on_delete='Cascade')
-    ldap_user = IntegerField(constraints=[SQL('DEFAULT "0"')])
-    enabled = IntegerField(constraints=[SQL('DEFAULT "1"')])
-    user_services = CharField(constraints=[SQL('DEFAULT "1 2 3 4 5"')])
-    last_login_date = DateTimeField(constraints=[SQL('DEFAULT "0000-00-00 00:00:00"')])
+    ldap_user = IntegerField(constraints=[SQL("DEFAULT '0'")])
+    enabled = IntegerField(constraints=[SQL("DEFAULT '1'")])
+    user_services = CharField(constraints=[SQL("DEFAULT '1 2 3 4 5'")])
+    last_login_date = DateTimeField(null=True)
     last_login_ip = CharField(null=True)
 
     class Meta:
@@ -144,12 +144,12 @@ class Setting(BaseModel):
     value = CharField(null=True)
     section = CharField()
     desc = CharField()
-    group = IntegerField(null=True, constraints=[SQL('DEFAULT 1')])
+    group_id = IntegerField(null=True, constraints=[SQL('DEFAULT 1')])
 
     class Meta:
         table_name = 'settings'
         primary_key = False
-        constraints = [SQL('UNIQUE (param, `group`)')]
+        constraints = [SQL('UNIQUE (param, group_id)')]
 
 
 class UserGroups(BaseModel):
@@ -175,7 +175,7 @@ class Cred(BaseModel):
 
     class Meta:
         table_name = 'cred'
-        constraints = [SQL('UNIQUE (name, `group_id`)')]
+        constraints = [SQL('UNIQUE (name, "group_id")')]
 
 
 class Version(BaseModel):
@@ -253,7 +253,7 @@ class SMON(BaseModel):
     enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
     description = CharField(null=True)
     response_time = CharField(null=True)
-    time_state = DateTimeField(constraints=[SQL('DEFAULT "0000-00-00 00:00:00"')])
+    time_state = DateTimeField(null=True)
     body_status = IntegerField(constraints=[SQL('DEFAULT 1')])
     telegram_channel_id = IntegerField(null=True)
     group_id = IntegerField()
@@ -263,7 +263,7 @@ class SMON(BaseModel):
     ssl_expire_date = CharField(null=True)
     pd_channel_id = IntegerField(null=True)
     mm_channel_id = IntegerField(null=True)
-    check_type = CharField(constraints=[SQL('DEFAULT "tcp"')])
+    check_type = CharField(constraints=[SQL("DEFAULT 'tcp'")])
     created_at = DateTimeField(default=datetime.now)
     updated_at = DateTimeField(default=datetime.now)
     check_timeout = IntegerField(constraints=[SQL('DEFAULT 2')])
@@ -385,7 +385,7 @@ class SmonRabbitCheck(BaseModel):
     password = CharField()
     use_tls = CharField(constraints=[SQL('DEFAULT 0')])
     interval = IntegerField(constraints=[SQL('DEFAULT 120')])
-    vhost = CharField(constraints=[SQL('DEFAULT "/"')])
+    vhost = CharField(constraints=[SQL("DEFAULT '/'")])
     ignore_ssl_error = IntegerField(constraints=[SQL('DEFAULT 0')])
 
     class Meta:
@@ -396,8 +396,8 @@ class SmonRabbitCheck(BaseModel):
 class SmonHttpCheck(BaseModel):
     smon_id = ForeignKeyField(SMON, on_delete='Cascade', unique=True)
     url = CharField()
-    method = CharField(constraints=[SQL('DEFAULT "get"')])
-    accepted_status_codes = CharField(constraints=[SQL('DEFAULT "200"')])
+    method = CharField(constraints=[SQL("DEFAULT 'get'")])
+    accepted_status_codes = CharField(constraints=[SQL("DEFAULT '200'")])
     body = CharField(null=True)
     interval = IntegerField(constraints=[SQL('DEFAULT 120')])
     headers = JSONField(null=True)
