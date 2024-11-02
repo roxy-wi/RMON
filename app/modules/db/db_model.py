@@ -175,7 +175,7 @@ class Cred(BaseModel):
 
     class Meta:
         table_name = 'cred'
-        constraints = [SQL('UNIQUE (name, "group_id")')]
+        constraints = [SQL('UNIQUE (name, group_id)')]
 
 
 class Version(BaseModel):
