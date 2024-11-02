@@ -79,7 +79,6 @@ class CheckView(MethodView):
                 check_json['checks'].append(check_dict)
                 check_json['entities'] = entities
                 check_json['place'] = place
-                # check_json['avg_res_time'] = smon_mod.get_average_response_time(check_id, check_type_id)
                 smon_id = model_to_dict(check, max_depth=1)
                 check_json.update(smon_id['smon_id'])
                 check_json.update(model_to_dict(check, recurse=False))
@@ -457,16 +456,16 @@ class CheckHttpView(CheckView):
               description:
                 type: 'string'
                 description: 'Description (optional)'
-              tg:
+              telegram_channel_id:
                 type: 'integer'
                 description: 'Telegram channel ID (optional)'
-              slack:
+              slack_channel_id:
                 type: 'integer'
                 description: 'Slack channel ID (optional)'
-              pd:
+              pd_channel_id:
                 type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
-              mm:
+              mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               http_method:
@@ -558,16 +557,16 @@ class CheckHttpView(CheckView):
               description:
                 type: 'string'
                 description: 'Description (optional)'
-              tg:
+              telegram_channel_id:
                 type: 'integer'
                 description: 'Telegram channel ID (optional)'
-              slack:
+              slack_channel_id:
                 type: 'integer'
                 description: 'Slack channel ID (optional)'
-              pd:
+              pd_channel_id:
                 type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
-              mm:
+              mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               http_method:
@@ -817,16 +816,16 @@ class CheckTcpView(CheckView):
               description:
                 type: 'string'
                 description: 'Description (optional)'
-              tg:
+              telegram_channel_id:
                 type: 'integer'
                 description: 'Telegram channel ID (optional)'
-              slack:
+              slack_channel_id:
                 type: 'integer'
                 description: 'Slack channel ID (optional)'
-              pd:
+              pd_channel_id:
                 type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
-              mm:
+              mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               interval:
@@ -900,16 +899,16 @@ class CheckTcpView(CheckView):
               description:
                 type: 'string'
                 description: 'Description (optional)'
-              tg:
+              telegram_channel_id:
                 type: 'integer'
                 description: 'Telegram channel ID (optional)'
-              slack:
+              slack_channel_id:
                 type: 'integer'
                 description: 'Slack channel ID (optional)'
-              pd:
+              pd_channel_id:
                 type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
-              mm:
+              mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               interval:
@@ -1158,16 +1157,16 @@ class CheckDnsView(CheckView):
               description:
                 type: 'string'
                 description: 'Description (optional)'
-              tg:
+              telegram_channel_id:
                 type: 'integer'
                 description: 'Telegram channel ID (optional)'
-              slack:
+              slack_channel_id:
                 type: 'integer'
                 description: 'Slack channel ID (optional)'
-              pd:
+              pd_channel_id:
                 type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
-              mm:
+              mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               interval:
@@ -1250,16 +1249,16 @@ class CheckDnsView(CheckView):
               description:
                 type: 'string'
                 description: 'Description (optional)'
-              tg:
+              telegram_channel_id:
                 type: 'integer'
                 description: 'Telegram channel ID (optional)'
-              slack:
+              slack_channel_id:
                 type: 'integer'
                 description: 'Slack channel ID (optional)'
-              pd:
+              pd_channel_id:
                 type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
-              mm:
+              mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               interval:
@@ -1490,16 +1489,16 @@ class CheckPingView(CheckView):
               description:
                 type: 'string'
                 description: 'Description (optional)'
-              tg:
+              telegram_channel_id:
                 type: 'integer'
                 description: 'Telegram channel ID (optional)'
-              slack:
+              slack_channel_id:
                 type: 'integer'
                 description: 'Slack channel ID (optional)'
-              pd:
+              pd_channel_id:
                 type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
-              mm:
+              mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               packet_size:
@@ -1574,16 +1573,16 @@ class CheckPingView(CheckView):
               description:
                 type: 'string'
                 description: 'Description (optional)'
-              tg:
+              telegram_channel_id:
                 type: 'integer'
                 description: 'Telegram channel ID (optional)'
-              slack:
+              slack_channel_id:
                 type: 'integer'
                 description: 'Slack channel ID (optional)'
-              pd:
+              pd_channel_id:
                 type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
-              mm:
+              mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               packet_size:
@@ -1831,16 +1830,16 @@ class CheckSmtpView(CheckView):
               description:
                 type: 'string'
                 description: 'Description (optional)'
-              tg:
+              telegram_channel_id:
                 type: 'integer'
                 description: 'Telegram channel ID (optional)'
-              slack:
+              slack_channel_id:
                 type: 'integer'
                 description: 'Slack channel ID (optional)'
-              pd:
+              pd_channel_id:
                 type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
-              mm:
+              mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               username:
@@ -1924,16 +1923,16 @@ class CheckSmtpView(CheckView):
               description:
                 type: 'string'
                 description: 'Description (optional)'
-              tg:
+              telegram_channel_id:
                 type: 'integer'
                 description: 'Telegram channel ID (optional)'
-              slack:
+              slack_channel_id:
                 type: 'integer'
                 description: 'Slack channel ID (optional)'
-              pd:
+              pd_channel_id:
                 type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
-              mm:
+              mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               username:
@@ -2190,16 +2189,16 @@ class CheckRabbitView(CheckView):
               description:
                 type: 'string'
                 description: 'Description (optional)'
-              tg:
+              telegram_channel_id:
                 type: 'integer'
                 description: 'Telegram channel ID (optional)'
-              slack:
+              slack_channel_id:
                 type: 'integer'
                 description: 'Slack channel ID (optional)'
-              pd:
+              pd_channel_id:
                 type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
-              mm:
+              mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               username:
@@ -2286,16 +2285,16 @@ class CheckRabbitView(CheckView):
               description:
                 type: 'string'
                 description: 'Description (optional)'
-              tg:
-                type: 'string'
+              telegram_channel_id:
+                type: 'integer'
                 description: 'Telegram channel ID (optional)'
-              slack:
-                type: 'string'
+              slack_channel_id:
+                type: 'integer'
                 description: 'Slack channel ID (optional)'
-              pd:
-                type: 'string'
+              pd_channel_id:
+                type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
-              mm:
+              mm_channel_id:
                 type: 'string'
                 description: 'Mattermost channel ID (optional)'
               username:

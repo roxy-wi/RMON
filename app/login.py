@@ -27,7 +27,8 @@ def check_login():
 
         try:
             roxywi_auth.check_login(user_params['user_id'])
-        except Exception:
+        except Exception as e:
+            print(f'error: Cannot check login: {e}')
             abort(401)
 
 

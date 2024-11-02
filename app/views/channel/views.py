@@ -221,54 +221,6 @@ class ChannelView(MethodView):
             return roxywi_common.handle_json_exceptions(e, f'Cannot update {body.channel} {receiver} channel')
 
     @validate(query=GroupQuery)
-    def patch(self, receiver: Literal['telegram', 'slack', 'pd', 'mm'], channel_id: int, query: GroupQuery):
-        """
-        Check a channel
-        ---
-        tags:
-          - Channel
-        summary: Send a message check to the channel.
-        description: This method is used to delete a specific channel based on its ID. Optionally, the group_id can be provided by the superAdmin role to check the channel from a specific group.
-        parameters:
-        - name: receiver
-          in: path
-          description: The type of the receiver. Only 'telegram', 'slack', 'pd', 'mm' are allowed.
-          required: true
-          type: string
-          enum: ['telegram', 'slack', 'pd', 'mm']
-        - name: channel_id
-          in: path
-          description: The ID of the channel that needs to be deleted.
-          required: true
-          type: integer
-        - name: group_id
-          in: query
-          description: The ID of the group. Optional and only for superAdmin role.
-          required: false
-          type: integer
-        produces:
-          - application/json
-        responses:
-          200:
-            description: The message has been sent to the channel.
-        """
-        try:
-            group_id = SupportClass.return_group_id(query)
-        except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
-
-        try:
-            _ = channel_sql.get_receiver_with_group(receiver, channel_id, group_id)
-        except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
-
-        try:
-            alerting.check_receiver(channel_id, receiver)
-            return BaseResponse().model_dump(mode='json'), 200
-        except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, f'Cannot check {channel_id} {receiver}')
-
-    @validate(query=GroupQuery)
     def delete(self, receiver: Literal['telegram', 'slack', 'pd', 'mm'], channel_id: int, query: GroupQuery):
         """
         Channel View
@@ -377,3 +329,56 @@ class ChannelsView(MethodView):
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
 
         return jsonify([model_to_dict(channel) for channel in channel_sql.get_user_receiver_by_group(receiver, group_id)])
+
+
+class ChannelCheckView(MethodView):
+    method_decorators = ["POST"]
+    decorators = [jwt_required(), get_user_params(), check_group()]
+
+    @validate(query=GroupQuery)
+    def post(self, receiver: Literal['telegram', 'slack', 'pd', 'mm'], channel_id: int, query: GroupQuery):
+        """
+        Check a channel
+        ---
+        tags:
+          - Channel
+        summary: Send a message check to the channel.
+        description: This method is used to delete a specific channel based on its ID. Optionally, the group_id can be provided by the superAdmin role to check the channel from a specific group.
+        parameters:
+        - name: receiver
+          in: path
+          description: The type of the receiver. Only 'telegram', 'slack', 'pd', 'mm' are allowed.
+          required: true
+          type: string
+          enum: ['telegram', 'slack', 'pd', 'mm']
+        - name: channel_id
+          in: path
+          description: The ID of the channel that needs to be deleted.
+          required: true
+          type: integer
+        - name: group_id
+          in: query
+          description: The ID of the group. Optional and only for superAdmin role.
+          required: false
+          type: integer
+        produces:
+          - application/json
+        responses:
+          200:
+            description: The message has been sent to the channel.
+        """
+        try:
+            group_id = SupportClass.return_group_id(query)
+        except Exception as e:
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
+
+        try:
+            _ = channel_sql.get_receiver_with_group(receiver, channel_id, group_id)
+        except Exception as e:
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
+
+        try:
+            alerting.check_receiver(channel_id, receiver)
+            return BaseResponse().model_dump(mode='json'), 200
+        except Exception as e:
+            return roxywi_common.handle_json_exceptions(e, f'Cannot check {channel_id} {receiver}')

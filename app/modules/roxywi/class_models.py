@@ -60,10 +60,10 @@ class BaseCheckRequest(BaseModel):
     entities: List[int]
     check_timeout: Annotated[int, Le(59), Gt(1)] = 2
     enabled: Optional[bool] = 1
-    tg: Optional[int] = 0
-    pd: Optional[int] = 0
-    mm: Optional[int] = 0
-    slack: Optional[int] = 0
+    telegram_channel_id: Optional[int] = 0
+    pd_channel_id: Optional[int] = 0
+    mm_channel_id: Optional[int] = 0
+    slack_channel_id: Optional[int] = 0
     interval: Optional[int] = 120
     check_group: Optional[EscapedString] = None
     group_id: Optional[int] = None
