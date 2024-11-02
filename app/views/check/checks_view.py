@@ -51,7 +51,6 @@ class ChecksViewHttp(ChecksView):
               type: array
               id: 'HttpChecks'
               items:
-                id: Agent
                 properties:
                   smon_id:
                     type: 'object'
