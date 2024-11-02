@@ -43,7 +43,6 @@ class RegionView(MethodView):
               properties:
                 country_id:
                   type: integer
-                  nullable: true
                   description: The identifier of the country (can be null)
                 description:
                   type: string
@@ -256,7 +255,6 @@ class RegionListView(MethodView):
                 properties:
                   country_id:
                     type: integer
-                    nullable: true
                     description: The identifier of the country (can be null)
                   description:
                     type: string
