@@ -5,8 +5,6 @@ from flask_jwt_extended import verify_jwt_in_request
 
 import app.modules.db.sql as sql
 import app.modules.db.user as user_sql
-import app.modules.db.group as group_sql
-import app.modules.roxywi.common as roxywi_common
 import app.modules.roxy_wi_tools as roxy_wi_tools
 
 
@@ -100,16 +98,6 @@ def do_login(user_params: dict, next_url: str):
     response = jsonify({"status": "done", "next_url": redirect_to})
     access_token = create_jwt_token(user_params)
     set_access_cookies(response, access_token)
-
-    try:
-        user_group_name = group_sql.get_group_name_by_id(user_params['group'])
-    except Exception:
-        user_group_name = ''
-
-    try:
-        roxywi_common.logging('RMON server', f' user: {user_params["name"]}, group: {user_group_name} login', roxywi=1)
-    except Exception as e:
-        print(f'error: {e}')
 
     return response
 

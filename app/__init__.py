@@ -24,7 +24,7 @@ registry = CollectorRegistry()
 multiprocess.MultiProcessCollector(registry, path='/tmp')
 
 metrics = PrometheusMetrics(app, registry=registry)
-metrics.info('rmon', 'RMON app', version='1.0.3')
+metrics.info('rmon', 'RMON app', version='1.2.1')
 
 from app.api.v1.routes.main import bp as main_api_v1_0_bp
 from app.api.v1.routes.user import bp as user_api_v1_0_bp

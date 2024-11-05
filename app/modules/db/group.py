@@ -5,22 +5,13 @@ from app.modules.db.common import out_error, resource_not_empty
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 
 
-def select_groups(**kwargs):
-	if kwargs.get("group") is not None:
-		query = Groups.select().where(Groups.name == kwargs.get('group'))
-	elif kwargs.get("id") is not None:
-		query = Groups.select().where(Groups.group_id == kwargs.get('id'))
-	else:
-		query = Groups.select().order_by(Groups.group_id)
-
+def select_groups() -> Groups:
 	try:
-		query_res = query.execute()
+		Groups.select().order_by(Groups.group_id).execute()
 	except Groups.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
-	else:
-		return query_res
 
 
 def add_group(name: str, description: str) -> int:
@@ -94,12 +85,10 @@ def update_group(name, descript, group_id):
 		return True
 
 
-def get_group_name_by_id(group_id):
+def get_group(group_id: int) -> Groups:
 	try:
-		group_name = Groups.get(Groups.group_id == group_id)
+		return Groups.get(Groups.group_id == group_id)
 	except Groups.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
-	else:
-		return group_name.name

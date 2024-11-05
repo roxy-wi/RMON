@@ -20,10 +20,10 @@ def create_check(
         name = json_data.name
         enable = json_data.enabled
         desc = json_data.description
-        telegram = json_data.tg
-        slack = json_data.slack
-        pd = json_data.pd
-        mm = json_data.mm
+        telegram = json_data.telegram_channel_id
+        slack = json_data.slack_channel_id
+        pd = json_data.pd_channel_id
+        mm = json_data.mm_channel_id
         timeout = json_data.check_timeout
     except Exception as e:
         raise e
@@ -114,10 +114,10 @@ def update_smon(smon_id, json_data) -> None:
         name = json_data.name
         enabled = json_data.enabled
         desc = json_data.description
-        telegram = json_data.tg
-        slack = json_data.slack
-        pd = json_data.pd
-        mm = json_data.mm
+        telegram = json_data.telegram_channel_id
+        slack = json_data.slack_channel_id
+        pd = json_data.pd_channel_id
+        mm = json_data.mm_channel_id
         timeout = json_data.check_timeout
     except Exception as e:
         raise Exception(f'wrong data: {e}')
