@@ -7,7 +7,7 @@ from app.modules.roxywi.exception import RoxywiResourceNotFound
 
 def select_groups() -> Groups:
 	try:
-		Groups.select().order_by(Groups.group_id).execute()
+		return Groups.select().order_by(Groups.group_id).execute()
 	except Groups.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:
