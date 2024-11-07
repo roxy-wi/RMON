@@ -63,6 +63,7 @@ class CheckView(MethodView):
             check_id = m.id
             if m.multi_check_id.check_group_id:
                 group_name = smon_sql.get_smon_group_by_id(m.multi_check_id.check_group_id).name
+                group_name = group_name.replace("'", "")
             else:
                 group_name = None
             check_json['check_group'] = group_name
@@ -209,7 +210,7 @@ class CheckView(MethodView):
             try:
                 last_id = smon_mod.create_check(data, self.group_id, self.check_type, multi_check_id, agent_id, region_id, country_id)
             except Exception as e:
-                raise Exception(f' here 2 {e}')
+                raise e
         else:
             last_id = check_id
 

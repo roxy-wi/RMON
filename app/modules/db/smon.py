@@ -301,17 +301,6 @@ def insert_smon_http(smon_id, url, body, http_method, interval, body_req, header
 		out_error(e)
 
 
-def select_smon_checks(check_type: str, group_id: int) -> Union[SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck]:
-	correct_model = tool_common.get_model_for_check(check_type=check_type)
-	try:
-		query = correct_model.select().join(SMON).where(SMON.group_id == group_id)
-		return query.execute()
-	except correct_model.DoesNotExist:
-		raise RoxywiResourceNotFound
-	except Exception as e:
-		out_error(e)
-
-
 def select_smon_by_id(last_id):
 	query = SMON.select().where(SMON.id == last_id)
 	try:
@@ -347,6 +336,16 @@ def select_multi_check(multi_check_id: int, group_id: int) -> SMON:
 def select_multi_checks(group_id: int) -> SMON:
 	try:
 		return SMON.select().join(MultiCheck).where(SMON.group_id == group_id).order_by(MultiCheck.check_group_id).group_by(SMON.multi_check_id)
+	except Exception as e:
+		out_error(e)
+
+
+def select_multi_checks_with_type(check_type: int, group_id: int) -> SMON:
+	try:
+		return SMON.select().join(MultiCheck).where(
+			(SMON.group_id == group_id) &
+			(SMON.check_type == check_type)
+		).order_by(MultiCheck.check_group_id).group_by(SMON.multi_check_id)
 	except Exception as e:
 		out_error(e)
 

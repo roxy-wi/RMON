@@ -10,7 +10,7 @@ $(function () {
 				success: function (data) {
 					let names = '';
 					for (let name in data) {
-						names += data[name]['name'].replaceAll("'", "") + ', ';
+						names += data[name]['name'].replaceAll("'", "") + ',';
 					}
 					response(names.split(','));
 				}

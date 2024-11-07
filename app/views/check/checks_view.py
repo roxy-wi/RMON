@@ -7,6 +7,7 @@ from flask_pydantic import validate
 from playhouse.shortcuts import model_to_dict
 
 import app.modules.db.smon as smon_sql
+import app.modules.tools.smon as smon_mod
 from app.modules.common.common_classes import SupportClass
 from app.middleware import get_user_params, check_group
 from app.modules.db.db_model import SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonSMTPCheck, SmonRabbitCheck
@@ -22,8 +23,39 @@ class ChecksView(MethodView):
 
     def get(self, query: GroupQuery) -> Union[SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck]:
         group_id = SupportClass.return_group_id(query)
-        checks = smon_sql.select_smon_checks(self.check_type, group_id)
-        return checks
+        check_type_id = smon_mod.get_check_id_by_name(self.check_type)
+        checks = smon_sql.select_multi_checks_with_type(self.check_type, group_id)
+        entities = []
+        check_list = []
+
+        for m in checks:
+            check_json = {'checks': []}
+            place = m.multi_check_id.entity_type
+            check_id = m.id
+            if m.multi_check_id.check_group_id:
+                group_name = smon_sql.get_smon_group_by_id(m.multi_check_id.check_group_id).name
+                group_name = group_name.replace("'", "")
+            else:
+                group_name = None
+            check_json['check_group'] = group_name
+            if m.country_id:
+                entities.append(m.country_id.id)
+            elif m.region_id:
+                entities.append(m.region_id.id)
+            elif m.agent_id:
+                entities.append(m.agent_id.id)
+            checks = smon_sql.select_one_smon(check_id, check_type_id=check_type_id)
+            for check in checks:
+                check_dict = model_to_dict(check, max_depth=1)
+                check_json['checks'].append(check_dict)
+                check_json['entities'] = entities
+                check_json['place'] = place
+                smon_id = model_to_dict(check, max_depth=1)
+                check_json.update(smon_id['smon_id'])
+                check_json.update(model_to_dict(check, recurse=False))
+            check_list.append(check_json)
+
+        return check_list
 
 
 class ChecksViewHttp(ChecksView):
@@ -46,74 +78,166 @@ class ChecksViewHttp(ChecksView):
           type: 'integer'
         responses:
           '200':
-            description: 'Successful Operation'
+            description: 'A list of HTTP checks'
             schema:
-              type: array
-              id: 'HttpChecks'
+              type: 'array'
               items:
+                type: 'object'
                 properties:
-                  smon_id:
-                    type: 'object'
-                    description: 'RMON object'
-                    properties:
-                      id:
-                        type: 'integer'
-                        description: 'RMON ID'
-                      name:
-                        type: 'string'
-                        description: 'Name'
-                      port:
-                        type: 'integer'
-                        description: 'Port'
-                      status:
-                        type: 'integer'
-                        description: 'Status'
-                      enabled:
-                        type: 'integer'
-                        description: 'EN'
-                      description:
-                        type: 'string'
-                        description: 'Description'
-                      time_state:
-                        type: 'string'
-                        format: 'date-time'
-                        description: 'Time State'
-                  place:
-                    type: 'string'
-                    description: Where checks must be deployed
-                    enum: ['all', 'country', 'region', 'agent']
-                  entities:
-                    type: 'array'
-                    description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
-                    items:
-                      type: 'integer'
-                  url:
-                    type: 'string'
-                    description: 'URL to be tested'
-                  method:
-                    type: 'string'
-                    description: 'HTTP Method to be used'
                   accepted_status_codes:
                     type: 'string'
-                    description: 'Expected status code'
+                    description: 'Expected HTTP status codes'
+                  agent_id:
+                    type: 'integer'
                   body:
                     type: 'string'
-                    description: 'Body content'
-                  interval:
-                    type: 'integer'
-                    description: 'Timeout interval'
-                  headers:
-                    type: 'string'
-                    description: 'Headers'
+                    description: 'Response body'
                   body_req:
                     type: 'string'
-                    description: 'Body Request'
+                    description: 'Request body'
+                  body_status:
+                    type: 'integer'
+                  check_group:
+                    type: 'string'
+                  check_timeout:
+                    type: 'integer'
+                    description: 'Timeout for the check'
+                  check_type:
+                    type: 'string'
+                    description: 'Type of check'
+                  checks:
+                    type: 'array'
+                    items:
+                      type: 'object'
+                      properties:
+                        accepted_status_codes:
+                          type: 'string'
+                        body:
+                          type: 'string'
+                        body_req:
+                          type: 'string'
+                        headers:
+                          type: 'string'
+                        ignore_ssl_error:
+                          type: 'integer'
+                        interval:
+                          type: 'integer'
+                        method:
+                          type: 'string'
+                        smon_id:
+                          type: 'object'
+                          properties:
+                            agent_id:
+                              type: 'integer'
+                            body_status:
+                              type: 'integer'
+                            check_timeout:
+                              type: 'integer'
+                            check_type:
+                              type: 'string'
+                            country_id:
+                              type: 'integer'
+                            created_at:
+                              type: 'string'
+                            description:
+                              type: 'string'
+                            enabled:
+                              type: 'integer'
+                            group_id:
+                              type: 'integer'
+                            id:
+                              type: 'integer'
+                            mm_channel_id:
+                              type: 'integer'
+                            multi_check_id:
+                              type: 'integer'
+                            name:
+                              type: 'string'
+                            pd_channel_id:
+                              type: 'integer'
+                            region_id:
+                              type: 'integer'
+                            response_time:
+                              type: 'string'
+                            slack_channel_id:
+                              type: 'integer'
+                            ssl_expire_critical_alert:
+                              type: 'integer'
+                            ssl_expire_date:
+                              type: 'string'
+                            ssl_expire_warning_alert:
+                              type: 'integer'
+                            status:
+                              type: 'integer'
+                            telegram_channel_id:
+                              type: 'integer'
+                            time_state:
+                              type: 'string'
+                            updated_at:
+                              type: 'string'
+                  country_id:
+                      type: 'integer'
+                  created_at:
+                      type: 'string'
+                  description:
+                      type: 'string'
+                  enabled:
+                      type: 'integer'
+                  entities:
+                      type: 'array'
+                      items:
+                          type: 'integer'
+                  group_id:
+                      type: 'integer'
+                  headers:
+                      type: 'string'
+                  id:
+                      type: 'integer'
+                  ignore_ssl_error:
+                      type: 'integer'
+                  interval:
+                      type: 'integer'
+                  method:
+                      type: 'string'
+                  mm_channel_id:
+                      type: 'integer'
+                  multi_check_id:
+                      type: 'integer'
+                  name:
+                      type: 'string'
+                  pd_channel_id:
+                      type: 'integer'
+                  place:
+                      type: 'string'
+                      description: 'Location where checks must be deployed'
+                      enum: ['all', 'country', 'region', 'agent']
+                  region_id:
+                      type: 'integer'
+                  response_time:
+                      type: 'string'
+                  slack_channel_id:
+                      type: 'integer'
+                  smon_id:
+                      type: 'integer'
+                  ssl_expire_critical_alert:
+                      type: 'integer'
+                  ssl_expire_date:
+                      type: 'string'
+                  ssl_expire_warning_alert:
+                      type: 'integer'
+                  status:
+                      type: 'integer'
+                  telegram_channel_id:
+                      type: 'integer'
+                  time_state:
+                      type: 'string'
+                  updated_at:
+                      type: 'string'
+                  url:
+                      type: 'string'
         """
         checks = super().get(query)
-        check_list = []
-        for check in checks:
-            check_list.append(model_to_dict(check, exclude=[SmonHttpCheck.smon_id.http, SmonHttpCheck.smon_id.port]))
-        return jsonify(check_list)
+        return jsonify(checks)
 
 
 class ChecksViewDns(ChecksView):
@@ -144,11 +268,11 @@ class ChecksViewDns(ChecksView):
                 properties:
                   place:
                     type: 'string'
-                    description: Where checks must be deployed
+                    description: 'Location where checks must be deployed'
                     enum: ['all', 'country', 'region', 'agent']
                   entities:
                     type: 'array'
-                    description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
+                    description: 'List of agents, regions, or countries depending on the place parameter'
                     items:
                       type: 'integer'
                   interval:
@@ -170,6 +294,10 @@ class ChecksViewDns(ChecksView):
                     type: 'object'
                     description: 'Object containing information related to smon_id'
                     properties:
+                      agent_id:
+                        type: 'integer'
+                      body_status:
+                        type: 'integer'
                       check_timeout:
                         type: 'integer'
                       check_type:
@@ -179,12 +307,14 @@ class ChecksViewDns(ChecksView):
                       description:
                         type: 'string'
                       enabled:
-                        type: 'string'
-                      check_group_id:
+                        type: 'integer'
+                      group_id:
                         type: 'integer'
                       id:
                         type: 'integer'
                       mm_channel_id:
+                        type: 'integer'
+                      multi_check_id:
                         type: 'integer'
                       name:
                         type: 'string'
@@ -202,17 +332,13 @@ class ChecksViewDns(ChecksView):
                         type: 'string'
                       updated_at:
                         type: 'string'
-                      group_id:
+                      region_id:
+                        type: 'integer'
+                      country_id:
                         type: 'integer'
         """
         checks = super().get(query)
-        check_list = []
-        for check in checks:
-            check_list.append(model_to_dict(check, exclude=[
-                SmonDnsCheck.smon_id.body_status, SmonDnsCheck.smon_id.http, SmonDnsCheck.smon_id.port, SmonDnsCheck.smon_id.ssl_expire_critical_alert,
-                SmonDnsCheck.smon_id.ssl_expire_date, SmonDnsCheck.smon_id.ssl_expire_warning_alert
-            ]))
-        return jsonify(check_list)
+        return jsonify(checks)
 
 
 class ChecksViewTcp(ChecksView):
@@ -235,78 +361,142 @@ class ChecksViewTcp(ChecksView):
             type: 'integer'
         responses:
           '200':
-            description: 'A list of ChecksViewTcp instances'
+            description: 'A list of TCP checks'
             schema:
               type: 'array'
               items:
                 type: 'object'
                 properties:
-                  place:
+                  agent_id:
+                    type: 'integer'
+                  body_status:
+                    type: 'integer'
+                  check_group:
                     type: 'string'
-                    description: Where checks must be deployed
-                    enum: ['all', 'country', 'region', 'agent']
-                  entities:
+                  check_timeout:
+                    type: 'integer'
+                    description: 'Timeout for the check'
+                  check_type:
+                    type: 'string'
+                    description: 'Type of check'
+                  checks:
                     type: 'array'
-                    description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
                     items:
+                      type: 'object'
+                      properties:
+                        interval:
+                          type: 'integer'
+                          description: 'Interval for the check'
+                        ip:
+                          type: 'string'
+                          description: 'IP address to check'
+                        port:
+                          type: 'integer'
+                          description: 'Port to check'
+                        smon_id:
+                          type: 'object'
+                          properties:
+                            agent_id:
+                              type: 'integer'
+                            body_status:
+                              type: 'integer'
+                            check_timeout:
+                              type: 'integer'
+                            check_type:
+                              type: 'string'
+                            country_id:
+                              type: 'integer'
+                            created_at:
+                              type: 'string'
+                            description:
+                              type: 'string'
+                            enabled:
+                              type: 'integer'
+                            group_id:
+                              type: 'integer'
+                            id:
+                              type: 'integer'
+                            mm_channel_id:
+                              type: 'integer'
+                            multi_check_id:
+                              type: 'integer'
+                            name:
+                              type: 'string'
+                            pd_channel_id:
+                              type: 'integer'
+                            region_id:
+                              type: 'integer'
+                            response_time:
+                              type: 'string'
+                            slack_channel_id:
+                              type: 'integer'
+                            ssl_expire_critical_alert:
+                              type: 'integer'
+                            ssl_expire_date:
+                              type: 'string'
+                            ssl_expire_warning_alert:
+                              type: 'integer'
+                            status:
+                              type: 'integer'
+                            telegram_channel_id:
+                              type: 'integer'
+                            time_state:
+                              type: 'string'
+                            updated_at:
+                              type: 'string'
+                  country_id:
+                      type: 'integer'
+                  created_at:
+                      type: 'string'
+                  description:
+                      type: 'string'
+                  enabled:
+                      type: 'integer'
+                  entities:
+                      type: 'array'
+                      items:
+                          type: 'integer'
+                  group_id:
+                      type: 'integer'
+                  id:
                       type: 'integer'
                   interval:
-                    type: 'integer'
-                    description: 'Check interval, in seconds'
+                      type: 'integer'
                   ip:
-                    type: 'string'
-                    description: 'IP address for the TCP check'
+                      type: 'string'
+                  mm_channel_id:
+                      type: 'integer'
+                  multi_check_id:
+                      type: 'integer'
+                  name:
+                      type: 'string'
+                  pd_channel_id:
+                      type: 'integer'
+                  place:
+                      type: 'string'
+                      description: 'Location where checks must be deployed'
+                      enum: ['all', 'country', 'region', 'agent']
                   port:
-                    type: 'integer'
-                    description: 'Port number for the TCP check'
+                      type: 'integer'
+                  region_id:
+                      type: 'integer'
+                  response_time:
+                      type: 'string'
+                  slack_channel_id:
+                      type: 'integer'
                   smon_id:
-                    type: 'object'
-                    description: 'A list of TCP checks'
-                    properties:
-                      check_timeout:
-                        type: 'integer'
-                      check_type:
-                        type: 'string'
-                      created_at:
-                        type: 'string'
-                      description:
-                        type: 'string'
-                      enabled:
-                        type: 'string'
-                      check_group_id:
-                        type: 'integer'
-                      id:
-                        type: 'integer'
-                      mm_channel_id:
-                        type: 'integer'
-                      name:
-                        type: 'string'
-                      pd_channel_id:
-                        type: 'integer'
-                      response_time:
-                        type: 'string'
-                      slack_channel_id:
-                        type: 'integer'
-                      status:
-                        type: 'integer'
-                      telegram_channel_id:
-                        type: 'integer'
-                      time_state:
-                        type: 'string'
-                      updated_at:
-                        type: 'string'
-                      group_id:
-                        type: 'integer'
+                      type: 'integer'
+                  status:
+                      type: 'integer'
+                  telegram_channel_id:
+                      type: 'integer'
+                  time_state:
+                      type: 'string'
+                  updated_at:
+                      type: 'string'
         """
         checks = super().get(query)
-        check_list = []
-        for check in checks:
-            check_list.append(model_to_dict(check, exclude=[
-                SmonTcpCheck.smon_id.body_status, SmonTcpCheck.smon_id.http, SmonTcpCheck.smon_id.port,
-                SmonTcpCheck.smon_id.ssl_expire_critical_alert,
-                SmonTcpCheck.smon_id.ssl_expire_date, SmonTcpCheck.smon_id.ssl_expire_warning_alert
-            ]))
-        return jsonify(check_list)
+        return jsonify(checks)
 
 
 class ChecksViewPing(ChecksView):
@@ -393,14 +583,7 @@ class ChecksViewPing(ChecksView):
                         type: 'integer'
         """
         checks = super().get(query)
-        check_list = []
-        for check in checks:
-            check_list.append(model_to_dict(check, exclude=[
-                SmonPingCheck.smon_id.body_status, SmonPingCheck.smon_id.http, SmonPingCheck.smon_id.port,
-                SmonPingCheck.smon_id.ssl_expire_critical_alert,
-                SmonPingCheck.smon_id.ssl_expire_date, SmonPingCheck.smon_id.ssl_expire_warning_alert
-            ]))
-        return jsonify(check_list)
+        return jsonify(checks)
 
 
 class ChecksViewSmtp(ChecksView):
@@ -423,77 +606,160 @@ class ChecksViewSmtp(ChecksView):
             type: 'integer'
         responses:
           '200':
-            description: 'ID of the group associated with the Ping checks'
+            description: 'A list of SMTP checks'
             schema:
               type: 'array'
               items:
                 type: 'object'
                 properties:
-                  place:
+                  agent_id:
+                    type: 'integer'
+                  body_status:
+                    type: 'integer'
+                  check_group:
                     type: 'string'
-                    description: Where checks must be deployed
-                    enum: ['all', 'country', 'region', 'agent']
-                  entities:
+                  check_timeout:
+                    type: 'integer'
+                    description: 'Timeout for the check'
+                  check_type:
+                    type: 'string'
+                    description: 'Type of check'
+                  checks:
                     type: 'array'
-                    description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
                     items:
+                      type: 'object'
+                      properties:
+                        ignore_ssl_error:
+                          type: 'integer'
+                          description: 'Flag to ignore SSL errors'
+                        interval:
+                          type: 'integer'
+                          description: 'Interval for the check'
+                        ip:
+                          type: 'string'
+                          description: 'IP address of the SMTP server'
+                        password:
+                          type: 'string'
+                          description: 'SMTP server password'
+                        port:
+                          type: 'integer'
+                          description: 'SMTP server port'
+                        smon_id:
+                          type: 'object'
+                          properties:
+                            agent_id:
+                              type: 'integer'
+                            body_status:
+                              type: 'integer'
+                            check_timeout:
+                              type: 'integer'
+                            check_type:
+                              type: 'string'
+                            country_id:
+                              type: 'integer'
+                            created_at:
+                              type: 'string'
+                            description:
+                              type: 'string'
+                            enabled:
+                              type: 'integer'
+                            group_id:
+                              type: 'integer'
+                            id:
+                              type: 'integer'
+                            mm_channel_id:
+                              type: 'integer'
+                            multi_check_id:
+                              type: 'integer'
+                            name:
+                              type: 'string'
+                            pd_channel_id:
+                              type: 'integer'
+                            region_id:
+                              type: 'integer'
+                            response_time:
+                              type: 'string'
+                            slack_channel_id:
+                              type: 'integer'
+                            ssl_expire_critical_alert:
+                              type: 'integer'
+                            ssl_expire_date:
+                              type: 'string'
+                            ssl_expire_warning_alert:
+                              type: 'integer'
+                            status:
+                              type: 'integer'
+                            telegram_channel_id:
+                              type: 'integer'
+                            time_state:
+                              type: 'string'
+                            updated_at:
+                              type: 'string'
+                            use_tls:
+                              type: 'integer'
+                            username:
+                              type: 'string'
+                  country_id:
+                      type: 'integer'
+                  created_at:
+                      type: 'string'
+                  description:
+                      type: 'string'
+                  enabled:
+                      type: 'integer'
+                  entities:
+                      type: 'array'
+                      items:
+                          type: 'integer'
+                  group_id:
+                      type: 'integer'
+                  id:
+                      type: 'integer'
+                  ignore_ssl_error:
                       type: 'integer'
                   interval:
-                    type: 'integer'
-                    description: 'Check interval, in seconds'
+                      type: 'integer'
                   ip:
-                    type: 'string'
-                    description: 'IP address for the Ping check'
-                  packet_size:
-                    type: 'integer'
-                    description: 'Size of the packet for the Ping check'
+                      type: 'string'
+                  mm_channel_id:
+                      type: 'integer'
+                  multi_check_id:
+                      type: 'integer'
+                  name:
+                      type: 'string'
+                  password:
+                      type: 'string'
+                  pd_channel_id:
+                      type: 'integer'
+                  place:
+                      type: 'string'
+                      description: 'Location where checks must be deployed'
+                      enum: ['all', 'country', 'region', 'agent']
+                  port:
+                      type: 'integer'
+                  region_id:
+                      type: 'integer'
+                  response_time:
+                      type: 'string'
+                  slack_channel_id:
+                      type: 'integer'
                   smon_id:
-                    type: 'object'
-                    description: 'Object containing information related to smon_id'
-                    properties:
-                      check_timeout:
-                        type: 'integer'
-                      check_type:
-                        type: 'string'
-                      created_at:
-                        type: 'string'
-                      description:
-                        type: 'string'
-                      enabled:
-                        type: 'string'
-                      check_group_id:
-                        type: 'integer'
-                      id:
-                        type: 'integer'
-                      mm_channel_id:
-                        type: 'integer'
-                      name:
-                        type: 'string'
-                      pd_channel_id:
-                        type: 'integer'
-                      response_time:
-                        type: 'string'
-                      slack_channel_id:
-                        type: 'integer'
-                      status:
-                        type: 'integer'
-                      telegram_channel_id:
-                        type: 'integer'
-                      time_state:
-                        type: 'string'
-                      updated_at:
-                        type: 'string'
-                      group_id:
-                        type: 'integer'
+                      type: 'integer'
+                  status:
+                      type: 'integer'
+                  telegram_channel_id:
+                      type: 'integer'
+                  time_state:
+                      type: 'string'
+                  updated_at:
+                      type: 'string'
+                  use_tls:
+                      type: 'integer'
+                  username:
+                      type: 'string'
         """
         checks = super().get(query)
-        check_list = []
-        for check in checks:
-            check_list.append(model_to_dict(check, exclude=[
-                SmonSMTPCheck.smon_id.body_status, SmonSMTPCheck.smon_id.http, SmonSMTPCheck.smon_id.ssl_expire_critical_alert,
-                SmonSMTPCheck.smon_id.ssl_expire_date, SmonSMTPCheck.smon_id.ssl_expire_warning_alert
-            ]))
-        return jsonify(check_list)
+        return jsonify(checks)
 
 
 class ChecksViewRabbit(ChecksView):
@@ -516,85 +782,157 @@ class ChecksViewRabbit(ChecksView):
             type: 'integer'
         responses:
           '200':
-            description: 'ID of the group associated with the RabbitMQ checks'
+            description: 'A list of Rabbit checks'
             schema:
               type: 'array'
               items:
                 type: 'object'
                 properties:
-                  place:
+                  agent_id:
+                    type: 'integer'
+                  body_status:
+                    type: 'integer'
+                  check_group:
                     type: 'string'
-                    description: Where checks must be deployed
-                    enum: ['all', 'country', 'region', 'agent']
-                  entities:
+                  check_timeout:
+                    type: 'integer'
+                    description: 'Timeout for the check'
+                  check_type:
+                    type: 'string'
+                    description: 'Type of check'
+                  checks:
                     type: 'array'
-                    description: List of agents, regions, or countries. What exactly will be chosen depends on the place parameter
                     items:
+                      type: 'object'
+                      properties:
+                        ignore_ssl_error:
+                          type: 'integer'
+                          description: 'Flag to ignore SSL errors'
+                        interval:
+                          type: 'integer'
+                          description: 'Interval for the check'
+                        ip:
+                          type: 'string'
+                          description: 'IP address of the RabbitMQ server'
+                        password:
+                          type: 'string'
+                          description: 'RabbitMQ server password'
+                        port:
+                          type: 'integer'
+                          description: 'RabbitMQ server port'
+                        smon_id:
+                          type: 'object'
+                          properties:
+                            agent_id:
+                              type: 'integer'
+                            body_status:
+                              type: 'integer'
+                            check_timeout:
+                              type: 'integer'
+                            check_type:
+                              type: 'string'
+                            country_id:
+                              type: 'integer'
+                            created_at:
+                              type: 'string'
+                            description:
+                              type: 'string'
+                            enabled:
+                              type: 'integer'
+                            group_id:
+                              type: 'integer'
+                            id:
+                              type: 'integer'
+                            mm_channel_id:
+                              type: 'integer'
+                            multi_check_id:
+                              type: 'integer'
+                            name:
+                              type: 'string'
+                            pd_channel_id:
+                              type: 'integer'
+                            region_id:
+                              type: 'integer'
+                            response_time:
+                              type: 'string'
+                            slack_channel_id:
+                              type: 'integer'
+                            ssl_expire_critical_alert:
+                              type: 'integer'
+                            ssl_expire_date:
+                              type: 'string'
+                            ssl_expire_warning_alert:
+                              type: 'integer'
+                            status:
+                              type: 'integer'
+                            telegram_channel_id:
+                              type: 'integer'
+                            time_state:
+                              type: 'string'
+                            updated_at:
+                              type: 'string'
+                            use_tls:
+                              type: 'integer'
+                            username:
+                              type: 'string'
+                  country_id:
+                      type: 'integer'
+                  created_at:
+                      type: 'string'
+                  description:
+                      type: 'string'
+                  enabled:
+                      type: 'integer'
+                  entities:
+                      type: 'array'
+                      items:
+                          type: 'integer'
+                  group_id:
+                      type: 'integer'
+                  id:
+                      type: 'integer'
+                  ignore_ssl_error:
                       type: 'integer'
                   interval:
-                    type: 'integer'
-                    description: 'Check interval, in seconds'
+                      type: 'integer'
                   ip:
-                    type: 'string'
-                    description: 'IP address for the RabbitMQ check'
-                  port:
-                    type: 'integer'
-                    description: 'Port for the RabbitMQ check'
-                    default: 5672
-                  username:
-                    type: 'string'
-                    description: 'Username for the RabbitMQ check'
+                      type: 'string'
+                  mm_channel_id:
+                      type: 'integer'
+                  multi_check_id:
+                      type: 'integer'
+                  name:
+                      type: 'string'
                   password:
-                    type: 'string'
-                    description: 'Password for the RabbitMQ check'
-                  vhost:
-                    type: 'string'
-                    description: 'vhost for the RabbitMQ check'
-                    default: /
+                      type: 'string'
+                  pd_channel_id:
+                      type: 'integer'
+                  place:
+                      type: 'string'
+                      description: 'Location where checks must be deployed'
+                      enum: ['all', 'country', 'region', 'agent']
+                  port:
+                      type: 'integer'
+                  region_id:
+                      type: 'integer'
+                  response_time:
+                      type: 'string'
+                  slack_channel_id:
+                      type: 'integer'
                   smon_id:
-                    type: 'object'
-                    description: 'Object containing information related to smon_id'
-                    properties:
-                      check_timeout:
-                        type: 'integer'
-                      check_type:
-                        type: 'string'
-                      created_at:
-                        type: 'string'
-                      description:
-                        type: 'string'
-                      enabled:
-                        type: 'string'
-                      check_group_id:
-                        type: 'integer'
-                      id:
-                        type: 'integer'
-                      mm_channel_id:
-                        type: 'integer'
-                      name:
-                        type: 'string'
-                      pd_channel_id:
-                        type: 'integer'
-                      response_time:
-                        type: 'string'
-                      slack_channel_id:
-                        type: 'integer'
-                      status:
-                        type: 'integer'
-                      telegram_channel_id:
-                        type: 'integer'
-                      time_state:
-                        type: 'string'
-                      updated_at:
-                        type: 'string'
-                      group_id:
-                        type: 'integer'
+                      type: 'integer'
+                  status:
+                      type: 'integer'
+                  telegram_channel_id:
+                      type: 'integer'
+                  time_state:
+                      type: 'string'
+                  updated_at:
+                      type: 'string'
+                  use_tls:
+                      type: 'integer'
+                  username:
+                      type: 'string'
         """
         checks = super().get(query)
-        check_list = []
-        for check in checks:
-            check_list.append(model_to_dict(check, exclude=[
-                SmonRabbitCheck.smon_id.body_status, SmonRabbitCheck.smon_id.http, SmonRabbitCheck.smon_id.ssl_expire_critical_alert,
-                SmonRabbitCheck.smon_id.ssl_expire_date, SmonRabbitCheck.smon_id.ssl_expire_warning_alert
-            ]))
-        return jsonify(check_list)
+        return jsonify(checks)
