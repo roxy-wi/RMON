@@ -74,7 +74,7 @@ class ChecksViewHttp(ChecksView):
         - in: 'query'
           name: 'group_id'
           description: 'ID of the group to retrieve'
-          required: true
+          required: false
           type: 'integer'
         responses:
           '200':
