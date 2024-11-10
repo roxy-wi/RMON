@@ -41,12 +41,10 @@ def get_agent(agent_id):
         'agents': smon_sql.get_agent(agent_id),
         'lang': roxywi_common.get_user_lang_for_flask(),
         'smon_status': tools_common.is_tool_active('rmon-server'),
-        'http_checks': smon_sql.select_checks_for_agent(agent_id, 'http'),
-        'tcp_checks': smon_sql.select_checks_for_agent(agent_id, 'tcp'),
-        'dns_checks': smon_sql.select_checks_for_agent(agent_id, 'dns'),
-        'ping_checks': smon_sql.select_checks_for_agent(agent_id, 'ping'),
-        'smtp_checks': smon_sql.select_checks_for_agent(agent_id, 'smtp')
     }
+
+    for check_type in ('http', 'tcp', 'dns', 'ping', 'smtp', 'rabbitmq'):
+        kwargs[f'{check_type}_checks'] = smon_sql.select_checks_for_agent_by_check_type(agent_id, check_type)
 
     return render_template('smon/agent.html', **kwargs)
 

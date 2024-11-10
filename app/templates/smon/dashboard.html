@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ lang.menu_links.monitoring.smon.dashboard }}{% endblock %}
 {% block h2 %}{{ lang.menu_links.monitoring.smon.dashboard }}{% endblock %}
-{% from 'include/input_macros.html' import input, checkbox, select %}
+{% from 'include/input_macros.html' import input, checkbox, select, checking_types %}
 {% block content %}
 <script src="{{ url_for('static', filename='js/rmon/agent.js') }}"></script>
 <script src="{{ url_for('static', filename='js/rmon/smon.js') }}"></script>

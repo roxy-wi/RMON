@@ -1,7 +1,6 @@
 {% if update %}
 {% import 'languages/'+lang|default('en')+'.html' as lang %}
 {% endif %}
-{% set checking_types = {'tcp': '1', 'http': '2', 'smtp': '3', 'ping': '4', 'dns': '5', 'rabbitmq': '6'} %}
 <script>
     // ждем полной загрузки страницы
     window.onload = () => {

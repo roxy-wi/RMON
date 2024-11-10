@@ -673,6 +673,14 @@ def select_checks_for_agent(agent_id: int) -> dict:
 		out_error(e)
 
 
+def select_checks_for_agent_by_check_type(agent_id: int, check_type: str) -> dict:
+	correct_model = tool_common.get_model_for_check(check_type=check_type)
+	try:
+		return correct_model.select(correct_model, SMON).join(SMON).where(SMON.agent_id == agent_id).objects().execute()
+	except Exception as e:
+		out_error(e)
+
+
 def get_smon_group_by_name(group_id: int, name: str) -> int:
 	try:
 		return SmonGroup.select().where((SmonGroup.name == name) & (SmonGroup.group_id == group_id)).get().id

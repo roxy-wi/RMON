@@ -59,3 +59,5 @@
 	{% endif %}
 	<span id="{{id}}" style="{{style}}" class="copyToClipboard {{class}}" data-copy="{{value}}" title="Copy {{value}} to clipboard">{{show}}</span>
 {%- endmacro %}
+
+{% set checking_types = {'tcp': '1', 'http': '2', 'smtp': '3', 'ping': '4', 'dns': '5', 'rabbitmq': '6'} %}
