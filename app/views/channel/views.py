@@ -113,7 +113,7 @@ class ChannelView(MethodView):
                 example: "channel name"
               group_id:
                 type: integer
-                description: The ID of the group to which the channel belongs.
+                description: The ID of the group to which the channel belongs. Only for superAdmin role.
                 example: 1
         consumes:
           - application/json
@@ -197,7 +197,7 @@ class ChannelView(MethodView):
                 example: "cool channel"
               group_id:
                 type: integer
-                description: The ID of the group to which the channel belongs.
+                description: The ID of the group to which the channel belongs. Only for superAdmin role.
                 example: 1
         consumes:
           - application/json
@@ -252,6 +252,7 @@ class ChannelView(MethodView):
           204:
             description: Channel Deleted
         """
+        roxywi_auth.page_for_admin(level=3)
         try:
             group_id = SupportClass.return_group_id(query)
         except Exception as e:

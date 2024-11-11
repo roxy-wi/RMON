@@ -90,3 +90,10 @@ def get_group(group_id: int) -> Groups:
 		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
+
+
+def select_groups_with_filter(group_name: str = None) -> Groups:
+	if group_name:
+		return Groups.select().where(Groups.name == group_name)
+	else:
+		return select_groups()

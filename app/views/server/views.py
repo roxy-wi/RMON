@@ -1,7 +1,7 @@
 from flask.views import MethodView
 from flask_pydantic import validate
 from flask_jwt_extended import jwt_required
-from flask import render_template, jsonify
+from flask import render_template, jsonify, g
 from playhouse.shortcuts import model_to_dict
 
 import app.modules.db.cred as cred_sql
@@ -11,8 +11,8 @@ import app.modules.roxywi.group as group_mod
 import app.modules.roxywi.common as roxywi_common
 import app.modules.server.server as server_mod
 from app.middleware import get_user_params, page_for_admin, check_group
-from app.modules.roxywi.exception import RoxywiResourceNotFound
-from app.modules.roxywi.class_models import BaseResponse, IdResponse, IdDataResponse, ServerRequest, GroupQuery, GroupRequest
+from app.modules.roxywi.class_models import BaseResponse, IdResponse, IdDataResponse, ServerRequest, GroupQuery, \
+    GroupRequest, UserSearchRequest
 from app.modules.common.common_classes import SupportClass
 
 
@@ -82,7 +82,7 @@ class ServerView(MethodView):
         try:
             server = server_sql.get_server_with_group(server_id, group_id)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get group')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group')
         return jsonify(model_to_dict(server))
 
     @validate(body=ServerRequest)
@@ -131,7 +131,7 @@ class ServerView(MethodView):
         try:
             last_id = server_mod.create_server(body.hostname, body.ip, group_id, body.enabled, body.cred_id, body.port, body.description)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot create a server')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create a server')
 
         roxywi_common.logging(body.ip, f'A new server {body.hostname} has been created', login=1, keep_history=1, service='server')
         try:
@@ -196,7 +196,7 @@ class ServerView(MethodView):
             server_ip = server_sql.select_server_ip_by_id(server_id)
             roxywi_common.logging(server_ip, f'The server {body.hostname} has been update', roxywi=1, login=1, keep_history=1, service='server')
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot update server')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot update server')
 
         return BaseResponse().model_dump(mode='json'), 201
 
@@ -221,7 +221,7 @@ class ServerView(MethodView):
             server_mod.delete_server(server_id)
             return BaseResponse().model_dump(mode='json'), 204
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot delete server')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot delete server')
 
 
 class ServersView(MethodView):
@@ -319,7 +319,7 @@ class ServerGroupView(MethodView):
             group = group_sql.get_group(group_id)
             return model_to_dict(group)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get group')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group')
 
     @validate(body=GroupRequest)
     def post(self, body: GroupRequest):
@@ -351,7 +351,7 @@ class ServerGroupView(MethodView):
             roxywi_common.logging('RMON server', f'A new group {body.name} has been created', roxywi=1, login=1)
             return IdResponse(id=last_id).model_dump(mode='json'), 201
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot create group')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create group')
 
     @validate(body=GroupRequest)
     def put(self, group_id: int, body: GroupRequest):
@@ -389,7 +389,7 @@ class ServerGroupView(MethodView):
             group_mod.update_group(group_id, body.name, body.description)
             return BaseResponse(), 201
         except Exception as e:
-            roxywi_common.handle_json_exceptions(e, 'Cannot update group')
+            roxywi_common.handler_exceptions_for_json_data(e, 'Cannot update group')
 
     def delete(self, group_id: int):
         """
@@ -410,7 +410,7 @@ class ServerGroupView(MethodView):
         try:
             self._check_is_user_and_group(group_id)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get user or group'), 404
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user or group'), 404
         try:
             group_mod.delete_group(group_id)
             return BaseResponse().model_dump(mode='json'), 204
@@ -429,12 +429,19 @@ class ServerGroupsView(MethodView):
     methods = ["GET"]
     decorators = [jwt_required(), get_user_params(), page_for_admin()]
 
-    def get(self):
+    @validate(query=UserSearchRequest)
+    def get(self, query: UserSearchRequest):
         """
         This endpoint allows to get server groups.
         ---
         tags:
           - Group
+        parameters:
+        - in: 'query'
+          name: 'group_name'
+          description: 'Find users by its group_name. Only for superAdmin role'
+          required: false
+          type: 'string'
         responses:
           200:
             description: Server groups retrieved successfully
@@ -453,7 +460,13 @@ class ServerGroupsView(MethodView):
             description: Unexpected error
         """
         groups_list = []
-        groups = group_sql.select_groups()
+        if any((v for k, v in query.model_dump(mode='json', exclude={'group_id': True}).items())):
+            if query.group_name and g.user_params['role'] > 1:
+                query.group_name = None
+        try:
+            groups = group_sql.select_groups_with_filter(query.group_name)
+        except Exception as e:
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get groups')
         for group in groups:
             groups_list.append(model_to_dict(group))
         return jsonify(groups_list)
