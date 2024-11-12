@@ -195,6 +195,7 @@ class RmonAgent(BaseModel):
 
 class GroupQuery(BaseModel):
     group_id: Optional[int] = None
+    recurse: Optional[bool] = False
 
 
 class UserSearchRequest(GroupQuery):

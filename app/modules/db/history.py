@@ -5,12 +5,12 @@ import app.modules.roxy_wi_tools as roxy_wi_tools
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 
 
-def alerts_history(service, user_group, **kwargs):
+def alerts_history(service: str, group_id: int, **kwargs):
 	if kwargs.get('check_id'):
 		query = RMONAlertsHistory.select().where(
 			(RMONAlertsHistory.service == service) &
 			(RMONAlertsHistory.rmon_id == kwargs.get('check_id')) &
-			(RMONAlertsHistory.user_group == user_group)
+			(RMONAlertsHistory.group_id == group_id)
 		)
 	else:
 		query = RMONAlertsHistory.select().where(RMONAlertsHistory.service == service)
@@ -22,9 +22,9 @@ def alerts_history(service, user_group, **kwargs):
 
 def rmon_multi_check_history(multi_check_id: int, group_id: int):
 	query = RMONAlertsHistory.select().join(SMON).where(
-			(RMONAlertsHistory.service == 'RMON') &
-			(RMONAlertsHistory.user_group == group_id) &
-			(SMON.multi_check_id == multi_check_id)
+		(RMONAlertsHistory.service == 'RMON') &
+		(RMONAlertsHistory.group_id == group_id) &
+		(SMON.multi_check_id == multi_check_id)
 	)
 	try:
 		return query.execute()

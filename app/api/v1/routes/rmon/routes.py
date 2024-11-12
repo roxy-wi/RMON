@@ -8,6 +8,7 @@ from app.views.check.check_metric_view import (ChecksMetricViewHttp, ChecksMetri
                                                ChecksMetricViewPing, ChecksMetricViewSMTP, ChecksMetricViewRabbitmq,
                                                CheckStatusesView, CheckStatusView)
 from app.views.check.status_page_views import StatusPageView
+from app.views.check.histrory_views import ChecksHistoryView, CheckHistoryView
 from app.views.check.group_views import CheckGroupView, CheckGroupsView
 
 
@@ -35,6 +36,8 @@ bp.add_url_rule('/check/rabbitmq/<int:check_id>/metrics', view_func=ChecksMetric
 bp.add_url_rule('/check/<int:check_id>/statuses', view_func=CheckStatusesView.as_view('check_statuses'))
 bp.add_url_rule('/check/<int:check_id>/status', view_func=CheckStatusView.as_view('check_status'))
 bp.add_url_rule('/check-groups', view_func=CheckGroupsView.as_view('check_groups'))
+bp.add_url_rule('/history', view_func=ChecksHistoryView.as_view('checks_history'))
+bp.add_url_rule('/history/<int:check_id>', view_func=CheckHistoryView.as_view('check_history'))
 
 register_api(AgentView, 'agent', '/agent', 'agent_id')
 register_api(RegionView, 'region', '/region', 'region_id')

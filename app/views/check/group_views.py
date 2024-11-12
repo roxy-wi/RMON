@@ -1,5 +1,5 @@
+from flask import jsonify
 from flask.views import MethodView
-from flask_apscheduler.json import jsonify
 from flask_jwt_extended import jwt_required
 from flask_pydantic import validate
 from playhouse.shortcuts import model_to_dict

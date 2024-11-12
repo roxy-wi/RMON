@@ -393,6 +393,20 @@ def update_db_v_1_2_7():
 			print("An error occurred:", e)
 
 
+def update_db_v_1_2_8():
+	try:
+		migrate(
+			migrator.rename_column('rmon_alerts_history', 'user_group', 'group_id'),
+		)
+	except Exception as e:
+		if e.args[0] == 'no such column: "user_group"' or 'column "group" does not exist' in str(e) or str(e) == '(1060, no such column: "user_group")':
+			print("Updating... DB has been updated to version 1.2")
+		elif e.args[0] == "'bool' object has no attribute 'sql'":
+			print("Updating... DB has been updated to version 1.2")
+		else:
+			print("An error occurred:", e)
+
+
 def update_ver():
 	try:
 		Version.update(version='1.2.1').execute()
@@ -431,6 +445,7 @@ def update_all():
 	update_db_v_1_2_5()
 	update_db_v_1_2_6()
 	update_db_v_1_2_7()
+	update_db_v_1_2_8()
 
 
 if __name__ == "__main__":
