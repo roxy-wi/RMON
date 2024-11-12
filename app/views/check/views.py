@@ -388,7 +388,7 @@ class CheckHttpView(CheckView):
                         type: 'string'
                         description: 'URL to be tested'
                 enabled:
-                  type: 'string'
+                  type: 'integer'
                   description: 'Enable status (1 for enabled)'
                 place:
                   type: 'string'
@@ -432,7 +432,7 @@ class CheckHttpView(CheckView):
                 type: 'string'
                 description: 'Check name'
               enabled:
-                type: 'string'
+                type: 'integer'
                 description: 'Enable status (1 for enabled)'
               place:
                 type: 'string'

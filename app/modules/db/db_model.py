@@ -6,6 +6,7 @@ from playhouse.sqlite_ext import SqliteExtDatabase
 import app.modules.roxy_wi_tools as roxy_wi_tools
 
 get_config = roxy_wi_tools.GetConfigVar()
+pgsql_enable = get_config.get_config_var('pgsql', 'enable')
 mysql_enable = get_config.get_config_var('mysql', 'enable')
 
 if mysql_enable == '1':
@@ -283,7 +284,7 @@ class RMONAlertsHistory(BaseModel):
     level = CharField()
     rmon_id = ForeignKeyField(SMON, on_delete='Cascade')
     port = IntegerField()
-    user_group = IntegerField(constraints=[SQL('DEFAULT 1')])
+    group_id = IntegerField(constraints=[SQL('DEFAULT 1')])
     service = CharField()
     date = DateTimeField(default=datetime.now)
 

@@ -9,7 +9,7 @@ import app.modules.roxywi.common as roxywi_common
 from app.middleware import get_user_params, check_group, page_for_admin
 from app.modules.common.common_classes import SupportClass
 from app.modules.db.db_model import RMONAlertsHistory
-from app.modules.roxywi.class_models import CheckGroup, GroupQuery, IdResponse, BaseResponse
+from app.modules.roxywi.class_models import GroupQuery
 
 
 class ChecksHistoryView(MethodView):
@@ -63,8 +63,8 @@ class ChecksHistoryView(MethodView):
                     type: string
                     example: "'DNS check'"
                   port:
-                    type: string
-                    example: ""
+                    type: integer
+                    example: 80
                   rmon_id:
                     type: integer
                     example: 2
@@ -142,8 +142,8 @@ class CheckHistoryView(MethodView):
                     type: string
                     example: "'DNS check'"
                   port:
-                    type: string
-                    example: ""
+                    type: integer
+                    example: 80
                   rmon_id:
                     type: integer
                     example: 2
