@@ -13,12 +13,12 @@ import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.user as roxywi_user
 import app.modules.roxywi.common as roxywi_common
 from app.modules.db.db_model import User as User_DB
-from app.modules.roxywi.exception import RoxywiResourceNotFound
 from app.modules.roxywi.class_models import (
     UserPost, UserPut, IdResponse, IdDataResponse, BaseResponse, AddUserToGroup, UserSearchRequest
 )
 from app.middleware import get_user_params, page_for_admin, check_group
 from app.modules.common.common_classes import SupportClass
+from app.modules.roxywi.exception import RoxywiPermissionError
 
 
 class UserView(MethodView):
@@ -117,7 +117,7 @@ class UserView(MethodView):
         try:
             roxywi_common.is_user_has_access_to_its_group(user_id)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot find user'), 404
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot find user')
         for user in users:
             users_list.append(model_to_dict(user, exclude={User_DB.group_id, User_DB.password, User_DB.user_services}))
         return jsonify(users_list)
@@ -174,11 +174,11 @@ class UserView(MethodView):
                   description: The ID of the created user
         """
         if g.user_params['role'] > body.role:
-            return roxywi_common.handle_json_exceptions('Wrong role', 'Cannot create user')
+            return roxywi_common.handler_exceptions_for_json_data(RoxywiPermissionError(), 'Cannot create user')
         try:
             user_id = roxywi_user.create_user(body.username, body.email, body.password, body.role, body.enabled, body.group_id)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot create a new user')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create a new user')
         else:
             if self.is_api:
                 return IdResponse(id=user_id), 201
@@ -232,11 +232,11 @@ class UserView(MethodView):
         try:
             _ = user_sql.get_user_id(user_id)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get user'), 404
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user')
         try:
             user_sql.update_user_from_admin_area(body.username, body.email, user_id, body.enabled)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot update user')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot update user')
         roxywi_common.logging(body.username, 'has been updated user', roxywi=1, login=1)
         return BaseResponse(), 201
 
@@ -265,14 +265,14 @@ class UserView(MethodView):
         try:
             roxywi_common.is_user_has_access_to_its_group(user_id)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot find user'), 404
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot find user')
         try:
             user = user_sql.get_user_id(user_id)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get user'), 404
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user')
 
         if g.user_params['role'] > int(user.role):
-            return roxywi_common.handle_json_exceptions('Wrong role', 'Cannot delete user'), 404
+            return roxywi_common.handler_exceptions_for_json_data(RoxywiPermissionError(), 'Cannot delete user')
 
         try:
             roxywi_user.delete_user(user_id)
@@ -346,7 +346,7 @@ class UserGroupView(MethodView):
         try:
             users = user_sql.select_user_groups_with_names(user_id)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get group')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group')
 
         json_data = []
         for user in users:
@@ -390,11 +390,11 @@ class UserGroupView(MethodView):
         try:
             self._check_is_user_and_group(user_id, group_id)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get user or group'), 404
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user or group')
         try:
             user_sql.update_user_role(user_id, group_id, body.role_id)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot add user to group'), 500
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot add user to group')
         else:
             return BaseResponse().model_dump(mode='json'), 201
 
@@ -434,14 +434,14 @@ class UserGroupView(MethodView):
         try:
             self._check_is_user_and_group(user_id, group_id)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get user or group'), 404
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user or group')
 
         try:
             user_sql.delete_user_from_group(group_id, user_id)
             user_sql.update_user_role(user_id, group_id, body.role_id)
             return BaseResponse().model_dump(mode='json'), 201
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot delete user')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot delete user')
 
     def patch(self, user_id: int, group_id: int):
         """
@@ -475,7 +475,7 @@ class UserGroupView(MethodView):
         try:
             self._check_is_user_and_group(user_id, group_id)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get user or group'), 404
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user or group')
 
         user_param = {"user": user_id, "group": group_id}
         access_token = roxywi_auth.create_jwt_token(user_param)
@@ -484,7 +484,7 @@ class UserGroupView(MethodView):
         try:
             user_sql.update_user_current_groups(group_id, user_id)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot update user or group'), 500
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot update user or group')
         return response
 
     def delete(self, user_id: int, group_id: int):
@@ -514,13 +514,13 @@ class UserGroupView(MethodView):
         try:
             self._check_is_user_and_group(user_id, group_id)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get user or group'), 404
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user or group')
 
         try:
             user_sql.delete_user_from_group(group_id, user_id)
             return BaseResponse().model_dump(mode='json'), 204
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot delete user')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot delete user')
 
     @staticmethod
     def _check_is_user_and_group(user_id: int, group_id: int):
@@ -617,7 +617,7 @@ class UsersView(MethodView):
         try:
             users = user_sql.get_users_in_group(group_id, query.email, query.username, query.group_name)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get users')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get users')
 
         return jsonify([model_to_dict(user, exclude=[User_DB.password, User_DB.user_services], recurse=False) for user in users])
 
@@ -660,7 +660,7 @@ class UserRoles(MethodView):
         try:
             roles = sql.select_roles()
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get roles')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get roles')
         roles_list = []
         for role in roles:
             roles_list.append(model_to_dict(role))

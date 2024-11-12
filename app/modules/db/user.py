@@ -122,8 +122,6 @@ def select_users(**kwargs):
 		).join(UserGroups, on=(User.user_id == UserGroups.user_id)).where(
 			UserGroups.user_group_id == kwargs.get("group")
 		))
-	elif kwargs.get('by_group_id'):
-		query = User.select().where(User.group_id == kwargs.get("by_group_id"))
 	else:
 		get_date = roxy_wi_tools.GetDate(get_setting('time_zone'))
 		cur_date = get_date.return_date('regular', timedelta_minutes_minus=15)
@@ -161,13 +159,6 @@ def check_user_group(user_id, group_id):
 def select_user_groups_with_names(user_id, **kwargs) -> UserGroups:
 	if kwargs.get("all") is not None:
 		query = (UserGroups.select().join(Groups))
-	elif kwargs.get("user_not_in_group") is not None:
-		query = (Groups.select(
-			Groups.group_id, Groups.name
-		).join(UserGroups, on=(
-			(UserGroups.user_group_id == Groups.group_id) &
-			(UserGroups.user_id == user_id)
-		), join_type=JOIN.LEFT_OUTER).group_by(Groups.name).where(UserGroups.user_id.is_null(True)))
 	else:
 		query = (UserGroups.select(
 		).join(Groups).where(UserGroups.user_id == user_id))
@@ -237,7 +228,7 @@ def get_super_admin_count() -> int:
 
 
 def select_users_emails_by_group_id(group_id: int):
-	query = User.select(User.email).where((User.group_id == group_id) & (User.role != 'guest'))
+	query = User.select(User.email).where((User.group_id == group_id) & (User.role != 4))
 	try:
 		query_res = query.execute()
 	except Exception as e:

@@ -186,13 +186,9 @@ def get_users_params(**kwargs):
 		raise Exception('Cannot get user id')
 
 	try:
-		role = user_sql.get_role_id(user_id, user.group_id.group_id)
+		role = user_sql.get_role_id(user_id, user_data['group'])
 	except Exception as e:
 		raise Exception(f'error: Cannot get user role {e}')
-
-	if role > 1:
-		if int(user_data['group']) != int(user.group_id.group_id):
-			raise Exception('Wrong active group')
 
 	if kwargs.get('disable'):
 		servers = get_dick_permit(disable=0)
@@ -205,7 +201,7 @@ def get_users_params(**kwargs):
 		'servers': servers,
 		'lang': get_user_lang_for_flask(),
 		'user_id': user_id,
-		'group_id': user.group_id.group_id
+		'group_id': user_data['group']
 	}
 
 	return user_params
