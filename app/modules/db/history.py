@@ -34,12 +34,12 @@ def rmon_multi_check_history(multi_check_id: int, group_id: int):
 		out_error(e)
 
 
-def insert_alerts(check_id, user_group, level, check_name, port, message, service):
+def insert_alerts(check_id, group_id, level, check_name, port, message, service):
 	get_date = roxy_wi_tools.GetDate()
 	cur_date = get_date.return_date('regular')
 	try:
 		RMONAlertsHistory.insert(
-			user_group=user_group, message=message, level=level, port=port, service=service,
+			group_id=group_id, message=message, level=level, port=port, service=service,
 			date=cur_date, rmon_id=check_id, name=check_name
 		).execute()
 	except Exception as e:
@@ -49,11 +49,10 @@ def insert_alerts(check_id, user_group, level, check_name, port, message, servic
 def delete_alert_history(keep_interval: int, service: str):
 	get_date = roxy_wi_tools.GetDate()
 	cur_date = get_date.return_date('regular', timedelta_minus=keep_interval)
-	query = RMONAlertsHistory.delete().where(
-		(RMONAlertsHistory.date < cur_date) & (RMONAlertsHistory.service == service)
-	)
 	try:
-		query.execute()
+		RMONAlertsHistory.delete().where(
+			(RMONAlertsHistory.date < cur_date) & (RMONAlertsHistory.service == service)
+		).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -77,9 +76,8 @@ def insert_action_history(service: str, action: str, server_id: int, user_id: in
 
 
 def delete_action_history(server_id: int):
-	query = ActionHistory.delete().where(ActionHistory.server_id == server_id)
 	try:
-		query.execute()
+		ActionHistory.delete().where(ActionHistory.server_id == server_id).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -88,9 +86,8 @@ def delete_action_history_for_period():
 	time_period = get_setting('action_keep_history_range')
 	get_date = roxy_wi_tools.GetDate()
 	cur_date = get_date.return_date('regular', timedelta_minus=time_period)
-	query = ActionHistory.delete().where(ActionHistory.date < cur_date)
 	try:
-		query.execute()
+		ActionHistory.delete().where(ActionHistory.date < cur_date).execute()
 	except Exception as e:
 		out_error(e)
 
