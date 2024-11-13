@@ -1,4 +1,4 @@
-from app.modules.db.db_model import Country
+from app.modules.db.db_model import Country, Region
 from app.modules.db.common import out_error
 from app.modules.roxywi.class_models import CountryRequest
 from app.modules.roxywi.exception import RoxywiResourceNotFound
@@ -16,7 +16,7 @@ def select_countries_by_group(group_id: int) -> Country:
 
 def select_enabled_countries_by_group(group_id: int) -> Country:
     try:
-        return Country.select().where(
+        return Country.select().join(Region).where(
             (Country.enabled == 1) &
             ((Country.group_id == group_id) |
             (Country.shared == 1))
@@ -27,7 +27,7 @@ def select_enabled_countries_by_group(group_id: int) -> Country:
 
 def get_country_with_group(country_id: int, group_id: int) -> Country:
     try:
-        return Country.get(Country.id == country_id, Country.group_id == group_id)
+        return Country.get(Country.id == country_id, (Country.group_id == group_id | Country.shared == 1))
     except Country.DoesNotExist:
         raise RoxywiResourceNotFound
     except Exception as e:

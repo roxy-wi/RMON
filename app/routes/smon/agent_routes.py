@@ -16,21 +16,20 @@ import app.modules.roxywi.common as roxywi_common
 import app.modules.server.server as server_mod
 
 
-@bp.route('/agent', methods=['GET'])
+@bp.route('/agent')
 @jwt_required()
 @get_user_params()
 def agent():
-    if request.method == 'GET':
-        group_id = g.user_params['group_id']
-        kwargs = {
-            'countries': country_sql.select_countries_by_group(group_id),
-            'regions': region_sql.select_regions_by_group(group_id),
-            'agents': smon_sql.get_agents(group_id),
-            'lang': roxywi_common.get_user_lang_for_flask(),
-            'smon_status': tools_common.is_tool_active('rmon-server'),
-        }
+    group_id = g.user_params['group_id']
+    kwargs = {
+        'countries': country_sql.select_countries_by_group(group_id),
+        'regions': region_sql.select_regions_by_group(group_id),
+        'agents': smon_sql.get_agents(group_id),
+        'lang': roxywi_common.get_user_lang_for_flask(),
+        'smon_status': tools_common.is_tool_active('rmon-server'),
+    }
 
-        return render_template('smon/agents.html', **kwargs)
+    return render_template('smon/agents.html', **kwargs)
 
 
 @bp.get('/agent/<int:agent_id>')

@@ -1,6 +1,6 @@
 from typing import Union
 
-from app.modules.db.db_model import Region
+from app.modules.db.db_model import Region, SmonAgent
 from app.modules.db.common import out_error
 from app.modules.roxywi.class_models import RegionRequest
 from app.modules.roxywi.exception import RoxywiResourceNotFound
@@ -18,7 +18,7 @@ def select_regions_by_group(group_id: int) -> Region:
 
 def get_region_with_group(region_id: int, group_id: int) -> Region:
     try:
-        return Region.get(Region.id == region_id, Region.group_id == group_id)
+        return Region.get(Region.id == region_id, (Region.group_id == group_id | Region.shared == 1))
     except Region.DoesNotExist:
         raise RoxywiResourceNotFound
     except Exception as e:
@@ -71,8 +71,8 @@ def get_regions_by_country(country_id: int) -> Region:
 
 def get_enabled_regions_by_country_with_group(country_id: int, group_id: int) -> Region:
     try:
-        return Region.select().where(
-            (Region.country_id == country_id) & (Region.group_id == group_id) & (Region.enabled == 1)
+        return Region.select().join(SmonAgent).where(
+            (Region.country_id == country_id) & (Region.enabled == 1) & ((Region.group_id == group_id) | (Region.shared == 1))
         ).execute()
     except Region.DoesNotExist:
         raise RoxywiResourceNotFound
