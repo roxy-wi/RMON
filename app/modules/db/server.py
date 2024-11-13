@@ -1,7 +1,7 @@
 from peewee import IntegrityError
 
 from app.modules.db.db_model import mysql_enable, connect, Server, SystemInfo
-from app.modules.db.common import out_error, not_unique_error
+from app.modules.db.common import out_error, not_unique_error, resource_not_empty
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 
 
@@ -21,6 +21,8 @@ def delete_server(server_id):
 	try:
 		server_for_delete = Server.delete().where(Server.server_id == server_id)
 		server_for_delete.execute()
+	except IntegrityError:
+		resource_not_empty()
 	except Exception as e:
 		out_error(e)
 	else:

@@ -6,7 +6,6 @@ from playhouse.sqlite_ext import SqliteExtDatabase
 import app.modules.roxy_wi_tools as roxy_wi_tools
 
 get_config = roxy_wi_tools.GetConfigVar()
-pgsql_enable = get_config.get_config_var('pgsql', 'enable')
 mysql_enable = get_config.get_config_var('mysql', 'enable')
 
 if mysql_enable == '1':
@@ -224,7 +223,7 @@ class Region(BaseModel):
 
 class SmonAgent(BaseModel):
     id = AutoField()
-    server_id = ForeignKeyField(Server, on_delete='Cascade')
+    server_id = ForeignKeyField(Server, on_delete='RESTRICT')
     name = CharField()
     uuid = CharField()
     enabled = IntegerField(constraints=[SQL('DEFAULT 1')])

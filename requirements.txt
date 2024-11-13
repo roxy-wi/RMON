@@ -22,7 +22,7 @@ distro>=1.9.0
 psutil>=5.9.1
 aio-pika>=7.1.0
 pika>=1.2.0
-websockets>=9.0
+websockets==13.1
 python-whois>=0.8.0
 pydantic~=2.7.4
 python-dateutil~=2.9.0.post0
