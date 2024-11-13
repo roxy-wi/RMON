@@ -183,12 +183,16 @@ class CheckView(MethodView):
 
     def _create_all_checks(self, data, multi_check_id: int):
         countries = country_sql.select_enabled_countries_by_group(self.group_id)
+        if len(countries) == 0:
+            raise Exception('There are no countries in your group')
         for c in countries:
             self._create_country_check(data, multi_check_id, c.id)
             roxywi_common.logging('RMON server', f'A new check {data.name} has been created on Country {c.name}')
 
     def _create_country_check(self, data, multi_check_id: int, country_id: int):
         regions = region_sql.get_enabled_regions_by_country_with_group(country_id, self.group_id)
+        if len(regions) == 0:
+            raise Exception('There are no regions in your group')
         for region in regions:
             self._create_region_check(data, multi_check_id, region.id, country_id)
             roxywi_common.logging('RMON server', f'A new check {data.name} has been created on Region {region.name}')
@@ -198,7 +202,7 @@ class CheckView(MethodView):
             random_agent_id = smon_sql.get_randon_agent(region_id)
         except RoxywiResourceNotFound:
             if not country_id:
-                raise RoxywiResourceNotFound(f'Cannot find any agent in the region: {region_id}')
+                raise Exception(f'Cannot find any agent in the region: {region_id}')
             pass
         except Exception as e:
             raise Exception(f'Cannot get agent from region: {e}')
