@@ -421,7 +421,6 @@ class CheckHttpView(CheckView):
             id: 'CheckHttpDetails'
             required:
               - name
-              - ip
               - enabled
               - url
               - http_method
