@@ -74,6 +74,7 @@ class CheckView(MethodView):
             elif m.agent_id:
                 entities.append(m.agent_id.id)
             checks = smon_sql.select_one_smon(check_id, check_type_id=check_type_id)
+            i = 0
             for check in checks:
                 check_dict = model_to_dict(check, max_depth=1)
                 check_dict['average_response_time'] = smon_mod.get_average_response_time(check_id, check_type_id)
@@ -83,6 +84,8 @@ class CheckView(MethodView):
                 smon_id = model_to_dict(check, max_depth=1)
                 check_json.update(smon_id['smon_id'])
                 check_json.update(model_to_dict(check, recurse=False))
+                check_json['checks'][i]['smon_id']['name'] = check.smon_id.name.replace("'", "")
+                i += 1
         if len(check_json['checks']) == 0:
             abort(404, f'{self.check_type} check not found')
 

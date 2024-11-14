@@ -1,4 +1,5 @@
 import json
+from typing import Literal
 
 import whois
 import netaddr
@@ -8,7 +9,7 @@ import app.modules.server.ssh as mod_ssh
 import app.modules.server.server as server_mod
 
 
-def ping_from_server(server_from: str, server_to: str, action: str) -> Response:
+def ping_from_server(server_from: str, server_to: str, action: Literal['ping', 'tracer']) -> Response:
     action_for_sending = ''
     if server_to == '':
         raise Exception('warning: Wrong IP address or DNS name')
@@ -33,9 +34,9 @@ def ping_from_server(server_from: str, server_to: str, action: str) -> Response:
                     yield f'{i}<br />'
         yield '</div>'
 
-    if action == 'nettools_ping':
+    if action == 'ping':
         action_for_sending = 'ping -c 4 -W 1 -s 56 -O '
-    elif action == 'nettools_trace':
+    elif action == 'trace':
         action_for_sending = 'tracepath -m 10 '
 
     action_for_sending = action_for_sending + server_to
@@ -47,7 +48,7 @@ def ping_from_server(server_from: str, server_to: str, action: str) -> Response:
         return Response(stream_with_context(paint_output(ssh_generator.generate(action_for_sending))), mimetype='text/html')
 
 
-def telnet_from_server(server_from: str, server_to: str, port_to: str) -> str:
+def telnet_from_server(server_from: str, server_to: str, port_to: int) -> str:
     count_string = 0
     stderr = ''
     output1 = ''

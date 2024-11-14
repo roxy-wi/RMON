@@ -64,7 +64,9 @@ class CheckGroupView(MethodView):
             group = smon_sql.get_smon_group_by_id_with_group(check_group_id, group_id)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot get group')
-        return jsonify(model_to_dict(group))
+        group_list = model_to_dict(group)
+        group_list['name'] = group['name'].replace("'", "")
+        return jsonify(group_list)
 
     @validate(body=CheckGroup)
     def post(self, body: CheckGroup):
@@ -269,7 +271,12 @@ class CheckGroupsView(MethodView):
         """
         group_id = SupportClass.return_group_id(query)
         try:
+            groups_list: list = []
             groups = smon_sql.select_smon_groups(group_id)
-            return jsonify([model_to_dict(g) for g in groups])
+            for g in groups:
+                group = model_to_dict(g)
+                group['name'] = g.name.replace("'", "")
+                groups_list.append(group)
+            return jsonify(groups_list)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot get groups')

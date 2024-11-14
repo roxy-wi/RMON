@@ -39,29 +39,6 @@ def update_server(hostname, group, enabled, server_id, cred_id, port, desc):
 		out_error(e)
 
 
-def get_hostname_by_server_ip(server_ip):
-	try:
-		return Server.get(Server.ip == server_ip).hostname
-	except Exception as e:
-		return out_error(e)
-
-
-def get_server_group(server_ip):
-	try:
-		return Server.get(Server.ip == server_ip).group_id
-	except Exception as e:
-		return out_error(e)
-
-
-def get_server_by_id(server_id: int) -> Server:
-	try:
-		return Server.get(Server.server_id == server_id)
-	except Server.DoesNotExist:
-		raise RoxywiResourceNotFound
-	except Exception as e:
-		return out_error(e)
-
-
 def get_server_by_ip(server_ip: str) -> Server:
 	try:
 		return Server.get(Server.ip == server_ip)
@@ -69,15 +46,6 @@ def get_server_by_ip(server_ip: str) -> Server:
 		raise RoxywiResourceNotFound
 	except Exception as e:
 		return out_error(e)
-#
-#
-# def select_server_by_name(name):
-# 	try:
-# 		ip = Server.get(Server.hostname == name)
-# 	except Exception as e:
-# 		return out_error(e)
-# 	else:
-# 		return ip.ip
 
 
 def insert_system_info(
@@ -115,25 +83,6 @@ def is_system_info(server_id):
 			return True
 		else:
 			return False
-
-#
-# def select_os_info(server_id):
-# 	try:
-# 		query_res = SystemInfo.get(SystemInfo.server_id == server_id).os_info
-# 	except Exception as e:
-# 		out_error(e)
-# 		return
-# 	else:
-# 		return query_res
-#
-#
-# def update_server_pos(pos, server_id) -> str:
-# 	query = Server.update(pos=pos).where(Server.server_id == server_id)
-# 	try:
-# 		query.execute()
-# 		return 'ok'
-# 	except Exception as e:
-# 		out_error(e)
 
 
 def is_serv_protected(serv):

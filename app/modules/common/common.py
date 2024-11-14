@@ -59,49 +59,6 @@ def get_time_zoned_date(date: datetime, fmt: str = None) -> str:
 		return native.strftime(date_format)
 
 
-def is_ip_or_dns(server_from_request: str) -> str:
-	"""
-	:param server_from_request: The server name or IP address obtained from the request
-	:return: The server name or IP address if it is valid. Otherwise, an empty string is returned.
-
-	This method checks whether the given server name or IP address is valid.
-	The method first strips any leading or trailing whitespace from the server_from_request parameter.
-	Then, it checks if the server_from_request value is one of the specified special server names.
-	If it is, the method immediately returns the server_from_request value.
-
-	If the server_from_request is not a special server name, it then validates whether it is an IP address
-	by matching it against the IP regular expression pattern (ip_regex).
-	If it is a valid IP address, the method returns the server_from_request value.
-
-	If the server_from_request is not an IP address, it checks if it is a valid DNS name
-	by matching it against the DNS regular expression pattern (dns_regex).
-	If it is a valid DNS name, the method returns the server_from_request value.
-
-	If the server_from_request value does not match any of the above conditions, an empty string is returned.
-
-	Note: This method uses regular expressions (re.match) to validate the server_from_request value,
-	so the regular expression patterns used should follow the standard IP and DNS validation rules.
-	"""
-	ip_regex = "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$"
-	dns_regex = "^(?!-)[A-Za-z0-9-]+([\\-\\.]{1}[a-z0-9]+)*\\.[A-Za-z]{2,6}$"
-	try:
-		server_from_request = server_from_request.strip()
-	except Exception:
-		pass
-	try:
-		if server_from_request in (
-			'rmon', 'rmon-server', 'rmon-socket', 'fail2ban', 'all', 'grafana-server', 'rabbitmq-server'
-		):
-			return server_from_request
-		if re.match(ip_regex, server_from_request):
-			return server_from_request
-		if re.match(dns_regex, server_from_request):
-			return server_from_request
-		return ''
-	except Exception:
-		return ''
-
-
 def checkAjaxInput(ajax_input: str, var_type=None, default=None):
 	"""
 	Checks if the provided `ajax_input` string contains any non-permitted characters and returns the modified string.

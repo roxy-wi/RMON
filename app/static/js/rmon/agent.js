@@ -338,7 +338,7 @@ function removeAgent(id, dialog_id) {
 		}
     });
 }
-function confirmAjaxAction(action, id, server_ip) {
+function confirmAjaxAction(action, id) {
 	let action_word = $('#translate').attr('data-'+action);
 	$( "#dialog-confirm" ).dialog({
 		resizable: false,
@@ -349,7 +349,7 @@ function confirmAjaxAction(action, id, server_ip) {
 		buttons: [{
 			text: action_word,
 			click: function (){
-				agentAction(action, id, server_ip, $(this));
+				agentAction(action, id, $(this));
 			}
 		}, {
 			text: cancel_word,
@@ -359,11 +359,11 @@ function confirmAjaxAction(action, id, server_ip) {
 		}]
 	});
 }
-function agentAction(action, id, server_ip, dialog_id) {
+function agentAction(action, id, dialog_id) {
 	$.ajax({
 		url: "/rmon/agent/action/"+ action,
 		type: "post",
-		data: {agent_id: id, server_ip: server_ip},
+		data: {agent_id: id},
 		success: function (data) {
 			data = data.replace(/\s+/g, ' ');
 			if (data.indexOf('error:') != '-1' || data.indexOf('unique') != '-1') {

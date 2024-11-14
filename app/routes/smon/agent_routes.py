@@ -9,7 +9,6 @@ import app.modules.db.smon as smon_sql
 import app.modules.db.region as region_sql
 import app.modules.db.country as country_sql
 import app.modules.db.server as server_sql
-import app.modules.common.common as common
 import app.modules.tools.smon_agent as smon_agent
 import app.modules.tools.common as tools_common
 import app.modules.roxywi.common as roxywi_common
@@ -173,15 +172,12 @@ def get_agent_checks(server_ip):
         return f'{e}'
 
 
-@bp.post('/agent/action/<action>')
+@bp.post('/agent/action/<any(start, stop, restart):action>')
 @jwt_required()
 @get_user_params()
 def agent_action(action):
-    server_ip = common.is_ip_or_dns(request.form.get('server_ip'))
-    server_group_id = server_sql.get_server_group(server_ip)
-
-    if action not in ('start', 'stop', 'restart'):
-        return 'error: Wrong action'
+    server_ip = smon_sql.get_agent_ip_by_id(int(request.form.get('agent_id')))
+    server_group_id = server_sql.get_server_by_ip(server_ip).group_id
 
     if g.user_params['group_id'] != server_group_id and g.user_params['role'] > 1:
         return 'error: Not authorized'

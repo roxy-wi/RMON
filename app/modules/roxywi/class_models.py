@@ -3,6 +3,7 @@ from annotated_types import Gt, Le
 from typing import Optional, Annotated, Union, Literal, Any, List
 
 from shlex import quote
+
 from pydantic_core import CoreSchema, core_schema
 from pydantic import BaseModel, field_validator, StringConstraints, IPvAnyAddress, AnyUrl, root_validator, GetCoreSchemaHandler, UUID4
 
@@ -275,3 +276,14 @@ class CountryRequest(BaseModel):
 class CheckGroup(BaseModel):
     name: EscapedString
     group_id: Optional[int] = None
+
+
+class NettoolsRequest(BaseModel):
+    server_from: Optional[EscapedString] = None
+    server_to: Optional[EscapedString] = None
+    port: Optional[Annotated[int, Gt(1), Le(65535)]] = None
+    action: Optional[Literal['ping', 'trace']] = None
+    dns_name: Optional[DomainName] = None
+    record_type: Optional[Literal['a', 'aaaa', 'caa', 'cname', 'mx', 'ns', 'ptr', 'sao', 'src', 'txt']] = None
+    ip: Optional[IPvAnyAddress] = None
+    netmask: Optional[int] = None

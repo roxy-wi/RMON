@@ -25,7 +25,7 @@ class ChecksMetricView(MethodView):
         try:
             smon_sql.select_check_with_group(check_id, group_id)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot find the check')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot find the check')
 
         return jsonify(smon_mod.history_metrics(check_id, self.check_type_id))
 

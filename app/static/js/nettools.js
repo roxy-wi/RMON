@@ -19,11 +19,13 @@ $( function() {
         }
         $.ajax({
             url: frm.attr('action'),
-            data: frm.serialize(),
+            data: getFormData(frm),
             type: frm.attr('method'),
+            contentType: "application/json; charset=utf-8",
             success: function (data) {
-                data = data.replace('\n', "<br>");
-                if (data.indexOf('error: ') != '-1' || data.indexOf('Fatal') != '-1' || data.indexOf('Error(s)') != '-1') {
+                if (data.status === 'failed') {
+                    toastr.error(data);
+                } else if (data.indexOf('error: ') != '-1' || data.indexOf('Fatal') != '-1' || data.indexOf('Error(s)') != '-1') {
                     $('#ajax-nettools').html('<div class="ping_pre">' + data + '</div>');
                 } else if (data.indexOf('warning: ') != '-1') {
                     toastr.clear();
@@ -53,16 +55,12 @@ $( function() {
         }
         $.ajax({
             url: frm.attr('action'),
-            data: frm.serialize(),
+            data: getFormData(frm),
             type: frm.attr('method'),
+            contentType: "application/json; charset=utf-8",
             success: function (data) {
-                data = data.replace('\n', "<br>");
-                if (data.indexOf('error: ') != '-1' || data.indexOf('Fatal') != '-1' || data.indexOf('Error(s)') != '-1') {
-                    toastr.clear();
+                if (data.status === 'failed') {
                     toastr.error(data);
-                } else if (data.indexOf('warning: ') != '-1') {
-                    toastr.clear();
-                    toastr.warning(data)
                 } else {
                     toastr.clear();
                     $('#ajax-nettools').html('<div class="ping_pre">' + data + '</div>');
@@ -73,36 +71,36 @@ $( function() {
     });
     $("#nettools_icmp_form").on("click", ":submit", function (e) {
         $('#ajax-nettools').html('');
-        var frm = $('#nettools_icmp_form');
-        if ($('#nettools_icmp_server_from option:selected').val() == '------') {
+        let action_button;
+        $('input[type=submit]').click(function() {
+            action_button = $(this).attr('name')
+        });
+        let frm = $('#nettools_icmp_form');
+        if ($('#nettools_icmp_server_from option:selected').val() === '------') {
             toastr.warning('Choose a server From');
             return false;
         }
-        if ($('#nettools_icmp_server_to').val() == '') {
+        if ($('#nettools_icmp_server_to').val() === '') {
             toastr.warning('Enter a server To');
             return false;
         }
+        let data = getFormData(frm);
+        data = JSON.parse(data);
+        data['action'] = $(this).val();
         $.ajax({
             url: frm.attr('action'),
-            data: frm.serialize() + "&nettools_action=" + $(this).val(),
+            data: JSON.stringify(data),
             type: frm.attr('method'),
+            contentType: "application/json; charset=utf-8",
             xhrFields: {
                 onprogress: function (e) {
-                    console.log(e.currentTarget.responseText);
                     $('#ajax-nettools').html(e.currentTarget.responseText);
                 }
             },
             dataType: 'text',
             success: function (data) {
-                data = data.replace('\n', "<br>");
-                if (data.indexOf('error: ') != '-1' || data.indexOf('Fatal') != '-1' || data.indexOf('Error(s)') != '-1') {
-                    toastr.clear();
+                if (data.status === 'failed') {
                     toastr.error(data);
-                } else if (data.indexOf('warning: ') != '-1') {
-                    toastr.clear();
-                    toastr.warning(data)
-                } else {
-                    toastr.clear();
                 }
             }
         });
@@ -152,20 +150,14 @@ $( function() {
         }
         $.ajax({
             url: frm.attr('action'),
-            data: frm.serialize() + "&nettools_action=" + $(this).val(),
+            data: getFormData(frm),
             type: frm.attr('method'),
-            dataType: 'text',
+            contentType: "application/json; charset=utf-8",
             success: function (data) {
-                data = data.replaceAll('"', '');
-                if (data.indexOf('error: ') != '-1' || data.indexOf('Fatal') != '-1' || data.indexOf('Error(s)') != '-1') {
-                    toastr.clear();
+                if (data.status === 'failed') {
                     toastr.error(data);
-                } else if (data.indexOf('warning: ') != '-1') {
-                    toastr.clear();
-                    toastr.warning(data)
                 } else {
                     toastr.clear();
-                    console.log(data)
                     $('#ajax-nettools').html('<div class="ping_pre">' + data + '</div>');
                 }
             }
@@ -175,8 +167,8 @@ $( function() {
     $("#nettools_ipcalc_form").on("click", ":submit", function (e) {
         $('#ajax-nettools').html('');
         let frm = $('#nettools_ipcalc_form');
-        let ip = $('#nettools_address').val();
-        let netmask = $('#nettools_netmask').val();
+        let ip = $('#ip').val();
+        let netmask = $('#netmask').val();
         if (ip === '') {
             toastr.warning('Enter a valid IP address');
             return false;
@@ -191,7 +183,6 @@ $( function() {
             type: frm.attr('method'),
             contentType: "application/json; charset=utf-8",
             success: function (data) {
-                // data = JSON.parse(data);
                 if (data.status === 'failed') {
                     toastr.clear();
                     toastr.error(data.error);
@@ -213,3 +204,13 @@ $( function() {
         event.preventDefault();
     });
 });
+function getFormData($form){
+    let unindexed_array = $form.serializeArray();
+    let indexed_array = {};
+
+    $.map(unindexed_array, function(n, i){
+        indexed_array[n['name']] = n['value'];
+    });
+
+    return JSON.stringify(indexed_array);
+}

@@ -13,7 +13,7 @@ def alerts_history(service: str, group_id: int, **kwargs):
 			(RMONAlertsHistory.group_id == group_id)
 		)
 	else:
-		query = RMONAlertsHistory.select().where(RMONAlertsHistory.service == service)
+		query = RMONAlertsHistory.select().where((RMONAlertsHistory.service == service) & (RMONAlertsHistory.group_id == group_id))
 	try:
 		return query.execute()
 	except Exception as e:

@@ -13,13 +13,13 @@
         <span class="server-action">
             {% if g.user_params['role']|string() <= '3' %}
                 <a id="start-{{ agent.id }}" class="start" title="{{lang.words.start|title()}}">
-                    <span class="service-start" onclick="confirmAjaxAction('start', '{{agent.id}}', '{{ agent.ip }}')"></span>
+                    <span class="service-start" onclick="confirmAjaxAction('start', '{{agent.id}}')"></span>
                 </a>
                 <a id="reload-{{ agent.id }}" class="reload" title="{{lang.words.restart|title()}}">
-                    <span class="service-reload" onclick="confirmAjaxAction('restart', '{{agent.id}}', '{{ agent.ip }}')"></span>
+                    <span class="service-reload" onclick="confirmAjaxAction('restart', '{{agent.id}}')"></span>
                 </a>
                 <a id="stop-{{ agent.id }}" class="stop" title="{{lang.words.stop|title()}}">
-                    <span class="service-stop" onclick="confirmAjaxAction('stop', '{{agent.id}}', '{{ agent.ip }}', '{{ agent.ip }}')"></span>
+                    <span class="service-stop" onclick="confirmAjaxAction('stop', '{{agent.id}}')"></span>
                 </a>
             {% endif %}
             {% if g.user_params['role'] <= 2 %}
@@ -46,6 +46,7 @@
         </div>
         <div>
             <b>{{lang.words.uptime|title()}}</b>: <time class="timeago" datetime="" id="agent-uptime-{{ agent.id }}" title="{{ lang.words.agent|title() }} {{ lang.words.uptime }}"></time>
+            <b>{{ lang.words.enabled|title() }}</b>: {% if agent.enabled %} {{ lang.words.yes|title() }} {% else %} {{ lang.words.no|title() }} {% endif %}
         </div>
         <div>
             <b>{{ lang.words.agent|title() }} ID</b>: {{ agent.id }}

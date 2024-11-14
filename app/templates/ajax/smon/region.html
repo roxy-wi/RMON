@@ -22,6 +22,7 @@
             <b>{{ lang.words.region|title() }} ID</b>: {{ region.id }}
         </div>
         <div>
+            <b>{{ lang.words.enabled|title() }}</b>: {% if region.enabled %} {{ lang.words.yes|title() }} {% else %} {{ lang.words.no|title() }} {% endif %}
             <b>{{ lang.words.shared|title() }}</b>: {% if region.shared %} {{ lang.words.yes|title() }} {% else %} {{ lang.words.no|title() }} {% endif %}
         </div>
         <div>
