@@ -83,7 +83,12 @@ class ChecksHistoryView(MethodView):
             history = history_sql.alerts_history('RMON', group_id)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get history')
-        return jsonify([model_to_dict(h, recurse=query.recurse, exclude={RMONAlertsHistory.service}, max_depth=1) for h in history])
+        history_list: list = []
+        for h in history:
+            history = model_to_dict(h, recurse=query.recurse, exclude={RMONAlertsHistory.service}, max_depth=1)
+            history['name'] = history['name'].replace("'", "")
+            history_list.append(history)
+        return jsonify(history_list)
 
 
 class CheckHistoryView(MethodView):
@@ -162,4 +167,9 @@ class CheckHistoryView(MethodView):
             history = history_sql.rmon_multi_check_history(check_id, group_id)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get history')
-        return jsonify([model_to_dict(h, recurse=query.recurse, exclude={RMONAlertsHistory.service}, max_depth=1) for h in history])
+        history_list: list = []
+        for h in history:
+            history = model_to_dict(h, recurse=query.recurse, exclude={RMONAlertsHistory.service}, max_depth=1)
+            history['name'] = history['name'].replace("'", "")
+            history_list.append(history)
+        return jsonify(history_list)

@@ -24,7 +24,7 @@
                     </select>
             </td>
             <td class="padding10 first-collumn">
-                {{ input('server_to', name='server_to', title='Enter IP or Name') }}
+                {{ input('nettools_icmp_server_to', name='server_to', name='server_to', title='Enter IP or Name') }}
             </td>
             <td class="padding10 first-collumn">
                 <button type="submit" title="Run Ping" id="nettools_ping" name="nettools_ping" value="ping">Ping</button>
@@ -55,10 +55,10 @@
                 </select>
             </td>
             <td class="padding10 first-collumn">
-                {{ input('server_to', title='Enter IP or Name') }}
+                {{ input('nettools_telnet_server_to', name='server_to', title='Enter IP or Name') }}
             </td>
             <td class="padding10 first-collumn">
-                {{ input('port', title='Enter port', type='number', style='width: 60px;') }}
+                {{ input('nettools_telnet_port_to', name='port', title='Enter port', type='number', style='width: 60px;') }}
             </td>
             <td>
                 <button type="submit" title="{{lang.words.run|title()}} Telnet" id="nettools_telnet" name="nettools_telnet" value="nettools_telnet">{{lang.words.connect|title()}}</button>
@@ -89,10 +89,10 @@
                 {% set values = dict() %}
                 {% set values = {'a':'A','aaa':'AAA', 'cname':'CNAME', 'mx':'MX', 'txt':'TXT', 'ptr':'PTR', 'srv':'SRV',
                 'SOA':'SOA', 'CAA':'CAA'} %}
-                {{ select('record_type', values=values, selected='A', required='required') }}
+                {{ select('nettools_nslookup_record_type', name='record_type', values=values, selected='A', required='required') }}
             </td>
             <td class="padding10 first-collumn">
-                {{ input('dns_name', title='Enter a DNS name') }}
+                {{ input('nettools_nslookup_name', name='dns_name', title='Enter a DNS name') }}
             </td>
             <td>
                 <button type="submit" title="{{lang.words.run|title()}} Telnet" id="nettools_nslookup" name="nettools_nslookup" value="nettools_nslookup">{{lang.words.check|title()}}</button>
@@ -126,7 +126,7 @@
         </tr>
         <tr>
             <td class="padding10 first-collumn">
-                {{ input('dns_name', title=lang.nettools_page.dns_name) }}
+                {{ input('nettools_whois_name', name='dns_name', title=lang.nettools_page.dns_name) }}
             </td>
             <td class="padding10" style="width: 0">
                 <button type="submit" title="{{lang.words.check|title()}}" id="nettools_whois" name="nettools_whois" value="nettools_whois">{{lang.words.check|title()}}</button>
@@ -144,10 +144,10 @@
         </tr>
         <tr>
             <td class="padding10 first-collumn">
-                {{ input('ip', placeholder='192.168.0.1') }}
+                {{ input('nettools_address', name='ip', placeholder='192.168.0.1') }}
             </td>
             <td>
-                {{ input('netmask', placeholder='24', type='number') }}
+                {{ input('nettools_netmask', name='netmask', placeholder='24', type='number') }}
             </td>
             <td class="padding10" style="width: 0">
                 <button type="submit" title="{{lang.words.calculate|title()}}" id="nettools_ipcalc_form" name="nettools_ipcalc_form" value="nettools_ipcalc_form">{{lang.words.calculate|title()}}</button>

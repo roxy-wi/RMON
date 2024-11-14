@@ -55,6 +55,9 @@ class ChecksView(MethodView):
                 check_json.update(smon_id['smon_id'])
                 check_json.update(model_to_dict(check, recurse=False))
                 check_json['checks'][i]['smon_id']['name'] = check.smon_id.name.replace("'", "")
+                if check_json['checks'][i]['smon_id']['check_type'] == 'http':
+                    check_json['checks'][i]['accepted_status_codes'] = int(check_json['checks'][i]['accepted_status_codes'])
+                    check_json['accepted_status_codes'] = int(check_json['accepted_status_codes'])
                 i += 1
             check_list.append(check_json)
 
@@ -88,7 +91,7 @@ class ChecksViewHttp(ChecksView):
                 type: 'object'
                 properties:
                   accepted_status_codes:
-                    type: 'string'
+                    type: 'integer'
                     description: 'Expected HTTP status codes'
                   agent_id:
                     type: 'integer'
@@ -114,7 +117,7 @@ class ChecksViewHttp(ChecksView):
                       type: 'object'
                       properties:
                         accepted_status_codes:
-                          type: 'string'
+                          type: 'integer'
                         body:
                           type: 'string'
                         body_req:
