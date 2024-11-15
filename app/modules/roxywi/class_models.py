@@ -280,7 +280,7 @@ class CheckGroup(BaseModel):
 
 class NettoolsRequest(BaseModel):
     server_from: Optional[EscapedString] = None
-    server_to: Optional[EscapedString] = None
+    server_to: Optional[Union[IPvAnyAddress, DomainName]] = None
     port: Optional[Annotated[int, Gt(1), Le(65535)]] = None
     action: Optional[Literal['ping', 'trace']] = None
     dns_name: Optional[DomainName] = None

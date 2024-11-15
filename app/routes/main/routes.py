@@ -149,12 +149,12 @@ def nettools():
 def nettools_check(check, body: NettoolsRequest):
     if check == 'icmp':
         try:
-            return nettools_mod.ping_from_server(body.server_from, body.server_to, body.action)
+            return nettools_mod.ping_from_server(body.server_from, str(body.server_to), body.action)
         except Exception as e:
             return ErrorResponse(error=f'Cannot ping: {e}').model_dump(mode='json'), 500
     elif check == 'tcp':
         try:
-            return nettools_mod.telnet_from_server(body.server_from, body.server_to, body.port)
+            return nettools_mod.telnet_from_server(body.server_from, str(body.server_to), body.port)
         except Exception as e:
             return ErrorResponse(error=f'Cannot check port: {e}').model_dump(mode='json'), 500
     elif check == 'dns':

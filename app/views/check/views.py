@@ -84,6 +84,7 @@ class CheckView(MethodView):
                 smon_id = model_to_dict(check, max_depth=1)
                 check_json.update(smon_id['smon_id'])
                 check_json.update(model_to_dict(check, recurse=False))
+                check_json['name'] = check_json['name'].replace("'", "")
                 check_json['checks'][i]['smon_id']['name'] = check.smon_id.name.replace("'", "")
                 if check_json['checks'][i]['smon_id']['check_type'] == 'http':
                     check_json['checks'][i]['accepted_status_codes'] = int(check_json['checks'][i]['accepted_status_codes'])

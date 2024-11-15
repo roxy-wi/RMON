@@ -60,7 +60,7 @@ $( function() {
             contentType: "application/json; charset=utf-8",
             success: function (data) {
                 if (data.status === 'failed') {
-                    toastr.error(data);
+                    toastr.warning(data);
                 } else {
                     toastr.clear();
                     $('#ajax-nettools').html('<div class="ping_pre">' + data + '</div>');
@@ -94,7 +94,12 @@ $( function() {
             contentType: "application/json; charset=utf-8",
             xhrFields: {
                 onprogress: function (e) {
-                    $('#ajax-nettools').html(e.currentTarget.responseText);
+                    try {
+                        data = JSON.parse(e.currentTarget.responseText);
+                        toastr.warning(data.error);
+                    } catch (error) {
+                        $('#ajax-nettools').html(e.currentTarget.responseText);
+                    }
                 }
             },
             dataType: 'text',
