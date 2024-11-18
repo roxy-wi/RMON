@@ -73,7 +73,7 @@ def get_enabled_regions_by_country_with_group(country_id: int, group_id: int) ->
     try:
         return Region.select().join(SmonAgent).where(
             (Region.country_id == country_id) & (Region.enabled == 1) & ((Region.group_id == group_id) | (Region.shared == 1))
-        ).execute()
+        ).group_by(Region.id).execute()
     except Region.DoesNotExist:
         raise RoxywiResourceNotFound
     except Exception as e:

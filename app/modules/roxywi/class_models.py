@@ -191,7 +191,6 @@ class RmonAgent(BaseModel):
     server_id: int
     uuid: Optional[UUID4] = ''
     reconfigure: Optional[bool] = 0
-    region_id: Optional[int] = None
 
 
 class GroupQuery(BaseModel):

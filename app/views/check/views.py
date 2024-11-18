@@ -191,6 +191,7 @@ class CheckView(MethodView):
 
     def _create_all_checks(self, data, multi_check_id: int):
         countries = country_sql.select_enabled_countries_by_group(self.group_id)
+
         if len(countries) == 0:
             raise Exception('There are no countries in your group')
         for c in countries:
