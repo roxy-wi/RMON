@@ -57,6 +57,7 @@ class CheckView(MethodView):
         multi_check = smon_sql.select_multi_check(multi_check_id, group_id)
         entities = []
         check_json = {'checks': []}
+        i = 0
 
         for m in multi_check:
             place = m.multi_check_id.entity_type
@@ -74,7 +75,6 @@ class CheckView(MethodView):
             elif m.agent_id:
                 entities.append(m.agent_id.id)
             checks = smon_sql.select_one_smon(check_id, check_type_id=check_type_id)
-            i = 0
             for check in checks:
                 check_dict = model_to_dict(check, max_depth=1)
                 check_dict['average_response_time'] = smon_mod.get_average_response_time(check_id, check_type_id)
@@ -86,6 +86,7 @@ class CheckView(MethodView):
                 check_json.update(model_to_dict(check, recurse=False))
                 check_json['name'] = check_json['name'].replace("'", "")
                 check_json['checks'][i]['smon_id']['name'] = check.smon_id.name.replace("'", "")
+                check_json['checks'][i]['smon_id']['uptime'] = smon_mod.check_uptime(check_json['checks'][i]['smon_id']['id'])
                 if check_json['checks'][i]['smon_id']['check_type'] == 'http':
                     check_json['checks'][i]['accepted_status_codes'] = int(check_json['checks'][i]['accepted_status_codes'])
                     check_json['accepted_status_codes'] = int(check_json['accepted_status_codes'])
@@ -315,6 +316,9 @@ class CheckHttpView(CheckView):
                       method:
                         type: 'string'
                         description: 'HTTP Method to be used'
+                      uptime:
+                         type: 'integer'
+                         description: 'Check uptime'
                       smon_id:
                         type: 'object'
                         description: 'RMON object'
@@ -690,6 +694,12 @@ class CheckTcpView(CheckView):
                       average_response_time:
                         type: 'integer'
                         description: 'Average response time in ms'
+                      uptime:
+                         type: 'integer'
+                         description: 'Check uptime'
+                      uptime:
+                         type: 'integer'
+                         description: 'Check uptime'
                       smon_id:
                         type: 'object'
                         description: 'RMON object'
@@ -1010,6 +1020,9 @@ class CheckDnsView(CheckView):
                       average_response_time:
                         type: 'integer'
                         description: 'Average response time in ms'
+                      uptime:
+                         type: 'integer'
+                         description: 'Check uptime'
                       smon_id:
                         type: 'object'
                         description: 'RMON object'
@@ -1361,6 +1374,9 @@ class CheckPingView(CheckView):
                       average_response_time:
                         type: 'integer'
                         description: 'Average response time in ms'
+                      uptime:
+                         type: 'integer'
+                         description: 'Check uptime'
                       smon_id:
                         type: 'object'
                         description: 'RMON object'
@@ -1691,6 +1707,9 @@ class CheckSmtpView(CheckView):
                       average_response_time:
                         type: 'integer'
                         description: 'Average response time in ms'
+                      uptime:
+                         type: 'integer'
+                         description: 'Check uptime'
                       smon_id:
                         type: 'object'
                         description: 'RMON object'
@@ -2042,6 +2061,9 @@ class CheckRabbitView(CheckView):
                       average_response_time:
                         type: 'integer'
                         description: 'Average response time in ms'
+                      uptime:
+                         type: 'integer'
+                         description: 'Check uptime'
                       smon_id:
                         type: 'object'
                         description: 'RMON object'

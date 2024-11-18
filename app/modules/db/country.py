@@ -20,7 +20,7 @@ def select_enabled_countries_by_group(group_id: int) -> Country:
             (Country.enabled == 1) &
             ((Country.group_id == group_id) |
             (Country.shared == 1))
-        ).execute()
+        ).group_by(Country.id).execute()
     except Exception as e:
         out_error(e)
 

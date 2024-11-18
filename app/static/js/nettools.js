@@ -71,10 +71,6 @@ $( function() {
     });
     $("#nettools_icmp_form").on("click", ":submit", function (e) {
         $('#ajax-nettools').html('');
-        let action_button;
-        $('input[type=submit]').click(function() {
-            action_button = $(this).attr('name')
-        });
         let frm = $('#nettools_icmp_form');
         if ($('#nettools_icmp_server_from option:selected').val() === '------') {
             toastr.warning('Choose a server From');
@@ -172,8 +168,8 @@ $( function() {
     $("#nettools_ipcalc_form").on("click", ":submit", function (e) {
         $('#ajax-nettools').html('');
         let frm = $('#nettools_ipcalc_form');
-        let ip = $('#ip').val();
-        let netmask = $('#netmask').val();
+        let ip = $('#nettools_address').val();
+        let netmask = $('#nettools_netmask').val();
         if (ip === '') {
             toastr.warning('Enter a valid IP address');
             return false;
