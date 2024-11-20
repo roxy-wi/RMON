@@ -1,10 +1,21 @@
-{% import 'languages/'+lang|default('en')+'.html' as lang %}
-{% from 'include/input_macros.html' import input, checkbox, copy_to_clipboard %}
+{% extends "base.html" %}
+{% block title %}{{ lang.words.overview|title() }} {{ lang.words.region }}{% endblock %}
+{% block h2 %}{{ lang.words.overview|title() }} {{ lang.words.region }}{% endblock %}
+{% block content %}
+{% from 'include/input_macros.html' import input, select, checking_types %}
+<script src="{{ url_for('static', filename='js/overview.js') }}"></script>
+<script src="{{ url_for('static', filename='js/region.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rmon/smon.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rmon/agent.js') }}"></script>
+<script src="{{ url_for('static', filename='js/jquery.timeago.js') }}" type="text/javascript"></script>
+<link href="{{ url_for('static', filename='css/servers.css') }}" rel="stylesheet"/>
+<link href="{{ url_for('static', filename='css/smon.css') }}" rel="stylesheet"/>
+<link href="{{ url_for('static', filename='css/ha.css') }}" rel="stylesheet">
 <div id="region-{{region.id}}" class="div-server-hapwi">
     <div class="server-name">
         <span class="overflow" style="width: 192px;">
             <span id="region-name-{{region.id}}" style="margin-top: 4px;display: inline-block;">
-                <a href="/rmon/region/{{ region.id }}" title="{{ lang.words.open|title() }} {{ region.name.replace("'","") }}">{{region.name.replace("'","")}}</a>
+                {{region.name.replace("'","")}}
             </span>
             <span id="region-desc-{{region.id}}">{% if region.description %} ({{region.description.replace("'", "")}}) {% endif %}</span>
         </span>
@@ -27,28 +38,16 @@
         </div>
         <div>
             <b>{{ lang.words.agents|title() }}</b>: <br />
-            {% for agent in agents %}
-                <a href="/rmon/agent/{{ agent.id }}" title="{{ lang.words.more|title }} {{ lang.words.info }}">{{agent.name.replace("'","")}}</a><br />
-            {% endfor %}
         </div>
     </div>
 </div>
+    {% include 'include/smon/checks_for_overview.html' %}
+<div id="dialog-confirm" style="display: none;">
+    <p><span class="ui-icon ui-icon-alert" style="float:left; margin:3px 12px 20px 0;"></span>{{lang.phrases.are_you_sure}}</p>
+</div>
+    {% include 'include/smon/dialogs.html' %}
 <script>
-    $( function() {
-        $('.copyToClipboard').hover(function () {
-            $.getScript("/static/js/fontawesome.min.js");
-        });
-        $('.copyToClipboard').click(function () {
-            let str = $(this).attr('data-copy');
-            const el = document.createElement('textarea');
-            el.value = str;
-            el.setAttribute('readonly', '');
-            el.style.position = 'absolute';
-            el.style.left = '-9999px';
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-        });
-    })
+    getRegion('{{region_id}}');
 </script>
+    {% include 'include/smon/add_form.html' %}
+{% endblock %}

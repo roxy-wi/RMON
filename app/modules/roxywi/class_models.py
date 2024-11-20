@@ -259,7 +259,6 @@ class RegionRequest(BaseModel):
     shared: Optional[bool] = 0
     enabled: Optional[bool] = 1
     group_id: Optional[int] = None
-    country_id: Optional[int] = None
     agents: Optional[list[int]] = None
 
 

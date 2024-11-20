@@ -47,6 +47,40 @@ def get_agent(agent_id):
     return render_template('smon/agent.html', **kwargs)
 
 
+@bp.get('/region/<int:region_id>')
+@jwt_required()
+@get_user_params()
+def get_region(region_id):
+    kwargs = {
+        'region': region_sql.get_region_with_group(region_id, g.user_params['group_id']),
+        'lang': roxywi_common.get_user_lang_for_flask(),
+        'smon_status': tools_common.is_tool_active('rmon-server'),
+        'region_id': region_id
+    }
+
+    for check_type in ('http', 'tcp', 'dns', 'ping', 'smtp', 'rabbitmq'):
+        kwargs[f'{check_type}_checks'] = smon_sql.select_checks_for_region_by_check_type(region_id, check_type)
+
+    return render_template('smon/region.html', **kwargs)
+
+
+@bp.get('/country/<int:country_id>')
+@jwt_required()
+@get_user_params()
+def get_country(country_id):
+    kwargs = {
+        'country': country_sql.get_country_with_group(country_id, g.user_params['group_id']),
+        'lang': roxywi_common.get_user_lang_for_flask(),
+        'smon_status': tools_common.is_tool_active('rmon-server'),
+        'country_id': country_id
+    }
+
+    for check_type in ('http', 'tcp', 'dns', 'ping', 'smtp', 'rabbitmq'):
+        kwargs[f'{check_type}_checks'] = smon_sql.select_checks_for_country_by_check_type(country_id, check_type)
+
+    return render_template('smon/country.html', **kwargs)
+
+
 @bp.post('/agent/hello')
 def agent_get_checks():
     json_data = request.json

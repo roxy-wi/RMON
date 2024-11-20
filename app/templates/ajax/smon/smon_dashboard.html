@@ -43,7 +43,7 @@
 		{% set down = [] %}
 		{% set up = [] %}
 		{% set dis = [] %}
-		{% for s in smon %}
+		{% for s in multi_checks %}
 			{% if s.enabled == 1 %}
 				{% if s.status == 1 and s.body_status == 1 %}
 					{% if up.append('1') %} {% endif %}

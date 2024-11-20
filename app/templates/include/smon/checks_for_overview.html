@@ -1,0 +1,116 @@
+<div class="overview-checks">
+    <div class="overview-checks-type">
+    <div class="server-name">{{ lang.words.checks|title() }} {{ lang.words.on }} {{ lang.words.the }} {{ lang.words.agent3 }}</div>
+    {% if http_checks %}
+        <div class="overview-check-type">HTTP:</div>
+        <div class="overview-checks-div">
+        {% for check in http_checks %}
+            <div class="overview-check" id="check-{{ check.multi_check_id }}">
+                <span class="overview-check-name"><b>{{ lang.words.name|title() }}:</b>
+                    <a href="/rmon/dashboard/{{ check.multi_check_id }}/{{ checking_types[check.check_type] }}" target="_blank">{{ check.name|replace("'", "") }}</a>
+                </span>
+                <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
+                <span class="check-name-tile overview-check-hostname"><b>URL:</b> <a href="{{ check.url }}" target="_blank">{{ check.url }}</a></span>
+                <span class="overview-check-col"><b>{{ lang.words.method|title() }}:</b> {{ check.method|upper() }}</span>
+                <span class="overview-check-col">
+                    <a class="edit edit-button-fa" title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}" onclick="editSmon('{{check.multi_check_id}}', 'http')"></a>
+                </span>
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+    {% if tcp_checks %}
+        <div class="overview-check-type">TCP:</div>
+        <div class="overview-checks-div">
+        {% for check in tcp_checks %}
+            <div class="overview-check" id="check-{{ check.multi_check_id }}">
+                <span class="overview-check-name"><b>{{ lang.words.name|title() }}:</b>
+                    <a href="/rmon/dashboard/{{ check.multi_check_id }}/{{ checking_types[check.check_type] }}" target="_blank">{{ check.name|replace("'", "") }}</a>
+                </span>
+                <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
+                <span class="check-name-tile overview-check-hostname"><b>{{ lang.words.Hostname }}:</b> {{ check.ip }}</span>
+                <span class="overview-check-col"><b>{{ lang.words.port|title() }}:</b> {{ check.port }}</span>
+                <span class="overview-check-col">
+                    <a class="edit edit-button-fa" title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}" onclick="editSmon('{{check.multi_check_id}}', 'tcp')"></a>
+                </span>
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+    {% if dns_checks %}
+        <div class="overview-check-type">DNS:</div>
+        <div class="overview-checks-div">
+            {% for check in dns_checks %}
+                <div class="overview-check" id="check-{{ check.multi_check_id }}">
+                    <span class="overview-check-name"><b>{{ lang.words.name|title() }}:</b>
+                        <a href="/rmon/dashboard/{{ check.multi_check_id }}/{{ checking_types[check.check_type] }}" target="_blank">{{ check.name|replace("'", "") }}</a>
+                    </span>
+                    <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
+                    <span class="check-name-tile overview-check-hostname"><b>{{ lang.words.record|title() }}:</b> {{ check.ip }}</span>
+                    <span class="overview-check-col"> <b>Resolver:</b>{{ check.resolver }}</span>
+                    <span class="overview-check-col"><b>{{ lang.words.record_type|title() }}:</b> {{ check.record_type|upper() }}</span>
+                    <span class="overview-check-col"> <b>{{ lang.words.port|title() }}:</b> {{ check.port }}</span>
+                    <span class="overview-check-col">
+                        <a class="edit edit-button-fa" title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}" onclick="editSmon('{{check.multi_check_id}}', 'dns')"></a>
+                    </span>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% if ping_checks %}
+        <div class="overview-check-type">Ping:</div>
+        <div class="overview-checks-div">
+        {% for check in ping_checks %}
+            <div class="overview-check" id="check-{{ check.multi_check_id }}">
+                <span class="overview-check-name"><b>{{ lang.words.name|title() }}:</b>
+                    <a href="/rmon/dashboard/{{ check.multi_check_id }}/{{ checking_types[check.check_type] }}" target="_blank">{{ check.name|replace("'", "") }}</a>
+                </span>
+                <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
+                <span class="check-name-tile overview-check-hostname"><b>{{ lang.words.Hostname }}:</b> {{ check.ip }} </span>
+                <span class="overview-check-col"><b>{{ lang.smon_page.desc.packet_size }}:</b> {{ check.packet_size }}</span>
+                <span class="overview-check-col">
+                    <a class="edit edit-button-fa" title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}" onclick="editSmon('{{check.multi_check_id}}', 'ping')"></a>
+                </span>
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+    {% if smtp_checks %}
+        <div class="overview-check-type">SMTP:</div>
+        <div class="overview-checks-div">
+        {% for check in smtp_checks %}
+            <div class="overview-check" id="check-{{ check.multi_check_id }}">
+                <span class="overview-check-name"><b>{{ lang.words.name|title() }}:</b>
+                    <a href="/rmon/dashboard/{{ check.multi_check_id }}/{{ checking_types[check.check_type] }}" target="_blank">{{ check.name|replace("'", "") }}</a>
+                </span>
+                <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
+                <span class="check-name-tile overview-check-hostname"><b>{{ lang.words.Hostname }}:</b> {{ check.ip }} </span>
+                <span class="overview-check-col"><b>{{ lang.words.port|title() }}:</b> {{ check.port }} </span>
+                <span class="overview-check-col">
+                    <a class="edit edit-button-fa" title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}" onclick="editSmon('{{check.multi_check_id}}', 'smtp')"></a>
+                </span>
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+    {% if rabbitmq_checks %}
+        <div class="overview-check-type">RabbitMQ:</div>
+        <div class="overview-checks-div">
+        {% for check in rabbitmq_checks %}
+            <div class="overview-check" id="check-{{ check.multi_check_id }}">
+                <span class="overview-check-name"><b>{{ lang.words.name|title() }}:</b>
+                    <a href="/rmon/dashboard/{{ check.multi_check_id }}/{{ checking_types[check.check_type] }}" target="_blank">{{ check.name|replace("'", "") }}</a>
+                </span>
+                <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
+                <span class="check-name-tile overview-check-hostname"><b>{{ lang.words.Hostname }}:</b> {{ check.ip }} </span>
+                <span class="overview-check-col"><b>VHost:</b> {{ check.vhost }}</span>
+                <span class="overview-check-col"><b>{{ lang.words.port|title() }}:</b> {{ check.port }} </span>
+                <span class="overview-check-col">
+                    <a class="edit edit-button-fa" title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}" onclick="editSmon('{{check.multi_check_id}}', 'rabbitmq')"></a>
+                </span>
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+    </div>
+</div>
