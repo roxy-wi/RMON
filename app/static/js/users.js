@@ -53,27 +53,27 @@ $( function() {
 		}
 	});
 	$('#search_ldap_user').click(function() {
-		let valid = true;
 		toastr.clear();
-		let allFields = $([]).add($('#new-username'));
+		let username_div = $('#new-username')
+		let valid = true;
+		let allFields = $([]).add(username_div);
 		allFields.removeClass("ui-state-error");
-		valid = valid && checkLength($('#new-username'), "user name", 1);
-		let user = $('#new-username').val()
+		valid = valid && checkLength(username_div, "user name", 1);
+		let user = username_div.val();
 		if (valid) {
 			$.ajax({
-				url: "/user/ldap/" + $('#new-username').val(),
+				url: "/user/ldap/" + user,
+				contentType: "application/json; charset=utf-8",
 				success: function (data) {
-					data = data.replace(/\s+/g, ' ');
-					if (data.indexOf('error:') != '-1') {
-						toastr.error(data);
+					if (data.status === 'failed') {
+						toastr.error(data.error);
 						$('#new-email').val('');
-						$('#new-password').attr('readonly', false);
-						$('#new-password').val('');
+						username_div.attr('readonly', false);
 					} else {
-						var json = $.parseJSON(data);
+						let json = $.parseJSON(data.user);
 						toastr.clear();
-						if (!$('#new-username').val().includes('@')) {
-							$('#new-username').val(user + '@' + json[1]);
+						if (!user.includes('@')) {
+							username_div.val(user + '@' + json[1]);
 						}
 						$('#new-email').val(json[0]);
 						$('#new-password').val('aduser');

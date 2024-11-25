@@ -10,10 +10,10 @@ function getRegionsForCountry(country_id) {
 			} else {
 				for (let k in data) {
                     let agent = data[k];
-                    if (agent.enabled === 1 && !agent.country_id) {
+                    if (agent.enabled && !agent.country_id) {
                         removeRegionFromStatus(agent.id, agent.name);
                     }
-                    if (agent.enabled === 1 && agent.country_id != null && Number(agent.country_id) === Number(country_id)) {
+                    if (agent.enabled && agent.country_id != null && Number(agent.country_id) === Number(country_id)) {
                         addRegionToStatus(agent.id, agent.name);
                     }
                 }

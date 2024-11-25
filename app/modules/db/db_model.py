@@ -6,9 +6,12 @@ from playhouse.sqlite_ext import SqliteExtDatabase
 import app.modules.roxy_wi_tools as roxy_wi_tools
 
 get_config = roxy_wi_tools.GetConfigVar()
+pgsql_enable = get_config.get_config_var('pgsql', 'enable')
 mysql_enable = get_config.get_config_var('mysql', 'enable')
 
-if mysql_enable == '1':
+if pgsql_enable == '1':
+    from playhouse.postgres_ext import BinaryJSONField as JSONField
+elif mysql_enable == '1':
     from playhouse.mysql_ext import JSONField
 else:
     from playhouse.sqlite_ext import JSONField
@@ -19,7 +22,17 @@ class ReconnectMySQLDatabase(ReconnectMixin, MySQLDatabase):
 
 
 def connect(get_migrator=None):
-    if mysql_enable == '1':
+    if pgsql_enable == '1':
+        db = get_config.get_config_var('pgsql', 'db')
+        kwargs = {
+            "user": get_config.get_config_var('pgsql', 'user'),
+            "password": get_config.get_config_var('pgsql', 'password'),
+            "host": get_config.get_config_var('pgsql', 'host'),
+            "port": int(get_config.get_config_var('pgsql', 'port'))
+        }
+        conn = PostgresqlDatabase(db, **kwargs)
+        migration = PostgresqlMigrator(conn)
+    elif mysql_enable == '1':
         mysql_db = get_config.get_config_var('mysql', 'mysql_db')
         kwargs = {
             "user": get_config.get_config_var('mysql', 'mysql_user'),
@@ -172,6 +185,7 @@ class Cred(BaseModel):
     group_id = IntegerField(constraints=[SQL('DEFAULT 1')])
     passphrase = CharField(null=True)
     shared = IntegerField(constraints=[SQL('DEFAULT 0')])
+    private_key = TextField(null=True)
 
     class Meta:
         table_name = 'cred'
@@ -201,8 +215,8 @@ class Country(BaseModel):
     name = CharField()
     description = CharField()
     group_id = IntegerField(constraints=[SQL('DEFAULT 1')])
-    enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
-    shared = IntegerField(constraints=[SQL('DEFAULT 0')])
+    enabled = BooleanField(default=True)
+    shared = BooleanField(default=False)
 
     class Meta:
         table_name = 'countries'
@@ -213,8 +227,8 @@ class Region(BaseModel):
     name = CharField()
     description = CharField()
     group_id = IntegerField(constraints=[SQL('DEFAULT 1')])
-    enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
-    shared = IntegerField(constraints=[SQL('DEFAULT 0')])
+    enabled = BooleanField(default=True)
+    shared = BooleanField(default=False)
     country_id = ForeignKeyField(Country, null=True, on_delete='SET NULL')
 
     class Meta:
@@ -253,7 +267,7 @@ class SMON(BaseModel):
     enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
     description = CharField(null=True)
     response_time = CharField(null=True)
-    time_state = DateTimeField(null=True)
+    time_state = DateTimeField(default=datetime.now)
     body_status = IntegerField(constraints=[SQL('DEFAULT 1')])
     telegram_channel_id = IntegerField(null=True)
     group_id = IntegerField()

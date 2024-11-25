@@ -65,7 +65,7 @@ class CheckGroupView(MethodView):
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot get group')
         group_list = model_to_dict(group)
-        group_list['name'] = group['name'].replace("'", "")
+        group_list['name'] = group_list['name'].replace("'", "")
         return jsonify(group_list)
 
     @validate(body=CheckGroup)

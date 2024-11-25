@@ -95,25 +95,28 @@ def get_ldap_email(username) -> str:
     ldap_class_search = sql.get_setting('ldap_class_search')
     ldap_user_attribute = sql.get_setting('ldap_user_attribute')
     ldap_type = sql.get_setting('ldap_type')
-
     ldap_proto = 'ldap' if ldap_type == "0" else 'ldaps'
 
-    ldap_bind = ldap.initialize('{}://{}:{}/'.format(ldap_proto, server, port))
+    try:
+        ldap_bind = ldap.initialize(f'{ldap_proto}://{server}:{port}/')
+    except Exception as e:
+        raise Exception(f'Cannot initialize connect to LDAP: {e}')
 
     try:
         ldap_bind.protocol_version = ldap.VERSION3
         ldap_bind.set_option(ldap.OPT_REFERRALS, 0)
+        ldap_bind.simple_bind_s(user, password)
 
-        _ = ldap_bind.simple_bind_s(user, password)
-
-        criteria = "(&(objectClass=" + ldap_class_search + ")(" + ldap_user_attribute + "=" + username + "))"
+        criteria = f"(&(objectClass={ldap_class_search})({ldap_user_attribute}={username}))"
         attributes = [ldap_search_field]
         result = ldap_bind.search_s(ldap_base, ldap.SCOPE_SUBTREE, criteria, attributes)
 
         results = [entry for dn, entry in result if isinstance(entry, dict)]
         try:
-            return '["' + results[0][ldap_search_field][0].decode("utf-8") + '","' + domain + '"]'
+            return f'["{results[0][ldap_search_field][0].decode("utf-8")}","{domain}"]'
         except Exception:
-            return 'error: user not found'
+            raise Exception('user not found')
+    except Exception as e:
+        raise Exception(e)
     finally:
         ldap_bind.unbind()

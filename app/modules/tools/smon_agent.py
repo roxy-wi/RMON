@@ -85,7 +85,7 @@ def delete_agent(agent_id: int):
 
 
 def update_agent(agent_id: int, data: RmonAgent):
-    json_data = data.model_dump(mode='python', exclude={'reconfigure': True, 'uuid': True})
+    json_data = data.model_dump(mode='python', exclude={'reconfigure': True, 'uuid': True}, exclude_none=True)
 
     try:
         smon_sql.update_agent(agent_id, **json_data)

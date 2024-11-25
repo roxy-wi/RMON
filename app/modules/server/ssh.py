@@ -94,28 +94,12 @@ def create_ssh_cred(name: str, password: str, group: int, username: str, enable:
 
 def upload_ssh_key(ssh_id: int, key: str, passphrase: str) -> None:
 	key = key.replace("'", "")
-	ssh = cred_sql.get_ssh(ssh_id)
-	group_name = group_sql.get_group(ssh.group_id).name
-	lib_path = get_config.get_config_var('main', 'lib_path')
-	full_dir = f'{lib_path}/keys/'
-	name = ssh.name
-	ssh_keys = f'{full_dir}{name}_{group_name}.pem'
+	key = crypt_password(key)
 
-	if key != '':
-		try:
-			key = paramiko.pkey.load_private_key(key, password=passphrase)
-		except Exception as e:
-			raise Exception(e)
-
-		try:
-			key.write_private_key_file(ssh_keys)
-		except Exception as e:
-			raise Exception(e)
-
-		try:
-			os.chmod(ssh_keys, 0o600)
-		except IOError as e:
-			raise Exception(e)
+	try:
+		cred_sql.update_private_key(ssh_id, key)
+	except Exception as e:
+		raise e
 
 	if passphrase:
 		try:
@@ -130,7 +114,7 @@ def upload_ssh_key(ssh_id: int, key: str, passphrase: str) -> None:
 	except Exception as e:
 		raise Exception(e)
 
-	roxywi_common.logging("Roxy-WI server", f"A new SSH cert has been uploaded {ssh_keys}", roxywi=1, login=1)
+	roxywi_common.logging("Roxy-WI server", "A new SSH cert has been uploaded", roxywi=1, login=1)
 
 
 def update_ssh_key(body: CredRequest, group_id: int, ssh_id: int) -> None:
@@ -144,7 +128,7 @@ def update_ssh_key(body: CredRequest, group_id: int, ssh_id: int) -> None:
 			raise Exception(e)
 
 	if os.path.isfile(ssh_key_name):
-		new_ssh_key_name = _return_correct_ssh_file(body)
+		new_ssh_key_name = _return_correct_ssh_file(body, ssh_id)
 		os.rename(ssh_key_name, new_ssh_key_name)
 		os.chmod(new_ssh_key_name, 0o600)
 
@@ -238,10 +222,29 @@ def get_creds(group_id: int = None, cred_id: int = None, not_shared: bool = Fals
 	return json_data
 
 
-def _return_correct_ssh_file(cred: CredRequest) -> str:
+def _return_correct_ssh_file(cred: CredRequest, ssh_id: int = None) -> str:
 	lib_path = get_config.get_config_var('main', 'lib_path')
 	group_name = group_sql.get_group(cred.group_id).name
 	if group_name not in cred.name:
-		return f'{lib_path}/keys/{cred.name}_{group_name}.pem'
+		key_file = f'{lib_path}/keys/{cred.name}_{group_name}.pem'
 	else:
-		return f'{lib_path}/keys/{cred.name}.pem'
+		key_file = f'{lib_path}/keys/{cred.name}.pem'
+
+	if not ssh_id:
+		ssh_id = cred.id
+
+	try:
+		private_key = cred_sql.get_ssh(ssh_id).private_key
+		private_key = decrypt_password(private_key)
+	except Exception as e:
+		raise e
+
+	with open(key_file, 'wb') as key:
+		key.write(private_key.encode())
+
+	try:
+		os.chmod(key_file, 0o600)
+	except IOError as e:
+		raise Exception(e)
+
+	return key_file

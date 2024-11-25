@@ -37,6 +37,8 @@ def rmon_multi_check_history(multi_check_id: int, group_id: int):
 def insert_alerts(check_id, group_id, level, check_name, port, message, service):
 	get_date = roxy_wi_tools.GetDate()
 	cur_date = get_date.return_date('regular')
+	if port == '':
+		port = 0
 	try:
 		RMONAlertsHistory.insert(
 			group_id=group_id, message=message, level=level, port=port, service=service,

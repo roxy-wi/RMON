@@ -125,7 +125,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'pd_channel_id': $('#new-smon-pd').val(),
 		'mm_channel_id': $('#new-smon-mm').val(),
 		'packet_size': $('#new-smon-packet_size').val(),
-		'http_method': $('#new-smon-method').val(),
+		'method': $('#new-smon-method').val(),
 		'interval': $('#new-smon-interval').val(),
 		'entities': entities,
 		'place': $('#new-smon-place option:selected').val(),

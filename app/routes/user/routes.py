@@ -1,12 +1,13 @@
 import json
 
-from flask import request, g
+from flask import request, g, jsonify
 from flask_jwt_extended import jwt_required
 
 from app.routes.user import bp
 import app.modules.common.common as common
 import app.modules.roxywi.user as roxywi_user
 import app.modules.roxywi.auth as roxywi_auth
+import app.modules.roxywi.common as roxywi_common
 from app.views.user.views import UserView
 from app.middleware import get_user_params
 from app.modules.roxywi.class_models import BaseResponse, ErrorResponse
@@ -26,7 +27,11 @@ bp.add_url_rule('', view_func=UserView.as_view('user'), methods=['POST'])
 def get_ldap_email(username):
     roxywi_auth.page_for_admin(level=2)
 
-    return roxywi_user.get_ldap_email(username)
+    try:
+        user = roxywi_user.get_ldap_email(username)
+        return jsonify({'status': 'ldap', 'user': user})
+    except Exception as e:
+        return roxywi_common.handle_json_exceptions(e, 'Cannot get LDAP email')
 
 
 @bp.post('/password')

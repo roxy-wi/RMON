@@ -1,6 +1,6 @@
 from peewee import IntegrityError
 
-from app.modules.db.db_model import mysql_enable, connect, Server, SystemInfo
+from app.modules.db.db_model import mysql_enable, connect, Server, SystemInfo, pgsql_enable
 from app.modules.db.common import out_error, not_unique_error, resource_not_empty
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 
@@ -52,9 +52,10 @@ def insert_system_info(
 	server_id: int, os_info: str, sys_info: dict, cpu: dict, ram: dict, network: dict, disks: dict
 ):
 	try:
+		SystemInfo.delete().where(SystemInfo.server_id == server_id).execute()
 		SystemInfo.insert(
 			server_id=server_id, os_info=os_info, sys_info=sys_info, cpu=cpu, ram=ram, network=network, disks=disks
-		).on_conflict('replace').execute()
+		).execute()
 	except Exception as e:
 		out_error(e)
 

@@ -143,7 +143,8 @@ def update_db_v_1_0_4():
 			migrator.add_column_default('smon', 'check_timeout', 2),
 		)
 	except Exception as e:
-		if e.args[0] == 'duplicate column name: check_timeout' or str(e) == '(1060, "Duplicate column name \'check_timeout\'")':
+		if (e.args[0] == 'duplicate column name: check_timeout' or 'column "check_timeout" of relation "smon" already exists'
+				or str(e) == '(1060, "Duplicate column name \'check_timeout\'")'):
 			print('Updating... DB has been updated to version 1.0.4')
 		else:
 			print("An error occurred:", e)
@@ -156,7 +157,8 @@ def update_db_v_1_0_7():
 			migrator.add_column_default('smon_agents', 'port', 5101),
 		)
 	except Exception as e:
-		if e.args[0] == 'duplicate column name: port' or str(e) == '(1060, "Duplicate column name \'port\'")':
+		if (e.args[0] == 'duplicate column name: port' or 'column "port" of relation "smon_agents" already exists'
+				or str(e) == '(1060, "Duplicate column name \'port\'")'):
 			print('Updating... DB has been updated to version 1.0.7')
 		else:
 			print("An error occurred:", e)
@@ -209,7 +211,8 @@ def update_db_v_1_1_2():
 			migrator.add_column_default('smon_http_check', 'ignore_ssl_error', 0),
 		)
 	except Exception as e:
-		if e.args[0] == 'duplicate column name: ignore_ssl_error' or str(e) == '(1060, "Duplicate column name \'ignore_ssl_error\'")':
+		if (e.args[0] == 'duplicate column name: ignore_ssl_error' or 'column "ignore_ssl_error" of relation "smon" already exists'
+				or str(e) == '(1060, "Duplicate column name \'ignore_ssl_error\'")'):
 			print('Updating... DB has been updated to version 1.1.2')
 		else:
 			print("An error occurred:", e)
@@ -252,7 +255,8 @@ def update_db_v_1_1_4():
 			migrator.add_column('smon_agents', 'region_id', field)
 		)
 	except Exception as e:
-		if e.args[0] == 'duplicate column name: region_id' or str(e) == '(1060, "Duplicate column name \'region_id\'")':
+		if (e.args[0] == 'duplicate column name: region_id' or 'column "region_id" of relation "smon" already exists'
+				or str(e) == '(1060, "Duplicate column name \'region_id\'")'):
 			print('Updating... DB has been updated to version 1.1.4')
 		else:
 			print("An error occurred:", e)
@@ -269,7 +273,8 @@ def update_db_v_1_1_4_1():
 				migrator.add_column('cred', 'shared', IntegerField(constraints=[SQL('DEFAULT 0')])),
 			)
 	except Exception as e:
-		if e.args[0] == 'duplicate column name: shared' or str(e) == '(1060, "Duplicate column name \'shared\'")':
+		if (e.args[0] == 'duplicate column name: shared' or 'column "shared" of relation "cred" already exists'
+				or str(e) == '(1060, "Duplicate column name \'shared\'")'):
 			print('Updating... DB has been updated to version 1.1.4-1')
 		else:
 			print("An error occurred:", e)
@@ -282,7 +287,8 @@ def update_db_v_1_1_6():
 			migrator.add_column('regions', 'country_id', field),
 		)
 	except Exception as e:
-		if e.args[0] == 'duplicate column name: country_id' or str(e) == '(1060, "Duplicate column name \'country_id\'")':
+		if (e.args[0] == 'duplicate column name: country_id' or 'column "country_ud" of relation "smon" already exists'
+				or str(e) == '(1060, "Duplicate column name \'country_id\'")'):
 			print('Updating... DB has been updated to version 1.1.6')
 		else:
 			print("An error occurred:", e)
@@ -295,7 +301,8 @@ def update_db_v_1_2():
 			migrator.add_column('smon', 'country_id', field),
 		)
 	except Exception as e:
-		if e.args[0] == 'duplicate column name: country_id' or str(e) == '(1060, "Duplicate column name \'country_id\'")':
+		if (e.args[0] == 'duplicate column name: country_id' or 'column "country_id" of relation "smon" already exists'
+				or str(e) == '(1060, "Duplicate column name \'country_id\'")'):
 			print('Updating... DB has been updated to version 1.2')
 		else:
 			print("An error occurred:", e)
@@ -308,7 +315,8 @@ def update_db_v_1_2_1():
 			migrator.add_column('smon', 'agent_id', field),
 		)
 	except Exception as e:
-		if e.args[0] == 'duplicate column name: agent_id' or str(e) == '(1060, "Duplicate column name \'agent_id\'")':
+		if (e.args[0] == 'duplicate column name: agent_id' or 'column "agent_id" of relation "smon" already exists'
+				or str(e) == '(1060, "Duplicate column name \'agent_id\'")'):
 			print('Updating... DB has been updated to version 1.2')
 		else:
 			print("An error occurred:", e)
@@ -321,7 +329,8 @@ def update_db_v_1_2_2():
 			migrator.add_column('smon', 'multi_check_id', field),
 		)
 	except Exception as e:
-		if e.args[0] == 'duplicate column name: multi_check_id' or str(e) == '(1060, "Duplicate column name \'multi_check_id\'")':
+		if (e.args[0] == 'duplicate column name: multi_check_id' or 'column "multi_check_id" of relation "smon" already exists'
+				or str(e) == '(1060, "Duplicate column name \'multi_check_id\'")'):
 			print('Updating... DB has been updated to version 1.2')
 		else:
 			print("An error occurred:", e)
@@ -373,7 +382,8 @@ def update_db_v_1_2_6():
 			migrator.add_column('multi_check', 'check_group_id', field),
 		)
 	except Exception as e:
-		if e.args[0] == 'duplicate column name: check_group_id' or str(e) == '(1060, "Duplicate column name \'check_group_id\'")':
+		if (e.args[0] == 'duplicate column name: check_group_id' or 'column "check_group_id" of relation "smon" already exists'
+				or str(e) == '(1060, "Duplicate column name \'check_group_id\'")'):
 			print('Updating... DB has been updated to version 1.2')
 		else:
 			print("An error occurred:", e)
@@ -399,7 +409,7 @@ def update_db_v_1_2_8():
 			migrator.rename_column('rmon_alerts_history', 'user_group', 'group_id'),
 		)
 	except Exception as e:
-		if e.args[0] == 'no such column: "user_group"' or 'column "group" does not exist' in str(e) or str(e) == '(1060, no such column: "user_group")':
+		if e.args[0] == 'no such column: "user_group"' or 'column "user_group" does not exist' in str(e) or str(e) == '(1060, no such column: "user_group")':
 			print("Updating... DB has been updated to version 1.2")
 		elif e.args[0] == "'bool' object has no attribute 'sql'":
 			print("Updating... DB has been updated to version 1.2")
@@ -407,9 +417,22 @@ def update_db_v_1_2_8():
 			print("An error occurred:", e)
 
 
+def update_db_v_1_3():
+	try:
+		migrate(
+			migrator.add_column('cred', 'private_key', TextField(null=True)),
+		)
+	except Exception as e:
+		if (e.args[0] == 'duplicate column name: private_key' or 'column "private_key" of relation "cred" already exists'
+				or str(e) == '(1060, "Duplicate column name \'private_key\'")'):
+			print('Updating... DB has been updated to version 1.3')
+		else:
+			print("An error occurred:", e)
+
+
 def update_ver():
 	try:
-		Version.update(version='1.2.2').execute()
+		Version.update(version='1.2.3').execute()
 	except Exception:
 		print('Cannot update version')
 
@@ -446,6 +469,7 @@ def update_all():
 	update_db_v_1_2_6()
 	update_db_v_1_2_7()
 	update_db_v_1_2_8()
+	update_db_v_1_3()
 
 
 if __name__ == "__main__":

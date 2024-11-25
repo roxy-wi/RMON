@@ -67,7 +67,7 @@ def send_new_check(
 def create_http_check(data: HttpCheckRequest, check_id: int) -> tuple[dict, int]:
     try:
         smon_sql.insert_smon_http(
-            check_id, data.url, data.body, data.http_method, data.interval, data.body_req, data.header_req,
+            check_id, data.url, data.body, data.method, data.interval, data.body_req, data.header_req,
             data.accepted_status_codes, data.ignore_ssl_error
         )
     except Exception as e:

@@ -1,6 +1,6 @@
-from peewee import Case, JOIN
+from peewee import Case
 
-from app.modules.db.db_model import User, UserGroups, Groups
+from app.modules.db.db_model import User, UserGroups, Groups, pgsql_enable
 from app.modules.db.sql import get_setting
 from app.modules.db.common import out_error
 import app.modules.roxy_wi_tools as roxy_wi_tools
@@ -127,6 +127,15 @@ def select_users(**kwargs):
 		cur_date = get_date.return_date('regular', timedelta_minutes_minus=15)
 		query = User.select(User, Case(0, [(
 			(User.last_login_date >= cur_date), 0)], 1).alias('last_login')).order_by(User.user_id)
+	if pgsql_enable:
+		if kwargs.get("group") is not None:
+			query = (User.select(
+				User, UserGroups
+			).join(UserGroups, on=(User.user_id == UserGroups.user_id)).where(
+				UserGroups.user_group_id == kwargs.get("group")
+			))
+		else:
+			query = User.select(User).order_by(User.user_id)
 	try:
 		query_res = query.execute()
 	except Exception as e:

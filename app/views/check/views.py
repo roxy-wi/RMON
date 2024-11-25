@@ -76,14 +76,14 @@ class CheckView(MethodView):
                 entities.append(m.agent_id.id)
             checks = smon_sql.select_one_smon(check_id, check_type_id=check_type_id)
             for check in checks:
-                check_dict = model_to_dict(check, max_depth=1)
+                check_dict = model_to_dict(check, max_depth=query.max_depth)
                 check_dict['average_response_time'] = smon_mod.get_average_response_time(check_id, check_type_id)
                 check_json['checks'].append(check_dict)
                 check_json['entities'] = entities
                 check_json['place'] = place
-                smon_id = model_to_dict(check, max_depth=1)
+                smon_id = model_to_dict(check, max_depth=query.max_depth)
                 check_json.update(smon_id['smon_id'])
-                check_json.update(model_to_dict(check, recurse=False))
+                check_json.update(model_to_dict(check, recurse=query.recurse))
                 check_json['name'] = check_json['name'].replace("'", "")
                 check_json['checks'][i]['smon_id']['name'] = check.smon_id.name.replace("'", "")
                 check_json['checks'][i]['smon_id']['uptime'] = smon_mod.check_uptime(check_json['checks'][i]['smon_id']['id'])
@@ -116,7 +116,7 @@ class CheckView(MethodView):
         except Exception as e:
             raise e
         check_group_id = self._get_check_group_id(data.check_group)
-        multi_check_id = smon_sql.create_mutli_check(self.group_id, data.place, check_group_id)
+        multi_check_id = smon_sql.create_multi_check(self.group_id, data.place, check_group_id)
         if data.place == 'all':
             self._create_all_checks(data, multi_check_id)
         for entity_id in data.entities:
@@ -193,6 +193,8 @@ class CheckView(MethodView):
         countries = country_sql.select_enabled_countries_by_group(self.group_id)
 
         if len(countries) == 0:
+            # Delete created empty multi check
+            smon_sql.delete_multi_check(multi_check_id, self.group_id)
             raise Exception('There are no countries in your group')
         for c in countries:
             self._create_country_check(data, multi_check_id, c.id)
@@ -201,6 +203,8 @@ class CheckView(MethodView):
     def _create_country_check(self, data, multi_check_id: int, country_id: int):
         regions = region_sql.get_enabled_regions_by_country_with_group(country_id, self.group_id)
         if len(regions) == 0:
+            # Delete created empty multi check
+            smon_sql.delete_multi_check(multi_check_id, self.group_id)
             raise Exception(f'There are no regions in your group in country_id: {country_id}')
         for region in regions:
             self._create_region_check(data, multi_check_id, region.id, country_id)

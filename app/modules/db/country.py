@@ -8,7 +8,7 @@ def select_countries_by_group(group_id: int) -> Country:
     try:
         return Country.select().where(
             (Country.group_id == group_id) |
-            (Country.shared == 1)
+            (Country.shared == True)
         ).execute()
     except Exception as e:
         out_error(e)
@@ -17,9 +17,9 @@ def select_countries_by_group(group_id: int) -> Country:
 def select_enabled_countries_by_group(group_id: int) -> Country:
     try:
         return Country.select().join(Region).where(
-            (Country.enabled == 1) &
+            (Country.enabled == True) &
             ((Country.group_id == group_id) |
-            (Country.shared == 1))
+            (Country.shared == True))
         ).group_by(Country.id).execute()
     except Exception as e:
         out_error(e)
@@ -27,7 +27,7 @@ def select_enabled_countries_by_group(group_id: int) -> Country:
 
 def get_country_with_group(country_id: int, group_id: int) -> Country:
     try:
-        return Country.get(Country.id == country_id, (Country.group_id == group_id | Country.shared == 1))
+        return Country.get((Country.id == country_id) & ((Country.group_id == group_id) | (Country.shared == True)))
     except Country.DoesNotExist:
         raise RoxywiResourceNotFound
     except Exception as e:
@@ -44,7 +44,7 @@ def create_country(body: CountryRequest) -> int:
 
 def update_country(body: CountryRequest, country_id: int) -> None:
     try:
-        Country.update(**body.model_dump(mode='json', exclude={'regions'})).where(Country.id == country_id).execute()
+        Country.update(**body.model_dump(mode='json')).where(Country.id == country_id).execute()
     except Country.DoesNotExist:
         raise RoxywiResourceNotFound
     except Exception as e:

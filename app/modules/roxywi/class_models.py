@@ -104,14 +104,14 @@ class BaseCheckRequest(BaseModel):
 
 class HttpCheckRequest(BaseCheckRequest):
     url: AnyUrl
-    http_method: Literal['get', 'post', 'put', 'patch', 'delete', 'head', 'options']
+    method: Literal['get', 'post', 'put', 'patch', 'delete', 'head', 'options']
     header_req: Optional[str] = None
     body_req: Optional[str] = None
     body: Optional[EscapedString] = None
     accepted_status_codes: Annotated[int, Gt(99), Le(599)]
     ignore_ssl_error: Optional[bool] = 0
 
-    @field_validator('http_method', mode='before')
+    @field_validator('method', mode='before')
     @classmethod
     def set_http_method(cls, v):
         return v.lower()
@@ -191,11 +191,13 @@ class RmonAgent(BaseModel):
     server_id: int
     uuid: Optional[UUID4] = ''
     reconfigure: Optional[bool] = 0
+    region_id: Optional[int] = None
 
 
 class GroupQuery(BaseModel):
     group_id: Optional[int] = None
     recurse: Optional[bool] = False
+    max_depth: Optional[int] = 1
 
 
 class UserSearchRequest(GroupQuery):
@@ -259,6 +261,7 @@ class RegionRequest(BaseModel):
     shared: Optional[bool] = 0
     enabled: Optional[bool] = 1
     group_id: Optional[int] = None
+    country_id: Optional[int] = None
     agents: Optional[list[int]] = None
 
 
