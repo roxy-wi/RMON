@@ -44,9 +44,8 @@ def update_user_from_admin_area(user, email, user_id, enabled):
 
 
 def delete_user_groups(user_id):
-	group_for_delete = UserGroups.delete().where(UserGroups.user_id == user_id)
 	try:
-		group_for_delete.execute()
+		UserGroups.delete().where(UserGroups.user_id == user_id).execute()
 	except Exception as e:
 		out_error(e)
 		return False
@@ -145,11 +144,9 @@ def select_users(**kwargs):
 
 def is_user_active(user_id: int) -> int:
 	try:
-		query = User.get(User.user_id == user_id).enabled
+		return User.get(User.user_id == user_id).enabled
 	except Exception as e:
 		out_error(e)
-	else:
-		return int(query)
 
 
 def check_user_group(user_id, group_id):
@@ -178,20 +175,16 @@ def select_user_groups_with_names(user_id, **kwargs) -> UserGroups:
 
 def select_user_roles_by_group(group_id: int) -> UserGroups:
 	try:
-		query_res = UserGroups.select().where(UserGroups.user_group_id == group_id).execute()
+		return UserGroups.select().where(UserGroups.user_group_id == group_id).execute()
 	except Exception as e:
 		out_error(e)
-	else:
-		return query_res
 
 
 def select_users_roles():
 	try:
-		query_res = UserGroups.select().execute()
+		return UserGroups.select().execute()
 	except Exception as e:
 		out_error(e)
-	else:
-		return query_res
 
 
 def update_last_act_user(user_id: int, ip: str) -> None:
@@ -236,14 +229,10 @@ def get_super_admin_count() -> int:
 
 
 def select_users_emails_by_group_id(group_id: int):
-	query = User.select(User.email).where((User.group_id == group_id) & (User.role != 4))
 	try:
-		query_res = query.execute()
+		return User.select(User.email).where((User.group_id == group_id) & (User.role != 4)).execute()
 	except Exception as e:
 		out_error(e)
-		return
-	else:
-		return query_res
 
 
 def is_user_super_admin(user_id: int) -> bool:

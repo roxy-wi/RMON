@@ -131,7 +131,7 @@ def default_values():
 		conn = connect()
 		cursor = conn.cursor()
 		try:
-			sql = """SELECT setval('groups_pkey', max(id)) FROM "groups";"""
+			sql = """SELECT setval('groups_id_seq', max(id)) FROM "groups";"""
 			cursor.execute(sql)
 		except Exception as e:
 			print(e)
