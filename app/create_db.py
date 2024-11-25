@@ -127,6 +127,15 @@ def default_values():
 	except Exception as e:
 		print(str(e))
 
+	if pgsql_enable:
+		conn = connect()
+		cursor = conn.cursor()
+		try:
+			sql = """SELECT setval('groups_pkey', max(id)) FROM "groups";"""
+			cursor.execute(sql)
+		except Exception as e:
+			print(e)
+
 
 # Needs for an insert version in first time
 def update_db_v_3_4_5_22():

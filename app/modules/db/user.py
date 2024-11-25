@@ -71,8 +71,7 @@ def update_user_current_groups_by_id(groups, user_id):
 def update_user_password(password, user_id):
 	try:
 		hashed_pass = roxy_wi_tools.Tools.get_hash(password)
-		user_update = User.update(password=hashed_pass).where(User.user_id == user_id)
-		user_update.execute()
+		User.update(password=hashed_pass).where(User.user_id == user_id).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -92,7 +91,7 @@ def delete_user(user_id):
 
 def update_user_role(user_id: int, group_id: int, role_id: int) -> None:
 	try:
-		UserGroups.delete().where((UserGroups.user_id == user_id) & (UserGroups.user_group_id == group_id)).execute()
+		delete_user_from_group(group_id, user_id)
 		UserGroups.insert(user_id=user_id, user_group_id=group_id, user_role_id=role_id).execute()
 	except Exception as e:
 		out_error(e)
