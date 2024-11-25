@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import Union
 
 from peewee import fn, IntegrityError
-from playhouse.shortcuts import model_to_dict
 
 from app.modules.db.db_model import (
 	SmonAgent, Server, SMON, SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonHistory, SmonStatusPageCheck,

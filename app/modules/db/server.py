@@ -1,6 +1,6 @@
 from peewee import IntegrityError
 
-from app.modules.db.db_model import mysql_enable, connect, Server, SystemInfo, pgsql_enable
+from app.modules.db.db_model import mysql_enable, connect, Server, SystemInfo
 from app.modules.db.common import out_error, not_unique_error, resource_not_empty
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 

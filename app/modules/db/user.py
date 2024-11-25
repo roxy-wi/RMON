@@ -63,8 +63,7 @@ def update_user_current_groups(group_id: int, user_id: int) -> None:
 
 def update_user_current_groups_by_id(groups, user_id):
 	try:
-		user_update = User.update(group_id=groups).where(User.user_id == user_id)
-		user_update.execute()
+		User.update(group_id=groups).where(User.user_id == user_id).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -93,7 +92,8 @@ def delete_user(user_id):
 
 def update_user_role(user_id: int, group_id: int, role_id: int) -> None:
 	try:
-		UserGroups.insert(user_id=user_id, user_group_id=group_id, user_role_id=role_id).on_conflict('replace').execute()
+		UserGroups.delete().where((UserGroups.user_id == user_id) & (UserGroups.user_group_id == group_id)).execute()
+		UserGroups.insert(user_id=user_id, user_group_id=group_id, user_role_id=role_id).execute()
 	except Exception as e:
 		out_error(e)
 

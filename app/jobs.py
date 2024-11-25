@@ -6,7 +6,6 @@ import distro
 
 from app import scheduler
 import app.modules.db.sql as sql
-import app.modules.db.user as user_sql
 import app.modules.db.roxy as roxy_sql
 import app.modules.db.history as history_sql
 import app.modules.roxywi.roxy as roxy
