@@ -93,7 +93,7 @@ def create_ssh_cred(name: str, password: str, group: int, username: str, enable:
 
 
 def upload_ssh_key(ssh_id: int, key: str, passphrase: str) -> None:
-	key = key.replace("'", "")
+	key = key.replace("'", "").strip()
 	key = crypt_password(key)
 
 	try:
@@ -118,19 +118,16 @@ def upload_ssh_key(ssh_id: int, key: str, passphrase: str) -> None:
 
 
 def update_ssh_key(body: CredRequest, group_id: int, ssh_id: int) -> None:
-	ssh = cred_sql.get_ssh(ssh_id)
-	ssh_key_name = _return_correct_ssh_file(ssh)
-
 	if body.password != '' and body.password is not None:
 		try:
 			body.password = crypt_password(body.password)
 		except Exception as e:
 			raise Exception(e)
-
-	if os.path.isfile(ssh_key_name):
-		new_ssh_key_name = _return_correct_ssh_file(body, ssh_id)
-		os.rename(ssh_key_name, new_ssh_key_name)
-		os.chmod(new_ssh_key_name, 0o600)
+	try:
+		key = body.private_key.replace("'", "").strip()
+		cred_sql.update_private_key(ssh_id, key)
+	except Exception as e:
+		raise e
 
 	try:
 		cred_sql.update_ssh(ssh_id, body.name, body.key_enabled, group_id, body.username, body.password, body.shared)
