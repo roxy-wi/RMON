@@ -16,10 +16,7 @@ def run_ansible(inv: dict, server_ips: str, ansible_role: str) -> object:
 	proxy = sql.get_setting('proxy')
 	proxy_serv = ''
 	tags = ''
-	try:
-		agent_pid = server_mod.start_ssh_agent()
-	except Exception as e:
-		raise Exception(f'{e}')
+	agent_pid = server_mod.start_ssh_agent()
 
 	try:
 		_install_ansible_collections()
@@ -40,7 +37,7 @@ def run_ansible(inv: dict, server_ips: str, ansible_role: str) -> object:
 				server_mod.add_key_to_agent(ssh_settings, agent_pid)
 			except Exception as e:
 				server_mod.stop_ssh_agent(agent_pid)
-				raise Exception(f'{e}')
+				raise Exception(e)
 
 		if proxy is not None and proxy != '' and proxy != 'None':
 			proxy_serv = proxy

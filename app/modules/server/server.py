@@ -444,13 +444,12 @@ def start_ssh_agent() -> dict:
 	agent_settings = {}
 	cmd = "ssh-agent -s"
 	output, stderr = subprocess_execute(cmd)
-
 	for out in output:
 		if 'SSH_AUTH_SOCK=' in out:
 			agent_settings.setdefault('socket', out.split('=')[1].split(';')[0])
 		if 'SSH_AGENT_PID=' in out:
 			agent_settings.setdefault('pid', out.split('=')[1].split(';')[0])
-	if 'error' in stderr:
+	if stderr:
 		raise Exception(f'error: Cannot start SSH agent: {stderr}')
 	return agent_settings
 

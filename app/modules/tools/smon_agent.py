@@ -59,6 +59,9 @@ def add_agent(data: RmonAgent) -> Union[int, tuple]:
 
     try:
         inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid, data.port)
+    except Exception as e:
+        roxywi_common.handle_exceptions(e, server_ip, 'Cannot generate inventory', login=1)
+    try:
         run_ansible(inv, server_ips, 'rmon_agent')
     except Exception as e:
         roxywi_common.handle_exceptions(e, server_ip, 'Cannot install RMON agent', login=1)

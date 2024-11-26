@@ -2,7 +2,6 @@ import os
 import base64
 from cryptography.fernet import Fernet
 
-import paramiko
 from flask import render_template
 from playhouse.shortcuts import model_to_dict
 
@@ -93,7 +92,7 @@ def create_ssh_cred(name: str, password: str, group: int, username: str, enable:
 
 
 def upload_ssh_key(ssh_id: int, key: str, passphrase: str) -> None:
-	key = key.replace("'", "").strip()
+	key = key.replace("'", "")
 	key = crypt_password(key)
 
 	try:
@@ -124,7 +123,7 @@ def update_ssh_key(body: CredRequest, group_id: int, ssh_id: int) -> None:
 		except Exception as e:
 			raise Exception(e)
 	try:
-		key = body.private_key.replace("'", "").strip()
+		key = body.private_key.replace("'", "")
 		cred_sql.update_private_key(ssh_id, key)
 	except Exception as e:
 		raise e
@@ -136,21 +135,18 @@ def update_ssh_key(body: CredRequest, group_id: int, ssh_id: int) -> None:
 		raise Exception(e)
 
 
-def delete_ssh_key(ssh_id) -> None:
-	name = ''
+def delete_ssh_key(ssh_id: int) -> None:
+	sshs = cred_sql.get_ssh(ssh_id)
 
-	for sshs in cred_sql.select_ssh(id=ssh_id):
-		name = sshs.name
-
-		if sshs.key_enabled == 1:
-			ssh_key_name = _return_correct_ssh_file(sshs)
-			try:
-				os.remove(ssh_key_name)
-			except Exception:
-				pass
+	if sshs.key_enabled == 1:
+		ssh_key_name = _return_correct_ssh_file(sshs)
+		try:
+			os.remove(ssh_key_name)
+		except Exception:
+			pass
 	try:
 		cred_sql.delete_ssh(ssh_id)
-		roxywi_common.logging('Roxy-WI server', f'The SSH credentials {name} has deleted', roxywi=1, login=1)
+		roxywi_common.logging('Roxy-WI server', f'The SSH credentials {sshs.name} has deleted', roxywi=1, login=1)
 	except Exception as e:
 		raise e
 
@@ -211,10 +207,8 @@ def get_creds(group_id: int = None, cred_id: int = None, not_shared: bool = Fals
 		cred_dict['private_key'] = ''
 
 		if cred.key_enabled == 1 and group_id == cred.group_id:
-			ssh_key_file = _return_correct_ssh_file(cred)
-			if os.path.isfile(ssh_key_file):
-				with open(ssh_key_file, 'rb') as key:
-					cred_dict['private_key'] = base64.b64encode(key.read()).decode('utf-8')
+			if cred.private_key:
+				cred_dict['private_key'] = base64.b64encode(cred.private_key.encode()).decode('utf-8')
 		json_data.append(cred_dict)
 	return json_data
 
