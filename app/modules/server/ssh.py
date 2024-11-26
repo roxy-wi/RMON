@@ -227,6 +227,8 @@ def _return_correct_ssh_file(cred: CredRequest, ssh_id: int = None) -> str:
 	try:
 		private_key = cred_sql.get_ssh(ssh_id).private_key
 		private_key = decrypt_password(private_key)
+		private_key = private_key.strip()
+		private_key = f'{private_key}\n'
 	except Exception as e:
 		raise e
 
