@@ -122,11 +122,6 @@ def update_ssh_key(body: CredRequest, group_id: int, ssh_id: int) -> None:
 			body.password = crypt_password(body.password)
 		except Exception as e:
 			raise Exception(e)
-	try:
-		key = body.private_key.replace("'", "")
-		cred_sql.update_private_key(ssh_id, key)
-	except Exception as e:
-		raise e
 
 	try:
 		cred_sql.update_ssh(ssh_id, body.name, body.key_enabled, group_id, body.username, body.password, body.shared)
