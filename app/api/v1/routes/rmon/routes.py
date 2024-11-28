@@ -3,7 +3,8 @@ from app.views.agent.views import AgentView, AgentsView
 from app.views.agent.region_views import RegionView, RegionListView
 from app.views.agent.country_views import CountryView, CountryListView
 from app.views.check.views import CheckHttpView, CheckTcpView, CheckDnsView, CheckPingView, CheckSmtpView, CheckRabbitView
-from app.views.check.checks_view import ChecksViewHttp, ChecksViewDns, ChecksViewTcp, ChecksViewPing, ChecksViewSmtp, ChecksViewRabbit
+from app.views.check.checks_view import (ChecksViewHttp, ChecksViewDns, ChecksViewTcp, ChecksViewPing, ChecksViewSmtp,
+                                         ChecksViewRabbit, AllChecksViewWithFilters)
 from app.views.check.check_metric_view import (ChecksMetricViewHttp, ChecksMetricViewTcp, ChecksMetricViewDNS,
                                                ChecksMetricViewPing, ChecksMetricViewSMTP, ChecksMetricViewRabbitmq,
                                                CheckStatusesView, CheckStatusView)
@@ -22,6 +23,7 @@ bp.add_url_rule('/agents', view_func=AgentsView.as_view('agents'))
 bp.add_url_rule('/regions', view_func=RegionListView.as_view('regions'))
 bp.add_url_rule('/countries', view_func=CountryListView.as_view('countries'))
 bp.add_url_rule('/checks/http', view_func=ChecksViewHttp.as_view('http_checks'))
+bp.add_url_rule('/checks', view_func=AllChecksViewWithFilters.as_view('checks'))
 bp.add_url_rule('/checks/dns', view_func=ChecksViewDns.as_view('dns_checks'))
 bp.add_url_rule('/checks/tcp', view_func=ChecksViewTcp.as_view('tcp_checks'))
 bp.add_url_rule('/checks/ping', view_func=ChecksViewPing.as_view('ping_checks'))

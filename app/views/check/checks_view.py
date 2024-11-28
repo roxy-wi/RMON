@@ -1,5 +1,3 @@
-from typing import Union
-
 from flask.views import MethodView
 from flask_jwt_extended import jwt_required
 from flask import jsonify
@@ -10,8 +8,48 @@ import app.modules.db.smon as smon_sql
 import app.modules.tools.smon as smon_mod
 from app.modules.common.common_classes import SupportClass
 from app.middleware import get_user_params, check_group
-from app.modules.db.db_model import SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonSMTPCheck, SmonRabbitCheck
-from app.modules.roxywi.class_models import GroupQuery
+from app.modules.roxywi.class_models import GroupQuery, CheckFiltersQuery
+from app.modules.db.db_model import SMON
+
+
+def _return_checks(checks: SMON, check_type_id: int = None) -> list:
+    entities = []
+    check_list = []
+
+    for m in checks:
+        check_json = {'checks': []}
+        place = m.multi_check_id.entity_type
+        check_id = m.id
+        if m.multi_check_id.check_group_id:
+            group_name = smon_sql.get_smon_group_by_id(m.multi_check_id.check_group_id).name
+            group_name = group_name.replace("'", "")
+        else:
+            group_name = None
+        check_json['check_group'] = group_name
+        if m.country_id:
+            entities.append(m.country_id.id)
+        elif m.region_id:
+            entities.append(m.region_id.id)
+        elif m.agent_id:
+            entities.append(m.agent_id.id)
+        checks = smon_sql.select_one_smon(check_id, check_type_id=check_type_id)
+        i = 0
+        for check in checks:
+            check_dict = model_to_dict(check, max_depth=1)
+            check_json['checks'].append(check_dict)
+            check_json['entities'] = entities
+            check_json['place'] = place
+            smon_id = model_to_dict(check, max_depth=1)
+            check_json.update(smon_id['smon_id'])
+            check_json.update(model_to_dict(check, recurse=False))
+            check_json['name'] = check_json['name'].replace("'", "")
+            check_json['checks'][i]['smon_id']['name'] = check.smon_id.name.replace("'", "")
+            if check_json['checks'][i]['smon_id']['check_type'] == 'http':
+                check_json['checks'][i]['accepted_status_codes'] = int(check_json['checks'][i]['accepted_status_codes'])
+                check_json['accepted_status_codes'] = int(check_json['accepted_status_codes'])
+            i += 1
+        check_list.append(check_json)
+    return check_list
 
 
 class ChecksView(MethodView):
@@ -21,47 +59,12 @@ class ChecksView(MethodView):
     def __init__(self):
         self.check_type = None
 
-    def get(self, query: GroupQuery) -> Union[SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck]:
+    def get(self, query: GroupQuery) -> list:
         group_id = SupportClass.return_group_id(query)
         check_type_id = smon_mod.get_check_id_by_name(self.check_type)
         checks = smon_sql.select_multi_checks_with_type(self.check_type, group_id)
-        entities = []
-        check_list = []
 
-        for m in checks:
-            check_json = {'checks': []}
-            place = m.multi_check_id.entity_type
-            check_id = m.id
-            if m.multi_check_id.check_group_id:
-                group_name = smon_sql.get_smon_group_by_id(m.multi_check_id.check_group_id).name
-                group_name = group_name.replace("'", "")
-            else:
-                group_name = None
-            check_json['check_group'] = group_name
-            if m.country_id:
-                entities.append(m.country_id.id)
-            elif m.region_id:
-                entities.append(m.region_id.id)
-            elif m.agent_id:
-                entities.append(m.agent_id.id)
-            checks = smon_sql.select_one_smon(check_id, check_type_id=check_type_id)
-            i = 0
-            for check in checks:
-                check_dict = model_to_dict(check, max_depth=1)
-                check_json['checks'].append(check_dict)
-                check_json['entities'] = entities
-                check_json['place'] = place
-                smon_id = model_to_dict(check, max_depth=1)
-                check_json.update(smon_id['smon_id'])
-                check_json.update(model_to_dict(check, recurse=False))
-                check_json['name'] = check_json['name'].replace("'", "")
-                check_json['checks'][i]['smon_id']['name'] = check.smon_id.name.replace("'", "")
-                if check_json['checks'][i]['smon_id']['check_type'] == 'http':
-                    check_json['checks'][i]['accepted_status_codes'] = int(check_json['checks'][i]['accepted_status_codes'])
-                    check_json['accepted_status_codes'] = int(check_json['accepted_status_codes'])
-                i += 1
-            check_list.append(check_json)
-
+        check_list = _return_checks(checks, check_type_id)
         return check_list
 
 
@@ -943,3 +946,176 @@ class ChecksViewRabbit(ChecksView):
         """
         checks = super().get(query)
         return jsonify(checks)
+
+
+class AllChecksViewWithFilters(MethodView):
+    methods = ["GET"]
+    decorators = [jwt_required(), get_user_params(), check_group()]
+
+    @validate(query=CheckFiltersQuery)
+    def get(self, query: CheckFiltersQuery):
+        """
+        Get all checks with filters.
+
+        ---
+        tags:
+        - 'Checks'
+        parameters:
+        - name: check_group
+          in: query
+          description: 'Filter by check group.'
+          required: false
+          type: string
+        - name: check_name
+          in: query
+          description: 'Filter by check name.'
+          required: false
+          type: string
+        - name: check_status
+          in: query
+          description: 'Filter by check status.'
+          required: false
+          type: integer
+        - name: check_type
+          in: query
+          description: 'Filter by check type. Available values: `http`, `tcp`, `ping`, `dns`, `rabbitmq`, `smtp`.'
+          required: false
+          type: string
+        - name: sort_by_check_name
+          in: query
+          description: 'Sort checks by check name.'
+          required: false
+          type: bool
+        - name: sort_by_check_status
+          in: query
+          description: 'Sort checks by check status.'
+          required: false
+          type: bool
+        - name: sort_by_check_type
+          in: query
+          description: 'Sort checks by check type.'
+          required: false
+          type: bool
+        - name: offset
+          in: query
+          type: integer
+          description: 'Offset for pagination.'
+          default: 1
+        - name: limit
+          in: query
+          type: integer
+          description: 'Limit for pagination.'
+          default: 25
+        responses:
+          '200':
+            description: 'Successful Operation'
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  agent_id:
+                    type: integer
+                    description: 'ID of the agent.'
+                  body_status:
+                    type: integer
+                    description: 'Status of the body content.'
+                  check_group:
+                    type: string
+                    description: 'Name of the check group.'
+                  check_timeout:
+                    type: integer
+                    description: 'Timeout interval of the check.'
+                  check_type:
+                    type: string
+                    description: 'Type of the check.'
+                  country_id:
+                    type: integer
+                    description: 'ID of the country.'
+                  created_at:
+                    type: string
+                    format: date-time
+                    description: 'Creation time of the check.'
+                  description:
+                    type: string
+                    description: 'Description of the check.'
+                  enabled:
+                    type: integer
+                    description: 'Enabled status of the check.'
+                  group_id:
+                    type: integer
+                    description: 'ID of the group.'
+                  id:
+                    type: integer
+                    description: 'ID of the check.'
+                  mm_channel_id:
+                    type: integer
+                    description: 'MM Channel ID.'
+                  multi_check_id:
+                    type: integer
+                    description: 'Multi-check ID.'
+                  name:
+                    type: string
+                    description: 'Name of the check.'
+                  pd_channel_id:
+                    type: integer
+                    description: 'PD Channel ID.'
+                  place:
+                    type: string
+                    description: 'Place related to the check.'
+                  region_id:
+                    type: integer
+                    description: 'ID of the region.'
+                  response_time:
+                    type: string
+                    description: 'Response time of the check.'
+                  slack_channel_id:
+                    type: integer
+                    description: 'Slack Channel ID.'
+                  ssl_expire_critical_alert:
+                    type: integer
+                    description: 'Critical alert for SSL expiry.'
+                  ssl_expire_date:
+                    type: string
+                    format: date-time
+                    description: 'SSL expiry date.'
+                  ssl_expire_warning_alert:
+                    type: integer
+                    description: 'Warning alert for SSL expiry.'
+                  status:
+                    type: integer
+                    description: 'Status of the check.'
+                  telegram_channel_id:
+                    type: integer
+                    description: 'Telegram Channel ID.'
+                  time_state:
+                    type: string
+                    format: date-time
+                    description: 'Time state of the check.'
+                  updated_at:
+                    type: string
+                    format: date-time
+                    description: 'Last updated time of the check.'
+        """
+        group_id = SupportClass.return_group_id(query)
+        checks = smon_sql.select_multi_check_with_filters(group_id, query)
+        entities = []
+        check_list = []
+
+        for m in checks:
+            check_json = {}
+            place = m.multi_check_id.entity_type
+            if m.multi_check_id.check_group_id:
+                group_name = smon_sql.get_smon_group_by_id(m.multi_check_id.check_group_id).name
+                group_name = group_name.replace("'", "")
+            else:
+                group_name = None
+
+            check_json['check_group'] = group_name
+            check_json['entities'] = entities
+            check_json['place'] = place
+            smon_id = model_to_dict(m, recurse=False, exclude={SMON.agent_id, SMON.region_id, SMON.country_id})
+            check_json.update(smon_id)
+            check_json['name'] = check_json['name'].replace("'", "")
+            check_list.append(check_json)
+        return jsonify(check_list)

@@ -11,6 +11,7 @@ from app.modules.db.db_model import (
 from app.modules.db.common import out_error, resource_not_empty
 import app.modules.roxy_wi_tools as roxy_wi_tools
 import app.modules.tools.common as tool_common
+from app.modules.roxywi.class_models import CheckFiltersQuery
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 
 
@@ -374,10 +375,54 @@ def select_multi_checks(group_id: int) -> SMON:
 
 def select_multi_checks_with_type(check_type: int, group_id: int) -> SMON:
 	try:
+		if pgsql_enable:
+			return SMON.select().join(MultiCheck).where(
+				(SMON.group_id == group_id) &
+				(SMON.check_type == check_type)
+			).distinct(SMON.multi_check_id)
 		return SMON.select().join(MultiCheck).where(
 			(SMON.group_id == group_id) &
 			(SMON.check_type == check_type)
 		).order_by(MultiCheck.check_group_id).group_by(SMON.multi_check_id)
+	except Exception as e:
+		out_error(e)
+
+
+def select_multi_check_with_filters(group_id: int, query: CheckFiltersQuery) -> SMON:
+	where_query = (SMON.group_id == group_id)
+	sort_query = None
+	if any((query.check_status, query.check_name, query.check_group, query.check_type)):
+		if query.check_status:
+			where_query = where_query & (SMON.status == query.check_status)
+		if query.check_name:
+			where_query = where_query & (SMON.name == query.check_name)
+		if query.check_type:
+			where_query = where_query & (SMON.check_type == query.check_type)
+		if query.check_group:
+			check_group_id = get_smon_group_by_name(group_id, query.check_group)
+			where_query = where_query & (MultiCheck.check_group_id == check_group_id)
+	if any((query.sort_by_check_name, query.sort_by_check_status, query.sort_by_check_type)):
+		if query.sort_by_check_name:
+			sort_query = SMON.name
+		elif query.sort_by_check_status:
+			sort_query = SMON.status
+		elif query.sort_by_check_type:
+			sort_query = SMON.check_type
+	try:
+		if pgsql_enable:
+			if sort_query:
+				query = SMON.select().join(MultiCheck).where(where_query).distinct(SMON.multi_check_id).order_by(SMON.multi_check_id, sort_query).paginate(query.offset, query.limit)
+			else:
+				query = SMON.select().join(MultiCheck).where(where_query).distinct(SMON.multi_check_id).paginate(query.offset, query.limit)
+			return query
+		else:
+			if sort_query:
+				query = SMON.select().join(MultiCheck).where(where_query).group_by(SMON.multi_check_id).order_by(sort_query).paginate(query.offset, query.limit)
+			else:
+				query = SMON.select().join(MultiCheck).where(where_query).group_by(SMON.multi_check_id).paginate(query.offset, query.limit)
+			return query
+	except SMON.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 

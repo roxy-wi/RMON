@@ -200,6 +200,18 @@ class GroupQuery(BaseModel):
     max_depth: Optional[int] = 1
 
 
+class CheckFiltersQuery(GroupQuery):
+    offset: int = 1
+    limit: int = 25
+    check_group: Optional[EscapedString] = None
+    check_name: Optional[EscapedString] = None
+    check_status: Optional[int] = None
+    check_type: Optional[Literal['http', 'tcp', 'ping', 'dns', 'rabbitmq', 'smtp']] = None
+    sort_by_check_name: Optional[bool] = False
+    sort_by_check_status: Optional[bool] = False
+    sort_by_check_type: Optional[bool] = False
+
+
 class UserSearchRequest(GroupQuery):
     username: Optional[str] = None
     email: Optional[str] = None

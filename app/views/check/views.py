@@ -443,7 +443,7 @@ class CheckHttpView(CheckView):
               - name
               - enabled
               - url
-              - http_method
+              - method
               - place
               - entities
             properties:
@@ -486,7 +486,7 @@ class CheckHttpView(CheckView):
               mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
-              http_method:
+              method:
                 type: 'string'
                 description: 'HTTP method'
                 enum: ['get', 'post', 'put', 'patch', 'delete', 'head', 'options']
@@ -587,7 +587,7 @@ class CheckHttpView(CheckView):
               mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
-              http_method:
+              method:
                   type: 'string'
                   description: 'HTTP method'
                   enum: ['get', 'post', 'put', 'patch', 'delete', 'head', 'options']
