@@ -401,12 +401,12 @@ def select_multi_check_with_filters(group_id: int, query: CheckFiltersQuery) -> 
 		if query.check_group:
 			check_group_id = get_smon_group_by_name(group_id, query.check_group)
 			where_query = where_query & (MultiCheck.check_group_id == check_group_id)
-	if any((query.sort_by_check_name, query.sort_by_check_status, query.sort_by_check_type)):
-		if query.sort_by_check_name:
+	if query.sort_by:
+		if query.sort_by == 'name':
 			sort_query = SMON.name
-		elif query.sort_by_check_status:
+		elif query.sort_by == 'status':
 			sort_query = SMON.status
-		elif query.sort_by_check_type:
+		elif query.sort_by == 'check_type':
 			sort_query = SMON.check_type
 	try:
 		if pgsql_enable:

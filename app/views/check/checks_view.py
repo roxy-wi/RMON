@@ -975,27 +975,17 @@ class AllChecksViewWithFilters(MethodView):
           in: query
           description: 'Filter by check status.'
           required: false
-          type: integer
+          type: 'integer'
         - name: check_type
           in: query
           description: 'Filter by check type. Available values: `http`, `tcp`, `ping`, `dns`, `rabbitmq`, `smtp`.'
           required: false
           type: string
-        - name: sort_by_check_name
+        - name: sort_by
           in: query
-          description: 'Sort checks by check name.'
+          description: 'Sort checks by check status. Available values: `name`, `status`, `check_type`.'
           required: false
-          type: bool
-        - name: sort_by_check_status
-          in: query
-          description: 'Sort checks by check status.'
-          required: false
-          type: bool
-        - name: sort_by_check_type
-          in: query
-          description: 'Sort checks by check type.'
-          required: false
-          type: bool
+          type: 'string'
         - name: offset
           in: query
           type: integer

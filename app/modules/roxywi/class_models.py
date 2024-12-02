@@ -207,9 +207,7 @@ class CheckFiltersQuery(GroupQuery):
     check_name: Optional[EscapedString] = None
     check_status: Optional[int] = None
     check_type: Optional[Literal['http', 'tcp', 'ping', 'dns', 'rabbitmq', 'smtp']] = None
-    sort_by_check_name: Optional[bool] = False
-    sort_by_check_status: Optional[bool] = False
-    sort_by_check_type: Optional[bool] = False
+    sort_by: Optional[Literal['name', 'status', 'check_type']] = None
 
 
 class UserSearchRequest(GroupQuery):
