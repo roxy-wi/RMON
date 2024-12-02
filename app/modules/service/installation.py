@@ -1,4 +1,5 @@
 import os
+import random
 from packaging import version
 
 import ansible
@@ -12,7 +13,7 @@ from app.modules.server.ssh import return_ssh_keys_path
 
 def run_ansible(inv: dict, server_ips: str, ansible_role: str) -> object:
 	inventory_path = '/var/www/rmon/app/scripts/ansible/inventory'
-	inventory = f'{inventory_path}/{ansible_role}.json'
+	inventory = f'{inventory_path}/{ansible_role}-{random.randint(0, 135)}.json'
 	proxy = sql.get_setting('proxy')
 	proxy_serv = ''
 	tags = ''

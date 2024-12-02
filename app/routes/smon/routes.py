@@ -75,11 +75,13 @@ def smon_dashboard(smon_id, check_id):
     9. Renders the RMON history template ('include/smon/smon_history.html') using the `render_template` function from Flask, passing the `kwargs` dictionary as keyword arguments.
     """
     roxywi_common.check_user_group_for_flask()
-    multi_check = smon_sql.get_multi_check(smon_id, g.user_params['group_id'])
+    group_id = g.user_params['group_id']
+    multi_check = smon_sql.get_multi_check(smon_id, group_id)
     smon = smon_sql.select_one_smon(multi_check.id, check_id)
-    all_checks = smon_sql.select_multi_check(smon_id, g.user_params['group_id'])
+    all_checks = smon_sql.select_multi_check(smon_id, group_id)
     cert_day_diff = 'N/A'
     avg_res_time = smon_mod.get_average_response_time(smon_id, check_id)
+
 
     try:
         last_resp_time = round(smon_sql.get_last_smon_res_time_by_check(smon_id, check_id), 2)
@@ -102,7 +104,11 @@ def smon_dashboard(smon_id, check_id):
         'check_type_id': check_id,
         'dashboard_id': smon_id,
         'last_resp_time': last_resp_time,
-        'all_checks': all_checks
+        'all_checks': all_checks,
+        'telegrams': channel_sql.get_user_receiver_by_group('telegram', group_id),
+        'slacks': channel_sql.get_user_receiver_by_group('slack', group_id),
+        'pds': channel_sql.get_user_receiver_by_group('pd', group_id),
+        'mms': channel_sql.get_user_receiver_by_group('mm', group_id),
     }
 
     return render_template('include/smon/smon_history.html', **kwargs)

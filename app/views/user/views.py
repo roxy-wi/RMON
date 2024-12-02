@@ -185,7 +185,7 @@ class UserView(MethodView):
             else:
                 lang = roxywi_common.get_user_lang_for_flask()
                 data = render_template(
-                    'ajax/new_user.html', users=user_sql.select_users(user=body.username), groups=group_sql.select_groups(),
+                    'ajax/new_user.html', users=user_sql.select_users(id=user_id), groups=group_sql.select_groups(),
                     roles=sql.select_roles(), adding=1, lang=lang
                 )
                 return IdDataResponse(id=user_id, data=data), 201

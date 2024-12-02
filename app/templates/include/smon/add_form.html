@@ -204,7 +204,7 @@
 				<select id="new-smon-telegram">
 					<option value="0">{{lang.words.disabled|title()}}</option>
 				{% for t in telegrams %}
-					<option value="{{t.id}}">{{t.chanel_name}}</option>
+					<option value="{{t.id}}">{{t.chanel_name.replace("'", "")}}</option>
 				{% endfor %}
 				</select>
 			</td>
@@ -215,7 +215,7 @@
 				<select id="new-smon-slack">
 					<option value="0">{{lang.words.disabled|title()}}</option>
 				{% for t in slacks %}
-					<option value="{{t.id}}">{{t.chanel_name}}</option>
+					<option value="{{t.id}}">{{t.chanel_name.replace("'", "")}}</option>
 				{% endfor %}
 				</select>
 			</td>
@@ -226,7 +226,7 @@
 				<select id="new-smon-pd">
 					<option value="0">{{lang.words.disabled|title()}}</option>
 				{% for t in pds %}
-					<option value="{{t.id}}">{{t.chanel_name}}</option>
+					<option value="{{t.id}}">{{t.chanel_name.replace("'", "")}}</option>
 				{% endfor %}
 				</select>
 			</td>
@@ -237,7 +237,7 @@
 				<select id="new-smon-mm">
 					<option value="0">{{lang.words.disabled|title()}}</option>
 				{% for t in mms %}
-					<option value="{{t.id}}">{{t.chanel_name}}</option>
+					<option value="{{t.id}}">{{t.chanel_name.replace("'", "")}}</option>
 				{% endfor %}
 				</select>
 			</td>

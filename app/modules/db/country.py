@@ -44,7 +44,7 @@ def create_country(body: CountryRequest) -> int:
 
 def update_country(body: CountryRequest, country_id: int) -> None:
     try:
-        Country.update(**body.model_dump(mode='json')).where(Country.id == country_id).execute()
+        Country.update(**body.model_dump(mode='json', exclude={'regions'})).where(Country.id == country_id).execute()
     except Country.DoesNotExist:
         raise RoxywiResourceNotFound
     except Exception as e:

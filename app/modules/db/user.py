@@ -106,27 +106,10 @@ def delete_user_from_group(group_id: int, user_id):
 
 
 def select_users(**kwargs):
-	if kwargs.get("user") is not None:
-		query = User.select().where(User.username == kwargs.get("user"))
-	elif kwargs.get("id") is not None:
-		query = User.select().where(User.user_id == kwargs.get("id"))
-	elif kwargs.get("group") is not None:
-		get_date = roxy_wi_tools.GetDate(get_setting('time_zone'))
-		cur_date = get_date.return_date('regular', timedelta_minutes_minus=15)
-		query = (User.select(
-			User, UserGroups, Case(
-				0, [((User.last_login_date >= cur_date), 0)], 1
-			).alias('last_login')
-		).join(UserGroups, on=(User.user_id == UserGroups.user_id)).where(
-			UserGroups.user_group_id == kwargs.get("group")
-		))
-	else:
-		get_date = roxy_wi_tools.GetDate(get_setting('time_zone'))
-		cur_date = get_date.return_date('regular', timedelta_minutes_minus=15)
-		query = User.select(User, Case(0, [(
-			(User.last_login_date >= cur_date), 0)], 1).alias('last_login')).order_by(User.user_id)
 	if pgsql_enable:
-		if kwargs.get("group") is not None:
+		if kwargs.get("id") is not None:
+			query = User.select().where(User.user_id == kwargs.get("id"))
+		elif kwargs.get("group") is not None:
 			query = (User.select(
 				User, UserGroups
 			).join(UserGroups, on=(User.user_id == UserGroups.user_id)).where(
@@ -134,6 +117,24 @@ def select_users(**kwargs):
 			))
 		else:
 			query = User.select(User).order_by(User.user_id)
+	else:
+		if kwargs.get("id") is not None:
+			query = User.select().where(User.user_id == kwargs.get("id"))
+		elif kwargs.get("group") is not None:
+			get_date = roxy_wi_tools.GetDate(get_setting('time_zone'))
+			cur_date = get_date.return_date('regular', timedelta_minutes_minus=15)
+			query = (User.select(
+				User, UserGroups, Case(
+					0, [((User.last_login_date >= cur_date), 0)], 1
+				).alias('last_login')
+			).join(UserGroups, on=(User.user_id == UserGroups.user_id)).where(
+				UserGroups.user_group_id == kwargs.get("group")
+			))
+		else:
+			get_date = roxy_wi_tools.GetDate(get_setting('time_zone'))
+			cur_date = get_date.return_date('regular', timedelta_minutes_minus=15)
+			query = User.select(User, Case(0, [(
+				(User.last_login_date >= cur_date), 0)], 1).alias('last_login')).order_by(User.user_id)
 	try:
 		query_res = query.execute()
 	except Exception as e:

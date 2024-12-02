@@ -260,7 +260,7 @@ function openSmonDialog(check_type, smon_id=0, edit=false) {
 }
 function getCheckSettings(smon_id, check_type) {
 	$.ajax({
-		url: api_v_prefix + "/rmon/check/" +  check_type + "/" + smon_id,
+		url: api_v_prefix + "/rmon/check/" + check_type + "/" + smon_id,
 		type: "get",
 		async: false,
 		dataType: "json",
@@ -298,9 +298,6 @@ function getCheckSettings(smon_id, check_type) {
 				$('#new-smon-header-req').val(data['checks'][0]['header_req']);
 			}
 			$('#new-smon-status-code').val(data['checks'][0]['accepted_status_codes']);
-			$('#new-smon-telegram').val(data['checks'][0]['smon_id']['telegram_channel_id']).change();
-			$('#new-smon-slack').val(data['checks'][0]['smon_id']['slack_channel_id']).change();
-			$('#new-smon-pd').val(data['checks'][0]['smon_id']['pd_channel_id']).change();
 			$('#new-smon-place').val(data['place']).change();
 			$('#new-smon-telegram').selectmenu("refresh");
 			$('#new-smon-place').trigger('selectmenuchange');
@@ -312,6 +309,18 @@ function getCheckSettings(smon_id, check_type) {
 			}
 			if (data['checks'][0]['smon_id']['mm_channel_id']) {
 				$('#new-smon-mm').val(data['checks'][0]['smon_id']['mm_channel_id']).change();
+				$('#new-smon-mm').selectmenu("refresh");
+			}
+			if (data['checks'][0]['smon_id']['pd_channel_id']) {
+				$('#new-smon-pd').val(data['checks'][0]['smon_id']['pd_channel_id']).change();
+				$('#new-smon-mm').selectmenu("refresh");
+			}
+			if (data['checks'][0]['smon_id']['telegram_channel_id']) {
+				$('#new-smon-telegram').val(data['checks'][0]['smon_id']['telegram_channel_id']).change();
+				$('#new-smon-mm').selectmenu("refresh");
+			}
+			if (data['checks'][0]['smon_id']['slack_channel_id']) {
+				$('#new-smon-slack').val(data['checks'][0]['smon_id']['slack_channel_id']).change();
 				$('#new-smon-mm').selectmenu("refresh");
 			}
 			if (data['checks'][0]['method']) {
@@ -433,7 +442,7 @@ function check_and_clear_check_type(check_type) {
 	}
 }
 function clear_check_vals() {
-	const inputs_for_clean = ['url', 'body', 'body-req', 'port', 'packet_size', 'ip', 'header-req', 'username', 'password', 'vhost']
+	const inputs_for_clean = ['url', 'body', 'body-req', 'port', 'packet_size', 'ip', 'header-req', 'username', 'password', 'vhost', 'group', 'description']
 	for (let i of inputs_for_clean) {
 		$('#new-smon-' + i).val('');
 	}
