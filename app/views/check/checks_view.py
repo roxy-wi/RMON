@@ -983,7 +983,7 @@ class AllChecksViewWithFilters(MethodView):
           type: string
         - name: sort_by
           in: query
-          description: 'Sort checks by check status. Available values: `name`, `status`, `check_type`.'
+          description: 'Sort checks by check status. Available values: `name`, `status`, `check_type`, `check_group`, `created_at`, `updated_at`.'
           required: false
           type: 'string'
         - name: offset

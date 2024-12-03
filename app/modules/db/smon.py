@@ -365,7 +365,7 @@ def select_multi_check(multi_check_id: int, group_id: int) -> SMON:
 
 def select_multi_checks(group_id: int) -> SMON:
 	try:
-		if pgsql_enable:
+		if pgsql_enable == '1':
 			return SMON.select().join(MultiCheck).where(SMON.group_id == group_id).distinct(SMON.multi_check_id)
 		else:
 			return SMON.select().join(MultiCheck).where(SMON.group_id == group_id).order_by(MultiCheck.check_group_id).group_by(SMON.multi_check_id)
@@ -375,7 +375,7 @@ def select_multi_checks(group_id: int) -> SMON:
 
 def select_multi_checks_with_type(check_type: int, group_id: int) -> SMON:
 	try:
-		if pgsql_enable:
+		if pgsql_enable == '1':
 			return SMON.select().join(MultiCheck).where(
 				(SMON.group_id == group_id) &
 				(SMON.check_type == check_type)
@@ -402,24 +402,27 @@ def select_multi_check_with_filters(group_id: int, query: CheckFiltersQuery) -> 
 			check_group_id = get_smon_group_by_name(group_id, query.check_group)
 			where_query = where_query & (MultiCheck.check_group_id == check_group_id)
 	if query.sort_by:
-		if query.sort_by == 'name':
-			sort_query = SMON.name
-		elif query.sort_by == 'status':
-			sort_query = SMON.status
-		elif query.sort_by == 'check_type':
-			sort_query = SMON.check_type
+		sorts = {
+			'name': SMON.name,
+			'status': SMON.status,
+			'check_type': SMON.check_type,
+			'check_group': MultiCheck.check_group_id,
+			'created_at': SMON.created_at,
+			'updated_at': SMON.updated_at,
+		}
+		sort_query = sorts[query.sort_by]
 	try:
-		if pgsql_enable:
+		if pgsql_enable == '1':
 			if sort_query:
-				query = SMON.select().join(MultiCheck).where(where_query).distinct(SMON.multi_check_id).order_by(SMON.multi_check_id, sort_query).paginate(query.offset, query.limit)
+				query = SMON.select().join(MultiCheck).distinct(SMON.multi_check_id, sort_query).where(where_query).order_by(sort_query, SMON.multi_check_id).paginate(query.offset, query.limit)
 			else:
 				query = SMON.select().join(MultiCheck).where(where_query).distinct(SMON.multi_check_id).paginate(query.offset, query.limit)
 			return query
 		else:
 			if sort_query:
-				query = SMON.select().join(MultiCheck).where(where_query).group_by(SMON.multi_check_id).order_by(sort_query).paginate(query.offset, query.limit)
+				query = SMON.select().join(MultiCheck).where(where_query).order_by(sort_query).group_by(SMON.multi_check_id).paginate(query.offset, query.limit)
 			else:
-				query = SMON.select().join(MultiCheck).where(where_query).group_by(SMON.multi_check_id).paginate(query.offset, query.limit)
+				query = SMON.select().join(MultiCheck).where(where_query).order_by(SMON.multi_check_id).group_by(SMON.multi_check_id).paginate(query.offset, query.limit)
 			return query
 	except SMON.DoesNotExist:
 		raise RoxywiResourceNotFound
@@ -430,7 +433,7 @@ def select_multi_check_with_filters(group_id: int, query: CheckFiltersQuery) -> 
 def select_one_multi_check_join(multi_check_id: int, check_type_id: int) -> SMON:
 	correct_model = tool_common.get_model_for_check(check_type_id=check_type_id)
 	try:
-		if pgsql_enable:
+		if pgsql_enable == '1':
 			return correct_model.select(correct_model, SMON).join_from(correct_model, SMON).distinct(SMON.multi_check_id).where(
 				SMON.multi_check_id == multi_check_id
 			)

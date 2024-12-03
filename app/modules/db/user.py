@@ -106,7 +106,7 @@ def delete_user_from_group(group_id: int, user_id):
 
 
 def select_users(**kwargs):
-	if pgsql_enable:
+	if pgsql_enable == '1':
 		if kwargs.get("id") is not None:
 			query = User.select().where(User.user_id == kwargs.get("id"))
 		elif kwargs.get("group") is not None:
