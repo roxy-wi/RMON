@@ -44,6 +44,9 @@ def default_values():
 		{'param': 'ssl_expire_critical_alert', 'value': '7', 'section': 'smon', 'desc': 'Critical alert about a SSL certificate expiration (in days)', 'group_id': '1'},
 		{'param': 'master_ip', 'value': '', 'section': 'smon', 'desc': '', 'group_id': '1'},
 		{'param': 'master_port', 'value': '5100', 'section': 'smon', 'desc': '', 'group_id': '1'},
+		{'param': 'use_victoria_metrics', 'value': '0', 'section': 'smon', 'desc': '', 'group_id': '1'},
+		{'param': 'victoria_metrics_select', 'value': '', 'section': 'smon', 'desc': '', 'group_id': '1'},
+		{'param': 'victoria_metrics_insert', 'value': '', 'section': 'smon', 'desc': '', 'group_id': '1'},
 		{'param': 'rabbitmq_host', 'value': '127.0.0.1', 'section': 'rabbitmq', 'desc': 'RabbitMQ-server host', 'group_id': '1'},
 		{'param': 'rabbitmq_port', 'value': '5672', 'section': 'rabbitmq', 'desc': 'RabbitMQ-server port', 'group_id': '1'},
 		{'param': 'rabbitmq_port', 'value': '5672', 'section': 'rabbitmq', 'desc': 'RabbitMQ-server port', 'group_id': '1'},
@@ -127,7 +130,7 @@ def default_values():
 	except Exception as e:
 		print(str(e))
 
-	if pgsql_enable:
+	if pgsql_enable == '1':
 		conn = connect()
 		cursor = conn.cursor()
 		try:

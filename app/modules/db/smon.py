@@ -202,13 +202,13 @@ def add_sec_to_state_time(time, smon_id):
 		out_error(e)
 
 
-def insert_smon_history(smon_id: int, resp_time: float, status: int, check_id: int, mes: str, now_utc: datetime):
+def insert_smon_history(smon_id: int, resp_time: float, status: int, check_type_id: int, mes: str, now_utc: datetime):
 	if status == '':
 		status = 0
 	if resp_time == '':
 		resp_time = 0
 	try:
-		SmonHistory.insert(smon_id=smon_id, response_time=resp_time, status=status, date=now_utc, check_id=check_id, mes=mes).execute()
+		SmonHistory.insert(smon_id=smon_id, response_time=resp_time, status=status, date=now_utc, check_id=check_type_id, mes=mes).execute()
 	except Exception as e:
 		out_error(e)
 

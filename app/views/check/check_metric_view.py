@@ -3,13 +3,14 @@ from flask_jwt_extended import jwt_required
 from flask import jsonify
 from flask_pydantic import validate
 
+import app.modules.db.sql as sql
 import app.modules.db.smon as smon_sql
 import app.modules.tools.smon as smon_mod
 import app.modules.common.common as common
 import app.modules.roxywi.common as roxywi_common
 from app.modules.common.common_classes import SupportClass
 from app.middleware import get_user_params, check_group
-from app.modules.roxywi.class_models import GroupQuery
+from app.modules.roxywi.class_models import CheckMetricsQuery
 
 
 class ChecksMetricView(MethodView):
@@ -20,14 +21,19 @@ class ChecksMetricView(MethodView):
         self.check_type = None
         self.check_type_id = None
 
-    def get(self, check_id: int, query: GroupQuery):
+    def get(self, check_id: int, query: CheckMetricsQuery):
         group_id = SupportClass.return_group_id(query)
+        is_vm = sql.get_setting('use_victoria_metrics')
+
         try:
             smon_sql.select_check_with_group(check_id, group_id)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot find the check')
 
-        return jsonify(smon_mod.history_metrics(check_id, self.check_type_id))
+        if is_vm:
+            return jsonify(smon_mod.history_metrics_from_vm(check_id, query))
+        else:
+            return jsonify(smon_mod.history_metrics(check_id, self.check_type_id))
 
 
 class ChecksMetricViewHttp(ChecksMetricView):
@@ -36,8 +42,8 @@ class ChecksMetricViewHttp(ChecksMetricView):
         self.check_type = 'http'
         self.check_type_id = 2
 
-    @validate(query=GroupQuery)
-    def get(self, check_id: int, query: GroupQuery):
+    @validate(query=CheckMetricsQuery)
+    def get(self, check_id: int, query: CheckMetricsQuery):
         """
         Get HTTP metrics check.
         ---
@@ -54,6 +60,21 @@ class ChecksMetricViewHttp(ChecksMetricView):
           description: This parameter is used only for the superAdmin role.
           required: false
           type: integer
+        - name: step
+          in: query
+          description: The interval between data points, which must be returned from the range query. Only if VictoriaMetrics is used.
+          default: 30s
+          type: string
+        - name: start
+          in: query
+          description: The starting timestamp of the time range for query evaluation. Only if VictoriaMetrics is used.
+          default: now - 30m
+          type: string
+        - name: end
+          in: query
+          description: the ending timestamp of the time range for query evaluation. If the end isn’t set, then the end is automatically set to the current time. Only if VictoriaMetrics is used.
+          default: now
+          type: string
         responses:
           '200':
             description: 'Successful Operation'
@@ -64,7 +85,7 @@ class ChecksMetricViewHttp(ChecksMetricView):
                   type: 'object'
                   description: 'HTTP metrics for the check'
                   properties:
-                    app_connect:
+                    appconnect:
                       type: 'string'
                       description: 'App connect times, comma-separated'
                     connect:
@@ -79,16 +100,16 @@ class ChecksMetricViewHttp(ChecksMetricView):
                     labels:
                       type: 'string'
                       description: 'Time labels, comma-separated'
-                    name_lookup:
+                    namelookup:
                       type: 'string'
                       description: 'Name lookup times, comma-separated'
-                    pre_transfer:
+                    pretransfer:
                       type: 'string'
                       description: 'Pre-transfer times, comma-separated'
                     redirect:
                       type: 'string'
                       description: 'Redirect times, comma-separated'
-                    start_transfer:
+                    starttransfer:
                       type: 'string'
                       description: 'Start transfer times, comma-separated'
         """
@@ -101,8 +122,8 @@ class ChecksMetricViewTcp(ChecksMetricView):
         self.check_type = 'tcp'
         self.check_type_id = 1
 
-    @validate(query=GroupQuery)
-    def get(self, check_id: int, query: GroupQuery):
+    @validate(query=CheckMetricsQuery)
+    def get(self, check_id: int, query: CheckMetricsQuery):
         """
         Get TCP metrics check.
         ---
@@ -114,6 +135,26 @@ class ChecksMetricViewTcp(ChecksMetricView):
           description: 'ID of the check to retrieve metrics for'
           required: true
           type: 'integer'
+        - name: group_id
+          in: query
+          description: This parameter is used only for the superAdmin role.
+          required: false
+          type: integer
+        - name: step
+          in: query
+          description: The interval between data points, which must be returned from the range query. Only if VictoriaMetrics is used.
+          default: 30s
+          type: string
+        - name: start
+          in: query
+          description: The starting timestamp of the time range for query evaluation. Only if VictoriaMetrics is used.
+          default: now - 30m
+          type: string
+        - name: end
+          in: query
+          description: the ending timestamp of the time range for query evaluation. If the end isn’t set, then the end is automatically set to the current time. Only if VictoriaMetrics is used.
+          default: now
+          type: string
         responses:
           '200':
             description: 'Successful Operation'
@@ -140,8 +181,8 @@ class ChecksMetricViewSMTP(ChecksMetricView):
         self.check_type = 'smtp'
         self.check_type_id = 3
 
-    @validate(query=GroupQuery)
-    def get(self, check_id: int, query: GroupQuery):
+    @validate(query=CheckMetricsQuery)
+    def get(self, check_id: int, query: CheckMetricsQuery):
         """
         Get SMTP metrics check.
         ---
@@ -158,6 +199,21 @@ class ChecksMetricViewSMTP(ChecksMetricView):
           description: This parameter is used only for the superAdmin role.
           required: false
           type: integer
+        - name: step
+          in: query
+          description: The interval between data points, which must be returned from the range query. Only if VictoriaMetrics is used.
+          default: 30s
+          type: string
+        - name: start
+          in: query
+          description: The starting timestamp of the time range for query evaluation. Only if VictoriaMetrics is used.
+          default: now - 30m
+          type: string
+        - name: end
+          in: query
+          description: the ending timestamp of the time range for query evaluation. If the end isn’t set, then the end is automatically set to the current time. Only if VictoriaMetrics is used.
+          default: now
+          type: string
         responses:
           '200':
             description: 'Successful Operation'
@@ -168,7 +224,7 @@ class ChecksMetricViewSMTP(ChecksMetricView):
                   type: 'object'
                   description: 'SMTP metrics for the check'
                   properties:
-                    app_connect:
+                    appconnect:
                       type: 'string'
                       description: 'App connect times, comma-separated'
                     connect:
@@ -183,7 +239,7 @@ class ChecksMetricViewSMTP(ChecksMetricView):
                     labels:
                       type: 'string'
                       description: 'Time labels, comma-separated'
-                    name_lookup:
+                    namelookup:
                       type: 'string'
                       description: 'Name lookup times, comma-separated'
         """
@@ -196,8 +252,8 @@ class ChecksMetricViewPing(ChecksMetricView):
         self.check_type = 'ping'
         self.check_type_id = 4
 
-    @validate(query=GroupQuery)
-    def get(self, check_id: int, query: GroupQuery):
+    @validate(query=CheckMetricsQuery)
+    def get(self, check_id: int, query: CheckMetricsQuery):
         """
         Get Ping metrics check.
         ---
@@ -214,6 +270,21 @@ class ChecksMetricViewPing(ChecksMetricView):
           description: This parameter is used only for the superAdmin role.
           required: false
           type: integer
+        - name: step
+          in: query
+          description: The interval between data points, which must be returned from the range query. Only if VictoriaMetrics is used.
+          default: 30s
+          type: string
+        - name: start
+          in: query
+          description: The starting timestamp of the time range for query evaluation. Only if VictoriaMetrics is used.
+          default: now - 30m
+          type: string
+        - name: end
+          in: query
+          description: the ending timestamp of the time range for query evaluation. If the end isn’t set, then the end is automatically set to the current time. Only if VictoriaMetrics is used.
+          default: now
+          type: string
         responses:
           '200':
             description: 'Successful Operation'
@@ -240,8 +311,8 @@ class ChecksMetricViewDNS(ChecksMetricView):
         self.check_type = 'ping'
         self.check_type_id = 5
 
-    @validate(query=GroupQuery)
-    def get(self, check_id: int, query: GroupQuery):
+    @validate(query=CheckMetricsQuery)
+    def get(self, check_id: int, query: CheckMetricsQuery):
         """
         Get DNS metrics check.
         ---
@@ -258,6 +329,21 @@ class ChecksMetricViewDNS(ChecksMetricView):
           description: This parameter is used only for the superAdmin role.
           required: false
           type: integer
+        - name: step
+          in: query
+          description: The interval between data points, which must be returned from the range query. Only if VictoriaMetrics is used.
+          default: 30s
+          type: string
+        - name: start
+          in: query
+          description: The starting timestamp of the time range for query evaluation. Only if VictoriaMetrics is used.
+          default: now - 30m
+          type: string
+        - name: end
+          in: query
+          description: the ending timestamp of the time range for query evaluation. If the end isn’t set, then the end is automatically set to the current time. Only if VictoriaMetrics is used.
+          default: now
+          type: string
         responses:
           '200':
             description: 'Successful Operation'
@@ -284,8 +370,8 @@ class ChecksMetricViewRabbitmq(ChecksMetricView):
         self.check_type = 'rabbitmq'
         self.check_type_id = 6
 
-    @validate(query=GroupQuery)
-    def get(self, check_id: int, query: GroupQuery):
+    @validate(query=CheckMetricsQuery)
+    def get(self, check_id: int, query: CheckMetricsQuery):
         """
         Get RabbitMQ metrics check.
         ---
@@ -302,6 +388,21 @@ class ChecksMetricViewRabbitmq(ChecksMetricView):
           description: This parameter is used only for the superAdmin role.
           required: false
           type: integer
+        - name: step
+          in: query
+          description: The interval between data points, which must be returned from the range query. Only if VictoriaMetrics is used.
+          default: 30s
+          type: string
+        - name: start
+          in: query
+          description: The starting timestamp of the time range for query evaluation. Only if VictoriaMetrics is used.
+          default: now - 30m
+          type: string
+        - name: end
+          in: query
+          description: the ending timestamp of the time range for query evaluation. If the end isn’t set, then the end is automatically set to the current time. Only if VictoriaMetrics is used.
+          default: now
+          type: string
         responses:
           '200':
             description: 'Successful Operation'
@@ -326,8 +427,8 @@ class CheckStatusesView(MethodView):
     methods = ["GET"]
     decorators = [jwt_required(), get_user_params(), check_group()]
 
-    @validate(query=GroupQuery)
-    def get(self, check_id: int, query: GroupQuery):
+    @validate(query=CheckMetricsQuery)
+    def get(self, check_id: int, query: CheckMetricsQuery):
         """
         Get Check Statuses.
         ---
@@ -339,11 +440,11 @@ class CheckStatusesView(MethodView):
           description: 'ID of the check to retrieve statuses for'
           required: true
           type: 'integer'
-        - in: 'query'
-          name: 'group_id'
-          description: 'Group ID for filtering (only for superAdmin role)'
+        - name: group_id
+          in: query
+          description: This parameter is used only for the superAdmin role.
           required: false
-          type: 'integer'
+          type: integer
         responses:
           '200':
             description: 'Successful Operation'
@@ -384,8 +485,8 @@ class CheckStatusView(MethodView):
     methods = ["GET"]
     decorators = [jwt_required(), get_user_params(), check_group()]
 
-    @validate(query=GroupQuery)
-    def get(self, check_id: int, query: GroupQuery):
+    @validate(query=CheckMetricsQuery)
+    def get(self, check_id: int, query: CheckMetricsQuery):
         """
         Get Check current Status.
         ---
@@ -397,11 +498,11 @@ class CheckStatusView(MethodView):
           description: 'ID of the check to retrieve status for'
           required: true
           type: 'integer'
-        - in: 'query'
-          name: 'group_id'
-          description: 'Group ID for filtering (only for superAdmin role)'
+        - name: group_id
+          in: query
+          description: This parameter is used only for the superAdmin role.
           required: false
-          type: 'integer'
+          type: integer
         responses:
           '200':
             description: 'Successful Operation'

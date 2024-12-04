@@ -1,8 +1,12 @@
 from datetime import datetime
+import json
 from typing import Union
 
+import requests
+from datetime import datetime
 from flask import render_template, abort
 
+import app.modules.db.sql as sql
 import app.modules.db.smon as smon_sql
 import app.modules.common.common as common
 import app.modules.server.server as server_mod
@@ -10,7 +14,7 @@ import app.modules.tools.smon_agent as smon_agent
 import app.modules.roxywi.common as roxywi_common
 from app.modules.roxywi.exception import RoxywiCheckLimits
 from app.modules.roxywi.class_models import HttpCheckRequest, DnsCheckRequest, PingCheckRequest, TcpCheckRequest, \
-    SmtpCheckRequest, RabbitCheckRequest
+    SmtpCheckRequest, RabbitCheckRequest, CheckMetricsQuery
 
 
 def create_check(
@@ -153,6 +157,31 @@ def delete_multi_check(smon_id: int, user_group: int):
         raise e
 
 
+def get_metrics(check_id: int, query: CheckMetricsQuery) -> dict:
+    vm_select = sql.get_setting('victoria_metrics_select')
+    response = requests.get(
+        f'{vm_select}/query_range?query=rmon_metrics{{check_id="{check_id}"}}&step={query.step}&start={query.start}&end={query.end}')
+
+    return json.loads(response.text)
+
+
+def history_metrics_from_vm(check_id: int, query: CheckMetricsQuery) -> dict:
+    metrics = {'chartData': {}}
+    metrics['chartData']['labels'] = {}
+    metrics_from_vm = get_metrics(check_id, query)
+    for metric in metrics_from_vm['data']['result']:
+        labels = ''
+
+        if metric['metric']['__name__'] == 'rmon_metrics':
+            metrics['chartData'][metric['metric']['metric']] = ''
+            for value in metric['values']:
+                date_time = datetime.utcfromtimestamp(value[0]).strftime('%Y-%m-%d %H:%M:%S')
+                labels += f'{date_time},'
+                metrics['chartData'][metric['metric']['metric']] += f'{value[1]},'
+        metrics['chartData']['labels'] = labels
+    return metrics
+
+
 def history_metrics(server_id: int, check_type_id: int) -> dict:
     metric = smon_sql.select_smon_history(server_id)
     metrics = {'chartData': {}}
@@ -196,13 +225,13 @@ def history_metrics(server_id: int, check_type_id: int) -> dict:
     metrics['chartData']['labels'] = labels
     metrics['chartData']['response_time'] = response_time
     if check_type_id in (2, 3):
-        metrics['chartData']['name_lookup'] = name_lookup
+        metrics['chartData']['namelookup'] = name_lookup
         metrics['chartData']['connect'] = connect
-        metrics['chartData']['app_connect'] = app_connect
+        metrics['chartData']['appconnect'] = app_connect
         if check_type_id == 2:
-            metrics['chartData']['pre_transfer'] = pre_transfer
+            metrics['chartData']['pretransfer'] = pre_transfer
             metrics['chartData']['redirect'] = redirect
-            metrics['chartData']['start_transfer'] = start_transfer
+            metrics['chartData']['starttransfer'] = start_transfer
             metrics['chartData']['download'] = download
 
     return metrics

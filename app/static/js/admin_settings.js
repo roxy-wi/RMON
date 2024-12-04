@@ -55,11 +55,6 @@ function hideAndShowSettings(section) {
 	}
 }
 function updateSettings(param, section, val) {
-	try {
-		val = val.replace(/\//g, "92");
-	} catch (e) {
-		val = val;
-	}
 	toastr.clear();
 	let json_data = {
 		'param': param,

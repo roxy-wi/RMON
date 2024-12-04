@@ -527,12 +527,12 @@ function renderSMONChartHttp(result, labels, check_id, check_type_id) {
 
     // Преобразование данных в массивы
     const labelArray = labels.split(',');
-    const name_lookup = result.chartData.name_lookup.split(',');
+    const name_lookup = result.chartData.namelookup.split(',');
     const connect = result.chartData.connect.split(',');
-    const app_connect = result.chartData.app_connect.split(',');
-    const pre_transfer = result.chartData.pre_transfer.split(',');
+    const app_connect = result.chartData.appconnect.split(',');
+    const pre_transfer = result.chartData.pretransfer.split(',');
     const redirect = result.chartData.redirect.split(',');
-    const start_transfer = result.chartData.start_transfer.split(',');
+    const start_transfer = result.chartData.starttransfer.split(',');
     const download = result.chartData.download.split(',');
     const response_time = result.chartData.response_time.split(',');
 

@@ -3,9 +3,11 @@ from annotated_types import Gt, Le
 from typing import Optional, Annotated, Union, Literal, Any, List
 
 from shlex import quote
+from datetime import datetime, timedelta
 
 from pydantic_core import CoreSchema, core_schema
-from pydantic import BaseModel, field_validator, StringConstraints, IPvAnyAddress, AnyUrl, root_validator, GetCoreSchemaHandler, UUID4
+from pydantic import BaseModel, field_validator, StringConstraints, IPvAnyAddress, AnyUrl, root_validator, \
+    GetCoreSchemaHandler, UUID4, PastDate
 
 DomainName = Annotated[str, StringConstraints(pattern=r"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]{0,61}[a-z0-9]$")]
 
@@ -298,3 +300,9 @@ class NettoolsRequest(BaseModel):
     record_type: Optional[Literal['a', 'aaaa', 'caa', 'cname', 'mx', 'ns', 'ptr', 'sao', 'src', 'txt']] = None
     ip: Optional[IPvAnyAddress] = None
     netmask: Optional[int] = None
+
+
+class CheckMetricsQuery(GroupQuery):
+    step: Optional[str] = '30s'
+    start: Optional[PastDate] = (datetime.now() - timedelta(hours=0, minutes=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    end: Optional[str] = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
