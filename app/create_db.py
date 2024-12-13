@@ -18,6 +18,7 @@ def default_values():
 		apache_dir = 'httpd'
 	data_source = [
 		{'param': 'time_zone', 'value': 'UTC', 'section': 'main', 'desc': 'Time Zone', 'group_id': '1'},
+		{'param': 'rmon_name', 'value': 'RMON', 'section': 'main', 'desc': '', 'group_id': '1'},
 		{'param': 'license', 'value': '', 'section': 'main', 'desc': 'License key', 'group_id': '1'},
 		{'param': 'proxy', 'value': '', 'section': 'main', 'desc': 'IP address and port of the proxy server. Use proto://ip:port', 'group_id': '1'},
 		{'param': 'session_ttl', 'value': '5', 'section': 'main', 'desc': 'TTL for a user session (in days)', 'group_id': '1'},
@@ -60,6 +61,8 @@ def default_values():
 		{'param': 'mail_smtp_port', 'value': '25', 'section': 'mail', 'desc': 'SMTP server port', 'group_id': '1'},
 		{'param': 'mail_smtp_user', 'value': '', 'section': 'mail', 'desc': 'UserPost for auth', 'group_id': '1'},
 		{'param': 'mail_smtp_password', 'value': '', 'section': 'mail', 'desc': 'Password for auth', 'group_id': '1'},
+		{'param': 'mail_enabled', 'value': '0', 'section': 'mail', 'desc': '', 'group_id': '1'},
+		{'param': 'mail_send_hello_message', 'value': '1', 'section': 'mail', 'desc': '', 'group_id': '1'},
 		{'param': 'log_time_storage', 'value': '14', 'section': 'logs', 'desc': 'Retention period for user activity logs (in days)', 'group_id': '1'},
 		{'param': 'apache_log_path', 'value': f'/var/log/{apache_dir}/', 'section': 'logs', 'desc': 'Path to Apache logs. Apache service for RMON', 'group_id': '1'},
 	]
@@ -444,7 +447,7 @@ def update_db_v_1_3():
 
 def update_ver():
 	try:
-		Version.update(version='1.2.3.1').execute()
+		Version.update(version='1.2.4').execute()
 	except Exception:
 		print('Cannot update version')
 

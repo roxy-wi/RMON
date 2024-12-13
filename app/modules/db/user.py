@@ -285,6 +285,9 @@ def get_users_in_group(group_id: int = None, email: str = None, username: str = 
 	else:
 		where_query = group_query
 	try:
-		return User.select().join(UserGroups).join(Groups).where(where_query).group_by(User.username).execute()
+		if pgsql_enable == '1':
+			return User.select().join(UserGroups).join(Groups).where(where_query).distinct(User.username).execute()
+		else:
+			return User.select().join(UserGroups).join(Groups).where(where_query).group_by(User.username).execute()
 	except Exception as e:
 		out_error(e)

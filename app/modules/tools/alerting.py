@@ -2,6 +2,11 @@ import json
 from typing import Union
 
 import pika
+import pdpyras
+import telebot
+from telebot import apihelper
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
 import requests
 from flask import render_template, abort, g
 from flask_jwt_extended import get_jwt, verify_jwt_in_request
@@ -44,6 +49,8 @@ def send_message_to_rabbit(message: str, **kwargs) -> None:
 
 
 def send_email_to_server_group(subject: str, mes: str, level: str, group_id: int) -> None:
+	if not sql.get_setting('mail_enabled'):
+		return
 	try:
 		users_email = user_sql.select_users_emails_by_group_id(group_id)
 
@@ -67,10 +74,11 @@ def send_email(email_to: str, subject: str, message: str) -> None:
 	mail_smtp_port = sql.get_setting('mail_smtp_port')
 	mail_smtp_user = sql.get_setting('mail_smtp_user')
 	mail_smtp_password = sql.get_setting('mail_smtp_password').replace("'", "")
+	rmon_name = sql.get_setting('rmon_name')
 
 	msg = MIMEText(message)
-	msg['Subject'] = f'RMON: {subject}'
-	msg['From'] = f'RMON <{mail_from}>'
+	msg['Subject'] = f'{rmon_name}: {subject}'
+	msg['From'] = f'{rmon_name} <{mail_from}>'
 	msg['To'] = email_to
 
 	try:
@@ -85,8 +93,6 @@ def send_email(email_to: str, subject: str, message: str) -> None:
 
 
 def telegram_send_mess(mess, level, **kwargs):
-	import telebot
-	from telebot import apihelper
 	token_bot = ''
 	channel_name = ''
 
@@ -120,8 +126,6 @@ def telegram_send_mess(mess, level, **kwargs):
 
 
 def slack_send_mess(mess, level, **kwargs):
-	from slack_sdk import WebClient
-	from slack_sdk.errors import SlackApiError
 	slack_token = ''
 	channel_name = ''
 
@@ -154,8 +158,6 @@ def slack_send_mess(mess, level, **kwargs):
 
 
 def pd_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, **kwargs):
-	import pdpyras
-
 	token = ''
 
 	if kwargs.get('channel_id') == 0:
@@ -200,6 +202,7 @@ def pd_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, 
 
 def mm_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, **kwargs):
 	token = ''
+	rmon_name = sql.get_setting('rmon_name')
 
 	if kwargs.get('channel_id') == 0:
 		return
@@ -228,7 +231,7 @@ def mm_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, 
 		"fallback": f"{alert_type}",
 		"color": f"#{color}",
 		"text": f"{mess}",
-		"author_name": "RMON",
+		"author_name": f"{rmon_name}",
 		"title": f"{level} alert",
 		"fields": [
 			{
@@ -239,7 +242,7 @@ def mm_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, 
 		]
 	}
 	attach = str(json.dumps(attach))
-	values = f'{{"channel": "{channel}", "username": "RMON", "attachments": [{attach}]}}'
+	values = f'{{"channel": "{channel}", "username": f"{rmon_name}", "attachments": [{attach}]}}'
 	proxy_dict = common.return_proxy_dict()
 	try:
 		requests.post(token, headers=headers, data=str(values), timeout=15)
@@ -267,8 +270,9 @@ def check_rabbit_alert() -> Union[str, dict]:
 
 
 def check_email_alert() -> str:
+	rmon_name = sql.get_setting('rmon_name')
 	subject = 'test message'
-	message = 'Test message from RMON'
+	message = f'Test message from {rmon_name}'
 
 	try:
 		user = user_sql.get_user_id(g.user_params['user_id'])
@@ -292,7 +296,7 @@ def add_receiver(receiver: str, token: str, channel: str, group: str, is_api=Fal
 		lang = roxywi_common.get_user_lang_for_flask()
 		new_channel = channel_sql.select_receiver(receiver, last_id)
 		groups = group_sql.select_groups()
-		roxywi_common.logging('Roxy-WI server', f'A new {receiver.title()} channel {channel} has been created ', roxywi=1, login=1)
+		roxywi_common.logging('RMON server', f'A new {receiver.title()} channel {channel} has been created ', roxywi=1, login=1)
 		return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channel=new_channel, receiver=receiver)
 
 
@@ -317,7 +321,8 @@ def check_receiver(channel_id: int, receiver_name: str) -> str:
 		"pd": pd_send_mess,
 		"mm": mm_send_mess,
 	}
-	mess = 'Test message from RMON'
+	rmon_name = sql.get_setting('rmon_name')
+	mess = f'Test message from {rmon_name}'
 
 	if receiver_name == 'pd':
 		level = 'warning'
@@ -335,7 +340,7 @@ def load_channels():
 		user_subscription = roxywi_common.return_user_status()
 	except Exception as e:
 		user_subscription = roxywi_common.return_unsubscribed_user_status()
-		roxywi_common.logging('Roxy-WI server', f'Cannot get a user plan: {e}', roxywi=1)
+		roxywi_common.logging('RMON server', f'Cannot get a user plan: {e}', roxywi=1)
 
 	try:
 		user_params = roxywi_common.get_users_params()

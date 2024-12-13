@@ -56,7 +56,7 @@
                         {% endif %}
                         {% endfor %}
                     </select>
-                {% elif set.param in ('ldap_type', 'ldap_enable', 'syslog_server_enable', 'mail_ssl', 'use_victoria_metrics') %}
+                {% elif set.param in ('ldap_type', 'ldap_enable', 'syslog_server_enable', 'mail_ssl', 'use_victoria_metrics', 'mail_enabled', 'mail_send_hello_message') %}
                     {% if set.value|int() == 1 %}
                         {{ checkbox(set.param, checked='checked', style='margin: 0') }}
                     {% else %}

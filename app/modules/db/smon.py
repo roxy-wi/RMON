@@ -56,6 +56,8 @@ def get_agent_with_group(agent_id: int, group_id: int):
 			(SmonAgent.id == agent_id) &
 			(Server.group_id == group_id)
 		).objects().execute()
+	except SmonAgent.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 

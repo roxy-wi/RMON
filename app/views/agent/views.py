@@ -7,14 +7,14 @@ from flask_pydantic import validate
 import app.modules.db.smon as smon_sql
 import app.modules.roxywi.common as roxywi_common
 import app.modules.tools.smon_agent as smon_agent
-from app.middleware import get_user_params, check_group
+from app.middleware import get_user_params, check_group, page_for_admin
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 from app.modules.roxywi.class_models import BaseResponse, IdResponse, RmonAgent, GroupQuery
 from app.modules.common.common_classes import SupportClass
 
 
 class AgentView(MethodView):
-    method_decorators = ["GET", "POST", "PUT", "DELETE"]
+    method_decorators = ["GET", "POST", "PUT", "PATCH", "DELETE"]
     decorators = [jwt_required(), get_user_params(), check_group()]
 
     def __init__(self):
@@ -240,6 +240,43 @@ class AgentView(MethodView):
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot update agent')
 
+    @validate(query=GroupQuery)
+    def patch(self, agent_id: int, query: GroupQuery):
+        """
+        Reconfigure agent.
+        ---
+        tags:
+          - Agent
+        parameters:
+        - in: 'query'
+          name: 'group_id'
+          description: 'Group ID. For superAdmin only'
+          required: false
+          type: 'integer'
+        - in: 'path'
+          name: 'agent_id'
+          description: 'ID of the agent to remove'
+          required: true
+          type: 'integer'
+        responses:
+          201:
+            description: Agent successfully reconfigured
+          400:
+            description: Invalid ID supplied
+          404:
+            description: Agent not found
+        """
+        group_id = SupportClass.return_group_id(query)
+        try:
+            smon_sql.get_agent_with_group(agent_id, group_id)
+        except Exception as e:
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get agent')
+        try:
+            smon_agent.reconfigure_agent(agent_id)
+            return BaseResponse().model_dump(mode='json'), 201
+        except Exception as e:
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot reconfigure agent')
+
     @staticmethod
     def delete(agent_id: int):
         """
@@ -254,7 +291,7 @@ class AgentView(MethodView):
             required: true
             type: 'integer'
         responses:
-          200:
+          204:
             description: Agent successfully deleted
           400:
             description: Invalid ID supplied
@@ -282,14 +319,13 @@ class AgentsView(MethodView):
     def get(self, query: GroupQuery):
         """
         Get Agent information by Group ID.
-        SuperAdmin can get by groups. Admin roles can get users only from its current group.
         ---
         tags:
           - Agent
         parameters:
         - in: 'query'
           name: 'group_id'
-          description: 'ID of the group to list users. For superAdmin only'
+          description: 'Group ID. For superAdmin only'
           required: false
           type: 'integer'
         responses:
@@ -367,3 +403,45 @@ class AgentsView(MethodView):
         agents = smon_sql.get_agents(group_id)
         agent_list = [model_to_dict(agent, recurse=False) for agent in agents]
         return jsonify(agent_list)
+
+
+class ReconfigureAgentView(MethodView):
+    method_decorators = ["POST"]
+    decorators = [jwt_required(), get_user_params(), check_group(), page_for_admin(level=2)]
+
+    @validate(query=GroupQuery)
+    def post(self, agent_id: int, query: GroupQuery):
+        """
+        Reconfigure agent.
+        ---
+        tags:
+          - Agent
+        parameters:
+        - in: 'query'
+          name: 'group_id'
+          description: 'Group ID. For superAdmin only'
+          required: false
+          type: 'integer'
+        - in: 'path'
+          name: 'agent_id'
+          description: 'ID of the agent to remove'
+          required: true
+          type: 'integer'
+        responses:
+          201:
+            description: Agent successfully reconfigured
+          400:
+            description: Invalid ID supplied
+          404:
+            description: Agent not found
+        """
+        group_id = SupportClass.return_group_id(query)
+        try:
+            smon_sql.get_agent_with_group(agent_id, group_id)
+        except Exception as e:
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get agent')
+        try:
+            smon_agent.reconfigure_agent(agent_id)
+            return BaseResponse().model_dump(mode='json'), 201
+        except Exception as e:
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot reconfigure agent')

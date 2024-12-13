@@ -37,7 +37,7 @@ def get_setting(param, **kwargs):
 				if param in (
 					'session_ttl', 'token_ttl', 'ldap_type', 'ldap_port', 'ldap_enable', 'log_time_storage', 'syslog_server_enable',
 					'keep_history_range', 'ssl_expire_warning_alert', 'ssl_expire_critical_alert', 'action_keep_history_range',
-					'use_victoria_metrics'
+					'use_victoria_metrics', 'mail_enabled', 'mail_send_hello_message'
 				):
 					return int(setting.value)
 				else:

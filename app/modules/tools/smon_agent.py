@@ -96,13 +96,17 @@ def update_agent(agent_id: int, data: RmonAgent):
         raise e
 
     if data.reconfigure:
-        agent_uuid = smon_sql.get_agent_uuid(agent_id)
-        server_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
-        try:
-            inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid, json_data['port'])
-            run_ansible(inv, server_ips, 'rmon_agent')
-        except Exception as e:
-            raise e
+        reconfigure_agent(agent_id)
+
+
+def reconfigure_agent(agent_id: int):
+    agent = smon_sql.get_agent_data(agent_id)
+    server_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
+    try:
+        inv, server_ips = generate_agent_inv(server_ip, 'install', agent.uuid, agent.port)
+        run_ansible(inv, server_ips, 'rmon_agent')
+    except Exception as e:
+        raise e
 
 
 def get_agent_headers(agent_id: int) -> dict:

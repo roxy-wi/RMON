@@ -19,9 +19,12 @@ def create_user(new_user: str, email: str, password: str, role: int, activeuser:
     except Exception as e:
         raise Exception(f'error: cannot update user role {e}')
     try:
+        if not sql.get_setting('mail_enabled') or not sql.get_setting('mail_send_hello_message'):
+            return user_id
         if password == 'aduser':
             password = 'your domain password'
-        message = f"A user has been created for you on RMON portal!\n\n" \
+        rmon_name = sql.get_setting('rmon_name')
+        message = f"A user has been created for you on {rmon_name} portal!\n\n" \
                   f"Now you can login to https://{os.environ.get('HTTP_HOST', '')}\n\n" \
                   f"Your credentials are:\n" \
                   f"Login: {new_user}\n" \
