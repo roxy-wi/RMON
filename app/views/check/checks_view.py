@@ -775,7 +775,7 @@ class ChecksViewSmtp(ChecksView):
 class ChecksViewRabbit(ChecksView):
     def __init__(self):
         super().__init__()
-        self.check_type = 'smtp'
+        self.check_type = 'rabbitmq'
 
     @validate(query=GroupQuery)
     def get(self, query: GroupQuery):

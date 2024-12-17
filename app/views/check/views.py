@@ -233,7 +233,8 @@ class CheckView(MethodView):
 
         try:
             self.create_func[self.check_type](data, last_id)
-            smon_mod.send_new_check(last_id, data, agent_id)
+            if data.enabled:
+                smon_mod.send_new_check(last_id, data, agent_id)
         except Exception as e:
             raise e
 
