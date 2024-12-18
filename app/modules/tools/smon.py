@@ -1,4 +1,3 @@
-from datetime import datetime
 import json
 from typing import Union
 
@@ -21,7 +20,7 @@ def create_check(
         json_data, group_id, check_type, multi_check_id: int, agent_id: int, region_id: int = None, country_id: int = None, show_new=1
 ) -> Union[bool, tuple]:
     try:
-        name = json_data.name
+        name = json_data.name.encode('utf-8')
         enable = json_data.enabled
         desc = json_data.description
         telegram = json_data.telegram_channel_id

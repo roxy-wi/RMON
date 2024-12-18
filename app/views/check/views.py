@@ -198,7 +198,7 @@ class CheckView(MethodView):
             raise Exception('There are no countries in your group')
         for c in countries:
             self._create_country_check(data, multi_check_id, c.id)
-            roxywi_common.logging('RMON server', f'A new check {data.name} has been created on Country {c.name}')
+            roxywi_common.logging('RMON server', f'A new check {data.name.encode("utf-8")} has been created on Country {c.name}')
 
     def _create_country_check(self, data, multi_check_id: int, country_id: int):
         regions = region_sql.get_enabled_regions_by_country_with_group(country_id, self.group_id)
@@ -208,7 +208,7 @@ class CheckView(MethodView):
             raise Exception(f'There are no regions in your group in country_id: {country_id}')
         for region in regions:
             self._create_region_check(data, multi_check_id, region.id, country_id)
-            roxywi_common.logging('RMON server', f'A new check {data.name} has been created on Region {region.name}')
+            roxywi_common.logging('RMON server', f'A new check {data.name.encode("utf-8")} has been created on Region {region.name}')
 
     def _create_region_check(self, data, multi_check_id: int, region_id: int, country_id: int = None):
         try:
