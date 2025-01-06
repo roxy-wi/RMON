@@ -246,3 +246,17 @@ function cleanCountryAddForm() {
 	$('#checked-regions').html('');
 	$('#all-regions').html('');
 }
+function get_country_count_checks(region_id) {
+    $.ajax({
+        url: '/rmon/country/' + region_id + '/count_checks',
+        contentType: "application/json; charset=utf-8",
+        success: function (data) {
+            if (data.status === 'failed') {
+                toastr.error(data.error);
+            } else {
+                toastr.clear();
+                $('#total_country_checks-' + region_id).html(data.checks)
+            }
+        }
+    });
+}

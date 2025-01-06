@@ -20,6 +20,7 @@
     <div class="server-desc">
         <div>
             <b>{{ lang.words.region|title() }} ID</b>: {{ region.id }}
+            <b>{{ lang.smon_page.desc.total_checks }}</b>: <span id="total_region_checks-{{ region.id }}"></span>
         </div>
         <div>
             <b>{{ lang.words.enabled|title() }}</b>: {% if region.enabled %} {{ lang.words.yes|title() }} {% else %} {{ lang.words.no|title() }} {% endif %}
@@ -50,5 +51,6 @@
             document.execCommand('copy');
             document.body.removeChild(el);
         });
-    })
+    });
+    get_region_count_checks('{{region.id}}');
 </script>

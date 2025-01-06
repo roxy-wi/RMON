@@ -64,6 +64,19 @@ def get_region(region_id):
     return render_template('smon/region.html', **kwargs)
 
 
+@bp.get('/<region_type>/<int:region_id>/count_checks')
+@jwt_required()
+def get_region_checks_count(region_type, region_id):
+    checks = 0
+    for check_type in ('http', 'tcp', 'dns', 'ping', 'smtp', 'rabbitmq'):
+        if region_type == 'country':
+            checks += len(smon_sql.select_checks_for_country_by_check_type(region_id, check_type))
+        else:
+            checks += len(smon_sql.select_checks_for_region_by_check_type(region_id, check_type))
+
+    return jsonify({'checks': checks})
+
+
 @bp.get('/country/<int:country_id>')
 @jwt_required()
 @get_user_params()

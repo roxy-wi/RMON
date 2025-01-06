@@ -246,3 +246,17 @@ function cleanRegionAddForm() {
 	$('#checked-agents').html('');
 	$('#all-agents').html('');
 }
+function get_region_count_checks(region_id) {
+    $.ajax({
+        url: '/rmon/region/' + region_id + '/count_checks',
+        contentType: "application/json; charset=utf-8",
+        success: function (data) {
+            if (data.status === 'failed') {
+                toastr.error(data.error);
+            } else {
+                toastr.clear();
+                $('#total_region_checks-' + region_id).html(data.checks)
+            }
+        }
+    });
+}

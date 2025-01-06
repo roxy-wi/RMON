@@ -20,6 +20,7 @@
     <div class="server-desc">
         <div>
             <b>{{ lang.words.country|title() }} ID</b>: {{ country.id }}
+            <b>{{ lang.smon_page.desc.total_checks }}</b>: <span id="total_country_checks-{{ country.id }}"></span>
         </div>
         <div>
             <b>{{ lang.words.enabled|title() }}</b>: {% if country.enabled %} {{ lang.words.yes|title() }} {% else %} {{ lang.words.no|title() }} {% endif %}
@@ -52,5 +53,6 @@
             document.execCommand('copy');
             document.body.removeChild(el);
         });
-    })
+    });
+    get_country_count_checks('{{country.id}}');
 </script>

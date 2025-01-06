@@ -157,7 +157,7 @@ class ChannelView(MethodView):
             else:
                 return IdDataResponse(data=data, id=0).model_dump(mode='json'), 201
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, f'Cannot create {body.channel} {receiver.title()} channel')
+            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot create {body.channel} {receiver.title()} channel')
 
     @validate(body=ChannelRequest)
     def put(self, receiver: Literal['telegram', 'slack', 'pd', 'mm'], channel_id: int, body: ChannelRequest):
@@ -218,7 +218,7 @@ class ChannelView(MethodView):
             roxywi_common.logging(f'group {group_id}', f'The {receiver.title()} token has been updated for channel: {body.channel}', login=1)
             return BaseResponse().model_dump(mode='json'), 201
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, f'Cannot update {body.channel} {receiver} channel')
+            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot update {body.channel} {receiver} channel')
 
     @validate(query=GroupQuery)
     def delete(self, receiver: Literal['telegram', 'slack', 'pd', 'mm'], channel_id: int, query: GroupQuery):
@@ -269,7 +269,7 @@ class ChannelView(MethodView):
                                   roxywi=1, login=1)
             return BaseResponse().model_dump(mode='json'), 204
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, f'Cannot delete {receiver} channel')
+            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot delete {receiver} channel')
 
 
 class ChannelsView(MethodView):
@@ -382,4 +382,4 @@ class ChannelCheckView(MethodView):
             alerting.check_receiver(channel_id, receiver)
             return BaseResponse().model_dump(mode='json'), 200
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, f'Cannot check {channel_id} {receiver}')
+            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot check {channel_id} {receiver}')

@@ -242,13 +242,17 @@ def mm_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, 
 		]
 	}
 	attach = str(json.dumps(attach))
-	values = f'{{"channel": "{channel}", "username": f"{rmon_name}", "attachments": [{attach}]}}'
+	values = f'{{"channel": "{channel}", "username": "{rmon_name}", "attachments": [{attach}]}}'
 	proxy_dict = common.return_proxy_dict()
 	try:
-		requests.post(token, headers=headers, data=str(values), timeout=15)
+		response = requests.post(token, headers=headers, data=str(values), timeout=15, proxies=proxy_dict)
+		res = json.loads(response.text)
+		if res['status_code'] != 200:
+			roxywi_common.logging('RMON server', res["message"].encode('utf-8'))
+			raise Exception(res["message"].encode('utf-8'))
 		return 'ok'
 	except Exception as e:
-		roxywi_common.logging('RMON server', str(e), roxywi=1, proxies=proxy_dict)
+		roxywi_common.logging('RMON server', str(e))
 		raise Exception(f'error: {e}')
 
 
