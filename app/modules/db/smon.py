@@ -80,8 +80,7 @@ def get_agent_id_by_check_id(check_id: int):
 
 def add_agent(**kwargs) -> int:
 	try:
-		last_id = SmonAgent.insert(**kwargs).execute()
-		return last_id
+		return SmonAgent.insert(**kwargs).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -455,6 +454,8 @@ def get_multi_check(check_id: int, group_id: int) -> SMON:
 			(SMON.group_id == group_id) &
 			(SMON.multi_check_id == check_id)
 		)
+	except MultiCheck.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 

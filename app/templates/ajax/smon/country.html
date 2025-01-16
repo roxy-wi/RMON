@@ -30,7 +30,9 @@
             <b>{{ lang.words.regions|title() }}</b>:
             <div class="region-list">
             {% for region in regions %}
-                <div class="region-list-child">{{region.name.replace("'", "")}}</div>
+                <div class="region-list-child">
+                    <a href="/rmon/region/{{ region.id }}" title="{{ lang.words.more|title }} {{ lang.words.info }}">{{region.name.replace("'", "")}}</a>
+                </div>
             {% endfor %}
             </div>
         </div>

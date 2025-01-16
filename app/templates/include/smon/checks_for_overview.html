@@ -1,6 +1,13 @@
+{% if agent_id %}
+{% set correct_region_type = lang.words.agent3 %}
+{% elif region_id %}
+{% set correct_region_type = lang.words.region %}
+{% else %}
+{% set correct_region_type = lang.words.country %}
+{% endif %}
 <div class="overview-checks">
     <div class="overview-checks-type">
-    <div class="server-name">{{ lang.words.checks|title() }} {{ lang.words.on }} {{ lang.words.the }} {{ lang.words.agent3 }}</div>
+    <div class="server-name">{{ lang.words.checks|title() }} {{ lang.words.on }} {{ lang.words.the }} {{ correct_region_type }}</div>
     {% if http_checks %}
         <div class="overview-check-type">HTTP:</div>
         <div class="overview-checks-div">
@@ -12,6 +19,9 @@
                 <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
                 <span class="check-name-tile overview-check-hostname"><b>URL:</b> <a href="{{ check.url }}" target="_blank">{{ check.url }}</a></span>
                 <span class="overview-check-col"><b>{{ lang.words.method|title() }}:</b> {{ check.method|upper() }}</span>
+                <span class="overview-check-col">
+                    <a href="/rmon/agent/{{ check.agent_id }}" title="{{ lang.words.open|title() }} {{ lang.words.agent }}" target="_blank">{{ lang.words.agent|title() }}</a>
+                </span>
                 <span class="overview-check-col">
                     <a class="edit edit-button-fa" title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}" onclick="editSmon('{{check.multi_check_id}}', 'http')"></a>
                 </span>
@@ -30,6 +40,9 @@
                 <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
                 <span class="check-name-tile overview-check-hostname"><b>{{ lang.words.Hostname }}:</b> {{ check.ip }}</span>
                 <span class="overview-check-col"><b>{{ lang.words.port|title() }}:</b> {{ check.port }}</span>
+                <span class="overview-check-col">
+                    <a href="/rmon/agent/{{ check.agent_id }}" title="{{ lang.words.open|title() }} {{ lang.words.agent }}" target="_blank">{{ lang.words.agent|title() }}</a>
+                </span>
                 <span class="overview-check-col">
                     <a class="edit edit-button-fa" title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}" onclick="editSmon('{{check.multi_check_id}}', 'tcp')"></a>
                 </span>
@@ -51,6 +64,9 @@
                     <span class="overview-check-col"><b>{{ lang.words.record_type|title() }}:</b> {{ check.record_type|upper() }}</span>
                     <span class="overview-check-col"> <b>{{ lang.words.port|title() }}:</b> {{ check.port }}</span>
                     <span class="overview-check-col">
+                        <a href="/rmon/agent/{{ check.agent_id }}" title="{{ lang.words.open|title() }} {{ lang.words.agent }}" target="_blank">{{ lang.words.agent|title() }}</a>
+                    </span>
+                    <span class="overview-check-col">
                         <a class="edit edit-button-fa" title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}" onclick="editSmon('{{check.multi_check_id}}', 'dns')"></a>
                     </span>
                 </div>
@@ -68,6 +84,9 @@
                 <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
                 <span class="check-name-tile overview-check-hostname"><b>{{ lang.words.Hostname }}:</b> {{ check.ip }} </span>
                 <span class="overview-check-col"><b>{{ lang.smon_page.desc.packet_size }}:</b> {{ check.packet_size }}</span>
+                <span class="overview-check-col">
+                    <a href="/rmon/agent/{{ check.agent_id }}" title="{{ lang.words.open|title() }} {{ lang.words.agent }}" target="_blank">{{ lang.words.agent|title() }}</a>
+                </span>
                 <span class="overview-check-col">
                     <a class="edit edit-button-fa" title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}" onclick="editSmon('{{check.multi_check_id}}', 'ping')"></a>
                 </span>
@@ -87,6 +106,9 @@
                 <span class="check-name-tile overview-check-hostname"><b>{{ lang.words.Hostname }}:</b> {{ check.ip }} </span>
                 <span class="overview-check-col"><b>{{ lang.words.port|title() }}:</b> {{ check.port }} </span>
                 <span class="overview-check-col">
+                    <a href="/rmon/agent/{{ check.agent_id }}" title="{{ lang.words.open|title() }} {{ lang.words.agent }}" target="_blank">{{ lang.words.agent|title() }}</a>
+                </span>
+                <span class="overview-check-col">
                     <a class="edit edit-button-fa" title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}" onclick="editSmon('{{check.multi_check_id}}', 'smtp')"></a>
                 </span>
             </div>
@@ -105,6 +127,9 @@
                 <span class="check-name-tile overview-check-hostname"><b>{{ lang.words.Hostname }}:</b> {{ check.ip }} </span>
                 <span class="overview-check-col"><b>VHost:</b> {{ check.vhost }}</span>
                 <span class="overview-check-col"><b>{{ lang.words.port|title() }}:</b> {{ check.port }} </span>
+                <span class="overview-check-col">
+                    <a href="/rmon/agent/{{ check.agent_id }}" title="{{ lang.words.open|title() }} {{ lang.words.agent }}" target="_blank">{{ lang.words.agent|title() }}</a>
+                </span>
                 <span class="overview-check-col">
                     <a class="edit edit-button-fa" title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}" onclick="editSmon('{{check.multi_check_id}}', 'rabbitmq')"></a>
                 </span>
