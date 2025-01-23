@@ -853,6 +853,6 @@ def create_multi_check(group_id: int, entity_type: str, check_group_id: int) -> 
 
 def update_check_current_retries(multi_check_id: int, current_retries: int) -> None:
 	try:
-		SMON.update(current_retries=current_retries).where(MultiCheck.id == multi_check_id).execute()
+		SMON.update(current_retries=current_retries).where(SMON.id == multi_check_id).execute()
 	except Exception as e:
 		out_error(e)
