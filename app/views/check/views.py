@@ -68,6 +68,7 @@ class CheckView(MethodView):
             else:
                 group_name = None
             check_json['check_group'] = group_name
+            check_json['retries'] = m.multi_check_id.retries
             if m.country_id:
                 entities.append(m.country_id.id)
             elif m.region_id:
@@ -116,7 +117,7 @@ class CheckView(MethodView):
         except Exception as e:
             raise e
         check_group_id = self._get_check_group_id(data.check_group)
-        multi_check_id = smon_sql.create_multi_check(self.group_id, data.place, check_group_id)
+        multi_check_id = smon_sql.create_multi_check(self.group_id, data.place, check_group_id, data.retries)
         if data.place == 'all':
             self._create_all_checks(data, multi_check_id)
         for entity_id in data.entities:
@@ -129,7 +130,7 @@ class CheckView(MethodView):
         new_entities = []
         place = data.place
         check_group_id = self._get_check_group_id(data.check_group)
-        smon_sql.update_multi_check_group_id(multi_check_id, check_group_id)
+        smon_sql.update_multi_check_group_id_and_retries(multi_check_id, check_group_id, data.retries)
         if data.place == 'all':
             countries = country_sql.select_enabled_countries_by_group(group_id)
             place = 'country'
@@ -423,6 +424,10 @@ class CheckHttpView(CheckView):
                 group_name:
                   type: 'string'
                   description: 'Group Name'
+                retries:
+                  type: 'integer'
+                  description: 'Maximum retries before the service is marked as down and a notification is sent'
+                  default: 3
         """
         return super().get(check_id, query)
 
@@ -513,6 +518,10 @@ class CheckHttpView(CheckView):
               ignore_ssl_error:
                 type: 'integer'
                 description: 'Ignore TLS/SSL error'
+              retries:
+                type: 'integer'
+                description: 'Maximum retries before the service is marked as down and a notification is sent'
+                default: 3
         responses:
           '200':
             description: 'Successful Operation'
@@ -614,6 +623,10 @@ class CheckHttpView(CheckView):
               ignore_ssl_error:
                 type: 'integer'
                 description: 'Ignore TLS/SSL error'
+              retries:
+                type: 'integer'
+                description: 'Maximum retries before the service is marked as down and a notification is sent'
+                default: 3
         responses:
           '201':
             description: 'Successful Operation, HTTP Check updated'
@@ -785,6 +798,10 @@ class CheckTcpView(CheckView):
                   type: 'string'
                   description: 'Where checks must be deployed'
                   enum: ['all', 'country', 'region', 'agent']
+                retries:
+                  type: 'integer'
+                  description: 'Maximum retries before the service is marked as down and a notification is sent'
+                  default: 3
         """
         return super().get(check_id, query)
 
@@ -857,6 +874,10 @@ class CheckTcpView(CheckView):
               check_timeout:
                 type: 'integer'
                 description: 'Timeout (optional)'
+              retries:
+                type: 'integer'
+                description: 'Maximum retries before the service is marked as down and a notification is sent'
+                default: 3
         responses:
           '200':
             description: 'Successful Operation'
@@ -940,6 +961,10 @@ class CheckTcpView(CheckView):
               check_timeout:
                 type: 'integer'
                 description: 'Timeout (optional)'
+              retries:
+                type: 'integer'
+                description: 'Maximum retries before the service is marked as down and a notification is sent'
+                default: 3
         responses:
           '201':
             description: 'Successful Operation, TCP Check updated'
@@ -1120,6 +1145,10 @@ class CheckDnsView(CheckView):
                 interval:
                   type: 'integer'
                   description: 'Check interval'
+                retries:
+                  type: 'integer'
+                  description: 'Maximum retries before the service is marked as down and a notification is sent'
+                  default: 3
         """
         return super().get(check_id, query)
 
@@ -1202,6 +1231,10 @@ class CheckDnsView(CheckView):
                 type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
+              retries:
+                type: 'integer'
+                description: 'Maximum retries before the service is marked as down and a notification is sent'
+                default: 3
         responses:
           '200':
             description: 'Successful Operation'
@@ -1294,6 +1327,10 @@ class CheckDnsView(CheckView):
                 type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
+              retries:
+                type: 'integer'
+                description: 'Maximum retries before the service is marked as down and a notification is sent'
+                default: 3
         responses:
           '201':
             description: 'Successful Operation, DNS Check updated'
@@ -1468,6 +1505,10 @@ class CheckPingView(CheckView):
                 interval:
                   type: 'integer'
                   description: 'Ping interval'
+                retries:
+                  type: 'integer'
+                  description: 'Maximum retries before the service is marked as down and a notification is sent'
+                  default: 3
         """
         return super().get(check_id, query)
 
@@ -1540,6 +1581,10 @@ class CheckPingView(CheckView):
                 type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
+              retries:
+                type: 'integer'
+                description: 'Maximum retries before the service is marked as down and a notification is sent'
+                default: 3
         responses:
           '200':
             description: 'Successful Operation'
@@ -1627,6 +1672,10 @@ class CheckPingView(CheckView):
                 type: 'integer'
                 description: 'Timeout (optional)'
                 default: 2
+              retries:
+                type: 'integer'
+                description: 'Maximum retries before the service is marked as down and a notification is sent'
+                default: 3
         responses:
           '201':
             description: 'Successful Operation, Ping Check updated'
@@ -1804,6 +1853,10 @@ class CheckSmtpView(CheckView):
                 ignore_ssl_error:
                   type: 'integer'
                   description: 'Ignore TLS/SSL error'
+                retries:
+                  type: 'integer'
+                  description: 'Maximum retries before the service is marked as down and a notification is sent'
+                  default: 3
         """
         return super().get(check_id, query)
 
@@ -1981,6 +2034,10 @@ class CheckSmtpView(CheckView):
               ignore_ssl_error:
                 type: 'integer'
                 description: 'Ignore TLS/SSL error'
+              retries:
+                type: 'integer'
+                description: 'Maximum retries before the service is marked as down and a notification is sent'
+                default: 3
         responses:
           '201':
             description: 'Successful Operation, Ping Check updated'
@@ -2164,6 +2221,10 @@ class CheckRabbitView(CheckView):
                 ignore_ssl_error:
                   type: 'integer'
                   description: 'Ignore TLS/SSL error'
+                retries:
+                  type: 'integer'
+                  description: 'Maximum retries before the service is marked as down and a notification is sent'
+                  default: 3
         """
         return super().get(check_id, query)
 
@@ -2251,6 +2312,10 @@ class CheckRabbitView(CheckView):
               ignore_ssl_error:
                 type: 'integer'
                 description: 'Ignore TLS/SSL error'
+              retries:
+                type: 'integer'
+                description: 'Maximum retries before the service is marked as down and a notification is sent'
+                default: 3
         responses:
           '200':
             description: 'Successful Operation'
@@ -2350,6 +2415,10 @@ class CheckRabbitView(CheckView):
               ignore_ssl_error:
                 type: 'integer'
                 description: 'Ignore TLS/SSL error'
+              retries:
+                type: 'integer'
+                description: 'Maximum retries before the service is marked as down and a notification is sent'
+                default: 3
         responses:
           '201':
             description: 'Successful Operation, Ping Check updated'

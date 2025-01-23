@@ -1,3 +1,4 @@
+import os
 import json
 import subprocess
 
@@ -427,6 +428,7 @@ def delete_server(server_id: int) -> str:
 		history_sql.delete_action_history(server_id)
 		server_sql.delete_system_info(server_id)
 		roxywi_common.logging(server_ip, f'The server {hostname} has been deleted', login=1)
+		os.system(f'ssh-keygen -R {server_ip}')
 		return 'Ok'
 
 

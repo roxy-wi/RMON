@@ -133,7 +133,8 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'header_req': $('#new-smon-header-req').val(),
 		'accepted_status_codes': $('#new-smon-status-code').val(),
 		'check_timeout': $('#new-smon-timeout').val(),
-		'ignore_ssl_error': ignore_ssl_error
+		'ignore_ssl_error': ignore_ssl_error,
+		'retries': $('#new-smon-retries').val()
 	}
 	let method = "post";
 	let api_url = api_v_prefix + '/rmon/check/' + check_type;
@@ -228,7 +229,7 @@ function openSmonDialog(check_type, smon_id=0, edit=false) {
 		autoOpen: false,
 		resizable: false,
 		height: "auto",
-		width: 600,
+		width: 625,
 		modal: true,
 		title: smon_add_tabel_title,
 		show: {
@@ -276,6 +277,7 @@ function getCheckSettings(smon_id, check_type) {
 			$('#new-smon-interval').val(data['checks'][0]['interval']);
 			$('#new-smon-username').val(data['checks'][0]['username']);
 			$('#new-smon-password').val(data['checks'][0]['password']);
+			$('#new-smon-retries').val(data['retries']);
 			if (data['check_group']) {
 				$('#new-smon-group').val(data['check_group'].replaceAll("'", ""));
 			}

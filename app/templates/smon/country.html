@@ -4,7 +4,7 @@
 {% block content %}
 {% from 'include/input_macros.html' import input, select, checking_types %}
 <script src="{{ url_for('static', filename='js/overview.js') }}"></script>
-<script src="{{ url_for('static', filename='js/country.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rmon/country.js') }}"></script>
 <script src="{{ url_for('static', filename='js/rmon/smon.js') }}"></script>
 <script src="{{ url_for('static', filename='js/rmon/agent.js') }}"></script>
 <script src="{{ url_for('static', filename='js/jquery.timeago.js') }}" type="text/javascript"></script>
@@ -31,6 +31,7 @@
     <div class="server-desc">
         <div>
             <b>{{ lang.words.country|title() }} ID</b>: {{ country.id }}
+            <b>{{ lang.smon_page.desc.total_checks }}</b>: <span id="total_country_checks-{{ country.id }}"></span>
         </div>
         <div>
             <b>{{ lang.words.enabled|title() }}</b>: {% if country.enabled %} {{ lang.words.yes|title() }} {% else %} {{ lang.words.no|title() }} {% endif %}
@@ -41,6 +42,16 @@
             <div class="region-list">
             {% for region in regions %}
                 <div class="region-list-child">{{region.name.replace("'", "")}}</div>
+            {% endfor %}
+            </div>
+        </div>
+        <div>
+            <b>{{ lang.words.regions|title() }}</b>:
+            <div class="region-list">
+            {% for region in regions %}
+                <div class="region-list-child">
+                    <a href="/rmon/region/{{ region.id }}" title="{{ lang.words.more|title }} {{ lang.words.info }}">{{region.name.replace("'", "")}}</a>
+                </div>
             {% endfor %}
             </div>
         </div>

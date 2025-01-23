@@ -15,7 +15,7 @@ def get_setting(param, **kwargs):
 	if kwargs.get('group_id'):
 		user_group_id = kwargs.get('group_id')
 
-	if param in ('proxy', 'agent_port', 'master_port', 'master_ip'):
+	if param in ('proxy', 'agent_port', 'master_port', 'master_ip', 'rmon_name'):
 		user_group_id = 1
 
 	if kwargs.get('all'):

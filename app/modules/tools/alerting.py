@@ -243,6 +243,7 @@ def mm_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, 
 	}
 	attach = str(json.dumps(attach))
 	values = f'{{"channel": "{channel}", "username": "{rmon_name}", "attachments": [{attach}]}}'
+	print(values)
 	proxy_dict = common.return_proxy_dict()
 	try:
 		response = requests.post(token, headers=headers, data=str(values), timeout=15, proxies=proxy_dict)

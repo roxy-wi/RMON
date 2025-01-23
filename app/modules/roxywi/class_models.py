@@ -70,6 +70,7 @@ class BaseCheckRequest(BaseModel):
     interval: Optional[int] = 120
     check_group: Optional[EscapedString] = None
     group_id: Optional[int] = None
+    retries: Annotated[int, Gt(0)] = 3
 
     @root_validator(pre=True)
     @classmethod

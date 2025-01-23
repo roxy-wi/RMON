@@ -127,7 +127,16 @@
 				<span class="need-field">*</span>
 			</td>
 			<td>
-				{{ input('new-smon-timeout', type='number', style="width: 240px;", value=2) }}
+				{{ input('new-smon-timeout', type='number', style="width: 240px;", value=10) }}
+			</td>
+		</tr>
+			<td class="padding20">
+				{{lang.words.Retries}}
+				<span class="need-field">*</span>
+			</td>
+			<td>
+				{{ input('new-smon-retries', type='number', style="width: 240px;", value=3) }}
+                <div class="tooltip" style="padding: 0">{{ lang.smon_page.desc.retries_desc }}</div>
 			</td>
 		</tr>
 		<tr class="smon_http_check">

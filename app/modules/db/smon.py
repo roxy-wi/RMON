@@ -460,9 +460,9 @@ def get_multi_check(check_id: int, group_id: int) -> SMON:
 		out_error(e)
 
 
-def update_multi_check_group_id(check_id: int, check_group_id: int) -> None:
+def update_multi_check_group_id_and_retries(check_id: int, check_group_id: int, retries: int) -> None:
 	try:
-		MultiCheck.update(check_group_id=check_group_id).where(MultiCheck.id == check_id).execute()
+		MultiCheck.update(check_group_id=check_group_id, retries=retries).where(MultiCheck.id == check_id).execute()
 	except MultiCheck.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:
@@ -844,8 +844,15 @@ def select_smon_groups(group_id: int) -> object:
 		out_error(e)
 
 
-def create_multi_check(group_id: int, entity_type: str, check_group_id: int) -> int:
+def create_multi_check(group_id: int, entity_type: str, check_group_id: int, retries: int) -> int:
 	try:
-		return MultiCheck.insert(group_id=group_id, entity_type=entity_type, check_group_id=check_group_id).execute()
+		return MultiCheck.insert(group_id=group_id, entity_type=entity_type, check_group_id=check_group_id, retries=retries).execute()
+	except Exception as e:
+		out_error(e)
+
+
+def update_multi_check_current_retries(multi_check_id: int, current_retries: int) -> None:
+	try:
+		MultiCheck.update(current_retries=current_retries).where(MultiCheck.id == multi_check_id).execute()
 	except Exception as e:
 		out_error(e)

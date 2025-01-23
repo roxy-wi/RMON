@@ -255,6 +255,8 @@ class MultiCheck(BaseModel):
     entity_type = CharField()
     group_id = ForeignKeyField(Groups, on_delete='RESTRICT')
     check_group_id = ForeignKeyField(SmonGroup, null=True, on_delete='SET NULL')
+    retries = IntegerField(constraints=[SQL('DEFAULT 3')])
+    current_retries = IntegerField(constraints=[SQL('DEFAULT 0')])
 
     class Meta:
         table_name = 'multi_check'
