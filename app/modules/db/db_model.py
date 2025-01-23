@@ -255,8 +255,6 @@ class MultiCheck(BaseModel):
     entity_type = CharField()
     group_id = ForeignKeyField(Groups, on_delete='RESTRICT')
     check_group_id = ForeignKeyField(SmonGroup, null=True, on_delete='SET NULL')
-    retries = IntegerField(constraints=[SQL('DEFAULT 3')])
-    current_retries = IntegerField(constraints=[SQL('DEFAULT 0')])
 
     class Meta:
         table_name = 'multi_check'
@@ -287,6 +285,8 @@ class SMON(BaseModel):
     country_id = ForeignKeyField(Country, null=True, on_delete='SET NULL')
     agent_id = ForeignKeyField(SmonAgent, null=True, on_delete='RESTRICT')
     multi_check_id = ForeignKeyField(MultiCheck, null=True, on_delete='CASCADE')
+    retries = IntegerField(constraints=[SQL('DEFAULT 3')])
+    current_retries = IntegerField(constraints=[SQL('DEFAULT 0')])
 
     class Meta:
         table_name = 'smon'

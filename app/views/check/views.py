@@ -68,7 +68,7 @@ class CheckView(MethodView):
             else:
                 group_name = None
             check_json['check_group'] = group_name
-            check_json['retries'] = m.multi_check_id.retries
+            # check_json['retries'] = m.multi_check_id.retries
             if m.country_id:
                 entities.append(m.country_id.id)
             elif m.region_id:
@@ -117,7 +117,7 @@ class CheckView(MethodView):
         except Exception as e:
             raise e
         check_group_id = self._get_check_group_id(data.check_group)
-        multi_check_id = smon_sql.create_multi_check(self.group_id, data.place, check_group_id, data.retries)
+        multi_check_id = smon_sql.create_multi_check(self.group_id, data.place, check_group_id)
         if data.place == 'all':
             self._create_all_checks(data, multi_check_id)
         for entity_id in data.entities:
@@ -130,7 +130,7 @@ class CheckView(MethodView):
         new_entities = []
         place = data.place
         check_group_id = self._get_check_group_id(data.check_group)
-        smon_sql.update_multi_check_group_id_and_retries(multi_check_id, check_group_id, data.retries)
+        smon_sql.update_multi_check_group(multi_check_id, check_group_id)
         if data.place == 'all':
             countries = country_sql.select_enabled_countries_by_group(group_id)
             place = 'country'

@@ -449,13 +449,11 @@ def update_db_v_1_2_6_1():
 	try:
 		if mysql_enable:
 			migrate(
-				migrator.add_column('multi_check', 'retries', IntegerField(default=3)),
-				migrator.add_column_default('multi_check', 'retries', 3),
+				migrator.drop_column('multi_check', 'retries'),
 			)
 		else:
 			migrate(
-				migrator.add_column('multi_check', 'retries', IntegerField(constraints=[SQL('DEFAULT 3')])),
-				migrator.add_column_default('multi_check', 'retries', 3),
+				migrator.drop_column('multi_check', 'retries'),
 			)
 	except Exception as e:
 		if (e.args[0] == 'duplicate column name: retries' or 'column "retries" of relation "multi_check" already exists'
@@ -469,16 +467,54 @@ def update_db_v_1_2_6_2():
 	try:
 		if mysql_enable:
 			migrate(
-				migrator.add_column('multi_check', 'current_retries', IntegerField(default=0)),
-				migrator.add_column_default('multi_check', 'current_retries', 0),
+				migrator.drop_column('multi_check', 'current_retries'),
 			)
 		else:
 			migrate(
-				migrator.add_column('multi_check', 'current_retries', IntegerField(constraints=[SQL('DEFAULT 0')])),
-				migrator.add_column_default('multi_check', 'current_retries', 0),
+				migrator.drop_column('multi_check', 'current_retries'),
 			)
 	except Exception as e:
-		if (e.args[0] == 'duplicate column name: current_retries' or 'column "current_retries" of relation "multi_check" already exists'
+		if (e.args[0] == 'duplicate column name: current_retries' or 'column "current_retries" of relation "smon" already exists'
+				or str(e) == '(1060, "Duplicate column name \'current_retries\'")'):
+			print('Updating... DB has been updated to version 1.2.6')
+		else:
+			print("An error occurred:", e)
+
+
+def update_db_v_1_2_6_1_1():
+	try:
+		if mysql_enable:
+			migrate(
+				migrator.add_column('smon', 'retries', IntegerField(default=3)),
+				migrator.add_column_default('smon', 'retries', 3),
+			)
+		else:
+			migrate(
+				migrator.add_column('smon', 'retries', IntegerField(constraints=[SQL('DEFAULT 3')])),
+				migrator.add_column_default('smon', 'retries', 3),
+			)
+	except Exception as e:
+		if (e.args[0] == 'duplicate column name: retries' or 'column "retries" of relation "multi_check" already exists'
+				or str(e) == '(1060, "Duplicate column name \'retries\'")'):
+			print('Updating... DB has been updated to version 1.2.6')
+		else:
+			print("An error occurred:", e)
+
+
+def update_db_v_1_2_6_2_1():
+	try:
+		if mysql_enable:
+			migrate(
+				migrator.add_column('smon', 'current_retries', IntegerField(default=0)),
+				migrator.add_column_default('smon', 'current_retries', 0),
+			)
+		else:
+			migrate(
+				migrator.add_column('smon', 'current_retries', IntegerField(constraints=[SQL('DEFAULT 0')])),
+				migrator.add_column_default('smon', 'current_retries', 0),
+			)
+	except Exception as e:
+		if (e.args[0] == 'duplicate column name: current_retries' or 'column "current_retries" of relation "smon" already exists'
 				or str(e) == '(1060, "Duplicate column name \'current_retries\'")'):
 			print('Updating... DB has been updated to version 1.2.6')
 		else:
@@ -527,6 +563,8 @@ def update_all():
 	update_db_v_1_3()
 	update_db_v_1_2_6_1()
 	update_db_v_1_2_6_2()
+	update_db_v_1_2_6_1_1()
+	update_db_v_1_2_6_2_1()
 
 
 if __name__ == "__main__":

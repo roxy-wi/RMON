@@ -28,12 +28,13 @@ def create_check(
         pd = json_data.pd_channel_id
         mm = json_data.mm_channel_id
         timeout = json_data.check_timeout
+        retries = json_data.retries
     except Exception as e:
         raise e
 
     try:
         last_id = smon_sql.insert_smon(
-            name, enable, desc, telegram, slack, pd, mm, group_id, check_type, timeout, agent_id, region_id, country_id, multi_check_id
+            name, enable, desc, telegram, slack, pd, mm, group_id, check_type, timeout, agent_id, region_id, country_id, multi_check_id, retries
         )
     except Exception as e:
         return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot create check: {name}')
@@ -122,6 +123,7 @@ def update_smon(smon_id, json_data) -> None:
         pd = json_data.pd_channel_id
         mm = json_data.mm_channel_id
         timeout = json_data.check_timeout
+        retries = json_data.retries
     except Exception as e:
         raise Exception(f'wrong data: {e}')
 
@@ -133,7 +135,7 @@ def update_smon(smon_id, json_data) -> None:
         pass
 
     try:
-        smon_sql.update_check(smon_id, name, telegram, slack, pd, mm, desc, enabled, timeout)
+        smon_sql.update_check(smon_id, name, telegram, slack, pd, mm, desc, enabled, timeout, retries)
     except Exception as e:
         raise Exception(f'here: {e}')
 

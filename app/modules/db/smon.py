@@ -244,12 +244,12 @@ def select_check_with_group(check_id: int, group_id: int) -> SMON:
 		out_error(e)
 
 
-def insert_smon(name, enable, desc, telegram, slack, pd, mm, group_id, check_type, timeout, agent_id, region_id, country_id, multi_check_id):
+def insert_smon(name, enable, desc, telegram, slack, pd, mm, group_id, check_type, timeout, agent_id, region_id, country_id, multi_check_id, retries):
 	try:
 		last_id = SMON.insert(
 			name=name, enabled=enable, description=desc, telegram_channel_id=telegram, slack_channel_id=slack,
 			pd_channel_id=pd, mm_channel_id=mm, group_id=group_id, status='3', check_type=check_type, check_timeout=timeout,
-			region_id=region_id, country_id=country_id, multi_check_id=multi_check_id, agent_id=agent_id
+			region_id=region_id, country_id=country_id, multi_check_id=multi_check_id, agent_id=agent_id, retries=retries
 		).execute()
 		return last_id
 	except Exception as e:
@@ -460,9 +460,9 @@ def get_multi_check(check_id: int, group_id: int) -> SMON:
 		out_error(e)
 
 
-def update_multi_check_group_id_and_retries(check_id: int, check_group_id: int, retries: int) -> None:
+def update_multi_check_group(check_id: int, check_group_id: int) -> None:
 	try:
-		MultiCheck.update(check_group_id=check_group_id, retries=retries).where(MultiCheck.id == check_id).execute()
+		MultiCheck.update(check_group_id=check_group_id).where(MultiCheck.id == check_id).execute()
 	except MultiCheck.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:
@@ -642,10 +642,10 @@ def get_history(smon_id: int) -> SmonHistory:
 		out_error(e)
 
 
-def update_check(smon_id, name, telegram, slack, pd, mm, desc, en, timeout):
+def update_check(smon_id, name, telegram, slack, pd, mm, desc, en, timeout, retries):
 	query = (SMON.update(
 		name=name, telegram_channel_id=telegram, slack_channel_id=slack, pd_channel_id=pd, mm_channel_id=mm,
-		description=desc, enabled=en, updated_at=datetime.now(), check_timeout=timeout
+		description=desc, enabled=en, updated_at=datetime.now(), check_timeout=timeout, retries=retries
 	).where(SMON.id == smon_id))
 	try:
 		query.execute()
@@ -844,15 +844,15 @@ def select_smon_groups(group_id: int) -> object:
 		out_error(e)
 
 
-def create_multi_check(group_id: int, entity_type: str, check_group_id: int, retries: int) -> int:
+def create_multi_check(group_id: int, entity_type: str, check_group_id: int) -> int:
 	try:
-		return MultiCheck.insert(group_id=group_id, entity_type=entity_type, check_group_id=check_group_id, retries=retries).execute()
+		return MultiCheck.insert(group_id=group_id, entity_type=entity_type, check_group_id=check_group_id).execute()
 	except Exception as e:
 		out_error(e)
 
 
-def update_multi_check_current_retries(multi_check_id: int, current_retries: int) -> None:
+def update_check_current_retries(multi_check_id: int, current_retries: int) -> None:
 	try:
-		MultiCheck.update(current_retries=current_retries).where(MultiCheck.id == multi_check_id).execute()
+		SMON.update(current_retries=current_retries).where(MultiCheck.id == multi_check_id).execute()
 	except Exception as e:
 		out_error(e)
