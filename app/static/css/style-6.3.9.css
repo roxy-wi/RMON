@@ -1087,7 +1087,7 @@ label {
 .res_time {
 	height: 25px;
 }
-.up, .down, .disable, .unknown {
+.up, .down, .disable, .unknown, .warning {
 	height: 40px;
 	width: 96%;
 	font-size: 25px;
@@ -1107,6 +1107,9 @@ label {
 }
 .unknown {
 	background-color: #939393;
+}
+.warning {
+	background-color: var(--yellow-color);
 }
 .minus-style {
 	cursor: pointer;

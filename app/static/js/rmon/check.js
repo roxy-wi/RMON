@@ -158,6 +158,9 @@ function updateCurrentStatus(check_id, data) {
 	} else if (data.status === 4) {
 		add_class = 'serverNone';
 		cur_status = translate_div.attr('data-disabled');
+	} else if (data.status === 5) {
+		add_class = 'serverWarn';
+		cur_status = translate_div.attr('data-warning');
 	}
 	if (data.time) {
 		let time = data.time;

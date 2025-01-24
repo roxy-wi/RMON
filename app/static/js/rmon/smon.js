@@ -458,7 +458,9 @@ function show_smon_history_statuses(check_id, id_for_history_replace) {
 			for (let status of data.reverse()) {
 				let add_class = 'serverUp';
 				if (status.status === 0) {
-					add_class = 'serverDown'
+					add_class = 'serverDown';
+				} else if (status.status === 5) {
+					add_class = 'serverWarn';
 				}
 				statuses += '<div class="smon_server_statuses ' + add_class + '" title="" data-help="' + status.date + ' ' + status.error + '"></div>';
 			}

@@ -73,6 +73,10 @@
         <div class="unknown">
             {{lang.smon_page.desc.UNKNOWN}}
         </div>
+     {% elif s.smon_id.status == 5 %}
+        <div class="warning">
+            {{lang.smon_page.desc.WARNING}}
+        </div>
      {% else %}
         <div class="down">
             {{lang.smon_page.desc.DOWN}}
