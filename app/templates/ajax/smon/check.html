@@ -90,7 +90,12 @@
 <script>
     $(document).ready(function() {
         $("time.timeago").timeago();
-    })
+    });
+    function getCheckByTimeout() {
+        getSmonCheck({{ s.smon_id.multi_check_id }}, {{check_type_id}}, '', false);
+        clearTimeout(timeout_{{ s.smon_id.multi_check_id  }});
+    }
+    var timeout_{{ s.smon_id.multi_check_id  }} = setTimeout(getCheckByTimeout, {{ s.interval }}000)
 </script>
 </div>
 {%- endfor -%}

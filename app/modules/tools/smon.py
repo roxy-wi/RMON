@@ -160,8 +160,8 @@ def delete_multi_check(smon_id: int, user_group: int):
 
 def get_metrics(check_id: int, query: CheckMetricsQuery) -> dict:
     vm_select = sql.get_setting('victoria_metrics_select')
-    response = requests.get(
-        f'{vm_select}/query_range?query=rmon_metrics{{check_id="{check_id}"}}&step={query.step}&start={query.start}&end={query.end}')
+    req = f'{vm_select}/query_range?query=rmon_metrics{{check_id="{check_id}"}}&step={query.step}&start={query.start}&end={query.end}'
+    response = requests.get(req)
 
     return json.loads(response.text)
 
@@ -170,6 +170,8 @@ def history_metrics_from_vm(check_id: int, query: CheckMetricsQuery) -> dict:
     metrics = {'chartData': {}}
     metrics['chartData']['labels'] = {}
     metrics_from_vm = get_metrics(check_id, query)
+    if metrics_from_vm['status'] == 'error':
+        raise Exception(metrics_from_vm['error'])
     for metric in metrics_from_vm['data']['result']:
         labels = ''
 

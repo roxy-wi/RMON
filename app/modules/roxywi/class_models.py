@@ -305,5 +305,30 @@ class NettoolsRequest(BaseModel):
 
 class CheckMetricsQuery(GroupQuery):
     step: Optional[str] = '30s'
-    start: Optional[PastDate] = (datetime.now() - timedelta(hours=0, minutes=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    start: Optional[str] = (datetime.now() - timedelta(hours=0, minutes=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
     end: Optional[str] = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    @root_validator(pre=True)
+    @classmethod
+    def transform_str_to_date(cls, values):
+        if 'start' in values:
+            start = values['start']
+            if 'h' in start:
+                start = int(start.replace('h', ''))
+                values['start'] = (datetime.now() - timedelta(hours=start, minutes=0)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            elif start == 'now':
+                values['start'] = (datetime.now() - timedelta(hours=0, minutes=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            else:
+                start = int(start.replace('m', ''))
+                values['start'] = (datetime.now() - timedelta(hours=0, minutes=start)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        if 'end' in values:
+            end = values['end']
+            if 'h' in end:
+                end = int(end.replace('h', ''))
+                values['end'] = (datetime.now() - timedelta(hours=end, minutes=0)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            elif end == 'now':
+                values['end'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+            else:
+                end = int(end.replace('m', ''))
+                values['end'] = (datetime.now() - timedelta(hours=0, minutes=end)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return values

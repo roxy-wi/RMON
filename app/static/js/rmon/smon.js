@@ -356,7 +356,7 @@ function cloneSmon(id, check_type) {
 	getCheckSettings(id, check_type);
 	openSmonDialog(check_type);
 }
-function getSmonCheck(smon_id, check_id, dialog_id, new_check=false, intervaled=false) {
+function getSmonCheck(smon_id, check_id, dialog_id, new_check=false) {
 	$.ajax({
 		url: "/rmon/check/" + smon_id + "/" + check_id,
 		type: "get",
@@ -372,10 +372,7 @@ function getSmonCheck(smon_id, check_id, dialog_id, new_check=false, intervaled=
 			$.getScript("/static/js/fontawesome.min.js");
 		}
 	});
-	if (!intervaled) {
-		setInterval(getSmonCheck, 60000, smon_id, check_id, '', false, true);
-		$(dialog_id).dialog("close");
-	}
+	$(dialog_id).dialog("close");
 }
 function check_and_clear_check_type(check_type) {
 	$("#check_type").val(check_type);

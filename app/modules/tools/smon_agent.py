@@ -6,6 +6,7 @@ import app.modules.db.sql as sql
 import app.modules.db.smon as smon_sql
 import app.modules.db.server as server_sql
 import app.modules.roxywi.common as roxywi_common
+from app.modules.roxywi.common import logging
 from app.modules.service.installation import run_ansible
 from app.modules.roxywi.class_models import RmonAgent
 from app.modules.roxywi.exception import RoxywiResourceNotFound
@@ -228,12 +229,18 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
     else:
         checks = smon_sql.select_en_smon(agent_id, 'http')
     for check in checks:
+        body = check.body
+        if body:
+            try:
+                body = check.body.replace("'", "")
+            except Exception as e:
+                logging('RMON', f'error: Cannot parse body for check {check.id}: {e}')
         json_data = {
             'check_type': 'http',
             'name': check.smon_id.name,
             'url': check.url,
             'http_method': check.method,
-            'body': check.body,
+            'body': body,
             'interval': check.interval,
             'timeout': check.smon_id.check_timeout,
             'accepted_status_codes': check.accepted_status_codes,

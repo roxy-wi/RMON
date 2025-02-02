@@ -31,7 +31,10 @@ class ChecksMetricView(MethodView):
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot find the check')
 
         if is_vm:
-            return jsonify(smon_mod.history_metrics_from_vm(check_id, query))
+            try:
+                return jsonify(smon_mod.history_metrics_from_vm(check_id, query))
+            except Exception as e:
+                return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get metrics')
         else:
             return jsonify(smon_mod.history_metrics(check_id, self.check_type_id))
 

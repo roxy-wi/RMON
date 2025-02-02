@@ -382,4 +382,4 @@ class ChannelCheckView(MethodView):
             alerting.check_receiver(channel_id, receiver)
             return BaseResponse().model_dump(mode='json'), 200
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot check {channel_id} {receiver}')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot send alert')

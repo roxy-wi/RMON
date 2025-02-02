@@ -15,7 +15,7 @@ def get_setting(param, **kwargs):
 	if kwargs.get('group_id'):
 		user_group_id = kwargs.get('group_id')
 
-	if param in ('proxy', 'agent_port', 'master_port', 'master_ip', 'rmon_name'):
+	if param in ('proxy', 'agent_port', 'master_port', 'master_ip', 'rmon_name', 'use_victoria_metrics', 'victoria_metrics_select'):
 		user_group_id = 1
 
 	if kwargs.get('all'):

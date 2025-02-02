@@ -68,7 +68,6 @@ class CheckView(MethodView):
             else:
                 group_name = None
             check_json['check_group'] = group_name
-            # check_json['retries'] = m.multi_check_id.retries
             if m.country_id:
                 entities.append(m.country_id.id)
             elif m.region_id:
@@ -91,6 +90,7 @@ class CheckView(MethodView):
                 if check_json['checks'][i]['smon_id']['check_type'] == 'http':
                     check_json['checks'][i]['accepted_status_codes'] = int(check_json['checks'][i]['accepted_status_codes'])
                     check_json['accepted_status_codes'] = int(check_json['accepted_status_codes'])
+                    check_json['body'] = check.body.replace("'", "")
                 i += 1
         if len(check_json['checks']) == 0:
             abort(404, f'{self.check_type} check not found')

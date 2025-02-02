@@ -220,9 +220,8 @@ def mm_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, 
 
 	for pd in mms:
 		token = pd.token
-		channel = pd.chanel_name
+		channel = pd.chanel_name.lower()
 
-	headers = {'Content-Type': 'application/json'}
 	if level == "info":
 		color = "51A347"
 	else:
@@ -237,18 +236,18 @@ def mm_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, 
 			{
 				"short": "true",
 				"title": "Level",
-				"value": f"{level}",
+				"value": level,
 			}
 		]
 	}
 	attach = str(json.dumps(attach))
+	headers = {'Content-Type': 'application/json'}
 	values = f'{{"channel": "{channel}", "username": "{rmon_name}", "attachments": [{attach}]}}'
-	print(values)
 	proxy_dict = common.return_proxy_dict()
 	try:
 		response = requests.post(token, headers=headers, data=str(values), timeout=15, proxies=proxy_dict)
-		res = json.loads(response.text)
-		if res['status_code'] != 200:
+		if response.status_code != 200:
+			res = json.loads(response.text)
 			roxywi_common.logging('RMON server', res["message"].encode('utf-8'))
 			raise Exception(res["message"].encode('utf-8'))
 		return 'ok'
@@ -337,7 +336,7 @@ def check_receiver(channel_id: int, receiver_name: str) -> str:
 	try:
 		return functions[receiver_name](mess, level, channel_id=channel_id)
 	except Exception as e:
-		return f'error: Cannot send message: {e}'
+		raise e
 
 
 def load_channels():
