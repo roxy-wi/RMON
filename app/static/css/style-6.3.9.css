@@ -1053,13 +1053,16 @@ label {
     border: 1px solid var(--border-color);
     border-radius: var(--big-border-radius);
 }
-.check-name-tile {
+.check-name-tile, .check-name-desc {
     width: 165px;
     overflow: hidden;
     display: inline-block;
     text-overflow: ellipsis;
     white-space: nowrap;
     margin-bottom: -5px;
+}
+.check-name-desc {
+	width: 265px;
 }
 #good_services {
 	clear: both;

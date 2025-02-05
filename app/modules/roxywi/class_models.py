@@ -318,9 +318,11 @@ class CheckMetricsQuery(GroupQuery):
                 values['start'] = (datetime.now() - timedelta(hours=start, minutes=0)).strftime("%Y-%m-%dT%H:%M:%SZ")
             elif start == 'now':
                 values['start'] = (datetime.now() - timedelta(hours=0, minutes=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
-            else:
+            elif 'm' in start:
                 start = int(start.replace('m', ''))
                 values['start'] = (datetime.now() - timedelta(hours=0, minutes=start)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            else:
+                values['start'] = (datetime.now() - timedelta(hours=0, minutes=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
         if 'end' in values:
             end = values['end']
             if 'h' in end:
@@ -328,7 +330,9 @@ class CheckMetricsQuery(GroupQuery):
                 values['end'] = (datetime.now() - timedelta(hours=end, minutes=0)).strftime("%Y-%m-%dT%H:%M:%SZ")
             elif end == 'now':
                 values['end'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
-            else:
+            elif 'm' in end:
                 end = int(end.replace('m', ''))
                 values['end'] = (datetime.now() - timedelta(hours=0, minutes=end)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            else:
+                values['end'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
         return values

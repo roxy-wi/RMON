@@ -295,9 +295,9 @@ function getCheckSettings(smon_id, check_type) {
 				$('#new-smon-body-req').val(data['checks'][0]['body_req']);
 			}
 			try {
-				$('#new-smon-header-req').val(data['checks'][0]['header_req'].replaceAll("'", ""));
+				$('#new-smon-header-req').val(data['checks'][0]['headers'].replaceAll("'", ""));
 			} catch (e) {
-				$('#new-smon-header-req').val(data['checks'][0]['header_req']);
+				$('#new-smon-header-req').val(data['checks'][0]['headers']);
 			}
 			$('#new-smon-status-code').val(data['checks'][0]['accepted_status_codes']);
 			$('#new-smon-place').val(data['place']).change();

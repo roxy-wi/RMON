@@ -27,7 +27,7 @@
         <a href="/rmon/history/check/{{s.smon_id.multi_check_id}}" title="{{lang.words.view|title()}} {{lang.words.alerts}} {{lang.words.history}} {{lang.words.for}} {{s.smon_id.name}} {{lang.words.host}}" class="history"></a>
     </span>
 </div>
-<div class="desc">
+<div class="desc check-name-desc overflow">
     {% if s.smon_id.description %}
         <b>{{s.smon_id.description.strip("'")}}</b>
     {% else %}

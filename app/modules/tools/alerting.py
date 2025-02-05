@@ -95,7 +95,10 @@ def send_email(email_to: str, subject: str, message: str) -> None:
 def telegram_send_mess(mess, level, **kwargs):
 	token_bot = ''
 	channel_name = ''
-
+	if level == 'info':
+		level = '\U0001F7E2 info'
+	else:
+		level = f'\U0001F534 {level}'
 	if kwargs.get('channel_id') == 0:
 		return
 
