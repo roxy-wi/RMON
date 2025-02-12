@@ -56,11 +56,14 @@ class CheckView(MethodView):
         check_type_id = smon_mod.get_check_id_by_name(self.check_type)
         multi_check = smon_sql.select_multi_check(multi_check_id, group_id)
         entities = []
+        runbook = None
         check_json = {'checks': []}
         i = 0
 
         for m in multi_check:
             place = m.multi_check_id.entity_type
+            if m.multi_check_id.runbook:
+                runbook = m.multi_check_id.runbook.replace("'", "")
             check_id = m.id
             if m.multi_check_id.check_group_id:
                 group_name = smon_sql.get_smon_group_by_id(m.multi_check_id.check_group_id).name
@@ -81,6 +84,7 @@ class CheckView(MethodView):
                 check_json['checks'].append(check_dict)
                 check_json['entities'] = entities
                 check_json['place'] = place
+                check_json['runbook'] = runbook
                 smon_id = model_to_dict(check, max_depth=query.max_depth)
                 check_json.update(smon_id['smon_id'])
                 check_json.update(model_to_dict(check, recurse=query.recurse))
@@ -117,7 +121,7 @@ class CheckView(MethodView):
         except Exception as e:
             raise e
         check_group_id = self._get_check_group_id(data.check_group)
-        multi_check_id = smon_sql.create_multi_check(self.group_id, data.place, check_group_id)
+        multi_check_id = smon_sql.create_multi_check(self.group_id, data.place, check_group_id, data.runbook)
         if data.place == 'all':
             self._create_all_checks(data, multi_check_id)
         for entity_id in data.entities:
@@ -130,7 +134,7 @@ class CheckView(MethodView):
         new_entities = []
         place = data.place
         check_group_id = self._get_check_group_id(data.check_group)
-        smon_sql.update_multi_check_group(multi_check_id, check_group_id)
+        smon_sql.update_multi_check_group(multi_check_id, check_group_id, data.runbook)
         if data.place == 'all':
             countries = country_sql.select_enabled_countries_by_group(group_id)
             place = 'country'
@@ -428,6 +432,13 @@ class CheckHttpView(CheckView):
                   type: 'integer'
                   description: 'Maximum retries before the service is marked as down and a notification is sent'
                   default: 3
+                redirects:
+                  type: 'integer'
+                  description: 'Maximum number of redirects to follow. Set to 0 to disable redirects.'
+                  default: 10
+                runbook:
+                  type: 'string'
+                  description: 'Link to runbook'
         """
         return super().get(check_id, query)
 
@@ -522,6 +533,13 @@ class CheckHttpView(CheckView):
                 type: 'integer'
                 description: 'Maximum retries before the service is marked as down and a notification is sent'
                 default: 3
+              redirects:
+                type: 'integer'
+                description: 'Maximum number of redirects to follow. Set to 0 to disable redirects.'
+                default: 10
+              runbook:
+                type: 'string'
+                description: 'Link to runbook'
         responses:
           '200':
             description: 'Successful Operation'
@@ -627,6 +645,13 @@ class CheckHttpView(CheckView):
                 type: 'integer'
                 description: 'Maximum retries before the service is marked as down and a notification is sent'
                 default: 3
+              redirects:
+                type: 'integer'
+                description: 'Maximum number of redirects to follow. Set to 0 to disable redirects.'
+                default: 10
+              runbook:
+                type: 'string'
+                description: 'Link to runbook'
         responses:
           '201':
             description: 'Successful Operation, HTTP Check updated'
@@ -802,6 +827,9 @@ class CheckTcpView(CheckView):
                   type: 'integer'
                   description: 'Maximum retries before the service is marked as down and a notification is sent'
                   default: 3
+                runbook:
+                  type: 'string'
+                  description: 'Link to runbook'
         """
         return super().get(check_id, query)
 
@@ -878,6 +906,9 @@ class CheckTcpView(CheckView):
                 type: 'integer'
                 description: 'Maximum retries before the service is marked as down and a notification is sent'
                 default: 3
+              runbook:
+                type: 'string'
+                description: 'Link to runbook'
         responses:
           '200':
             description: 'Successful Operation'
@@ -965,6 +996,9 @@ class CheckTcpView(CheckView):
                 type: 'integer'
                 description: 'Maximum retries before the service is marked as down and a notification is sent'
                 default: 3
+              runbook:
+                type: 'string'
+                description: 'Link to runbook'
         responses:
           '201':
             description: 'Successful Operation, TCP Check updated'
@@ -1149,6 +1183,9 @@ class CheckDnsView(CheckView):
                   type: 'integer'
                   description: 'Maximum retries before the service is marked as down and a notification is sent'
                   default: 3
+                runbook:
+                  type: 'string'
+                  description: 'Link to runbook'
         """
         return super().get(check_id, query)
 
@@ -1235,6 +1272,9 @@ class CheckDnsView(CheckView):
                 type: 'integer'
                 description: 'Maximum retries before the service is marked as down and a notification is sent'
                 default: 3
+              runbook:
+                type: 'string'
+                description: 'Link to runbook'
         responses:
           '200':
             description: 'Successful Operation'
@@ -1331,6 +1371,9 @@ class CheckDnsView(CheckView):
                 type: 'integer'
                 description: 'Maximum retries before the service is marked as down and a notification is sent'
                 default: 3
+              runbook:
+                type: 'string'
+                description: 'Link to runbook'
         responses:
           '201':
             description: 'Successful Operation, DNS Check updated'
@@ -1509,6 +1552,9 @@ class CheckPingView(CheckView):
                   type: 'integer'
                   description: 'Maximum retries before the service is marked as down and a notification is sent'
                   default: 3
+                runbook:
+                  type: 'string'
+                  description: 'Link to runbook'
         """
         return super().get(check_id, query)
 
@@ -1585,6 +1631,9 @@ class CheckPingView(CheckView):
                 type: 'integer'
                 description: 'Maximum retries before the service is marked as down and a notification is sent'
                 default: 3
+              runbook:
+                type: 'string'
+                description: 'Link to runbook'
         responses:
           '200':
             description: 'Successful Operation'
@@ -1676,6 +1725,9 @@ class CheckPingView(CheckView):
                 type: 'integer'
                 description: 'Maximum retries before the service is marked as down and a notification is sent'
                 default: 3
+              runbook:
+                type: 'string'
+                description: 'Link to runbook'
         responses:
           '201':
             description: 'Successful Operation, Ping Check updated'
@@ -1857,6 +1909,9 @@ class CheckSmtpView(CheckView):
                   type: 'integer'
                   description: 'Maximum retries before the service is marked as down and a notification is sent'
                   default: 3
+                runbook:
+                  type: 'string'
+                  description: 'Link to runbook'
         """
         return super().get(check_id, query)
 
@@ -1941,6 +1996,13 @@ class CheckSmtpView(CheckView):
               ignore_ssl_error:
                 type: 'integer'
                 description: 'Ignore TLS/SSL error'
+              retries:
+                type: 'integer'
+                description: 'Maximum retries before the service is marked as down and a notification is sent'
+                default: 3
+              runbook:
+                type: 'string'
+                description: 'Link to runbook'
         responses:
           '200':
             description: 'Successful Operation'
@@ -2038,6 +2100,9 @@ class CheckSmtpView(CheckView):
                 type: 'integer'
                 description: 'Maximum retries before the service is marked as down and a notification is sent'
                 default: 3
+              runbook:
+                type: 'string'
+                description: 'Link to runbook'
         responses:
           '201':
             description: 'Successful Operation, Ping Check updated'
@@ -2225,6 +2290,9 @@ class CheckRabbitView(CheckView):
                   type: 'integer'
                   description: 'Maximum retries before the service is marked as down and a notification is sent'
                   default: 3
+                runbook:
+                  type: 'string'
+                  description: 'Link to runbook'
         """
         return super().get(check_id, query)
 
@@ -2316,6 +2384,9 @@ class CheckRabbitView(CheckView):
                 type: 'integer'
                 description: 'Maximum retries before the service is marked as down and a notification is sent'
                 default: 3
+              runbook:
+                type: 'string'
+                description: 'Link to runbook'
         responses:
           '200':
             description: 'Successful Operation'
@@ -2419,6 +2490,9 @@ class CheckRabbitView(CheckView):
                 type: 'integer'
                 description: 'Maximum retries before the service is marked as down and a notification is sent'
                 default: 3
+              runbook:
+                type: 'string'
+                description: 'Link to runbook'
         responses:
           '201':
             description: 'Successful Operation, Ping Check updated'

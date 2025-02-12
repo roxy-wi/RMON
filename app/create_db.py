@@ -445,7 +445,6 @@ def update_db_v_1_3():
 			print("An error occurred:", e)
 
 
-
 def update_db_v_1_2_6_1_1():
 	try:
 		if mysql_enable:
@@ -486,9 +485,42 @@ def update_db_v_1_2_6_2_1():
 			print("An error occurred:", e)
 
 
+def update_db_v_1_2_7_1():
+	try:
+		if mysql_enable:
+			migrate(
+				migrator.add_column('smon_http_check', 'redirects', IntegerField(default=10)),
+				migrator.add_column_default('smon_http_check', 'redirects', 10),
+			)
+		else:
+			migrate(
+				migrator.add_column('smon_http_check', 'redirects', IntegerField(constraints=[SQL('DEFAULT 10')])),
+				migrator.add_column_default('smon_http_check', 'redirects', 10),
+			)
+	except Exception as e:
+		if (e.args[0] == 'duplicate column name: redirects' or 'column "redirects" of relation "smon_http_check" already exists'
+				or str(e) == '(1060, "Duplicate column name \'redirects\'")'):
+			print('Updating... DB has been updated to version 1.2.7')
+		else:
+			print("An error occurred:", e)
+
+
+def update_db_v_1_2_7_1_1():
+	try:
+		migrate(
+			migrator.add_column('multi_check', 'runbook', TextField(null=True)),
+		)
+	except Exception as e:
+		if (e.args[0] == 'duplicate column name: runbook' or 'column "runbook" of relation "multi_check" already exists'
+				or str(e) == '(1060, "Duplicate column name \'runbook\'")'):
+			print('Updating... DB has been updated to version 1.2.7')
+		else:
+			print("An error occurred:", e)
+
+
 def update_ver():
 	try:
-		Version.update(version='1.2.6.5').execute()
+		Version.update(version='1.2.7').execute()
 	except Exception:
 		print('Cannot update version')
 
@@ -528,6 +560,8 @@ def update_all():
 	update_db_v_1_3()
 	update_db_v_1_2_6_1_1()
 	update_db_v_1_2_6_2_1()
+	update_db_v_1_2_7_1()
+	update_db_v_1_2_7_1_1()
 
 
 if __name__ == "__main__":

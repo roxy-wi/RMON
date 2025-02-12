@@ -12,6 +12,7 @@ from flask import render_template, abort, g
 from flask_jwt_extended import get_jwt, verify_jwt_in_request
 
 import app.modules.db.sql as sql
+import app.modules.db.smon as smon_sql
 import app.modules.db.user as user_sql
 import app.modules.db.group as group_sql
 import app.modules.db.channel as channel_sql
@@ -92,13 +93,14 @@ def send_email(email_to: str, subject: str, message: str) -> None:
 		roxywi_common.logging('RMON server', f'error: unable to send email: {e}', roxywi=1)
 
 
-def telegram_send_mess(mess, level, **kwargs):
+def telegram_send_mess(mess, o_level, multi_check_id: int = None, **kwargs):
 	token_bot = ''
 	channel_name = ''
-	if level == 'info':
+	runbook = ''
+	if o_level == 'info':
 		level = '\U0001F7E2 info'
 	else:
-		level = f'\U0001F534 {level}'
+		level = f'\U0001F534 {o_level}'
 	if kwargs.get('channel_id') == 0:
 		return
 
@@ -114,23 +116,33 @@ def telegram_send_mess(mess, level, **kwargs):
 		channel_name = telegram.chanel_name
 
 	if token_bot == '' or channel_name == '':
-		mess = " Can't send message. Add Telegram channel before use alerting at this servers group"
+		mess = "Can't send message. Add Telegram channel before use alerting at this servers group"
 		roxywi_common.logging('RMON server', mess, roxywi=1)
 
 	if proxy is not None and proxy != '' and proxy != 'None':
 		apihelper.proxy = {'https': proxy}
+
+	if o_level != 'info':
+		try:
+			check = smon_sql.get_one_multi_check(multi_check_id)
+			if check.runbook:
+				runbook = f'.\n Runbook: {check.runbook}'
+		except Exception as e:
+			roxywi_common.logging('RMON', f'error: unable to get check: {e}')
+
 	try:
 		bot = telebot.TeleBot(token=token_bot)
-		bot.send_message(chat_id=channel_name, text=f'{level}: {mess}')
+		bot.send_message(chat_id=channel_name, text=f'{level}: {mess} {runbook}')
 		return 'ok'
 	except Exception as e:
 		roxywi_common.logging('RMON server', str(e), roxywi=1)
 		raise Exception(f'error: {e}')
 
 
-def slack_send_mess(mess, level, **kwargs):
+def slack_send_mess(mess, level, multi_check_id: int = None, **kwargs):
 	slack_token = ''
 	channel_name = ''
+	runbook = ''
 
 	if kwargs.get('channel_id') == 0:
 		return
@@ -152,16 +164,25 @@ def slack_send_mess(mess, level, **kwargs):
 	else:
 		client = WebClient(token=slack_token)
 
+	if level != 'info':
+		try:
+			check = smon_sql.get_one_multi_check(multi_check_id)
+			if check.runbook:
+				runbook = f'.\n Runbook: {check.runbook}'
+		except Exception as e:
+			roxywi_common.logging('RMON', f'error: unable to get check: {e}')
+
 	try:
-		client.chat_postMessage(channel=f'#{channel_name}', text=f'{level}: {mess}')
+		client.chat_postMessage(channel=f'#{channel_name}', text=f'{level}: {mess} {runbook}')
 		return 'ok'
 	except SlackApiError as e:
 		roxywi_common.logging('RMON server', str(e), roxywi=1)
 		raise Exception(f'error: {e}')
 
 
-def pd_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, **kwargs):
+def pd_send_mess(mess, level, multi_check_id: int = None, service_id=None, alert_type=None, **kwargs):
 	token = ''
+	runbook = ''
 
 	if kwargs.get('channel_id') == 0:
 		return
@@ -183,7 +204,7 @@ def pd_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, 
 	try:
 		proxy = sql.get_setting('proxy')
 		session = pdpyras.EventsAPISession(token)
-		dedup_key = f'{server_ip} {service_id} {alert_type}'
+		dedup_key = f'{multi_check_id} {service_id} {alert_type}'
 	except Exception as e:
 		roxywi_common.logging('RMON server', str(e), roxywi=1)
 		raise Exception(f'error: {e}')
@@ -192,19 +213,32 @@ def pd_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, 
 		proxies = dict(https=proxy, http=proxy)
 		session.proxies.update(proxies)
 
+	if level != 'info':
+		try:
+			check = smon_sql.get_one_multi_check(multi_check_id)
+			if check.runbook:
+				runbook = check.runbook
+		except Exception as e:
+			roxywi_common.logging('RMON', f'error: unable to get check: {e}')
+
 	try:
 		if level == 'info':
 			session.resolve(dedup_key)
 		else:
-			session.trigger(mess, 'RMON', dedup_key=dedup_key, severity=level, custom_details={'server': server_ip, 'alert': mess})
+			custom_details = {
+				'alert': mess,
+				'runbook': runbook
+			}
+			session.trigger(mess, 'RMON', dedup_key=dedup_key, severity=level, custom_details=custom_details)
 		return 'ok'
 	except Exception as e:
 		roxywi_common.logging('RMON server', str(e), roxywi=1)
 		raise Exception(f'error: {e}')
 
 
-def mm_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, **kwargs):
+def mm_send_mess(mess, level, multi_check_id: int = None, alert_type=None, **kwargs):
 	token = ''
+	runbook = ''
 	rmon_name = sql.get_setting('rmon_name')
 
 	if kwargs.get('channel_id') == 0:
@@ -225,6 +259,14 @@ def mm_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, 
 		token = pd.token
 		channel = pd.chanel_name.lower()
 
+	if level != 'info':
+		try:
+			check = smon_sql.get_one_multi_check(multi_check_id)
+			if check.runbook:
+				runbook = check.runbook
+		except Exception as e:
+			roxywi_common.logging('RMON', f'error: unable to get check: {e}')
+
 	if level == "info":
 		color = "51A347"
 	else:
@@ -240,6 +282,11 @@ def mm_send_mess(mess, level, server_ip=None, service_id=None, alert_type=None, 
 				"short": "true",
 				"title": "Level",
 				"value": level,
+			},
+			{
+				"short": "true",
+				"title": "Runbook",
+				"value": runbook,
 			}
 		]
 	}
@@ -321,7 +368,7 @@ def update_receiver_channel(receiver_name: str, token: str, channel: str, group:
 		raise e
 
 
-def check_receiver(channel_id: int, receiver_name: str) -> str:
+def check_receiver(channel_id: int, receiver_name: str, multi_check_id: int = None) -> str:
 	functions = {
 		"telegram": telegram_send_mess,
 		"slack": slack_send_mess,
@@ -337,7 +384,7 @@ def check_receiver(channel_id: int, receiver_name: str) -> str:
 		level = 'info'
 
 	try:
-		return functions[receiver_name](mess, level, channel_id=channel_id)
+		return functions[receiver_name](mess, level, multi_check_id, channel_id=channel_id)
 	except Exception as e:
 		raise e
 

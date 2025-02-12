@@ -134,7 +134,9 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'accepted_status_codes': $('#new-smon-status-code').val(),
 		'check_timeout': $('#new-smon-timeout').val(),
 		'ignore_ssl_error': ignore_ssl_error,
-		'retries': $('#new-smon-retries').val()
+		'retries': $('#new-smon-retries').val(),
+		'redirects': $('#new-smon-redirects').val(),
+		'runbook': $('#new-smon-runbook').val(),
 	}
 	let method = "post";
 	let api_url = api_v_prefix + '/rmon/check/' + check_type;
@@ -278,6 +280,8 @@ function getCheckSettings(smon_id, check_type) {
 			$('#new-smon-username').val(data['checks'][0]['username']);
 			$('#new-smon-password').val(data['checks'][0]['password']);
 			$('#new-smon-retries').val(data['retries']);
+			$('#new-smon-redirects').val(data['redirects']);
+			$('#new-smon-runbook').val(data['runbook']);
 			if (data['check_group']) {
 				$('#new-smon-group').val(data['check_group'].replaceAll("'", ""));
 			}
@@ -441,7 +445,8 @@ function check_and_clear_check_type(check_type) {
 	}
 }
 function clear_check_vals() {
-	const inputs_for_clean = ['url', 'body', 'body-req', 'port', 'packet_size', 'ip', 'header-req', 'username', 'password', 'vhost', 'group', 'description']
+	const inputs_for_clean = ['url', 'body', 'body-req', 'port', 'packet_size', 'ip', 'header-req', 'username',
+		'password', 'vhost', 'group', 'description', 'runbook']
 	for (let i of inputs_for_clean) {
 		$('#new-smon-' + i).val('');
 	}

@@ -255,6 +255,7 @@ class MultiCheck(BaseModel):
     entity_type = CharField()
     group_id = ForeignKeyField(Groups, on_delete='RESTRICT')
     check_group_id = ForeignKeyField(SmonGroup, null=True, on_delete='SET NULL')
+    runbook = TextField(null=True)
 
     class Meta:
         table_name = 'multi_check'
@@ -419,6 +420,7 @@ class SmonHttpCheck(BaseModel):
     headers = JSONField(null=True)
     body_req = JSONField(null=True)
     ignore_ssl_error = IntegerField(constraints=[SQL('DEFAULT 0')])
+    redirects = IntegerField(constraints=[SQL('DEFAULT 10')])
 
     class Meta:
         table_name = 'smon_http_check'

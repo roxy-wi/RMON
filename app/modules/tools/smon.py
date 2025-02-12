@@ -1,6 +1,7 @@
 import json
 from typing import Union
 
+import pytz
 import requests
 from datetime import datetime
 from flask import render_template, abort
@@ -72,7 +73,7 @@ def create_http_check(data: HttpCheckRequest, check_id: int) -> tuple[dict, int]
     try:
         smon_sql.insert_smon_http(
             check_id, data.url, data.body, data.method, data.interval, data.body_req, data.header_req,
-            data.accepted_status_codes, data.ignore_ssl_error
+            data.accepted_status_codes, data.ignore_ssl_error, data.redirects
         )
     except Exception as e:
         return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create HTTP check')
@@ -161,6 +162,7 @@ def delete_multi_check(smon_id: int, user_group: int):
 def get_metrics(check_id: int, query: CheckMetricsQuery) -> dict:
     vm_select = sql.get_setting('victoria_metrics_select')
     req = f'{vm_select}/query_range?query=rmon_metrics{{check_id="{check_id}"}}&step={query.step}&start={query.start}&end={query.end}'
+    print(req)
     response = requests.get(req)
 
     return json.loads(response.text)
@@ -178,7 +180,7 @@ def history_metrics_from_vm(check_id: int, query: CheckMetricsQuery) -> dict:
         if metric['metric']['__name__'] == 'rmon_metrics':
             metrics['chartData'][metric['metric']['metric']] = ''
             for value in metric['values']:
-                date_time = datetime.utcfromtimestamp(value[0]).strftime('%Y-%m-%d %H:%M:%S')
+                date_time = datetime.fromtimestamp(value[0], tz=pytz.UTC).strftime('%Y-%m-%d %H:%M:%S%z')
                 labels += f'{date_time},'
                 metrics['chartData'][metric['metric']['metric']] += f'{value[1]},'
         metrics['chartData']['labels'] = labels

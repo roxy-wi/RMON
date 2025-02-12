@@ -184,6 +184,15 @@
 				{{ input('new-smon-status-code', type='number', style="width: 240px;", value=200) }}
 			</td>
 		</tr>
+		<tr class="smon_http_check">
+			<td class="padding20">
+				{{lang.smon_page.desc.redirects}}
+			</td>
+			<td>
+				{{ input('new-smon-redirects', type='number', style="width: 240px;", value=10) }}
+                <div class="tooltip" style="padding: 0">{{ lang.smon_page.desc.redirects_desc }}</div>
+			</td>
+		</tr>
 		<tr>
 			<td class="padding20">{{lang.words.enable|title()}}</td>
 			<td>
@@ -250,6 +259,10 @@
 				{% endfor %}
 				</select>
 			</td>
+		</tr>
+		<tr>
+			<td class="padding20">{{lang.words.runbook|title()}}</td>
+			<td>{{ input('new-smon-runbook', style="width: 240px;", placeholder="https://wiki.example.com/runbook/help") }}</td>
 		</tr>
 		<tr>
 			<td class="padding20">{{lang.words.group|title()}}</td>

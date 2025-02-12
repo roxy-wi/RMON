@@ -247,8 +247,8 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             'ignore_ssl_error': check.ignore_ssl_error,
             'body_req': check.body_req,
             'headers': check.headers,
+            'redirects': check.redirects,
         }
-
         api_path = f'check/{check.smon_id}'
         try:
             send_post_request_to_agent(agent_id, server_ip, api_path, json_data)

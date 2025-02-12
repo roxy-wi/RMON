@@ -318,7 +318,7 @@ def insert_smon_dns(smon_id: int, hostname: str, port: int, resolver: str, recor
 		out_error(e)
 
 
-def insert_smon_http(smon_id, url, body, method, interval, body_req, header_req, status_code, ignore_ssl_error):
+def insert_smon_http(smon_id, url, body, method, interval, body_req, header_req, status_code, ignore_ssl_error, redirects):
 	try:
 		SmonHttpCheck.delete().where(SmonHttpCheck.smon_id == smon_id).execute()
 	except SmonHttpCheck.DoesNotExist:
@@ -326,7 +326,7 @@ def insert_smon_http(smon_id, url, body, method, interval, body_req, header_req,
 	try:
 		SmonHttpCheck.insert(
 			smon_id=smon_id, url=url, body=body, method=method, interval=interval, body_req=body_req,
-			headers=header_req, accepted_status_codes=status_code, ignore_ssl_error=ignore_ssl_error
+			headers=header_req, accepted_status_codes=status_code, ignore_ssl_error=ignore_ssl_error, redirects=redirects
 		).execute()
 	except Exception as e:
 		out_error(e)
@@ -460,9 +460,18 @@ def get_multi_check(check_id: int, group_id: int) -> SMON:
 		out_error(e)
 
 
-def update_multi_check_group(check_id: int, check_group_id: int) -> None:
+def get_one_multi_check(check_id: int) -> MultiCheck:
 	try:
-		MultiCheck.update(check_group_id=check_group_id).where(MultiCheck.id == check_id).execute()
+		return MultiCheck.get(MultiCheck.id == check_id)
+	except MultiCheck.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		out_error(e)
+
+
+def update_multi_check_group(check_id: int, check_group_id: int, runbook: str) -> None:
+	try:
+		MultiCheck.update(check_group_id=check_group_id, runbook=runbook).where(MultiCheck.id == check_id).execute()
 	except MultiCheck.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:
@@ -844,9 +853,11 @@ def select_smon_groups(group_id: int) -> object:
 		out_error(e)
 
 
-def create_multi_check(group_id: int, entity_type: str, check_group_id: int) -> int:
+def create_multi_check(group_id: int, entity_type: str, check_group_id: int, runbook: str) -> int:
 	try:
-		return MultiCheck.insert(group_id=group_id, entity_type=entity_type, check_group_id=check_group_id).execute()
+		return MultiCheck.insert(
+			group_id=group_id, entity_type=entity_type, check_group_id=check_group_id, runbook=runbook
+		).execute()
 	except Exception as e:
 		out_error(e)
 

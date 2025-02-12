@@ -71,6 +71,7 @@ class BaseCheckRequest(BaseModel):
     check_group: Optional[EscapedString] = None
     group_id: Optional[int] = None
     retries: Annotated[int, Gt(0)] = 3
+    runbook: Optional[EscapedString] = None
 
     @root_validator(pre=True)
     @classmethod
@@ -113,6 +114,7 @@ class HttpCheckRequest(BaseCheckRequest):
     body: Optional[EscapedString] = None
     accepted_status_codes: Annotated[int, Gt(99), Le(599)]
     ignore_ssl_error: Optional[bool] = 0
+    redirects: Optional[int] = 10
 
     @field_validator('method', mode='before')
     @classmethod
@@ -305,8 +307,8 @@ class NettoolsRequest(BaseModel):
 
 class CheckMetricsQuery(GroupQuery):
     step: Optional[str] = '30s'
-    start: Optional[str] = (datetime.now() - timedelta(hours=0, minutes=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    end: Optional[str] = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+    start: Optional[str] = (datetime.now() - timedelta(hours=0, minutes=30)).strftime("%Y-%m-%dT%H:%M:%S%z")
+    end: Optional[str] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S%z")
 
     @root_validator(pre=True)
     @classmethod
@@ -315,24 +317,24 @@ class CheckMetricsQuery(GroupQuery):
             start = values['start']
             if 'h' in start:
                 start = int(start.replace('h', ''))
-                values['start'] = (datetime.now() - timedelta(hours=start, minutes=0)).strftime("%Y-%m-%dT%H:%M:%SZ")
+                values['start'] = (datetime.now() - timedelta(hours=start, minutes=0)).strftime("%Y-%m-%dT%H:%M:%S%z")
             elif start == 'now':
-                values['start'] = (datetime.now() - timedelta(hours=0, minutes=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
+                values['start'] = (datetime.now() - timedelta(hours=0, minutes=30)).strftime("%Y-%m-%dT%H:%M:%S%z")
             elif 'm' in start:
                 start = int(start.replace('m', ''))
-                values['start'] = (datetime.now() - timedelta(hours=0, minutes=start)).strftime("%Y-%m-%dT%H:%M:%SZ")
+                values['start'] = (datetime.now() - timedelta(hours=0, minutes=start)).strftime("%Y-%m-%dT%H:%M:%S%z")
             else:
-                values['start'] = (datetime.now() - timedelta(hours=0, minutes=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
+                values['start'] = (datetime.now() - timedelta(hours=0, minutes=30)).strftime("%Y-%m-%dT%H:%M:%S%z")
         if 'end' in values:
             end = values['end']
             if 'h' in end:
                 end = int(end.replace('h', ''))
-                values['end'] = (datetime.now() - timedelta(hours=end, minutes=0)).strftime("%Y-%m-%dT%H:%M:%SZ")
+                values['end'] = (datetime.now() - timedelta(hours=end, minutes=0)).strftime("%Y-%m-%dT%H:%M:%S%z")
             elif end == 'now':
-                values['end'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+                values['end'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S%z")
             elif 'm' in end:
                 end = int(end.replace('m', ''))
-                values['end'] = (datetime.now() - timedelta(hours=0, minutes=end)).strftime("%Y-%m-%dT%H:%M:%SZ")
+                values['end'] = (datetime.now() - timedelta(hours=0, minutes=end)).strftime("%Y-%m-%dT%H:%M:%S%z")
             else:
-                values['end'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+                values['end'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S%z")
         return values
