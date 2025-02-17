@@ -454,7 +454,7 @@ def get_multi_check(check_id: int, group_id: int) -> SMON:
 			(SMON.group_id == group_id) &
 			(SMON.multi_check_id == check_id)
 		)
-	except MultiCheck.DoesNotExist:
+	except SMON.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
