@@ -162,7 +162,6 @@ def delete_multi_check(smon_id: int, user_group: int):
 def get_metrics(check_id: int, query: CheckMetricsQuery) -> dict:
     vm_select = sql.get_setting('victoria_metrics_select')
     req = f'{vm_select}/query_range?query=rmon_metrics{{check_id="{check_id}"}}&step={query.step}&start={query.start}&end={query.end}'
-    print(req)
     response = requests.get(req)
 
     return json.loads(response.text)

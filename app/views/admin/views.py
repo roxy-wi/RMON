@@ -11,9 +11,7 @@ import app.modules.roxywi.roxy as roxy
 import app.modules.roxywi.common as roxywi_common
 import app.modules.tools.smon as smon_mod
 from app.middleware import get_user_params, page_for_admin, check_group
-from app.modules.roxywi.class_models import (
-    BaseResponse, GroupQuery, SettingsRequest
-)
+from app.modules.roxywi.class_models import BaseResponse, GroupQuery, SettingsRequest
 from app.modules.common.common_classes import SupportClass
 
 

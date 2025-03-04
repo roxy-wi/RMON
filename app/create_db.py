@@ -48,6 +48,7 @@ def default_values():
 		{'param': 'use_victoria_metrics', 'value': '0', 'section': 'smon', 'desc': '', 'group_id': '1'},
 		{'param': 'victoria_metrics_select', 'value': '', 'section': 'smon', 'desc': '', 'group_id': '1'},
 		{'param': 'victoria_metrics_insert', 'value': '', 'section': 'smon', 'desc': '', 'group_id': '1'},
+		{'param': 'rabbitmq_enabled', 'value': '0', 'section': 'rabbitmq', 'desc': 'Enable alerting in the WEB panel', 'group_id': '1'},
 		{'param': 'rabbitmq_host', 'value': '127.0.0.1', 'section': 'rabbitmq', 'desc': 'RabbitMQ-server host', 'group_id': '1'},
 		{'param': 'rabbitmq_port', 'value': '5672', 'section': 'rabbitmq', 'desc': 'RabbitMQ-server port', 'group_id': '1'},
 		{'param': 'rabbitmq_port', 'value': '5672', 'section': 'rabbitmq', 'desc': 'RabbitMQ-server port', 'group_id': '1'},

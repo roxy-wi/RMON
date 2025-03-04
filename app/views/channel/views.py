@@ -78,6 +78,7 @@ class ChannelView(MethodView):
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
 
+        channel.chanel_name = channel.chanel_name.replace("'", "")
         return model_to_dict(channel)
 
     @validate(body=ChannelRequest)
@@ -147,17 +148,16 @@ class ChannelView(MethodView):
             group_id = SupportClass.return_group_id(body)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
-
         try:
             data = alerting.add_receiver(receiver, body.token, body.channel, group_id, self.is_api)
-            roxywi_common.logging('RMON server', f'A new {receiver.title()} channel {body.channel} has been created ',
+            roxywi_common.logging('RMON server', f'A new {receiver.title()} channel {body.channel.encode("utf-8")} has been created ',
                                   login=1)
             if self.is_api:
                 return IdResponse(id=data).model_dump(mode='json'), 201
             else:
                 return IdDataResponse(data=data, id=0).model_dump(mode='json'), 201
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot create {body.channel} {receiver.title()} channel')
+            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot create {body.channel.encode("utf-8")} {receiver.title()} channel')
 
     @validate(body=ChannelRequest)
     def put(self, receiver: Literal['telegram', 'slack', 'pd', 'mm'], channel_id: int, body: ChannelRequest):
@@ -215,10 +215,10 @@ class ChannelView(MethodView):
 
         try:
             alerting.update_receiver_channel(receiver, body.token, body.channel, group_id, channel_id)
-            roxywi_common.logging(f'group {group_id}', f'The {receiver.title()} token has been updated for channel: {body.channel}', login=1)
+            roxywi_common.logging(f'group {group_id}', f'The {receiver.title()} token has been updated for channel: {body.channel.encode("utf-8")}', login=1)
             return BaseResponse().model_dump(mode='json'), 201
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot update {body.channel} {receiver} channel')
+            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot update {body.channel.encode("utf-8")} {receiver} channel')
 
     @validate(query=GroupQuery)
     def delete(self, receiver: Literal['telegram', 'slack', 'pd', 'mm'], channel_id: int, query: GroupQuery):
@@ -324,12 +324,16 @@ class ChannelsView(MethodView):
                     description: The token used for the channel.
                     example: "'test tg'"
         """
+        channel_list = []
         try:
             group_id = SupportClass.return_group_id(query)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
 
-        return jsonify([model_to_dict(channel) for channel in channel_sql.get_user_receiver_by_group(receiver, group_id)])
+        for channel in channel_sql.get_user_receiver_by_group(receiver, group_id):
+            channel.chanel_name = channel.chanel_name.replace("'", "")
+            channel_list.append(model_to_dict(channel))
+        return jsonify(channel_list)
 
 
 class ChannelCheckView(MethodView):

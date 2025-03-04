@@ -983,7 +983,7 @@ class AllChecksViewWithFilters(MethodView):
           type: string
         - name: sort_by
           in: query
-          description: 'Sort checks by check status. Available values: `name`, `status`, `check_type`, `check_group`, `created_at`, `updated_at`.'
+          description: 'Sort checks by check status. If add "-" to a value it will be sorted by ASC. Available values: `name`, `status`, `check_type`, `check_group`, `created_at`, `updated_at`.'
           required: false
           type: 'string'
         - name: offset
@@ -1000,97 +1000,114 @@ class AllChecksViewWithFilters(MethodView):
           '200':
             description: 'Successful Operation'
             schema:
-              type: array
-              items:
-                type: object
-                properties:
-                  agent_id:
-                    type: integer
-                    description: 'ID of the agent.'
-                  body_status:
-                    type: integer
-                    description: 'Status of the body content.'
-                  check_group:
-                    type: string
-                    description: 'Name of the check group.'
-                  check_timeout:
-                    type: integer
-                    description: 'Timeout interval of the check.'
-                  check_type:
-                    type: string
-                    description: 'Type of the check.'
-                  country_id:
-                    type: integer
-                    description: 'ID of the country.'
-                  created_at:
-                    type: string
-                    format: date-time
-                    description: 'Creation time of the check.'
-                  description:
-                    type: string
-                    description: 'Description of the check.'
-                  enabled:
-                    type: integer
-                    description: 'Enabled status of the check.'
-                  group_id:
-                    type: integer
-                    description: 'ID of the group.'
-                  id:
-                    type: integer
-                    description: 'ID of the check.'
-                  mm_channel_id:
-                    type: integer
-                    description: 'MM Channel ID.'
-                  multi_check_id:
-                    type: integer
-                    description: 'Multi-check ID.'
-                  name:
-                    type: string
-                    description: 'Name of the check.'
-                  pd_channel_id:
-                    type: integer
-                    description: 'PD Channel ID.'
-                  place:
-                    type: string
-                    description: 'Place related to the check.'
-                  region_id:
-                    type: integer
-                    description: 'ID of the region.'
-                  response_time:
-                    type: string
-                    description: 'Response time of the check.'
-                  slack_channel_id:
-                    type: integer
-                    description: 'Slack Channel ID.'
-                  ssl_expire_critical_alert:
-                    type: integer
-                    description: 'Critical alert for SSL expiry.'
-                  ssl_expire_date:
-                    type: string
-                    format: date-time
-                    description: 'SSL expiry date.'
-                  ssl_expire_warning_alert:
-                    type: integer
-                    description: 'Warning alert for SSL expiry.'
-                  status:
-                    type: integer
-                    description: 'Status of the check.'
-                  telegram_channel_id:
-                    type: integer
-                    description: 'Telegram Channel ID.'
-                  time_state:
-                    type: string
-                    format: date-time
-                    description: 'Time state of the check.'
-                  updated_at:
-                    type: string
-                    format: date-time
-                    description: 'Last updated time of the check.'
+              type: object
+              properties:
+                results:
+                  type: array
+                  description: Array of check objects.
+                  items:
+                    type: object
+                    properties:
+                      body_status:
+                        type: integer
+                        description: The status of the body.
+                      check_group:
+                        type: string
+                        description: The group name of the check (e.g., "edge").
+                      check_timeout:
+                        type: integer
+                        description: The timeout value of the check in seconds.
+                      check_type:
+                        type: string
+                        description: The type of check (e.g., "http", "tcp").
+                      created_at:
+                        type: string
+                        format: date-time
+                        description: The date and time when the check was created.
+                      current_retries:
+                        type: integer
+                        description: The number of current retries for this check.
+                      description:
+                        type: string
+                        description: Additional description or information about the check.
+                      enabled:
+                        type: integer
+                        description: Indicates whether the check is enabled (1) or disabled (0).
+                      entities:
+                        type: array
+                        description: List of associated entities.
+                        items:
+                          type: string
+                      group_id:
+                        type: integer
+                        description: The identifier of the group associated with the check.
+                      id:
+                        type: integer
+                        description: Unique identifier of the check.
+                      mm_channel_id:
+                        type: integer
+                        description: Specific `mm` channel ID where check results are sent.
+                      multi_check_id:
+                        type: integer
+                        description: Identifier for multi-check configurations.
+                      name:
+                        type: string
+                        description: The name of the check.
+                      pd_channel_id:
+                        type: integer
+                        description: PagerDuty channel ID for the check notifications.
+                      place:
+                        type: string
+                        description: The placement or location information for the check (e.g., "all").
+                      response_time:
+                        type: string
+                        format: double
+                        description: The average response time recorded for the check.
+                      retries:
+                        type: integer
+                        description: Maximum number of retries configured for the check.
+                      slack_channel_id:
+                        type: integer
+                        description: Slack channel ID for sending check results.
+                      ssl_expire_critical_alert:
+                        type: integer
+                        description: Status of SSL expire critical alerts (0 or 1).
+                      ssl_expire_date:
+                        type: string
+                        format: date-time
+                        description: The expiration date of the SSL certificate.
+                      ssl_expire_warning_alert:
+                        type: integer
+                        description: Status of SSL expire warning alerts (0 or 1).
+                      status:
+                        type: integer
+                        description: The current operational status of the check.
+                      telegram_channel_id:
+                        type: integer
+                        description: The Telegram channel ID for check notifications.
+                      time_state:
+                        type: string
+                        format: date-time
+                        description: The timestamp of the current check state.
+                      updated_at:
+                        type: string
+                        format: date-time
+                        description: The date and time when the check was last updated.
+                total:
+                  type: integer
+                  description: Total number of checks matching the criteria.
+
         """
         group_id = SupportClass.return_group_id(query)
         checks = smon_sql.select_multi_check_with_filters(group_id, query)
         entities = []
-        check_list = []
+        if any((query.check_name, query.check_group, query.check_type)):
+            len_checks = len(checks)
+        elif isinstance(query.check_status, int):
+            len_checks = smon_sql.get_count_multi_with_status_checks(group_id, query.check_status)
+        else:
+            len_checks = smon_sql.get_count_multi_checks(group_id)
+        check_list = {'results': [], 'total': len_checks}
 
         for m in checks:
             check_json = {}
@@ -1107,5 +1124,5 @@ class AllChecksViewWithFilters(MethodView):
             smon_id = model_to_dict(m, recurse=False, exclude={SMON.agent_id, SMON.region_id, SMON.country_id})
             check_json.update(smon_id)
             check_json['name'] = check_json['name'].replace("'", "")
-            check_list.append(check_json)
+            check_list['results'].append(check_json)
         return jsonify(check_list)

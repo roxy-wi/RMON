@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 from pydantic_core import CoreSchema, core_schema
 from pydantic import BaseModel, field_validator, StringConstraints, IPvAnyAddress, AnyUrl, root_validator, \
-    GetCoreSchemaHandler, UUID4, PastDate
+    GetCoreSchemaHandler, UUID4
 
 DomainName = Annotated[str, StringConstraints(pattern=r"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]{0,61}[a-z0-9]$")]
 
@@ -212,7 +212,10 @@ class CheckFiltersQuery(GroupQuery):
     check_name: Optional[EscapedString] = None
     check_status: Optional[int] = None
     check_type: Optional[Literal['http', 'tcp', 'ping', 'dns', 'rabbitmq', 'smtp']] = None
-    sort_by: Optional[Literal['name', 'status', 'check_type', 'check_group', 'created_at', 'updated_at']] = None
+    sort_by: Optional[Literal[
+        'name', 'status', 'check_type', 'check_group', 'created_at', 'updated_at',
+        '-name', '-status', '-check_type', '-check_group', '-created_at', '-updated_at']
+    ] = None
 
 
 class UserSearchRequest(GroupQuery):

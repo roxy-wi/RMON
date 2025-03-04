@@ -93,10 +93,11 @@ def send_email(email_to: str, subject: str, message: str) -> None:
 		roxywi_common.logging('RMON server', f'error: unable to send email: {e}', roxywi=1)
 
 
-def telegram_send_mess(mess, o_level, multi_check_id: int = None, **kwargs):
+def telegram_send_mess(mess, o_level, **kwargs):
 	token_bot = ''
 	channel_name = ''
 	runbook = ''
+	rmon_name = sql.get_setting('rmon_name')
 	if o_level == 'info':
 		level = '\U0001F7E2 info'
 	else:
@@ -124,7 +125,7 @@ def telegram_send_mess(mess, o_level, multi_check_id: int = None, **kwargs):
 
 	if o_level != 'info':
 		try:
-			check = smon_sql.get_one_multi_check(multi_check_id)
+			check = smon_sql.get_one_multi_check(kwargs.get('multi_check_id'))
 			if check.runbook:
 				runbook = f'.\n Runbook: {check.runbook}'
 		except Exception as e:
@@ -132,17 +133,18 @@ def telegram_send_mess(mess, o_level, multi_check_id: int = None, **kwargs):
 
 	try:
 		bot = telebot.TeleBot(token=token_bot)
-		bot.send_message(chat_id=channel_name, text=f'{level}: {mess} {runbook}')
+		bot.send_message(chat_id=channel_name, text=f'[{rmon_name}] {level}: {mess} {runbook}')
 		return 'ok'
 	except Exception as e:
 		roxywi_common.logging('RMON server', str(e), roxywi=1)
 		raise Exception(f'error: {e}')
 
 
-def slack_send_mess(mess, level, multi_check_id: int = None, **kwargs):
+def slack_send_mess(mess, level, **kwargs):
 	slack_token = ''
 	channel_name = ''
 	runbook = ''
+	rmon_name = sql.get_setting('rmon_name')
 
 	if kwargs.get('channel_id') == 0:
 		return
@@ -166,23 +168,24 @@ def slack_send_mess(mess, level, multi_check_id: int = None, **kwargs):
 
 	if level != 'info':
 		try:
-			check = smon_sql.get_one_multi_check(multi_check_id)
+			check = smon_sql.get_one_multi_check(kwargs.get('multi_check_id'))
 			if check.runbook:
 				runbook = f'.\n Runbook: {check.runbook}'
 		except Exception as e:
 			roxywi_common.logging('RMON', f'error: unable to get check: {e}')
 
 	try:
-		client.chat_postMessage(channel=f'#{channel_name}', text=f'{level}: {mess} {runbook}')
+		client.chat_postMessage(channel=f'#{channel_name}', text=f'[{rmon_name}] {level}: {mess} {runbook}')
 		return 'ok'
 	except SlackApiError as e:
 		roxywi_common.logging('RMON server', str(e), roxywi=1)
 		raise Exception(f'error: {e}')
 
 
-def pd_send_mess(mess, level, multi_check_id: int = None, service_id=None, alert_type=None, **kwargs):
+def pd_send_mess(mess, level, **kwargs):
 	token = ''
 	runbook = ''
+	rmon_name = sql.get_setting('rmon_name')
 
 	if kwargs.get('channel_id') == 0:
 		return
@@ -204,7 +207,7 @@ def pd_send_mess(mess, level, multi_check_id: int = None, service_id=None, alert
 	try:
 		proxy = sql.get_setting('proxy')
 		session = pdpyras.EventsAPISession(token)
-		dedup_key = f'{multi_check_id} {service_id} {alert_type}'
+		dedup_key = f'{kwargs.get("multi_check_id")} {kwargs.get("agent_name")}'
 	except Exception as e:
 		roxywi_common.logging('RMON server', str(e), roxywi=1)
 		raise Exception(f'error: {e}')
@@ -215,7 +218,7 @@ def pd_send_mess(mess, level, multi_check_id: int = None, service_id=None, alert
 
 	if level != 'info':
 		try:
-			check = smon_sql.get_one_multi_check(multi_check_id)
+			check = smon_sql.get_one_multi_check(kwargs.get('multi_check_id'))
 			if check.runbook:
 				runbook = check.runbook
 		except Exception as e:
@@ -226,7 +229,7 @@ def pd_send_mess(mess, level, multi_check_id: int = None, service_id=None, alert
 			session.resolve(dedup_key)
 		else:
 			custom_details = {
-				'alert': mess,
+				'alert': f'[{rmon_name}] {mess}',
 				'runbook': runbook
 			}
 			session.trigger(mess, 'RMON', dedup_key=dedup_key, severity=level, custom_details=custom_details)
@@ -236,7 +239,7 @@ def pd_send_mess(mess, level, multi_check_id: int = None, service_id=None, alert
 		raise Exception(f'error: {e}')
 
 
-def mm_send_mess(mess, level, multi_check_id: int = None, alert_type=None, **kwargs):
+def mm_send_mess(mess, level, **kwargs):
 	token = ''
 	runbook = ''
 	rmon_name = sql.get_setting('rmon_name')
@@ -261,7 +264,7 @@ def mm_send_mess(mess, level, multi_check_id: int = None, alert_type=None, **kwa
 
 	if level != 'info':
 		try:
-			check = smon_sql.get_one_multi_check(multi_check_id)
+			check = smon_sql.get_one_multi_check(kwargs.get('multi_check_id'))
 			if check.runbook:
 				runbook = check.runbook
 		except Exception as e:
@@ -272,7 +275,7 @@ def mm_send_mess(mess, level, multi_check_id: int = None, alert_type=None, **kwa
 	else:
 		color = "c20707"
 	attach = {
-		"fallback": f"{alert_type}",
+		"fallback": f"{level}",
 		"color": f"#{color}",
 		"text": f"{mess}",
 		"author_name": f"{rmon_name}",
@@ -341,7 +344,7 @@ def check_email_alert() -> str:
 	return 'ok'
 
 
-def add_receiver(receiver: str, token: str, channel: str, group: str, is_api=False) -> str:
+def add_receiver(receiver: str, token: str, channel: str, group: str, is_api=False) -> Union[str, int]:
 	last_id = channel_sql.insert_new_receiver(receiver, token, channel, group)
 
 	if is_api:
@@ -350,7 +353,6 @@ def add_receiver(receiver: str, token: str, channel: str, group: str, is_api=Fal
 		lang = roxywi_common.get_user_lang_for_flask()
 		new_channel = channel_sql.select_receiver(receiver, last_id)
 		groups = group_sql.select_groups()
-		roxywi_common.logging('RMON server', f'A new {receiver.title()} channel {channel} has been created ', roxywi=1, login=1)
 		return render_template('ajax/new_receiver.html', groups=groups, lang=lang, channel=new_channel, receiver=receiver)
 
 
@@ -383,8 +385,13 @@ def check_receiver(channel_id: int, receiver_name: str, multi_check_id: int = No
 	else:
 		level = 'info'
 
+	kwargs = {
+		'multi_check_id': multi_check_id,
+		'channel_id': channel_id
+	}
+
 	try:
-		return functions[receiver_name](mess, level, multi_check_id, channel_id=channel_id)
+		return functions[receiver_name](mess, level, **kwargs)
 	except Exception as e:
 		raise e
 

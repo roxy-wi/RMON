@@ -55,7 +55,7 @@ def get_agent_with_group(agent_id: int, group_id: int):
 		return SmonAgent.select(SmonAgent, Server).join(Server).where(
 			(SmonAgent.id == agent_id) &
 			(Server.group_id == group_id)
-		).objects().execute()
+		).objects().order_by(SmonAgent.id).execute()
 	except SmonAgent.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:
@@ -182,9 +182,9 @@ def select_status(smon_id):
 		out_error(e)
 
 
-def change_status(status: int, smon_id: int) -> None:
+def change_status(status: int, smon_id: int, time: str) -> None:
 	try:
-		SMON.update(status=status).where(SMON.id == smon_id).execute()
+		SMON.update(status=status, time_state=time).where(SMON.id == smon_id).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -196,11 +196,11 @@ def response_time(time, smon_id):
 		out_error(e)
 
 
-def add_sec_to_state_time(time, smon_id):
-	try:
-		SMON.update(time_state=time).where(SMON.id == smon_id).execute()
-	except Exception as e:
-		out_error(e)
+# def add_sec_to_state_time(time, smon_id):
+# 	try:
+# 		SMON.update(time_state=time).where(SMON.id == smon_id).execute()
+# 	except Exception as e:
+# 		out_error(e)
 
 
 def insert_smon_history(smon_id: int, resp_time: float, status: int, check_type_id: int, mes: str, now_utc: datetime):
@@ -228,7 +228,7 @@ def insert_smon_history_http_metrics(date, **kwargs) -> None:
 def select_one_smon(smon_id: int, check_type_id: int) -> tuple:
 	correct_model = tool_common.get_model_for_check(check_type_id=check_type_id)
 	try:
-		return correct_model.select(correct_model, SMON).join_from(correct_model, SMON).where(SMON.id == smon_id).execute()
+		return correct_model.select(correct_model, SMON).join_from(correct_model, SMON).where(SMON.id == smon_id).order_by(SMON.id).execute()
 	except correct_model.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:
@@ -392,17 +392,21 @@ def select_multi_checks_with_type(check_type: int, group_id: int) -> SMON:
 def select_multi_check_with_filters(group_id: int, query: CheckFiltersQuery) -> SMON:
 	where_query = (SMON.group_id == group_id)
 	sort_query = None
-	if any((query.check_status, query.check_name, query.check_group, query.check_type)):
-		if query.check_status:
-			where_query = where_query & (SMON.status == query.check_status)
+	is_desc = False
+	if any((query.check_name, query.check_group, query.check_type)):
 		if query.check_name:
-			where_query = where_query & (SMON.name == query.check_name)
+			where_query = where_query & (SMON.name.contains(query.check_name))
 		if query.check_type:
 			where_query = where_query & (SMON.check_type == query.check_type)
 		if query.check_group:
 			check_group_id = get_smon_group_by_name(group_id, query.check_group)
 			where_query = where_query & (MultiCheck.check_group_id == check_group_id)
+	if isinstance(query.check_status, int):
+		where_query = where_query & (SMON.status == query.check_status)
 	if query.sort_by:
+		if query.sort_by.startswith('-'):
+			is_desc = True
+			query.sort_by = query.sort_by.replace('-', '')
 		sorts = {
 			'name': SMON.name,
 			'status': SMON.status,
@@ -411,20 +415,46 @@ def select_multi_check_with_filters(group_id: int, query: CheckFiltersQuery) -> 
 			'created_at': SMON.created_at,
 			'updated_at': SMON.updated_at,
 		}
-		sort_query = sorts[query.sort_by]
+		if is_desc:
+			sort_query = sorts[query.sort_by].desc()
+		else:
+			sort_query = sorts[query.sort_by].asc()
 	try:
 		if pgsql_enable == '1':
 			if sort_query:
 				query = SMON.select().join(MultiCheck).distinct(SMON.multi_check_id, sort_query).where(where_query).order_by(sort_query, SMON.multi_check_id).paginate(query.offset, query.limit)
 			else:
 				query = SMON.select().join(MultiCheck).where(where_query).distinct(SMON.multi_check_id).paginate(query.offset, query.limit)
-			return query
 		else:
 			if sort_query:
 				query = SMON.select().join(MultiCheck).where(where_query).order_by(sort_query).group_by(SMON.multi_check_id).paginate(query.offset, query.limit)
 			else:
 				query = SMON.select().join(MultiCheck).where(where_query).order_by(SMON.multi_check_id).group_by(SMON.multi_check_id).paginate(query.offset, query.limit)
-			return query
+		return query
+	except SMON.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		out_error(e)
+
+
+def get_count_multi_with_status_checks(group_id: int, status: int) -> int:
+	try:
+		if pgsql_enable == '1':
+			return SMON.select().join(MultiCheck).where((SMON.group_id == group_id) & (SMON.status == status)).distinct(SMON.multi_check_id).count()
+		else:
+			return SMON.select().join(MultiCheck).where((SMON.group_id == group_id) & (SMON.status == status)).order_by(MultiCheck.check_group_id).group_by(SMON.multi_check_id).count()
+	except SMON.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		out_error(e)
+
+
+def get_count_multi_checks(group_id: int) -> int:
+	try:
+		if pgsql_enable == '1':
+			return SMON.select().join(MultiCheck).where(SMON.group_id == group_id).distinct(SMON.multi_check_id).count()
+		else:
+			return SMON.select().join(MultiCheck).where(SMON.group_id == group_id).order_by(MultiCheck.check_group_id).group_by(SMON.multi_check_id).count()
 	except SMON.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:
@@ -705,6 +735,8 @@ def get_smon_alert_status(smon_id: str, alert: str) -> int:
 			alert_value = SMON.get(SMON.id == smon_id).ssl_expire_warning_alert
 		else:
 			alert_value = SMON.get(SMON.id == smon_id).ssl_expire_critical_alert
+	except SMON.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 	else:

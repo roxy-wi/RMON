@@ -15,7 +15,7 @@ def get_setting(param, **kwargs):
 	if kwargs.get('group_id'):
 		user_group_id = kwargs.get('group_id')
 
-	if param in ('proxy', 'agent_port', 'master_port', 'master_ip', 'rmon_name', 'use_victoria_metrics', 'victoria_metrics_select'):
+	if param in ('proxy', 'agent_port', 'master_port', 'master_ip', 'rmon_name', 'use_victoria_metrics', 'victoria_metrics_select', 'rabbitmq_enabled'):
 		user_group_id = 1
 
 	if kwargs.get('all'):
@@ -37,7 +37,7 @@ def get_setting(param, **kwargs):
 				if param in (
 					'session_ttl', 'token_ttl', 'ldap_type', 'ldap_port', 'ldap_enable', 'log_time_storage', 'syslog_server_enable',
 					'keep_history_range', 'ssl_expire_warning_alert', 'ssl_expire_critical_alert', 'action_keep_history_range',
-					'use_victoria_metrics', 'mail_enabled', 'mail_send_hello_message'
+					'use_victoria_metrics', 'mail_enabled', 'mail_send_hello_message', 'rabbitmq_enabled'
 				):
 					return int(setting.value)
 				else:
