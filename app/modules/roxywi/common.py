@@ -137,6 +137,19 @@ def logging(server_ip: str, action: str, **kwargs) -> None:
 		print(f'Cannot write log. Please check log_path in config {e}')
 
 
+def logging_without_user(server_ip: str, action: str, **kwargs) -> None:
+	get_date = roxy_wi_tools.GetDate(get_setting('time_zone'))
+	cur_date_in_log = get_date.return_date('date_in_log')
+	log_path = get_config_var.get_config_var('main', 'log_path')
+	log_file = f"{log_path}/rmon.log"
+	mess = f"{cur_date_in_log} from {server_ip} {action} on: {server_ip}\n"
+	try:
+		with open(log_file, 'a') as log:
+			log.write(mess)
+	except IOError as e:
+		print(f'Cannot write log. Please check log_path in config {e}')
+
+
 def keep_action_history(service: str, action: str, server_ip: str, login: str, user_ip: str):
 	if login != '':
 		user = user_sql.get_user_by_username(login)

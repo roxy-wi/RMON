@@ -102,7 +102,7 @@ def agent_get_checks():
     try:
         smon_agent.send_checks(agent_id.id)
     except Exception as e:
-        return f'{e}'
+        return f'{e}', 500
     return 'ok'
 
 

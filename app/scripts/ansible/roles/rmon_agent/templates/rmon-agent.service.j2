@@ -6,9 +6,8 @@ After=syslog.target network.target
 Type=simple
 EnvironmentFile=/etc/rmon/rmon-agent.cfg
 WorkingDirectory=/var/lib/rmon/rmon-agent
-ExecStartPre=/usr/bin/rm -f /var/lib/rmon/rmon-agent/jobs
 ExecStart={{ gunicorn_bin }} --workers 1 --threads 1 --bind 0.0.0.0:${agent_port} -m 007 wsgi:app
-ExecStartPost=/usr/bin/python3 -c 'from rmon_checks import ask_for_checks; ask_for_checks()'
+#ExecStartPost=/usr/bin/python3 -c 'from rmon_checks import ask_for_checks; ask_for_checks()'
 
 StandardOutput=journal
 StandardError=journal

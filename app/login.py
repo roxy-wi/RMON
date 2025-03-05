@@ -23,6 +23,7 @@ def check_login():
             abort(401)
 
         if not user_sql.is_user_active(user_params['user_id']):
+            print(f'error: User {user_params["user_id"]} is not active')
             abort(401)
 
         try:
