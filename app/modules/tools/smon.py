@@ -41,7 +41,7 @@ def create_check(
         return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot create check: {name}')
 
     if last_id:
-        roxywi_common.logging('RMON', f'A new check {name} has been created on Agent {agent_id}', login=1)
+        roxywi_common.logger(f'A new check {name} has been created on Agent {agent_id}', login=1)
 
     if last_id and show_new:
         return last_id
@@ -152,7 +152,7 @@ def delete_multi_check(smon_id: int, user_group: int):
             server_ip = smon_sql.get_agent_ip_by_id(agent_id)
             smon_agent.delete_check(agent_id, server_ip, m.id)
         except Exception as e:
-            roxywi_common.handle_exceptions(e, 'RMON', 'Cannot delete check', login=1)
+            roxywi_common.handle_exceptions(e, 'Cannot delete check', login=1)
     try:
         smon_sql.delete_multi_check(smon_id, user_group)
     except Exception as e:
@@ -364,5 +364,5 @@ def get_average_response_time(check_id: int, check_type_id: int) -> float:
     try:
         return round(smon_sql.get_avg_resp_time(check_id, check_type_id), 2)
     except Exception as e:
-        roxywi_common.logging('RMON', f'Failed to get avg resp time: {e}')
+        roxywi_common.logger(f'Failed to get avg resp time: {e}', 'error')
         return 0

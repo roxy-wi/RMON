@@ -58,7 +58,7 @@ def send_email_to_server_group(subject: str, mes: str, level: str, group_id: int
 		for user_email in users_email:
 			send_email(user_email.email, subject, f'{level}: {mes}')
 	except Exception as e:
-		roxywi_common.logging('RMON server', f'error: unable to send email: {e}', roxywi=1)
+		roxywi_common.logger(f'Unable to send email: {e}', "error")
 
 
 def send_email(email_to: str, subject: str, message: str) -> None:
@@ -88,9 +88,9 @@ def send_email(email_to: str, subject: str, message: str) -> None:
 			smtp_obj.starttls()
 		smtp_obj.login(mail_smtp_user, mail_smtp_password)
 		smtp_obj.send_message(msg)
-		roxywi_common.logging('RMON server', f'An email has been sent to {email_to}', roxywi=1)
+		roxywi_common.logger(f'An email has been sent to {email_to}')
 	except Exception as e:
-		roxywi_common.logging('RMON server', f'error: unable to send email: {e}', roxywi=1)
+		roxywi_common.logger(f'unable to send email: {e}', "error")
 
 
 def telegram_send_mess(mess, o_level, **kwargs):
@@ -118,7 +118,7 @@ def telegram_send_mess(mess, o_level, **kwargs):
 
 	if token_bot == '' or channel_name == '':
 		mess = "Can't send message. Add Telegram channel before use alerting at this servers group"
-		roxywi_common.logging('RMON server', mess, roxywi=1)
+		roxywi_common.logger(mess, "error")
 
 	if proxy is not None and proxy != '' and proxy != 'None':
 		apihelper.proxy = {'https': proxy}
@@ -129,15 +129,15 @@ def telegram_send_mess(mess, o_level, **kwargs):
 			if check.runbook:
 				runbook = f'.\n Runbook: {check.runbook}'
 		except Exception as e:
-			roxywi_common.logging('RMON', f'error: unable to get check: {e}')
+			roxywi_common.logger(f'unable to get check: {e}')
 
 	try:
 		bot = telebot.TeleBot(token=token_bot)
 		bot.send_message(chat_id=channel_name, text=f'[{rmon_name}] {level}: {mess} {runbook}')
 		return 'ok'
 	except Exception as e:
-		roxywi_common.logging('RMON server', str(e), roxywi=1)
-		raise Exception(f'error: {e}')
+		roxywi_common.logger(str(e), "error")
+		raise Exception(f'{e}')
 
 
 def slack_send_mess(mess, level, **kwargs):
@@ -172,14 +172,14 @@ def slack_send_mess(mess, level, **kwargs):
 			if check.runbook:
 				runbook = f'.\n Runbook: {check.runbook}'
 		except Exception as e:
-			roxywi_common.logging('RMON', f'error: unable to get check: {e}')
+			roxywi_common.logger(f'unable to get check: {e}')
 
 	try:
 		client.chat_postMessage(channel=f'#{channel_name}', text=f'[{rmon_name}] {level}: {mess} {runbook}')
 		return 'ok'
 	except SlackApiError as e:
-		roxywi_common.logging('RMON server', str(e), roxywi=1)
-		raise Exception(f'error: {e}')
+		roxywi_common.logger(str(e), "error")
+		raise Exception(f'{e}')
 
 
 def pd_send_mess(mess, level, **kwargs):
@@ -194,12 +194,12 @@ def pd_send_mess(mess, level, **kwargs):
 		try:
 			pds = channel_sql.get_receiver_by_id('pd', kwargs.get('channel_id'))
 		except Exception as e:
-			roxywi_common.logging('RMON server', str(e), roxywi=1)
+			roxywi_common.logger(str(e), "error")
 	else:
 		try:
 			pds = channel_sql.get_receiver_by_ip('pd', kwargs.get('ip'))
 		except Exception as e:
-			roxywi_common.logging('RMON server', str(e), roxywi=1)
+			roxywi_common.logger(str(e), "error")
 
 	for pd in pds:
 		token = pd.token
@@ -209,8 +209,8 @@ def pd_send_mess(mess, level, **kwargs):
 		session = pdpyras.EventsAPISession(token)
 		dedup_key = f'{kwargs.get("multi_check_id")} {kwargs.get("agent_name")}'
 	except Exception as e:
-		roxywi_common.logging('RMON server', str(e), roxywi=1)
-		raise Exception(f'error: {e}')
+		roxywi_common.logger(str(e), "error")
+		raise Exception(f'{e}')
 
 	if proxy is not None and proxy != '' and proxy != 'None':
 		proxies = dict(https=proxy, http=proxy)
@@ -222,7 +222,7 @@ def pd_send_mess(mess, level, **kwargs):
 			if check.runbook:
 				runbook = check.runbook
 		except Exception as e:
-			roxywi_common.logging('RMON', f'error: unable to get check: {e}')
+			roxywi_common.logger(f'unable to get check: {e}')
 
 	try:
 		if level == 'info':
@@ -235,8 +235,8 @@ def pd_send_mess(mess, level, **kwargs):
 			session.trigger(mess, 'RMON', dedup_key=dedup_key, severity=level, custom_details=custom_details)
 		return 'ok'
 	except Exception as e:
-		roxywi_common.logging('RMON server', str(e), roxywi=1)
-		raise Exception(f'error: {e}')
+		roxywi_common.logger(str(e), "error")
+		raise Exception(f'{e}')
 
 
 def mm_send_mess(mess, level, **kwargs):
@@ -268,7 +268,7 @@ def mm_send_mess(mess, level, **kwargs):
 			if check.runbook:
 				runbook = check.runbook
 		except Exception as e:
-			roxywi_common.logging('RMON', f'error: unable to get check: {e}')
+			roxywi_common.logger(f'unable to get check: {e}')
 
 	if level == "info":
 		color = "51A347"
@@ -301,12 +301,12 @@ def mm_send_mess(mess, level, **kwargs):
 		response = requests.post(token, headers=headers, data=str(values), timeout=15, proxies=proxy_dict)
 		if response.status_code != 200:
 			res = json.loads(response.text)
-			roxywi_common.logging('RMON server', res["message"].encode('utf-8'))
+			roxywi_common.logger(res["message"].encode('utf-8'))
 			raise Exception(res["message"].encode('utf-8'))
 		return 'ok'
 	except Exception as e:
-		roxywi_common.logging('RMON server', str(e))
-		raise Exception(f'error: {e}')
+		roxywi_common.logger(str(e))
+		raise Exception(f'{e}')
 
 
 def check_rabbit_alert() -> Union[str, dict]:
@@ -334,12 +334,12 @@ def check_email_alert() -> str:
 	try:
 		user = user_sql.get_user_id(g.user_params['user_id'])
 	except Exception as e:
-		return f'error: Cannot get a user email: {e}'
+		return f'Cannot get a user email: {e}'
 
 	try:
 		send_email(user.email, subject, message)
 	except Exception as e:
-		return f'error: Cannot send a message {e}'
+		return f'Cannot send a message {e}'
 
 	return 'ok'
 
@@ -401,7 +401,7 @@ def load_channels():
 		user_subscription = roxywi_common.return_user_status()
 	except Exception as e:
 		user_subscription = roxywi_common.return_unsubscribed_user_status()
-		roxywi_common.logging('RMON server', f'Cannot get a user plan: {e}', roxywi=1)
+		roxywi_common.logger(f'Cannot get a user plan: {e}', "error")
 
 	try:
 		user_params = roxywi_common.get_users_params()

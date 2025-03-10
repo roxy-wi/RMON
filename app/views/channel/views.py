@@ -150,8 +150,8 @@ class ChannelView(MethodView):
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
         try:
             data = alerting.add_receiver(receiver, body.token, body.channel, group_id, self.is_api)
-            roxywi_common.logging('RMON server', f'A new {receiver.title()} channel {body.channel.encode("utf-8")} has been created ',
-                                  login=1)
+            roxywi_common.logger(f'A new {receiver.title()} channel {body.channel.encode("utf-8")} has been created ',
+                                 login=1)
             if self.is_api:
                 return IdResponse(id=data).model_dump(mode='json'), 201
             else:
@@ -215,7 +215,8 @@ class ChannelView(MethodView):
 
         try:
             alerting.update_receiver_channel(receiver, body.token, body.channel, group_id, channel_id)
-            roxywi_common.logging(f'group {group_id}', f'The {receiver.title()} token has been updated for channel: {body.channel.encode("utf-8")}', login=1)
+            roxywi_common.logger(
+                f'The {receiver.title()} token has been updated for channel: {body.channel.encode("utf-8")}')
             return BaseResponse().model_dump(mode='json'), 201
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot update {body.channel.encode("utf-8")} {receiver} channel')
@@ -265,8 +266,7 @@ class ChannelView(MethodView):
 
         try:
             alerting.delete_receiver_channel(channel_id, receiver)
-            roxywi_common.logging('RMON server', f'The {receiver.title()} channel {channel_id} has been deleted ',
-                                  roxywi=1, login=1)
+            roxywi_common.logger(f'The {receiver.title()} channel {channel_id} has been deleted ')
             return BaseResponse().model_dump(mode='json'), 204
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot delete {receiver} channel')

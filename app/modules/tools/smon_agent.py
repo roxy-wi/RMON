@@ -6,7 +6,6 @@ import app.modules.db.sql as sql
 import app.modules.db.smon as smon_sql
 import app.modules.db.server as server_sql
 import app.modules.roxywi.common as roxywi_common
-from app.modules.roxywi.common import logging
 from app.modules.service.installation import run_ansible
 from app.modules.roxywi.class_models import RmonAgent
 from app.modules.roxywi.exception import RoxywiResourceNotFound
@@ -15,9 +14,9 @@ from app.modules.roxywi.exception import RoxywiResourceNotFound
 def generate_agent_inv(server_ip: str, action: str, agent_uuid: uuid, agent_port=5101) -> object:
     master_port = sql.get_setting('master_port')
     master_ip = sql.get_setting('master_ip')
-    if not master_ip: raise Exception('error: Master IP cannot be empty')
-    if master_port == '': raise Exception('error: Master port cannot be empty')
-    if agent_port == '': raise Exception('error: Agent port cannot be empty')
+    if not master_ip: raise Exception(' Master IP cannot be empty')
+    if master_port == '': raise Exception(' Master port cannot be empty')
+    if agent_port == '': raise Exception(' Agent port cannot be empty')
     inv = {"server": {"hosts": {}}}
     server_ips = [server_ip]
     inv['server']['hosts'][server_ip] = {
@@ -35,11 +34,11 @@ def check_agent_limit():
     user_subscription = roxywi_common.return_user_subscription()
     count_agents = smon_sql.count_agents()
     if user_subscription['user_plan'] == 'free' and count_agents >= 1:
-        raise Exception('error: You have reached limit for Free plan')
+        raise Exception(' You have reached limit for Free plan')
     elif user_subscription['user_plan'] == 'home' and count_agents >= 3:
-        raise Exception('error: You have reached limit for Home plan')
+        raise Exception(' You have reached limit for Home plan')
     elif user_subscription['user_plan'] == 'enterprise' and count_agents >= 10:
-        raise Exception('error: You have reached limit for Enterprise plan')
+        raise Exception(' You have reached limit for Enterprise plan')
 
 
 def add_agent(data: RmonAgent) -> Union[int, tuple]:
@@ -61,18 +60,18 @@ def add_agent(data: RmonAgent) -> Union[int, tuple]:
     try:
         inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid, data.port)
     except Exception as e:
-        roxywi_common.handle_exceptions(e, server_ip, 'Cannot generate inventory', login=1)
+        roxywi_common.handle_exceptions(e, 'Cannot generate inventory', 'error')
     try:
         run_ansible(inv, server_ips, 'rmon_agent')
     except Exception as e:
-        roxywi_common.handle_exceptions(e, server_ip, 'Cannot install RMON agent', login=1)
+        roxywi_common.handle_exceptions(e, 'Cannot install RMON agent', 'error')
 
     try:
         last_id = smon_sql.add_agent(**agent_kwargs)
-        roxywi_common.logging(server_ip, 'A new RMON agent has been created', login=1, keep_history=1, service='RMON')
+        roxywi_common.logger('A new RMON agent has been created', 'error', keep_history=1, service='RMON')
         return last_id
     except Exception as e:
-        roxywi_common.handle_exceptions(e, 'RMON server', 'Cannot create Agent', login=1)
+        roxywi_common.handle_exceptions(e, 'Cannot create Agent', 'error')
 
 
 def delete_agent(agent_id: int):
@@ -128,8 +127,8 @@ def send_get_request_to_agent(agent_id: int, server_ip: str, api_path: str) -> b
         req = requests.get(f'http://{server_ip}:{agent.port}/{api_path}', headers=headers, timeout=5)
         return req.content
     except Exception as e:
-        roxywi_common.logging(server_ip, f'error: Cannot get agent status: {e}')
-        raise Exception('error: Cannot get agent status')
+        roxywi_common.logger(f'Cannot get agent status: {e}', 'error')
+        raise Exception(' Cannot get agent status')
 
 
 def send_post_request_to_agent(agent_id: int, server_ip: str, api_path: str, json_data: object) -> bytes:
@@ -149,13 +148,13 @@ def delete_check(agent_id: int, server_ip: str, check_id: int) -> bytes:
         req = requests.delete(f'http://{server_ip}:{agent.port}/check/{check_id}', headers=headers, timeout=5)
         return req.content
     except requests.exceptions.HTTPError as e:
-        roxywi_common.logging(server_ip, f'error: Cannot delete check from agent: http error {e}', login=1)
+        roxywi_common.logger(f' Cannot delete check from agent: http error {e}', 'error')
     except requests.exceptions.ConnectTimeout:
-        roxywi_common.logging(server_ip, 'error: Cannot delete check from agent: connection timeout', login=1)
+        roxywi_common.logger(' Cannot delete check from agent: connection timeout', 'error')
     except requests.exceptions.ConnectionError:
-        roxywi_common.logging(server_ip, 'error: Cannot delete check from agent: connection error', login=1)
+        roxywi_common.logger(' Cannot delete check from agent: connection error', 'error')
     except Exception as e:
-        raise Exception(f'error: Cannot delete check from Agent {server_ip}: {e}')
+        raise Exception(f' Cannot delete check from Agent {server_ip}: {e}')
 
 
 def send_tcp_checks(agent_id: int, server_ip: str, check_id=None) -> None:
@@ -176,7 +175,7 @@ def send_tcp_checks(agent_id: int, server_ip: str, check_id=None) -> None:
         try:
             send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
         except Exception as e:
-            roxywi_common.logging_without_user(server_ip, f'error: Cannot send TCP checks: {e}')
+            roxywi_common.logging_without_user(f' Cannot send TCP checks: {e}', 'error')
 
 
 def send_ping_checks(agent_id: int, server_ip: str, check_id=None) -> None:
@@ -197,7 +196,7 @@ def send_ping_checks(agent_id: int, server_ip: str, check_id=None) -> None:
         try:
             send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
         except Exception as e:
-            roxywi_common.logging_without_user(server_ip, f'error: Cannot send Ping checks: {e}')
+            roxywi_common.logging_without_user(f' Cannot send Ping checks: {e}', 'error')
 
 
 def send_dns_checks(agent_id: int, server_ip: str, check_id=None) -> None:
@@ -220,7 +219,7 @@ def send_dns_checks(agent_id: int, server_ip: str, check_id=None) -> None:
         try:
             send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
         except Exception as e:
-            roxywi_common.logging_without_user(server_ip, f'error: Cannot send DNS checks: {e}')
+            roxywi_common.logging_without_user(f'Cannot send DNS checks: {e}', 'error')
 
 
 def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
@@ -234,7 +233,7 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             try:
                 body = check.body.replace("'", "")
             except Exception as e:
-                logging('RMON', f'error: Cannot parse body for check {check.id}: {e}')
+                roxywi_common.logger(f'Cannot parse body for check {check.id}: {e}', 'error')
         json_data = {
             'check_type': 'http',
             'name': check.smon_id.name,
@@ -253,7 +252,7 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
         try:
             send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
         except Exception as e:
-            roxywi_common.logging_without_user(server_ip, f'error: Cannot send HTTP checks: {e}')
+            roxywi_common.logging_without_user(f'Cannot send HTTP checks: {e}', 'error')
 
 
 def send_smtp_checks(agent_id: int, server_ip: str, check_id=None) -> None:
@@ -277,7 +276,7 @@ def send_smtp_checks(agent_id: int, server_ip: str, check_id=None) -> None:
         try:
             send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
         except Exception as e:
-            roxywi_common.logging_without_user(server_ip, f'error: Cannot send SMTP checks: {e}')
+            roxywi_common.logging_without_user(f'Cannot send SMTP checks: {e}', 'error')
 
 
 def send_rabbit_checks(agent_id: int, server_ip: str, check_id=None) -> None:
@@ -302,7 +301,7 @@ def send_rabbit_checks(agent_id: int, server_ip: str, check_id=None) -> None:
         try:
             send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
         except Exception as e:
-            roxywi_common.logging_without_user(server_ip, f'error: Cannot send RabbitMQ checks: {e}')
+            roxywi_common.logging_without_user(f'Cannot send RabbitMQ checks: {e}', 'error')
 
 
 def send_checks(agent_id: int) -> None:
@@ -310,24 +309,24 @@ def send_checks(agent_id: int) -> None:
     try:
         send_tcp_checks(agent_id, server_ip)
     except Exception as e:
-        roxywi_common.logging(f'Agent ID: {agent_id}', f'error: Cannot send TCP checks: {e}')
+        roxywi_common.logger(f'Cannot send TCP checks: {e}', 'error')
     try:
         send_ping_checks(agent_id, server_ip)
     except Exception as e:
-        roxywi_common.logging(f'Agent ID: {agent_id}', f'error: Cannot send Ping checks: {e}')
+        roxywi_common.logger(f'Cannot send Ping checks: {e}', 'error')
     try:
         send_dns_checks(agent_id, server_ip)
     except Exception as e:
-        roxywi_common.logging(f'Agent ID: {agent_id}', f'error: Cannot send DNS checks: {e}')
+        roxywi_common.logger(f'Cannot send DNS checks: {e}', 'error')
     try:
         send_http_checks(agent_id, server_ip)
     except Exception as e:
-        roxywi_common.logging(f'Agent ID: {agent_id}', f'error: Cannot send HTTP checks: {e}')
+        roxywi_common.logger(f'Cannot send HTTP checks: {e}', 'error')
     try:
         send_smtp_checks(agent_id, server_ip)
     except Exception as e:
-        roxywi_common.logging(f'Agent ID: {agent_id}', f'error: Cannot send SMTP checks: {e}')
+        roxywi_common.logger(f'Cannot send SMTP checks: {e}', 'error')
     try:
         send_rabbit_checks(agent_id, server_ip)
     except Exception as e:
-        roxywi_common.logging(f'Agent ID: {agent_id}', f'error: Cannot send RabbitMQ checks: {e}')
+        roxywi_common.logger(f'Cannot send RabbitMQ checks: {e}', 'error')

@@ -2,13 +2,16 @@ import os
 import sys
 import traceback
 import glob
+import logging
 from typing import Any
+import socket
 
 from flask import request, g
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import verify_jwt_in_request
+from pythonjsonlogger.json import JsonFormatter
 
-from app.modules.db.sql import get_setting
+import app.modules.db.sql as sql
 import app.modules.db.roxy as roxy_sql
 import app.modules.db.user as user_sql
 import app.modules.db.group as group_sql
@@ -49,7 +52,7 @@ def check_user_group_for_flask(**kwargs):
 	if user_sql.check_user_group(user_id, group_id):
 		return True
 	else:
-		logging('RMON server', 'has tried to actions in not his group', login=1)
+		logger('has tried to actions in not his group', login=1)
 		return False
 
 
@@ -57,7 +60,7 @@ def check_user_group_for_socket(user_id: int, group_id: int) -> bool:
 	if user_sql.check_user_group(user_id, group_id):
 		return True
 	else:
-		logging('RMON server', 'has tried to actions in not his group', login=1)
+		logger('has tried to actions in not his group', login=1)
 		return False
 
 
@@ -68,7 +71,7 @@ def check_is_server_in_group(server_ip: str) -> bool:
 		if (s[2] == server_ip and int(s[3]) == int(group_id)) or group_id == 1:
 			return True
 		else:
-			logging('RMON server', ' has tried to actions in not his group server ', login=1)
+			logger(' has tried to actions in not his group server ', login=1)
 			return False
 
 
@@ -99,18 +102,48 @@ def get_files(folder, file_format, server_ip=None) -> list:
 		return file
 
 
-def logging(server_ip: str, action: str, **kwargs) -> None:
-	get_date = roxy_wi_tools.GetDate(get_setting('time_zone'))
-	cur_date_in_log = get_date.return_date('date_in_log')
-	log_path = get_config_var.get_config_var('main', 'log_path')
-	log_file = f"{log_path}/rmon.log"
+def set_logger():
+	logs_in_json = sql.get_setting('json_format')
+
+	if logs_in_json:
+		log_path = get_config_var.get_config_var('main', 'log_path')
+		log_file = f"{log_path}/rmon.log"
+		log_handler = logging.FileHandler(log_file)
+		hostname = socket.gethostname()
+		formatter = JsonFormatter(
+			"%(asctime)s %(levelname)s %(message)s",
+			rename_fields={"asctime": "timestamp", "levelname": "level"},
+			defaults={"service_name": "rmon", "hostname": hostname}
+		)
+		log_handler.setFormatter(formatter)
+
+		logger_s = logging.getLogger()
+		logger_s.addHandler(log_handler)
+		logger_s.setLevel(logging.INFO)
+
+		if not os.path.exists(log_path):
+			os.makedirs(log_path)
+
+		return logger_s
+	else:
+		logging.basicConfig(filename='/var/log/rmon/rmon.log', format='%(asctime)s %(levelname)s: %(message)s',
+							level=logging.INFO)
+		return logging
+
+
+logger_setup = set_logger()
+log_level = {
+		'info': logger_setup.info,
+		'error': logger_setup.error,
+	}
+
+
+def logger(action: str, level: str = 'info', **kwargs) -> None:
 	verify_jwt_in_request()
 	claims = get_jwt()
 	user_id = claims['user_id']
 	login = user_sql.get_user_id(user_id=user_id)
-
-	if not os.path.exists(log_path):
-		os.makedirs(log_path)
+	hostname = socket.gethostname()
 
 	try:
 		user_group = get_user_group()
@@ -122,32 +155,17 @@ def logging(server_ip: str, action: str, **kwargs) -> None:
 	except Exception:
 		ip = ''
 
-	mess = f"{cur_date_in_log} from {ip} user: {login.username}, group: {user_group}, {action} on: {server_ip}\n"
+	log_level[level](action, extra={'ip': ip, 'user': login.username, 'group': user_group})
 
 	if kwargs.get('keep_history'):
 		try:
-			keep_action_history(kwargs.get('service'), action, server_ip, login.username, ip)
+			keep_action_history(kwargs.get('service'), action, hostname, login.username, ip)
 		except Exception as e:
 			print(f'error: Cannot save history: {e}')
 
-	try:
-		with open(log_file, 'a') as log:
-			log.write(mess)
-	except IOError as e:
-		print(f'Cannot write log. Please check log_path in config {e}')
 
-
-def logging_without_user(server_ip: str, action: str, **kwargs) -> None:
-	get_date = roxy_wi_tools.GetDate(get_setting('time_zone'))
-	cur_date_in_log = get_date.return_date('date_in_log')
-	log_path = get_config_var.get_config_var('main', 'log_path')
-	log_file = f"{log_path}/rmon.log"
-	mess = f"{cur_date_in_log} from {server_ip} {action} on: {server_ip}\n"
-	try:
-		with open(log_file, 'a') as log:
-			log.write(mess)
-	except IOError as e:
-		print(f'Cannot write log. Please check log_path in config {e}')
+def logging_without_user(action: str, level: str = 'error') -> None:
+	log_level[level](action)
 
 
 def keep_action_history(service: str, action: str, server_ip: str, login: str, user_ip: str):
@@ -164,7 +182,7 @@ def keep_action_history(service: str, action: str, server_ip: str, login: str, u
 
 		history_sql.insert_action_history(service, action, server.server_id, user_id, user_ip, server_ip, server.hostname)
 	except Exception as e:
-		logging('RMON server', f'Cannot save a history: {e}', mes_type='error')
+		logger(f'Cannot save a history: {e}', 'error')
 
 
 def get_dick_permit(**kwargs):
@@ -250,26 +268,25 @@ def return_user_subscription():
 		user_subscription = return_user_status()
 	except Exception as e:
 		user_subscription = return_unsubscribed_user_status()
-		logging('RMON server', f'Cannot get a user plan: {e}', roxywi=1)
+		logger(f'Cannot get a user plan: {e}', 'error')
 
 	return user_subscription
 
 
-def handle_exceptions(ex: Exception, server_ip: str, message: str, **kwargs: Any) -> None:
+def handle_exceptions(ex: Exception, message: str, **kwargs: Any) -> None:
 	"""
-	:param server_ip:
 	:param ex: The exception that was caught
 	:param message: The error message to be logged and raised
 	:param kwargs: Additional keyword arguments to be passed to the logging function
 	:return: None
 
 	"""
-	logging(server_ip, f'error: {message}: {ex}', **kwargs)
+	logger(f'{message}: {ex}', 'error', **kwargs)
 	raise Exception(f'error: {message}: {ex}')
 
 
-def handle_json_exceptions(ex: Exception, message: str, server_ip='RMON server') -> dict:
-	logging(server_ip, f'{message}: {ex}', login=1, mes_type='error')
+def handle_json_exceptions(ex: Exception, message: str) -> dict:
+	logger(f'{message}: {ex}', 'error')
 	return ErrorResponse(error=f'{message}: {ex}').model_dump(mode='json')
 
 

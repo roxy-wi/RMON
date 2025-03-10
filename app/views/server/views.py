@@ -133,11 +133,13 @@ class ServerView(MethodView):
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create a server')
 
-        roxywi_common.logging(body.ip, f'A new server {body.hostname} has been created', login=1, keep_history=1, service='server')
+        roxywi_common.logger(f'A new server {body.hostname} has been created', login=1, keep_history=1,
+                             service='server')
         try:
             server_mod.update_server_after_creating(body.hostname, body.ip)
         except Exception as e:
-            roxywi_common.logging(body.ip, f'Cannot get system info from {body.hostname}: {e}', login=1, keep_history=1, service='server', mes_type='error')
+            roxywi_common.logger(f'Cannot get system info from {body.hostname}: {e}', login=1, keep_history=1,
+                                 service='server', mes_type='error')
 
         if self.is_api:
             return IdResponse(id=last_id).model_dump(mode='json'), 201
@@ -194,7 +196,8 @@ class ServerView(MethodView):
         try:
             server_sql.update_server(body.hostname, group_id, body.enabled, server_id, body.cred_id, body.port, body.description)
             server_ip = server_sql.select_server_ip_by_id(server_id)
-            roxywi_common.logging(server_ip, f'The server {body.hostname} has been update', roxywi=1, login=1, keep_history=1, service='server')
+            roxywi_common.logger(f'The server {body.hostname} has been update', roxywi=1, login=1, keep_history=1,
+                                 service='server')
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot update server')
 
@@ -348,7 +351,7 @@ class ServerGroupView(MethodView):
         """
         try:
             last_id = group_sql.add_group(body.name, body.description)
-            roxywi_common.logging('RMON server', f'A new group {body.name} has been created', roxywi=1, login=1)
+            roxywi_common.logger(f'A new group {body.name} has been created', roxywi=1, login=1)
             return IdResponse(id=last_id).model_dump(mode='json'), 201
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create group')

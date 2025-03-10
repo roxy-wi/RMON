@@ -131,7 +131,7 @@ class SettingsView(MethodView):
             sql.update_setting(body.param, body.value, group_id)
         except Exception as e:
             roxywi_common.handle_json_exceptions(e, 'Cannot update settings')
-        roxywi_common.logging('Roxy-WI server', f'The {body.param} setting has been changed to: {body.value}', login=1)
+        roxywi_common.logger(f'The {body.param} setting has been changed to: {body.value}', login=1)
 
         if body.param == 'master_port':
             try:

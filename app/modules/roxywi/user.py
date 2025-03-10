@@ -11,9 +11,9 @@ import app.modules.tools.alerting as alerting
 def create_user(new_user: str, email: str, password: str, role: int, activeuser: int, group: int) -> int:
     try:
         user_id = user_sql.add_user(new_user, email, password, role, activeuser, group)
-        roxywi_common.logging(f'a new user {new_user}', 'has been created', login=1)
+        roxywi_common.logger('A new user has been created')
     except Exception as e:
-        roxywi_common.handle_exceptions(e, 'RMON server', 'Cannot create a new user', login=1)
+        roxywi_common.handle_exceptions(e, 'Cannot create a new user')
     try:
         user_sql.update_user_role(user_id, group, role)
     except Exception as e:
@@ -31,7 +31,7 @@ def create_user(new_user: str, email: str, password: str, role: int, activeuser:
                   f"Password: {password}"
         alerting.send_email(email, 'A user has been created for you', message)
     except Exception as e:
-        roxywi_common.logging('error: Cannot send email for a new user', str(e), login=1)
+        roxywi_common.logger(f'Cannot send email: {e}', 'error')
 
     return user_id
 
@@ -47,22 +47,22 @@ def delete_user(user_id: int) -> None:
         username = u.username
     if user_sql.delete_user(user_id):
         user_sql.delete_user_groups(user_id)
-        roxywi_common.logging(username, 'has been deleted user', login=1)
+        roxywi_common.logger('has been deleted user')
 
 
 def update_user(email, new_user, user_id, enabled, group_id, role_id):
     try:
         user_sql.update_user(new_user, email, role_id, user_id, enabled)
     except Exception as e:
-        roxywi_common.handle_exceptions(e, 'RMON server', f'Cannot update user {new_user}', login=1)
+        roxywi_common.handle_exceptions(e, f'Cannot update user {new_user}')
     user_sql.update_user_role(user_id, group_id, role_id)
-    roxywi_common.logging(new_user, 'has been updated user', login=1)
+    roxywi_common.logger('has been updated user')
 
 
 def update_user_password(password, user_id):
     user = user_sql.get_user_id(user_id)
     user_sql.update_user_password(password, user_id)
-    roxywi_common.logging(f'user {user.username}', 'has changed password', login=1)
+    roxywi_common.logger('has changed password')
 
 
 def save_user_group_and_role(user: str, groups_and_roles: dict):
@@ -81,7 +81,7 @@ def save_user_group_and_role(user: str, groups_and_roles: dict):
             except Exception as e:
                 raise Exception(f'error: Cannot update groups: {e}')
         else:
-            roxywi_common.logging('RMON server', f'Groups and roles have been updated for user: {user}', login=1)
+            roxywi_common.logger(f'Groups and roles have been updated for user: {user}')
             return resp
 
 

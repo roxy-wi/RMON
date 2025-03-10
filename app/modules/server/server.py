@@ -29,15 +29,16 @@ def ssh_command(server_ip: str, commands: str, **kwargs):
 				stdin, stdout, stderr = ssh.run_command(command, timeout=timeout)
 				stdin.close()
 			except Exception as e:
-				roxywi_common.handle_exceptions(e, server_ip, 'Something wrong with SSH connection. Probably sudo with password')
+				roxywi_common.handle_exceptions(e, 'Something wrong with SSH connection. Probably sudo with password')
 
 			if stderr:
 				for line in stderr.readlines():
 					if line:
-						roxywi_common.handle_exceptions(line, server_ip, line)
+						roxywi_common.handle_exceptions(line, line)
 
 			if stdout.channel.recv_exit_status() and kwargs.get('rc'):
-				roxywi_common.handle_exceptions(stdout.read().decode('utf-8'), server_ip, f'Cannot perform SSH command: {command} ')
+				roxywi_common.handle_exceptions(stdout.read().decode('utf-8'),
+												f'Cannot perform SSH command: {command} ')
 
 			if kwargs.get('raw'):
 				return stdout.readlines()
@@ -47,7 +48,7 @@ def ssh_command(server_ip: str, commands: str, **kwargs):
 			else:
 				return stdout.read().decode(encoding='UTF-8')
 	except Exception as e:
-		roxywi_common.handle_exceptions(e, server_ip, '')
+		roxywi_common.handle_exceptions(e, '')
 
 
 def subprocess_execute(cmd):
@@ -375,19 +376,19 @@ def show_firewalld_rules(server_ip) -> str:
 	try:
 		input_chain = ssh_command(server_ip, cmd, raw=1)
 	except Exception as e:
-		roxywi_common.logging(server_ip, f'error: Cannot get Iptables Input chain: {e}')
+		roxywi_common.logger(f'Cannot get Iptables Input chain: {e}', "error")
 		return 'error: Cannot get Iptables Input chain'
 
 	try:
 		in_public_allow = ssh_command(server_ip, cmd1, raw=1)
 	except Exception as e:
-		roxywi_common.logging(server_ip, f'error: Cannot get Iptables IN_public_allow chain: {e}')
+		roxywi_common.logger(f'Cannot get Iptables IN_public_allow chain: {e}', "error")
 		return 'error: Cannot get Iptables IN_public_allow chain'
 
 	try:
 		output_chain = ssh_command(server_ip, cmd2, raw=1)
 	except Exception as e:
-		roxywi_common.logging(server_ip, f'error: Cannot get Iptables OUTPUT chain: {e}')
+		roxywi_common.logger(f'Cannot get Iptables OUTPUT chain: {e}', "error")
 		return 'error: Cannot get Iptables OUTPUT chain'
 
 	for each_line in input_chain:
@@ -412,7 +413,7 @@ def update_server_after_creating(hostname: str, ip: str) -> None:
 	try:
 		get_system_info(ip)
 	except Exception as e:
-		roxywi_common.handle_exceptions(e, hostname, f'Cannot get info from server {hostname}', login=1)
+		roxywi_common.handle_exceptions(e, f'Cannot get info from server {hostname}')
 
 
 def delete_server(server_id: int) -> str:
@@ -427,7 +428,7 @@ def delete_server(server_id: int) -> str:
 	if server_sql.delete_server(server_id):
 		history_sql.delete_action_history(server_id)
 		server_sql.delete_system_info(server_id)
-		roxywi_common.logging(server_ip, f'The server {hostname} has been deleted', login=1)
+		roxywi_common.logger(f'The server {hostname} has been deleted')
 		os.system(f'ssh-keygen -R {server_ip}')
 		return 'Ok'
 

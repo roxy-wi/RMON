@@ -162,7 +162,7 @@ class CheckView(MethodView):
                 smon_sql.delete_smon(check['check_id'], group_id)
                 agent_ip = smon_sql.get_agent_ip_by_id(check['agent_id'])
                 smon_agent.delete_check(check['agent_id'], agent_ip, check['check_id'])
-                roxywi_common.logging('RMON server', f'Check {check["check_id"]} has been deleted from Agent {check["agent_id"]}')
+                roxywi_common.logger(f'Check {check["check_id"]} has been deleted from Agent {check["agent_id"]}')
         for entity_id in need_to_update:
             for check in entity_id_check_id[entity_id]:
                 try:
@@ -203,7 +203,7 @@ class CheckView(MethodView):
             raise Exception('There are no countries in your group')
         for c in countries:
             self._create_country_check(data, multi_check_id, c.id)
-            roxywi_common.logging('RMON server', f'A new check {data.name.encode("utf-8")} has been created on Country {c.name}')
+            roxywi_common.logger(f'A new check {data.name.encode("utf-8")} has been created on Country {c.name}')
 
     def _create_country_check(self, data, multi_check_id: int, country_id: int):
         regions = region_sql.get_enabled_regions_by_country_with_group(country_id, self.group_id)
@@ -213,7 +213,7 @@ class CheckView(MethodView):
             raise Exception(f'There are no regions in your group in country_id: {country_id}')
         for region in regions:
             self._create_region_check(data, multi_check_id, region.id, country_id)
-            roxywi_common.logging('RMON server', f'A new check {data.name.encode("utf-8")} has been created on Region {region.name}')
+            roxywi_common.logger(f'A new check {data.name.encode("utf-8")} has been created on Region {region.name}')
 
     def _create_region_check(self, data, multi_check_id: int, region_id: int, country_id: int = None):
         try:

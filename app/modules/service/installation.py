@@ -84,18 +84,18 @@ def run_ansible(inv: dict, server_ips: str, ansible_role: str) -> object:
 			invent.write(str(inv))
 	except Exception as e:
 		server_mod.stop_ssh_agent(agent_pid)
-		roxywi_common.handle_exceptions(e, 'RMON server', 'Cannot save inventory file')
+		roxywi_common.handle_exceptions(e, 'Cannot save inventory file')
 
 	try:
 		result = ansible_runner.run(**kwargs)
 	except Exception as e:
 		server_mod.stop_ssh_agent(agent_pid)
-		roxywi_common.handle_exceptions(e, 'RMON server', 'Cannot run Ansible')
+		roxywi_common.handle_exceptions(e, 'Cannot run Ansible')
 
 	try:
 		server_mod.stop_ssh_agent(agent_pid)
 	except Exception as e:
-		roxywi_common.logging('RMON server', f'error: Cannot stop SSH agent {e}')
+		roxywi_common.logger(f'Cannot stop SSH agent {e}', 'error')
 
 	os.remove(inventory)
 
@@ -117,8 +117,7 @@ def _install_ansible_collections():
 					old_ansible_server = '--server https://old-galaxy.ansible.com/'
 				exit_code = os.system(f'ansible-galaxy collection install {collection} {old_ansible_server}')
 			except Exception as e:
-				roxywi_common.handle_exceptions(e, 'Roxy-WI server',
-												f'Cannot install as collection. {trouble_link}')
+				roxywi_common.handle_exceptions(e, f'Cannot install as collection. {trouble_link}')
 			else:
 				if exit_code != 0:
 					raise Exception(
