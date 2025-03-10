@@ -66,6 +66,7 @@ def default_values():
 		{'param': 'mail_send_hello_message', 'value': '1', 'section': 'mail', 'desc': '', 'group_id': '1'},
 		{'param': 'log_time_storage', 'value': '14', 'section': 'logs', 'desc': 'Retention period for user activity logs (in days)', 'group_id': '1'},
 		{'param': 'apache_log_path', 'value': f'/var/log/{apache_dir}/', 'section': 'logs', 'desc': 'Path to Apache logs. Apache service for RMON', 'group_id': '1'},
+		{'param': 'json_format', 'value': '1', 'section': 'logs', 'desc': '', 'group_id': '1'},
 	]
 
 	try:
@@ -521,7 +522,7 @@ def update_db_v_1_2_7_1_1():
 
 def update_ver():
 	try:
-		Version.update(version='1.2.8.1').execute()
+		Version.update(version='1.2.9').execute()
 	except Exception:
 		print('Cannot update version')
 

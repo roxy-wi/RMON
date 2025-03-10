@@ -55,7 +55,7 @@ def my_expired_token_callback(jwt_header, jwt_payload):
 
 @jwt.unauthorized_loader
 def custom_unauthorized_response(_err):
-    return jsonify(error="Authorize first"), 401
+    return jsonify(error=f"Authorize first {_err}"), 401
 
 
 @bp.route("/spec")

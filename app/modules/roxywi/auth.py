@@ -56,7 +56,7 @@ def check_in_ldap(user, password):
     port = sql.get_setting('ldap_port')
     ldap_class_search = sql.get_setting('ldap_class_search')
     root_user = sql.get_setting('ldap_user')
-    root_password = sql.get_setting('ldap_password')
+    root_password = sql.get_setting('ldap_password').replace("'", "")
     ldap_base = sql.get_setting('ldap_base')
     ldap_search_field = sql.get_setting('ldap_search_field')
     ldap_user_attribute = sql.get_setting('ldap_user_attribute')
@@ -65,25 +65,33 @@ def check_in_ldap(user, password):
     ldap_proto = 'ldap' if ldap_type == "0" else 'ldaps'
 
     ldap_bind = ldap.initialize('{}://{}:{}/'.format(ldap_proto, server, port))
+    ldap_bind.set_option(ldap.OPT_NETWORK_TIMEOUT, 10.0)
     try:
         ldap_bind.protocol_version = ldap.VERSION3
         ldap_bind.set_option(ldap.OPT_REFERRALS, 0)
-
         _ = ldap_bind.simple_bind_s(root_user, root_password)
+    except ldap.INVALID_CREDENTIALS:
+        print('Invalid username or password to connect to LDAP')
+        return False
 
+    try:
         criteria = "(&(objectClass=" + ldap_class_search + ")(" + ldap_user_attribute + "=" + user + "))"
         attributes = [ldap_search_field]
         result = ldap_bind.search_s(ldap_base, ldap.SCOPE_SUBTREE, criteria, attributes)
 
         _ = ldap_bind.simple_bind_s(result[0][0], password)
     except ldap.INVALID_CREDENTIALS:
+        print('invalid credentials')
         return False
     except ldap.SERVER_DOWN:
+        print('server down')
         raise Exception('error: LDAP server is down')
     except ldap.LDAPError as e:
         if isinstance(e.message, dict) and 'desc' in e.message:
+            print('error: LDAP error: {}'.format(e.message['desc']))
             raise Exception(f'error: {e.message["desc"]}')
         else:
+            print('error: LDAP error: {}'.format(e.message))
             raise Exception(f'error: {e}')
     else:
         return True
