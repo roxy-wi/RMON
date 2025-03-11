@@ -43,7 +43,7 @@ def get_user_group(**kwargs) -> int:
 	return user_group
 
 
-def check_user_group_for_flask(**kwargs):
+def check_user_group_for_flask():
 	verify_jwt_in_request()
 	claims = get_jwt()
 	user_id = claims['user_id']
@@ -52,7 +52,7 @@ def check_user_group_for_flask(**kwargs):
 	if user_sql.check_user_group(user_id, group_id):
 		return True
 	else:
-		logger('has tried to actions in not his group', login=1)
+		logger('Has tried to actions in not his group', 'warning')
 		return False
 
 
@@ -60,7 +60,7 @@ def check_user_group_for_socket(user_id: int, group_id: int) -> bool:
 	if user_sql.check_user_group(user_id, group_id):
 		return True
 	else:
-		logger('has tried to actions in not his group', login=1)
+		logger('Has tried to actions in not his group', 'warning')
 		return False
 
 
@@ -71,8 +71,8 @@ def check_is_server_in_group(server_ip: str) -> bool:
 		if (s[2] == server_ip and int(s[3]) == int(group_id)) or group_id == 1:
 			return True
 		else:
-			logger(' has tried to actions in not his group server ', login=1)
-			return False
+			logger('Has tried to actions in not his group server ', 'warning')
+	return False
 
 
 def get_files(folder, file_format, server_ip=None) -> list:
@@ -103,11 +103,14 @@ def get_files(folder, file_format, server_ip=None) -> list:
 
 
 def set_logger():
-	logs_in_json = sql.get_setting('json_format')
+	try:
+		logs_in_json = sql.get_setting('json_format')
+	except Exception:
+		logs_in_json = 1
+	log_path = get_config_var.get_config_var('main', 'log_path')
+	log_file = f"{log_path}/rmon.log"
 
 	if logs_in_json:
-		log_path = get_config_var.get_config_var('main', 'log_path')
-		log_file = f"{log_path}/rmon.log"
 		log_handler = logging.FileHandler(log_file)
 		hostname = socket.gethostname()
 		formatter = JsonFormatter(
@@ -126,14 +129,14 @@ def set_logger():
 
 		return logger_s
 	else:
-		logging.basicConfig(filename='/var/log/rmon/rmon.log', format='%(asctime)s %(levelname)s: %(message)s',
-							level=logging.INFO)
+		logging.basicConfig(filename=log_file, format='%(asctime)s %(levelname)s: %(message)s', level=logging.INFO)
 		return logging
 
 
 logger_setup = set_logger()
 log_level = {
 		'info': logger_setup.info,
+		'warning': logger_setup.warning,
 		'error': logger_setup.error,
 	}
 
