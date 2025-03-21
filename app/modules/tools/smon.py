@@ -1,5 +1,5 @@
 import json
-from typing import Union
+from typing import Union, Optional
 
 import pytz
 import requests
@@ -18,35 +18,32 @@ from app.modules.roxywi.class_models import HttpCheckRequest, DnsCheckRequest, P
 
 
 def create_check(
-        json_data, group_id, check_type, multi_check_id: int, agent_id: int, region_id: int = None, country_id: int = None, show_new=1
-) -> Union[bool, tuple]:
-    try:
-        name = json_data.name.encode('utf-8')
-        enable = json_data.enabled
-        desc = json_data.description
-        telegram = json_data.telegram_channel_id
-        slack = json_data.slack_channel_id
-        pd = json_data.pd_channel_id
-        mm = json_data.mm_channel_id
-        timeout = json_data.check_timeout
-        retries = json_data.retries
-    except Exception as e:
-        raise e
+        json_data, group_id, check_type, multi_check_id: int, agent_id: int, region_id: int = None, country_id: int = None
+) -> int:
+    name = json_data.name.encode('utf-8')
+    kwargs = {
+        "name": name,
+        "enabled": json_data.enabled,
+        "description": json_data.description,
+        "telegram_channel_id": json_data.telegram_channel_id,
+        "slack_channel_id": json_data.slack_channel_id,
+        "pd_channel_id": json_data.pd_channel_id,
+        "mm_channel_id": json_data.mm_channel_id,
+        "email_channel_id": json_data.email_channel_id,
+        "check_timeout": json_data.check_timeout,
+        "retries": json_data.retries,
+        "multi_check_id": multi_check_id,
+        "group_id": group_id,
+        "check_type": check_type,
+        "agent_id": agent_id,
+        "region_id": region_id,
+        "country_id": country_id,
+        "status": '3'
+    }
+    last_id = smon_sql.insert_smon(**kwargs)
+    roxywi_common.logger(f'A new check {name} has been created on Agent {agent_id}')
 
-    try:
-        last_id = smon_sql.insert_smon(
-            name, enable, desc, telegram, slack, pd, mm, group_id, check_type, timeout, agent_id, region_id, country_id, multi_check_id, retries
-        )
-    except Exception as e:
-        return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot create check: {name}')
-
-    if last_id:
-        roxywi_common.logger(f'A new check {name} has been created on Agent {agent_id}', login=1)
-
-    if last_id and show_new:
-        return last_id
-    else:
-        return False
+    return last_id
 
 
 def send_new_check(
@@ -69,7 +66,7 @@ def send_new_check(
         smon_agent.send_rabbit_checks(agent_id, agent_ip, last_id)
 
 
-def create_http_check(data: HttpCheckRequest, check_id: int) -> tuple[dict, int]:
+def create_http_check(data: HttpCheckRequest, check_id: int) -> Optional[tuple[dict, int]]:
     try:
         smon_sql.insert_smon_http(
             check_id, data.url, data.body, data.method, data.interval, data.body_req, data.header_req,
@@ -79,35 +76,35 @@ def create_http_check(data: HttpCheckRequest, check_id: int) -> tuple[dict, int]
         return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create HTTP check')
 
 
-def create_dns_check(data: DnsCheckRequest, last_id: int) -> tuple[dict, int]:
+def create_dns_check(data: DnsCheckRequest, last_id: int) -> Optional[tuple[dict, int]]:
     try:
         smon_sql.insert_smon_dns(last_id, data.ip, data.port, data.resolver, data.record_type, data.interval)
     except Exception as e:
         return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create DNS check')
 
 
-def create_ping_check(data: PingCheckRequest, last_id: int) -> tuple[dict, int]:
+def create_ping_check(data: PingCheckRequest, last_id: int) -> Optional[tuple[dict, int]]:
     try:
         smon_sql.insert_smon_ping(last_id, data.ip, data.packet_size, data.interval)
     except Exception as e:
         return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create Ping check')
 
 
-def create_smtp_check(data: SmtpCheckRequest, last_id: int) -> tuple[dict, int]:
+def create_smtp_check(data: SmtpCheckRequest, last_id: int) -> Optional[tuple[dict, int]]:
     try:
         smon_sql.insert_smon_smtp(last_id, data.ip, data.port, data.username, data.password, data.interval, data.ignore_ssl_error)
     except Exception as e:
         return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create Ping check')
 
 
-def create_rabbit_check(data: RabbitCheckRequest, last_id: int) -> tuple[dict, int]:
+def create_rabbit_check(data: RabbitCheckRequest, last_id: int) -> Optional[tuple[dict, int]]:
     try:
         smon_sql.insert_smon_rabbit(last_id, data.ip, data.port, data.username, data.password, data.interval, data.ignore_ssl_error, data.vhost)
     except Exception as e:
         return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create Ping check')
 
 
-def create_tcp_check(data: TcpCheckRequest, last_id: int) -> tuple[dict, int]:
+def create_tcp_check(data: TcpCheckRequest, last_id: int) -> Optional[tuple[dict, int]]:
     try:
         smon_sql.insert_smon_tcp(last_id, data.ip, data.port, data.interval)
     except Exception as e:
@@ -116,15 +113,18 @@ def create_tcp_check(data: TcpCheckRequest, last_id: int) -> tuple[dict, int]:
 
 def update_smon(smon_id, json_data) -> None:
     try:
-        name = json_data.name
-        enabled = json_data.enabled
-        desc = json_data.description
-        telegram = json_data.telegram_channel_id
-        slack = json_data.slack_channel_id
-        pd = json_data.pd_channel_id
-        mm = json_data.mm_channel_id
-        timeout = json_data.check_timeout
-        retries = json_data.retries
+        kwargs = {
+            'name': json_data.name,
+            'enabled': json_data.enabled,
+            'description': json_data.description,
+            'telegram_channel_id': json_data.telegram_channel_id,
+            'slack_channel_id': json_data.slack_channel_id,
+            'pd_channel_id': json_data.pd_channel_id,
+            'mm_channel_id': json_data.mm_channel_id,
+            'email_channel_id': json_data.email_channel_id,
+            'check_timeout': json_data.check_timeout,
+            'retries': json_data.retries,
+        }
     except Exception as e:
         raise Exception(f'wrong data: {e}')
 
@@ -136,7 +136,7 @@ def update_smon(smon_id, json_data) -> None:
         pass
 
     try:
-        smon_sql.update_check(smon_id, name, telegram, slack, pd, mm, desc, enabled, timeout, retries)
+        smon_sql.update_check(smon_id, **kwargs)
     except Exception as e:
         raise Exception(f'here: {e}')
 
@@ -161,7 +161,8 @@ def delete_multi_check(smon_id: int, user_group: int):
 
 def get_metrics(check_id: int, query: CheckMetricsQuery) -> dict:
     vm_select = sql.get_setting('victoria_metrics_select')
-    req = f'{vm_select}/query_range?query=rmon_metrics{{check_id="{check_id}"}}&step={query.step}&start={query.start}&end={query.end}'
+    rmon_name = sql.get_setting('rmon_name')
+    req = f'{vm_select}/query_range?query={rmon_name}_metrics{{check_id="{check_id}"}}&step={query.step}&start={query.start}&end={query.end}'
     response = requests.get(req)
 
     return json.loads(response.text)
@@ -169,14 +170,15 @@ def get_metrics(check_id: int, query: CheckMetricsQuery) -> dict:
 
 def history_metrics_from_vm(check_id: int, query: CheckMetricsQuery) -> dict:
     metrics = {'chartData': {}}
-    metrics['chartData']['labels'] = {}
+    metrics['chartData']['labels'] = ''
     metrics_from_vm = get_metrics(check_id, query)
+    rmon_name = sql.get_setting('rmon_name')
     if metrics_from_vm['status'] == 'error':
         raise Exception(metrics_from_vm['error'])
     for metric in metrics_from_vm['data']['result']:
         labels = ''
 
-        if metric['metric']['__name__'] == 'rmon_metrics':
+        if metric['metric']['__name__'] == f'{rmon_name}_metrics':
             metrics['chartData'][metric['metric']['metric']] = ''
             for value in metric['values']:
                 date_time = datetime.fromtimestamp(value[0], tz=pytz.UTC).strftime('%Y-%m-%d %H:%M:%S%z')

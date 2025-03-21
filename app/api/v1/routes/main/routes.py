@@ -26,13 +26,13 @@ register_api(ServerGroupView, 'group', '/group', 'group_id')
 
 def register_api_with_group(view, endpoint, url_beg, pk='receiver', pk_type='int', pk_end='channel_id', pk_type_end='int'):
     view_func = view.as_view(endpoint, True)
-    bp.add_url_rule(f'/{url_beg}/<any(telegram, slack, pd, mm):{pk}>', view_func=view_func, methods=['POST'])
-    bp.add_url_rule(f'/{url_beg}/<any(telegram, slack, pd, mm):{pk}>/<{pk_type_end}:{pk_end}>', view_func=view_func, methods=['PUT', 'DELETE', 'GET'])
+    bp.add_url_rule(f'/{url_beg}/<any(telegram, slack, pd, mm, email):{pk}>', view_func=view_func, methods=['POST'])
+    bp.add_url_rule(f'/{url_beg}/<any(telegram, slack, pd, mm, email):{pk}>/<{pk_type_end}:{pk_end}>', view_func=view_func, methods=['PUT', 'DELETE', 'GET'])
 
 
 register_api_with_group(ChannelView, 'channel', '/channel')
-bp.add_url_rule('/channels/<any(telegram, slack, pd, mm):receiver>', view_func=ChannelsView.as_view('channels'), methods=['GET'])
-bp.add_url_rule('/channel/<any(telegram, slack, pd, mm):receiver>/<int:channel_id>/check', view_func=ChannelCheckView.as_view('channel_check'), methods=['POST'])
+bp.add_url_rule('/channels/<any(telegram, slack, pd, mm, email):receiver>', view_func=ChannelsView.as_view('channels'), methods=['GET'])
+bp.add_url_rule('/channel/<any(telegram, slack, pd, mm, email):receiver>/<int:channel_id>/check', view_func=ChannelCheckView.as_view('channel_check'), methods=['POST'])
 
 bp.add_url_rule(
     '/settings',

@@ -182,7 +182,7 @@
         </td>
         {% if user_params['role']|int() == 1 %}
         <td>
-            <select id="pdgroup-{{mm.id}}" name="pdgroup-{{mm.id}}">
+            <select id="mmgroup-{{mm.id}}" name="mmgroup-{{mm.id}}">
                 <option disabled selected>------</option>
                 {% for group in groups %}
                 {% if mm.group_id|string() == group.group_id|string() %}
@@ -206,7 +206,57 @@
     </tr>
     {% endfor %}
 </table>
-<br /><span class="add-button" title="{{lang.words.add|title()}} Mattermost {{lang.words.channel}}" id="add-mm-button">+ {{lang.words.add|title()}}</span>
+<table id="checker_email_table" class="overview-overflow">
+    <caption><i class="fas fa-power-off caption-icon"></i><h3>Emails {{lang.words.list}}</h3></caption>
+    <tr class="overviewHead" style="width: 50%;">
+        <td class="padding10 first-collumn" style="width: 25%;">
+            Emails
+        </td>
+        <td style="width: 20%;">{{ lang.words.name|title() }}</td>
+        {% if user_params['role']|int() == 1 %}
+        <td style="width: 25%;">{{lang.words.group|title()}}</td>
+        {% endif %}
+        <td style="width: 100%;"></td>
+        <td></td>
+        <td><span onclick="loadChannel()" class="refresh" title="{{lang.words.refresh2|title()}} Emails {{lang.words.list}}"></span></td>
+    </tr>
+    {% for email in emails %}
+    <tr id="email-table-{{email.id}}" class="{{ loop.cycle('odd', 'even') }}">
+        <td class="padding10 first-collumn">
+            {% set id = 'email-emails-' + email.id|string() %}
+            {{ input(id, value=email.token.replace("'", ""), size='30') }}
+        </td>
+        <td>
+            {% set id = 'email-name-' + email.id|string() %}
+            {{ input(id, value=email.chanel_name.replace("'", ""), size='30') }}
+        </td>
+        {% if user_params['role']|int() == 1 %}
+        <td>
+            <select id="emailgroup-{{email.id}}" name="emailgroup-{{email.id}}">
+                <option disabled selected>------</option>
+                {% for group in groups %}
+                {% if email.group_id|string() == group.group_id|string() %}
+                <option value="{{ group.group_id }}" selected>{{ group.name }}</option>
+                {% else %}
+                <option value="{{ group.group_id }}">{{ group.name }}</option>
+                {% endif %}
+                {% endfor %}
+            </select>
+        </td>
+        {% endif %}
+        <td>
+            <button title="{{lang.phrases.send_test_mes}}" onclick="checkReceiver({{email.id}}, 'email')">{{lang.words.test|title()}}</button>
+        </td>
+        <td>
+            <a class="add" onclick="cloneReceiver({{email.id}}, 'email')" id="clone-{{email.id}}" title="{{lang.words.w_copy|title()}} {{lang.words.the}} {{lang.words.settings}} {{email.chanel_name}}" style="cursor: pointer;"></a>
+        </td>
+        <td>
+            <a class="delete" onclick="confirmDeleteReceiver({{email.id}}, 'email')" title="{{lang.words.delete|title()}} {{lang.words.channel}} {{email.chanel_name}}" style="cursor: pointer;"></a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<br /><span class="add-button" title="{{lang.words.add|title()}} Emails {{lang.words.list}}" id="add-email-button">+ {{lang.words.add|title()}}</span>
 <br /><br />
 <table class="overflow_div">
     <caption><i class="fas fa-envelope-open-text caption-icon"></i><h3>{{lang.words.test2|title()}} {{lang.words.message}}</h3></caption>

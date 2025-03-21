@@ -260,6 +260,17 @@
 				</select>
 			</td>
 		</tr>
+        <tr>
+			<td class="padding20">Email</td>
+			<td>
+				<select id="new-smon-email">
+					<option value="0">{{lang.words.disabled|title()}}</option>
+				{% for t in emails %}
+					<option value="{{t.id}}">{{t.chanel_name.replace("'", "")}}</option>
+				{% endfor %}
+				</select>
+			</td>
+		</tr>
 		<tr>
 			<td class="padding20">{{lang.words.runbook|title()}}</td>
 			<td>{{ input('new-smon-runbook', style="width: 240px;", placeholder="https://wiki.example.com/runbook/help") }}</td>

@@ -520,9 +520,22 @@ def update_db_v_1_2_7_1_1():
 			print("An error occurred:", e)
 
 
+def update_db_v_1_2_10():
+	try:
+		migrate(
+			migrator.add_column('smon', 'email_channel_id', IntegerField(null=True)),
+		)
+	except Exception as e:
+		if (e.args[0] == 'duplicate column name: email_channel_id' or 'column "email_channel_id" of relation "smon" already exists'
+				or str(e) == '(1060, "Duplicate column name \'email_channel_id\'")'):
+			print('Updating... DB has been updated to version 1.2.10')
+		else:
+			print("An error occurred:", e)
+
+
 def update_ver():
 	try:
-		Version.update(version='1.2.9.1').execute()
+		Version.update(version='1.2.10').execute()
 	except Exception:
 		print('Cannot update version')
 
@@ -564,6 +577,7 @@ def update_all():
 	update_db_v_1_2_6_2_1()
 	update_db_v_1_2_7_1()
 	update_db_v_1_2_7_1_1()
+	update_db_v_1_2_10()
 
 
 if __name__ == "__main__":

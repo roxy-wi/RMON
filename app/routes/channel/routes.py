@@ -8,7 +8,7 @@ import app.modules.tools.alerting as alerting
 import app.modules.roxywi.common as roxywi_common
 from app.views.channel.views import ChannelView
 
-bp.add_url_rule('/<any(telegram, slack, pd, mm):receiver>', view_func=ChannelView.as_view('channel', False), methods=['POST'])
+bp.add_url_rule('/<any(telegram, slack, pd, mm, email):receiver>', view_func=ChannelView.as_view('channel', False), methods=['POST'])
 
 
 @bp.before_request

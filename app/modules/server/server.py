@@ -416,21 +416,14 @@ def update_server_after_creating(hostname: str, ip: str) -> None:
 		roxywi_common.handle_exceptions(e, f'Cannot get info from server {hostname}')
 
 
-def delete_server(server_id: int) -> str:
-	server = server_sql.select_servers(id=server_id)
-	server_ip = ''
-	hostname = ''
-
-	for s in server:
-		hostname = s[1]
-		server_ip = s[2]
+def delete_server(server_id: int) -> None:
+	server = server_sql.get_server(server_id)
 
 	if server_sql.delete_server(server_id):
 		history_sql.delete_action_history(server_id)
 		server_sql.delete_system_info(server_id)
-		roxywi_common.logger(f'The server {hostname} has been deleted')
-		os.system(f'ssh-keygen -R {server_ip}')
-		return 'Ok'
+		roxywi_common.logger(f'The server {server.hostname} has been deleted')
+		os.system(f'ssh-keygen -R {server.ip}')
 
 
 def server_is_up(server_ip: str) -> str:

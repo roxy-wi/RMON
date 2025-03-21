@@ -56,7 +56,6 @@ class CheckView(MethodView):
         check_type_id = smon_mod.get_check_id_by_name(self.check_type)
         multi_check = smon_sql.select_multi_check(multi_check_id, group_id)
         entities = []
-        runbook = None
         check_json = {'checks': []}
         i = 0
 
@@ -64,6 +63,8 @@ class CheckView(MethodView):
             place = m.multi_check_id.entity_type
             if m.multi_check_id.runbook:
                 runbook = m.multi_check_id.runbook.replace("'", "")
+            else:
+                runbook = ''
             check_id = m.id
             if m.multi_check_id.check_group_id:
                 group_name = smon_sql.get_smon_group_by_id(m.multi_check_id.check_group_id).name
@@ -365,6 +366,9 @@ class CheckHttpView(CheckView):
                           mm_channel_id:
                             type: 'integer'
                             description: 'MM Channel ID'
+                          email_channel_id:
+                            type: 'integer'
+                            description: 'Email Channel ID'
                           multi_check_id:
                             type: 'integer'
                             description: 'Multi-check ID'
@@ -503,6 +507,9 @@ class CheckHttpView(CheckView):
               mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
+              email_channel_id:
+                type: 'integer'
+                description: 'Email channel ID (optional)'
               method:
                 type: 'string'
                 description: 'HTTP method'
@@ -615,6 +622,9 @@ class CheckHttpView(CheckView):
               mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
+              email_channel_id:
+                type: 'integer'
+                description: 'Email channel ID (optional)'
               method:
                   type: 'string'
                   description: 'HTTP method'
@@ -776,6 +786,9 @@ class CheckTcpView(CheckView):
                           mm_channel_id:
                             type: 'integer'
                             description: 'MM Channel ID'
+                          email_channel_id:
+                            type: 'integer'
+                            description: 'Email channel ID (optional)'
                           multi_check_id:
                             type: 'integer'
                             description: 'Multi-check ID'
@@ -896,6 +909,9 @@ class CheckTcpView(CheckView):
               mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
+              email_channel_id:
+                type: 'integer'
+                description: 'Email channel ID (optional)'
               interval:
                 type: 'integer'
                 description: 'Interval check (default to 120, optional)'
@@ -986,6 +1002,9 @@ class CheckTcpView(CheckView):
               mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
+              email_channel_id:
+                type: 'integer'
+                description: 'Email channel ID (optional)'
               interval:
                 type: 'integer'
                 description: 'Interval check (default to 120, optional)'
@@ -1120,6 +1139,9 @@ class CheckDnsView(CheckView):
                           mm_channel_id:
                             type: 'integer'
                             description: 'MM Channel ID'
+                          email_channel_id:
+                            type: 'integer'
+                            description: 'Email channel ID (optional)'
                           multi_check_id:
                             type: 'integer'
                             description: 'Multi-check ID'
@@ -1260,6 +1282,9 @@ class CheckDnsView(CheckView):
               mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
+              email_channel_id:
+                type: 'integer'
+                description: 'Email channel ID (optional)'
               interval:
                 type: 'integer'
                 description: 'Interval check (optional)'
@@ -1359,6 +1384,9 @@ class CheckDnsView(CheckView):
               mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
+              email_channel_id:
+                type: 'integer'
+                description: 'Email channel ID (optional)'
               interval:
                 type: 'integer'
                 description: 'Interval check (optional)'
@@ -1495,6 +1523,9 @@ class CheckPingView(CheckView):
                           mm_channel_id:
                             type: 'integer'
                             description: 'MM Channel ID'
+                          email_channel_id:
+                            type: 'integer'
+                            description: 'Email channel ID (optional)'
                           multi_check_id:
                             type: 'integer'
                             description: 'Multi-check ID'
@@ -1615,6 +1646,9 @@ class CheckPingView(CheckView):
               mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
+              email_channel_id:
+                type: 'integer'
+                description: 'Email channel ID (optional)'
               packet_size:
                 type: 'integer'
                 description: 'Packet size (optional)'
@@ -1706,6 +1740,9 @@ class CheckPingView(CheckView):
               mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
+              email_channel_id:
+                type: 'integer'
+                description: 'Email channel ID (optional)'
               packet_size:
                 type: 'integer'
                 description: 'Packet size (optional)'
@@ -1849,6 +1886,9 @@ class CheckSmtpView(CheckView):
                           mm_channel_id:
                             type: 'integer'
                             description: 'MM Channel ID'
+                          email_channel_id:
+                            type: 'integer'
+                            description: 'Email channel ID (optional)'
                           multi_check_id:
                             type: 'integer'
                             description: 'Multi-check ID'
@@ -1979,6 +2019,9 @@ class CheckSmtpView(CheckView):
               mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
+              email_channel_id:
+                type: 'integer'
+                description: 'Email channel ID (optional)'
               username:
                 type: 'string'
                 description: 'Username to connect to the SMTP server'
@@ -2079,6 +2122,9 @@ class CheckSmtpView(CheckView):
               mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
+              email_channel_id:
+                type: 'integer'
+                description: 'Email channel ID (optional)'
               username:
                 type: 'string'
                 description: 'Username to connect to the SMTP server'
@@ -2224,6 +2270,9 @@ class CheckRabbitView(CheckView):
                           mm_channel_id:
                             type: 'integer'
                             description: 'MM Channel ID'
+                          email_channel_id:
+                            type: 'integer'
+                            description: 'Email channel ID (optional)'
                           multi_check_id:
                             type: 'integer'
                             description: 'Multi-check ID'
@@ -2360,6 +2409,9 @@ class CheckRabbitView(CheckView):
               mm_channel_id:
                 type: 'integer'
                 description: 'Mattermost channel ID (optional)'
+              email_channel_id:
+                type: 'integer'
+                description: 'Email channel ID (optional)'
               username:
                 type: 'string'
                 description: 'Username to connect to the RabbitMQ server'
@@ -2463,6 +2515,9 @@ class CheckRabbitView(CheckView):
               mm_channel_id:
                 type: 'string'
                 description: 'Mattermost channel ID (optional)'
+              email_channel_id:
+                type: 'integer'
+                description: 'Email channel ID (optional)'
               username:
                 type: 'string'
                 description: 'Username to connect to the RabbitMQ server'

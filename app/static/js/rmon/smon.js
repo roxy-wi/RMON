@@ -124,6 +124,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'slack_channel_id': $('#new-smon-slack').val(),
 		'pd_channel_id': $('#new-smon-pd').val(),
 		'mm_channel_id': $('#new-smon-mm').val(),
+		'email_channel_id': $('#new-smon-email').val(),
 		'packet_size': $('#new-smon-packet_size').val(),
 		'method': $('#new-smon-method').val(),
 		'interval': $('#new-smon-interval').val(),
@@ -312,6 +313,10 @@ function getCheckSettings(smon_id, check_type) {
 				for (let entity_id of data['entities']) {
 					getEntityJson(entity_id, data['place']);
 				}
+			}
+			if (data['checks'][0]['smon_id']['email_channel_id']) {
+				$('#new-smon-email').val(data['checks'][0]['smon_id']['email_channel_id']).change();
+				$('#new-smon-email').selectmenu("refresh");
 			}
 			if (data['checks'][0]['smon_id']['mm_channel_id']) {
 				$('#new-smon-mm').val(data['checks'][0]['smon_id']['mm_channel_id']).change();

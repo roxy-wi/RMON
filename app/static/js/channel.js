@@ -11,6 +11,9 @@ $( function() {
 	$('#add-mm-button').click(function () {
 		addMMDialog.dialog('open');
 	});
+	$('#add-email-button').click(function () {
+		addEmailDialog.dialog('open');
+	});
 	let telegram_tabel_title = $("#telegram-add-table-overview").attr('title');
 	let addTelegramDialog = $("#telegram-add-table").dialog({
 		autoOpen: false,
@@ -127,6 +130,35 @@ $( function() {
 			}
 		}]
 	});
+	let email_tabel_title = $("#email-add-table-overview").attr('title');
+	let addEmailDialog = $("#email-add-table").dialog({
+		autoOpen: false,
+		resizable: false,
+		height: "auto",
+		width: 600,
+		modal: true,
+		title: email_tabel_title,
+		show: {
+			effect: "fade",
+			duration: 200
+		},
+		hide: {
+			effect: "fade",
+			duration: 200
+		},
+		buttons: [{
+			text: add_word,
+			click: function () {
+				addRecevier(this, 'email');
+			}
+		}, {
+			text: cancel_word,
+			click: function () {
+				$(this).dialog("close");
+				clearTips();
+			}
+		}]
+	});
 	$("#checker_telegram_table input").change(function () {
 		let id = $(this).attr('id').split('-');
 		updateReceiver(id[2], 'telegram')
@@ -158,6 +190,14 @@ $( function() {
 	$("#checker_mm_table select").on('selectmenuchange', function () {
 		let id = $(this).attr('id').split('-');
 		updateReceiver(id[1], 'mm')
+	});
+	$("#checker_emails_table input").change(function () {
+		let id = $(this).attr('id').split('-');
+		updateReceiver(id[2], 'email')
+	});
+	$("#checker_emails_table select").on('selectmenuchange', function () {
+		let id = $(this).attr('id').split('-');
+		updateReceiver(id[1], 'email')
 	});
 });
 function loadChannel() {

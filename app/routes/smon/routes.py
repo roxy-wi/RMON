@@ -38,6 +38,7 @@ def smon_main_dashboard():
         'slacks': channel_sql.get_user_receiver_by_group('slack', group_id),
         'pds': channel_sql.get_user_receiver_by_group('pd', group_id),
         'mms': channel_sql.get_user_receiver_by_group('mm', group_id),
+        'emails': channel_sql.get_user_receiver_by_group('email', group_id),
         'sort': request.args.get('sort', None)
     }
 
@@ -111,6 +112,7 @@ def smon_dashboard(smon_id, check_id):
         'slacks': channel_sql.get_user_receiver_by_group('slack', group_id),
         'pds': channel_sql.get_user_receiver_by_group('pd', group_id),
         'mms': channel_sql.get_user_receiver_by_group('mm', group_id),
+        'emails': channel_sql.get_user_receiver_by_group('email', group_id),
     }
 
     return render_template('include/smon/smon_history.html', **kwargs)

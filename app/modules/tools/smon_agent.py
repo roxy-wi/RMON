@@ -60,18 +60,18 @@ def add_agent(data: RmonAgent) -> Union[int, tuple]:
     try:
         inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid, data.port)
     except Exception as e:
-        roxywi_common.handle_exceptions(e, 'Cannot generate inventory', 'error')
+        roxywi_common.handle_exceptions(e, 'Cannot generate inventory')
     try:
         run_ansible(inv, server_ips, 'rmon_agent')
     except Exception as e:
-        roxywi_common.handle_exceptions(e, 'Cannot install RMON agent', 'error')
+        roxywi_common.handle_exceptions(e, 'Cannot install RMON agent')
 
     try:
         last_id = smon_sql.add_agent(**agent_kwargs)
         roxywi_common.logger('A new RMON agent has been created', 'error', keep_history=1, service='RMON')
         return last_id
     except Exception as e:
-        roxywi_common.handle_exceptions(e, 'Cannot create Agent', 'error')
+        roxywi_common.handle_exceptions(e, 'Cannot create Agent')
 
 
 def delete_agent(agent_id: int):

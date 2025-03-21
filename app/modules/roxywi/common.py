@@ -120,7 +120,7 @@ def set_logger():
 		)
 		log_handler.setFormatter(formatter)
 
-		logger_s = logging.getLogger()
+		logger_s = logging.getLogger('rmon')
 		logger_s.addHandler(log_handler)
 		logger_s.setLevel(logging.INFO)
 
@@ -164,7 +164,7 @@ def logger(action: str, level: str = 'info', **kwargs) -> None:
 		try:
 			keep_action_history(kwargs.get('service'), action, hostname, login.username, ip)
 		except Exception as e:
-			print(f'error: Cannot save history: {e}')
+			log_level['error'](f'Cannot save history: {e}', extra={'ip': ip, 'user': login.username, 'group': user_group})
 
 
 def logging_without_user(action: str, level: str = 'error') -> None:
@@ -182,7 +182,6 @@ def keep_action_history(service: str, action: str, server_ip: str, login: str, u
 
 	try:
 		server = server_sql.get_server_by_ip(server_ip=server_ip)
-
 		history_sql.insert_action_history(service, action, server.server_id, user_id, user_ip, server_ip, server.hostname)
 	except Exception as e:
 		logger(f'Cannot save a history: {e}', 'error')

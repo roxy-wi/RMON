@@ -24,6 +24,8 @@ class EscapedString(str):
                 return field_value
             else:
                 return quote(field_value.rstrip())
+        else:
+            return ''
 
     @classmethod
     def __get_pydantic_core_schema__(
@@ -67,6 +69,7 @@ class BaseCheckRequest(BaseModel):
     pd_channel_id: Optional[int] = 0
     mm_channel_id: Optional[int] = 0
     slack_channel_id: Optional[int] = 0
+    email_channel_id: Optional[int] = 0
     interval: Optional[int] = 120
     check_group: Optional[EscapedString] = None
     group_id: Optional[int] = None

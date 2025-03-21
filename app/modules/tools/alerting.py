@@ -88,7 +88,6 @@ def send_email(email_to: str, subject: str, message: str) -> None:
 			smtp_obj.starttls()
 		smtp_obj.login(mail_smtp_user, mail_smtp_password)
 		smtp_obj.send_message(msg)
-		roxywi_common.logger(f'An email has been sent to {email_to}')
 	except Exception as e:
 		roxywi_common.logger(f'unable to send email: {e}', "error")
 
@@ -108,7 +107,7 @@ def telegram_send_mess(mess, o_level, **kwargs):
 	if kwargs.get('channel_id'):
 		telegrams = channel_sql.get_receiver_by_id('telegram', kwargs.get('channel_id'))
 	else:
-		telegrams = channel_sql.get_receiver_by_ip('slack', kwargs.get('ip'))
+		telegrams = channel_sql.get_receiver_by_ip('telegram', kwargs.get('ip'))
 
 	proxy = sql.get_setting('proxy')
 
@@ -326,6 +325,38 @@ def check_rabbit_alert() -> Union[str, dict]:
 		return 'ok'
 
 
+def email_send_mess(mess, o_level, **kwargs):
+	runbook = ''
+	rmon_name = sql.get_setting('rmon_name')
+
+	if o_level == 'info':
+		level = '\U0001F7E2 info'
+	else:
+		level = f'\U0001F534 {o_level}'
+	if kwargs.get('channel_id') == 0:
+		return
+
+	if kwargs.get('channel_id'):
+		emails = channel_sql.get_receiver_by_id('email', kwargs.get('channel_id'))
+	else:
+		emails = channel_sql.get_receiver_by_ip('email', kwargs.get('ip'))
+
+	for e in emails:
+		emails_raw = e.token
+		emails = [email.strip() for email in emails_raw.replace(',', ' ').split()]
+
+		for email in emails:
+			email = email.replace("'", "")
+			if o_level != 'info':
+				try:
+					check = smon_sql.get_one_multi_check(kwargs.get('multi_check_id'))
+					if check.runbook:
+						runbook = f'.\n Runbook: {check.runbook}'
+				except Exception as e:
+					roxywi_common.logger(f'unable to get check: {e}')
+			send_email(email, f'{rmon_name}: {level}: {mess} {runbook}', f'{level}: {mess}')
+
+
 def check_email_alert() -> str:
 	rmon_name = sql.get_setting('rmon_name')
 	subject = 'test message'
@@ -376,6 +407,7 @@ def check_receiver(channel_id: int, receiver_name: str, multi_check_id: int = No
 		"slack": slack_send_mess,
 		"pd": pd_send_mess,
 		"mm": mm_send_mess,
+		"email": email_send_mess
 	}
 	rmon_name = sql.get_setting('rmon_name')
 	mess = f'Test message from {rmon_name}'
@@ -421,6 +453,7 @@ def load_channels():
 		kwargs.setdefault('mms', channel_sql.get_user_receiver_by_group('mm', user_group))
 		kwargs.setdefault('groups', group_sql.select_groups())
 		kwargs.setdefault('slacks', channel_sql.get_user_receiver_by_group('slack', user_group))
+		kwargs.setdefault('emails', channel_sql.get_user_receiver_by_group('email', user_group))
 		kwargs.setdefault('user_subscription', user_subscription)
 		kwargs.setdefault('user_params', user_params)
 		kwargs.setdefault('lang', user_params['lang'])

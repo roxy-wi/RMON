@@ -1,12 +1,13 @@
-from app.modules.db.db_model import Telegram, Slack, PD, Server, MM
+from app.modules.db.db_model import Telegram, Slack, PD, Server, MM, Email
 from app.modules.db.common import out_error
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 
 models = {
-		'telegram': Telegram,
-		'slack': Slack,
-		'pd': PD,
-		'mm': MM
+	'telegram': Telegram,
+	'slack': Slack,
+	'pd': PD,
+	'mm': MM,
+	'email': Email
 	}
 
 

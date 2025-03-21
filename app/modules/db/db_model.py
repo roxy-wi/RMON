@@ -112,6 +112,16 @@ class Role(BaseModel):
         table_name = 'role'
 
 
+class Email(BaseModel):
+    id = AutoField()
+    token = CharField()
+    chanel_name = CharField()
+    group_id = IntegerField()
+
+    class Meta:
+        table_name = 'emails'
+
+
 class Telegram(BaseModel):
     id = AutoField()
     token = CharField()
@@ -278,6 +288,7 @@ class SMON(BaseModel):
     ssl_expire_date = CharField(null=True)
     pd_channel_id = IntegerField(null=True)
     mm_channel_id = IntegerField(null=True)
+    email_channel_id = IntegerField(null=True)
     check_type = CharField(constraints=[SQL("DEFAULT 'tcp'")])
     created_at = DateTimeField(default=datetime.now)
     updated_at = DateTimeField(default=datetime.now)
@@ -492,5 +503,5 @@ def create_tables():
             [Groups, User, Server, Role, Telegram, Slack, UserGroups, Setting, Cred, Version, ActionHistory, Region,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
              SmonStatusPage, SmonStatusPageCheck, SMON, SmonGroup, MM, RMONAlertsHistory, SmonSMTPCheck, SmonRabbitCheck,
-             Country, MultiCheck]
+             Country, MultiCheck, Email]
         )

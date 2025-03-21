@@ -196,13 +196,6 @@ def response_time(time, smon_id):
 		out_error(e)
 
 
-# def add_sec_to_state_time(time, smon_id):
-# 	try:
-# 		SMON.update(time_state=time).where(SMON.id == smon_id).execute()
-# 	except Exception as e:
-# 		out_error(e)
-
-
 def insert_smon_history(smon_id: int, resp_time: float, status: int, check_type_id: int, mes: str, now_utc: datetime):
 	if status == '':
 		status = 0
@@ -244,13 +237,9 @@ def select_check_with_group(check_id: int, group_id: int) -> SMON:
 		out_error(e)
 
 
-def insert_smon(name, enable, desc, telegram, slack, pd, mm, group_id, check_type, timeout, agent_id, region_id, country_id, multi_check_id, retries):
+def insert_smon(**kwargs):
 	try:
-		last_id = SMON.insert(
-			name=name, enabled=enable, description=desc, telegram_channel_id=telegram, slack_channel_id=slack,
-			pd_channel_id=pd, mm_channel_id=mm, group_id=group_id, status='3', check_type=check_type, check_timeout=timeout,
-			region_id=region_id, country_id=country_id, multi_check_id=multi_check_id, agent_id=agent_id, retries=retries
-		).execute()
+		last_id = SMON.insert(**kwargs).execute()
 		return last_id
 	except Exception as e:
 		out_error(e)
@@ -681,13 +670,9 @@ def get_history(smon_id: int) -> SmonHistory:
 		out_error(e)
 
 
-def update_check(smon_id, name, telegram, slack, pd, mm, desc, en, timeout, retries):
-	query = (SMON.update(
-		name=name, telegram_channel_id=telegram, slack_channel_id=slack, pd_channel_id=pd, mm_channel_id=mm,
-		description=desc, enabled=en, updated_at=datetime.now(), check_timeout=timeout, retries=retries
-	).where(SMON.id == smon_id))
+def update_check(smon_id, **kwargs) -> None:
 	try:
-		query.execute()
+		SMON.update(**kwargs).where(SMON.id == smon_id).execute()
 	except Exception as e:
 		out_error(e)
 

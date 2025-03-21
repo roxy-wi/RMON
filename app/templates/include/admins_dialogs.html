@@ -303,6 +303,42 @@
         {% endif %}
     </table>
 </div>
+<div id="email-add-table" style="display: none;">
+    <table class="overview" id="email-add-table-overview" title="{{lang.words.add|title()}} {{lang.words.w_a}} {{lang.words.new}} Email {{lang.words.list}}">
+        {% include 'include/tr_validate_tips.html' %}
+        <tr>
+            <td class="padding20">
+                <span title="Emails">Emails</span>
+                <span class="need-field">*</span>
+            </td>
+            <td>
+                {{ input('email-token-add', size='30') }}
+            </td>
+        </tr>
+        <tr>
+            <td class="padding20">
+                {{lang.words.name|title()}}
+                <span class="need-field">*</span>
+            </td>
+            <td>
+                {{ input('email-chanel-add') }}
+            </td>
+        </tr>
+        {% if g.user_params['role'] == 1 %}
+        <tr>
+            <td class="padding20">{{lang.words.group|title()}}</td>
+            <td>
+                <select id="new-email-group-add" name="new-email-group-add">
+                    <option disabled selected value="0">{{lang.words.select|title()}} {{lang.words.w_a}} {{lang.words.group2}}</option>
+                    {% for group in groups %}
+                    <option value="{{ group.group_id }}">{{ group.name }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+        </tr>
+        {% endif %}
+    </table>
+</div>
 <div id="dialog-confirm-services" style="display: none;">
     <p><span class="ui-icon ui-icon-alert" style="float:left; margin:3px 12px 20px 0;"></span>{{lang.phrases.are_you_sure}}</p>
 </div>
