@@ -99,6 +99,8 @@ def telegram_send_mess(mess, o_level, **kwargs):
 	rmon_name = sql.get_setting('rmon_name')
 	if o_level == 'info':
 		level = '\U0001F7E2 info'
+	elif o_level == 'warning':
+		level = '\U0001F7E1 warning'
 	else:
 		level = f'\U0001F534 {o_level}'
 	if kwargs.get('channel_id') == 0:
@@ -271,6 +273,8 @@ def mm_send_mess(mess, level, **kwargs):
 
 	if level == "info":
 		color = "51A347"
+	elif level == "warning":
+		color = "FFB300"
 	else:
 		color = "c20707"
 	attach = {
@@ -331,6 +335,8 @@ def email_send_mess(mess, o_level, **kwargs):
 
 	if o_level == 'info':
 		level = '\U0001F7E2 info'
+	elif o_level == 'warning':
+		level = '\U0001F7E1 warning'
 	else:
 		level = f'\U0001F534 {o_level}'
 	if kwargs.get('channel_id') == 0:

@@ -7,7 +7,7 @@ urllib3<2
 pyTelegramBotAPI>=3.6.3
 slack-sdk>=3.4.0
 pdpyras>=4.5.2
-peewee>=3.14.10
+peewee==3.17.7
 PyMySQL>=1.0.2
 psycopg2-binary==2.9.10
 Werkzeug~=3.0.3

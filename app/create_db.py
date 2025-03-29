@@ -533,9 +533,29 @@ def update_db_v_1_2_10():
 			print("An error occurred:", e)
 
 
+def update_db_v_1_2_11():
+	try:
+		if mysql_enable:
+			migrate(
+				migrator.add_column('multi_check', 'priority', CharField(default='critical')),
+				migrator.add_column_default('multi_check', 'priority', 'critical'),
+			)
+		else:
+			migrate(
+				migrator.add_column('multi_check', 'priority', CharField(constraints=[SQL("DEFAULT 'critical'")])),
+				migrator.add_column_default('multi_check', 'priority', 'critical'),
+			)
+	except Exception as e:
+		if (e.args[0] == 'duplicate column name: priority' or 'column "priority" of relation "multi_check" already exists'
+				or str(e) == '(1060, "Duplicate column name \'priority\'")'):
+			print('Updating... DB has been updated to version 1.2.11')
+		else:
+			print("An error occurred:", e)
+
+
 def update_ver():
 	try:
-		Version.update(version='1.2.10').execute()
+		Version.update(version='1.2.11').execute()
 	except Exception:
 		print('Cannot update version')
 
@@ -578,6 +598,7 @@ def update_all():
 	update_db_v_1_2_7_1()
 	update_db_v_1_2_7_1_1()
 	update_db_v_1_2_10()
+	update_db_v_1_2_11()
 
 
 if __name__ == "__main__":

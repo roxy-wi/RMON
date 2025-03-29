@@ -1,8 +1,28 @@
 {% from 'include/input_macros.html' import input, checkbox, copy_to_clipboard %}
 {% if not adding %}
+<script>
+$(document).ready(function() {
+    $('#ajax-servers').on('page.dt')
+        .DataTable({
+            dom: 'Blfrtip',
+            colReorder: true,
+            "pageLength": 25,
+            stateSave: true,
+            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            "columnDefs": [
+                {
+                    "searchable": false,
+                    "orderable": false
+                }
+            ],
+            "stripeClasses": [ 'odd', 'even' ]
+        });
+});
+</script>
 <table class="overview overview-overflow" id="ajax-servers">
 	<thead>
 		<tr class="overviewHead">
+            <th class="padding10" style="width: 0;">Id</th>
 			<th class="padding10 first-collumn" id="server-name-th">{{lang.words.name|title()}}</th>
 			<th class="ip-field" style="width: 10% " id="server-ip-th">IP</th>
 			<th style="width: 5%" class="help_cursor"><span title="SSH port">{{lang.words.port|title()}}</span></th>
@@ -25,6 +45,9 @@
 {% endif %}
 		{% for server in servers %}
 		<tr id="server-{{server.0}}" class="{{ loop.cycle('odd', 'even') }} {% if adding %}newserver{% endif %}">
+            <td>
+                {{ server.0 }}
+            </td>
 			<td class="padding10 first-collumn">
 				<span class="serverNone server-status-small" title="{{lang.phrases.server_unknown}}" id="server_status-{{server.0}}"></span>
 				{% set id = 'hostname-' + server.0|string() %}

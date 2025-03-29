@@ -225,11 +225,11 @@
     {% for email in emails %}
     <tr id="email-table-{{email.id}}" class="{{ loop.cycle('odd', 'even') }}">
         <td class="padding10 first-collumn">
-            {% set id = 'email-emails-' + email.id|string() %}
+            {% set id = 'email-token-' + email.id|string() %}
             {{ input(id, value=email.token.replace("'", ""), size='30') }}
         </td>
         <td>
-            {% set id = 'email-name-' + email.id|string() %}
+            {% set id = 'email-chanel-' + email.id|string() %}
             {{ input(id, value=email.chanel_name.replace("'", ""), size='30') }}
         </td>
         {% if user_params['role']|int() == 1 %}

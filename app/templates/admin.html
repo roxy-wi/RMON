@@ -10,6 +10,14 @@
 {% endif %}
 <script src="{{ url_for('static', filename='js/admin/cred.js') }}"></script>
 <script src="{{ url_for('static', filename='js/fontawesome.min.js') }}"></script>
+<link href="{{ url_for('static', filename='css/table-6.3.9.css') }}" rel="stylesheet" type="text/css">
+<link href="{{ url_for('static', filename='js/dataTables/buttons.dataTables.min.css') }}" rel="stylesheet" type="text/css">
+<script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/dataTables.min.js') }}"></script>
+{#<script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/dataTables/dataTables.buttons.min.js') }}"></script>#}
+{#<script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/dataTables/jszip.min.js') }}"></script>#}
+{#<script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/dataTables/pdfmake.min.js') }}"></script>#}
+{#<script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/dataTables/vfs_fonts.js') }}"></script>#}
+{#<script type="text/javascript" charset="utf8" src="{{ url_for('static', filename='js/dataTables/buttons.html5.min.js') }}"></script>#}
 {% include 'include/del_confirm.html' %}
 <div id="tabs">
 	<ul id="admin-tabs">
@@ -48,18 +56,20 @@
 				<th style="width: 100%;">{{lang.words.desc|title()}}</th>
 				<th></th>
 			</tr>
+            </thead>
 			<tbody>
 		{% for group in groups %}
 			<tr id="group-{{ group.group_id }}" class="{{ loop.cycle('odd', 'even') }}">
-				<td class="padding10" style="width: 0">{{group.group_id}}</td>
+				<td style="width: 0;">{{group.group_id}}</td>
 			{% if group.name == "Default" %}
-				<td class="padding10 first-collumn">{{ group.name }}</td>
+				<td class="padding10 first-collumn" style="padding: 8px 0;">{{ group.name }}</td>
 				<td>{{ group.description.replace("'", "") }}</td>
 				<td></td>
 			{% else %}
-				<td class="padding10 first-collumn">
+				<td class="padding10 first-collumn" style="padding: 8px 0;">
 					{% set id = 'name-' + group.group_id|string() %}
 					{{ input(id, value=group.name.replace("'", "")) }}
+                    <span style="display: none">group.name.replace("'", "")</span>
 				</td>
 				<td>
 					{% set id = 'descript-' + group.group_id|string() %}
@@ -68,6 +78,7 @@
 					{% else %}
 						{{ input(id, value='', size='60') }}
 					{% endif %}
+                    <span style="display: none">{{ group.description.replace("'", "") }}</span>
 				</td>
 				<td>
 					<a class="delete" onclick="confirmDeleteGroup({{ group.group_id }})" title="{{lang.words.delete|title()}} {{lang.words.group2}} {{group.name.replace("'", "")}}" style="cursor: pointer;"></a>
@@ -158,6 +169,22 @@
 			}
 		{% endfor %}
 	});
+    $(document).ready(function() {
+        $('#ajax-group').on('page.dt')
+            .DataTable({
+                dom: 'Blfrtip',
+                colReorder: true,
+                "pageLength": 25,
+                stateSave: true,
+                "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+                "columnDefs": [
+                    {
+                        "searchable": false,
+                        "orderable": false
+                    }
+                ],
+            });
+    });
 </script>
 <link href="{{ url_for('static', filename='css/servers.css') }}" rel="stylesheet"/>
 {% if g.user_params['role'] == 2 %}

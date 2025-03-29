@@ -138,6 +138,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'retries': $('#new-smon-retries').val(),
 		'redirects': $('#new-smon-redirects').val(),
 		'runbook': $('#new-smon-runbook').val(),
+		'priority': $('#new-smon-priority').val(),
 	}
 	let method = "post";
 	let api_url = api_v_prefix + '/rmon/check/' + check_type;
@@ -283,6 +284,7 @@ function getCheckSettings(smon_id, check_type) {
 			$('#new-smon-retries').val(data['retries']);
 			$('#new-smon-redirects').val(data['redirects']);
 			$('#new-smon-runbook').val(data['runbook']);
+			$('#new-smon-priority').val(data['priority']);
 			if (data['check_group']) {
 				$('#new-smon-group').val(data['check_group'].replaceAll("'", ""));
 			}

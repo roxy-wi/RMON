@@ -488,9 +488,9 @@ def get_one_multi_check(check_id: int) -> MultiCheck:
 		out_error(e)
 
 
-def update_multi_check_group(check_id: int, check_group_id: int, runbook: str) -> None:
+def update_multi_check_group(check_id: int, check_group_id: int, runbook: str, priority: str) -> None:
 	try:
-		MultiCheck.update(check_group_id=check_group_id, runbook=runbook).where(MultiCheck.id == check_id).execute()
+		MultiCheck.update(check_group_id=check_group_id, runbook=runbook, priority=priority).where(MultiCheck.id == check_id).execute()
 	except MultiCheck.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:
@@ -728,15 +728,11 @@ def get_smon_alert_status(smon_id: str, alert: str) -> int:
 		return alert_value
 
 
-def change_body_status(status, smon_id):
-	query = SMON.update(body_status=status).where(SMON.id == smon_id)
+def change_body_status(status, smon_id, time):
 	try:
-		query.execute()
+		SMON.update(body_status=status, time_state=time).where(SMON.id == smon_id).execute()
 	except Exception as e:
 		out_error(e)
-		return False
-	else:
-		return True
 
 
 def select_body_status(smon_id):
@@ -870,10 +866,10 @@ def select_smon_groups(group_id: int) -> object:
 		out_error(e)
 
 
-def create_multi_check(group_id: int, entity_type: str, check_group_id: int, runbook: str) -> int:
+def create_multi_check(group_id: int, entity_type: str, check_group_id: int, runbook: str, priority: str) -> int:
 	try:
 		return MultiCheck.insert(
-			group_id=group_id, entity_type=entity_type, check_group_id=check_group_id, runbook=runbook
+			group_id=group_id, entity_type=entity_type, check_group_id=check_group_id, runbook=runbook, priority=priority
 		).execute()
 	except Exception as e:
 		out_error(e)

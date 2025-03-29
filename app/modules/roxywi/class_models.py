@@ -75,6 +75,7 @@ class BaseCheckRequest(BaseModel):
     group_id: Optional[int] = None
     retries: Annotated[int, Gt(0)] = 3
     runbook: Optional[EscapedString] = None
+    priority: Literal['info', 'warning', 'error', 'critical'] = 'critical'
 
     @root_validator(pre=True)
     @classmethod

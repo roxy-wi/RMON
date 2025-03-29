@@ -86,6 +86,7 @@ class CheckView(MethodView):
                 check_json['entities'] = entities
                 check_json['place'] = place
                 check_json['runbook'] = runbook
+                check_json['priority'] = m.multi_check_id.priority
                 smon_id = model_to_dict(check, max_depth=query.max_depth)
                 check_json.update(smon_id['smon_id'])
                 check_json.update(model_to_dict(check, recurse=query.recurse))
@@ -122,7 +123,7 @@ class CheckView(MethodView):
         except Exception as e:
             raise e
         check_group_id = self._get_check_group_id(data.check_group)
-        multi_check_id = smon_sql.create_multi_check(self.group_id, data.place, check_group_id, data.runbook)
+        multi_check_id = smon_sql.create_multi_check(self.group_id, data.place, check_group_id, data.runbook, data.priority)
         if data.place == 'all':
             self._create_all_checks(data, multi_check_id)
         for entity_id in data.entities:
@@ -135,7 +136,7 @@ class CheckView(MethodView):
         new_entities = []
         place = data.place
         check_group_id = self._get_check_group_id(data.check_group)
-        smon_sql.update_multi_check_group(multi_check_id, check_group_id, data.runbook)
+        smon_sql.update_multi_check_group(multi_check_id, check_group_id, data.runbook, data.priority)
         if data.place == 'all':
             countries = country_sql.select_enabled_countries_by_group(group_id)
             place = 'country'
@@ -443,6 +444,10 @@ class CheckHttpView(CheckView):
                 runbook:
                   type: 'string'
                   description: 'Link to runbook'
+                priority:
+                  type: 'string'
+                  description: 'Alert priority'
+                  default: 'critical'
         """
         return super().get(check_id, query)
 
@@ -547,6 +552,10 @@ class CheckHttpView(CheckView):
               runbook:
                 type: 'string'
                 description: 'Link to runbook'
+              priority:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['info', 'warning', 'error', 'critical']
         responses:
           '200':
             description: 'Successful Operation'
@@ -662,6 +671,10 @@ class CheckHttpView(CheckView):
               runbook:
                 type: 'string'
                 description: 'Link to runbook'
+              priority:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['info', 'warning', 'error', 'critical']
         responses:
           '201':
             description: 'Successful Operation, HTTP Check updated'
@@ -843,6 +856,10 @@ class CheckTcpView(CheckView):
                 runbook:
                   type: 'string'
                   description: 'Link to runbook'
+                priority:
+                  type: 'string'
+                  description: 'Alert priority'
+                  default: 'critical'
         """
         return super().get(check_id, query)
 
@@ -867,6 +884,7 @@ class CheckTcpView(CheckView):
               - enabled
               - place
               - entities
+              - priority
             properties:
               name:
                 type: 'string'
@@ -925,6 +943,10 @@ class CheckTcpView(CheckView):
               runbook:
                 type: 'string'
                 description: 'Link to runbook'
+              priority:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['info', 'warning', 'error', 'critical']
         responses:
           '200':
             description: 'Successful Operation'
@@ -1018,6 +1040,10 @@ class CheckTcpView(CheckView):
               runbook:
                 type: 'string'
                 description: 'Link to runbook'
+              priority:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['info', 'warning', 'error', 'critical']
         responses:
           '201':
             description: 'Successful Operation, TCP Check updated'
@@ -1208,6 +1234,10 @@ class CheckDnsView(CheckView):
                 runbook:
                   type: 'string'
                   description: 'Link to runbook'
+                priority:
+                  type: 'string'
+                  description: 'Alert priority'
+                  default: 'critical'
         """
         return super().get(check_id, query)
 
@@ -1300,6 +1330,10 @@ class CheckDnsView(CheckView):
               runbook:
                 type: 'string'
                 description: 'Link to runbook'
+              priority:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['info', 'warning', 'error', 'critical']
         responses:
           '200':
             description: 'Successful Operation'
@@ -1402,6 +1436,10 @@ class CheckDnsView(CheckView):
               runbook:
                 type: 'string'
                 description: 'Link to runbook'
+              priority:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['info', 'warning', 'error', 'critical']
         responses:
           '201':
             description: 'Successful Operation, DNS Check updated'
@@ -1586,6 +1624,10 @@ class CheckPingView(CheckView):
                 runbook:
                   type: 'string'
                   description: 'Link to runbook'
+                priority:
+                  type: 'string'
+                  description: 'Alert priority'
+                  default: 'critical'
         """
         return super().get(check_id, query)
 
@@ -1668,6 +1710,10 @@ class CheckPingView(CheckView):
               runbook:
                 type: 'string'
                 description: 'Link to runbook'
+              priority:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['info', 'warning', 'error', 'critical']
         responses:
           '200':
             description: 'Successful Operation'
@@ -1765,6 +1811,10 @@ class CheckPingView(CheckView):
               runbook:
                 type: 'string'
                 description: 'Link to runbook'
+              priority:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['info', 'warning', 'error', 'critical']
         responses:
           '201':
             description: 'Successful Operation, Ping Check updated'
@@ -1952,6 +2002,10 @@ class CheckSmtpView(CheckView):
                 runbook:
                   type: 'string'
                   description: 'Link to runbook'
+                priority:
+                  type: 'string'
+                  description: 'Alert priority'
+                  default: 'critical'
         """
         return super().get(check_id, query)
 
@@ -2046,6 +2100,10 @@ class CheckSmtpView(CheckView):
               runbook:
                 type: 'string'
                 description: 'Link to runbook'
+              priority:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['info', 'warning', 'error', 'critical']
         responses:
           '200':
             description: 'Successful Operation'
@@ -2149,6 +2207,10 @@ class CheckSmtpView(CheckView):
               runbook:
                 type: 'string'
                 description: 'Link to runbook'
+              priority:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['info', 'warning', 'error', 'critical']
         responses:
           '201':
             description: 'Successful Operation, Ping Check updated'
@@ -2342,6 +2404,10 @@ class CheckRabbitView(CheckView):
                 runbook:
                   type: 'string'
                   description: 'Link to runbook'
+                priority:
+                  type: 'string'
+                  description: 'Alert priority'
+                  default: 'critical'
         """
         return super().get(check_id, query)
 
@@ -2439,6 +2505,10 @@ class CheckRabbitView(CheckView):
               runbook:
                 type: 'string'
                 description: 'Link to runbook'
+              priority:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['info', 'warning', 'error', 'critical']
         responses:
           '200':
             description: 'Successful Operation'
@@ -2548,6 +2618,10 @@ class CheckRabbitView(CheckView):
               runbook:
                 type: 'string'
                 description: 'Link to runbook'
+              priority:
+                type: 'string'
+                description: Where checks must be deployed
+                enum: ['info', 'warning', 'error', 'critical']
         responses:
           '201':
             description: 'Successful Operation, Ping Check updated'

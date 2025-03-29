@@ -46,13 +46,13 @@ table.dataTable {
     background-image: url("../images/sort_asc_disabled.png"); }
   table.dataTable thead .sorting_desc_disabled {
     background-image: url("../images/sort_desc_disabled.png"); }
-  table.dataTable tbody tr {
-    background-color: white; }
+  /*table.dataTable tbody tr {*/
+  /*  background-color: white; }*/
     table.dataTable tbody tr.selected {
       background-color: var(--blue-color); }
   table.dataTable tbody th,
   table.dataTable tbody td {
-    padding: 8px 10px; }
+    padding: 1px 10px; }
   table.dataTable.row-border tbody th, table.dataTable.row-border tbody td, table.dataTable.display tbody th, table.dataTable.display tbody td {
     border-top: 1px solid #dddddd; }
   table.dataTable.row-border tbody tr:first-child th,

@@ -271,6 +271,17 @@
 				</select>
 			</td>
 		</tr>
+        <tr>
+			<td class="padding20">{{ lang.words.priority|title() }}</td>
+			<td>
+				<select id="new-smon-priority">
+					<option value="info">{{lang.words.info|title()}}</option>
+					<option value="warning">{{lang.words.warning|title()}}</option>
+					<option value="error">{{lang.words.error|title()}}</option>
+					<option value="critical">{{lang.words.critical|title()}}</option>
+				</select>
+			</td>
+		</tr>
 		<tr>
 			<td class="padding20">{{lang.words.runbook|title()}}</td>
 			<td>{{ input('new-smon-runbook', style="width: 240px;", placeholder="https://wiki.example.com/runbook/help") }}</td>

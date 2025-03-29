@@ -191,11 +191,11 @@ $( function() {
 		let id = $(this).attr('id').split('-');
 		updateReceiver(id[1], 'mm')
 	});
-	$("#checker_emails_table input").change(function () {
+	$("#checker_email_table input").change(function () {
 		let id = $(this).attr('id').split('-');
 		updateReceiver(id[2], 'email')
 	});
-	$("#checker_emails_table select").on('selectmenuchange', function () {
+	$("#checker_email_table select").on('selectmenuchange', function () {
 		let id = $(this).attr('id').split('-');
 		updateReceiver(id[1], 'email')
 	});

@@ -1,8 +1,28 @@
 {% from 'include/input_macros.html' import input, checkbox %}
 {% if not adding %}
+<script>
+$(document).ready(function() {
+    $('#ajax-users').on('page.dt')
+        .DataTable({
+            dom: 'Blfrtip',
+            colReorder: true,
+            "pageLength": 25,
+            stateSave: true,
+            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+            "columnDefs": [
+                {
+                    "searchable": false,
+                    "orderable": false
+                }
+            ],
+            "stripeClasses": [ 'odd', 'even' ]
+        });
+});
+</script>
 <table class="overview" id="ajax-users">
 	<thead>
 		<tr class="overviewHead">
+            <th class="padding10" style="width: 0;">Id</th>
 			<th class="padding10 first-collumn" id="user-login-th">{{lang.words.login|title()}}</th>
 			<th style="width: 10%">{{lang.words.password|title()}}</th>
 			<th style="width: 10%" class="checkbox-head" id="user-active-th">{{lang.words.active|title()}}</th>
@@ -28,6 +48,9 @@
             {% endfor %}
         {% endif %}
 		<tr id="user-{{user.user_id}}" class="{{ loop.cycle('odd', 'even') }} {% if adding %}newuser{% endif %}">
+            <td>
+                {{ user.user_id }}
+            </td>
 			<td class="padding10 first-collumn">
 				{% set login_id = 'login-' + user.user_id|string() %}
 				{% if user.ldap_user == 1 %}
@@ -35,6 +58,7 @@
 				{% else %}
 					{{ input(login_id, value=user.username, disabled=disable_superAdmin['disabled']) }}
 				{% endif %}
+                <span style="display: none">{{ user.username }}</span>
 			</td>
 			<td>
 				{% if user.ldap_user != 1 and not disable_superAdmin['disabled'] %}
@@ -57,6 +81,7 @@
 				{% else %}
 					{{ input(email_id, value=user.email, type='email', disabled=disable_superAdmin['disabled']) }}
 				{% endif %}
+                <span style="display: none">{{ user.email }}</span>
 			</td>
 			<td>
 				{% if g.user_params['role'] == 2 %}
