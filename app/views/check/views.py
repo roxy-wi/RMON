@@ -56,6 +56,7 @@ class CheckView(MethodView):
         check_type_id = smon_mod.get_check_id_by_name(self.check_type)
         multi_check = smon_sql.select_multi_check(multi_check_id, group_id)
         entities = []
+        expiration = ''
         check_json = {'checks': []}
         i = 0
 
@@ -71,6 +72,8 @@ class CheckView(MethodView):
                 group_name = group_name.replace("'", "")
             else:
                 group_name = None
+            if m.multi_check_id.expiration and m.multi_check_id.expiration != '0000-00-00 00:00:00':
+                expiration = m.multi_check_id.expiration.strftime("%Y-%m-%d %H:%M")
             check_json['check_group'] = group_name
             if m.country_id:
                 entities.append(m.country_id.id)
@@ -87,6 +90,7 @@ class CheckView(MethodView):
                 check_json['place'] = place
                 check_json['runbook'] = runbook
                 check_json['priority'] = m.multi_check_id.priority
+                check_json['expiration'] = expiration
                 smon_id = model_to_dict(check, max_depth=query.max_depth)
                 check_json.update(smon_id['smon_id'])
                 check_json.update(model_to_dict(check, recurse=query.recurse))
@@ -122,21 +126,23 @@ class CheckView(MethodView):
             smon_mod.check_checks_limit()
         except Exception as e:
             raise e
-        check_group_id = self._get_check_group_id(data.check_group)
-        multi_check_id = smon_sql.create_multi_check(self.group_id, data.place, check_group_id, data.runbook, data.priority)
+        check_parameters = self._return_check_parameters(data)
+        check_parameters['group_id'] = self.group_id
+        check_parameters['entity_type'] = data.place
+        multi_check_id = smon_sql.create_multi_check(**check_parameters)
         if data.place == 'all':
             self._create_all_checks(data, multi_check_id)
         for entity_id in data.entities:
             self.multi_check_func[data.place](data, multi_check_id, entity_id)
-
+        roxywi_common.logger(f'Check {multi_check_id} has been created', keep_history=1, service='RMON')
         return multi_check_id
 
     def put(self, multi_check_id: int, data) -> None:
         group_id = SupportClass.return_group_id(data)
         new_entities = []
         place = data.place
-        check_group_id = self._get_check_group_id(data.check_group)
-        smon_sql.update_multi_check_group(multi_check_id, check_group_id, data.runbook, data.priority)
+        check_parameters = self._return_check_parameters(data)
+        smon_sql.update_multi_check_group(multi_check_id, **check_parameters)
         if data.place == 'all':
             countries = country_sql.select_enabled_countries_by_group(group_id)
             place = 'country'
@@ -187,14 +193,25 @@ class CheckView(MethodView):
                     self.multi_check_func[place](data, multi_check_id, entity_id)
                 except Exception as e:
                     raise Exception(f'here: {e}')
+        roxywi_common.logger(f'Check {multi_check_id} has been updated', keep_history=1, service='RMON')
 
     def delete(self, check_id: int, query: GroupQuery) -> Union[int, tuple]:
         group_id = SupportClass.return_group_id(query)
         try:
             smon_mod.delete_multi_check(check_id, group_id)
+            roxywi_common.logger(f'Check {check_id} has been deleted', keep_history=1, service='RMON')
             return BaseResponse(status='Ok').model_dump(mode='json'), 204
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot delete {self.check_type} check')
+
+    def _return_check_parameters(self, data) -> dict:
+        check_parameters = {
+            'check_group_id': self._get_check_group_id(data.check_group),
+            'runbook': data.runbook,
+            'priority': data.priority,
+            'expiration': data.expiration
+        }
+        return check_parameters
 
     def _create_all_checks(self, data, multi_check_id: int):
         countries = country_sql.select_enabled_countries_by_group(self.group_id)
@@ -448,6 +465,9 @@ class CheckHttpView(CheckView):
                   type: 'string'
                   description: 'Alert priority'
                   default: 'critical'
+                expiration:
+                  type: 'string'
+                  description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
         """
         return super().get(check_id, query)
 
@@ -556,6 +576,9 @@ class CheckHttpView(CheckView):
                 type: 'string'
                 description: Where checks must be deployed
                 enum: ['info', 'warning', 'error', 'critical']
+              expiration:
+                type: 'string'
+                description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
         responses:
           '200':
             description: 'Successful Operation'
@@ -675,6 +698,9 @@ class CheckHttpView(CheckView):
                 type: 'string'
                 description: Where checks must be deployed
                 enum: ['info', 'warning', 'error', 'critical']
+              expiration:
+                type: 'string'
+                description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
         responses:
           '201':
             description: 'Successful Operation, HTTP Check updated'
@@ -860,6 +886,9 @@ class CheckTcpView(CheckView):
                   type: 'string'
                   description: 'Alert priority'
                   default: 'critical'
+                expiration:
+                  type: 'string'
+                  description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
         """
         return super().get(check_id, query)
 
@@ -947,6 +976,9 @@ class CheckTcpView(CheckView):
                 type: 'string'
                 description: Where checks must be deployed
                 enum: ['info', 'warning', 'error', 'critical']
+              expiration:
+                type: 'string'
+                description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
         responses:
           '200':
             description: 'Successful Operation'
@@ -1044,6 +1076,9 @@ class CheckTcpView(CheckView):
                 type: 'string'
                 description: Where checks must be deployed
                 enum: ['info', 'warning', 'error', 'critical']
+              expiration:
+                type: 'string'
+                description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
         responses:
           '201':
             description: 'Successful Operation, TCP Check updated'
@@ -1238,6 +1273,9 @@ class CheckDnsView(CheckView):
                   type: 'string'
                   description: 'Alert priority'
                   default: 'critical'
+                expiration:
+                  type: 'string'
+                  description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
         """
         return super().get(check_id, query)
 
@@ -1334,6 +1372,9 @@ class CheckDnsView(CheckView):
                 type: 'string'
                 description: Where checks must be deployed
                 enum: ['info', 'warning', 'error', 'critical']
+              expiration:
+                type: 'string'
+                description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
         responses:
           '200':
             description: 'Successful Operation'
@@ -1440,6 +1481,9 @@ class CheckDnsView(CheckView):
                 type: 'string'
                 description: Where checks must be deployed
                 enum: ['info', 'warning', 'error', 'critical']
+              expiration:
+                type: 'string'
+                description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
         responses:
           '201':
             description: 'Successful Operation, DNS Check updated'
@@ -1628,6 +1672,9 @@ class CheckPingView(CheckView):
                   type: 'string'
                   description: 'Alert priority'
                   default: 'critical'
+                expiration:
+                  type: 'string'
+                  description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
         """
         return super().get(check_id, query)
 
@@ -1714,6 +1761,9 @@ class CheckPingView(CheckView):
                 type: 'string'
                 description: Where checks must be deployed
                 enum: ['info', 'warning', 'error', 'critical']
+              expiration:
+                type: 'string'
+                description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
         responses:
           '200':
             description: 'Successful Operation'
@@ -1815,6 +1865,9 @@ class CheckPingView(CheckView):
                 type: 'string'
                 description: Where checks must be deployed
                 enum: ['info', 'warning', 'error', 'critical']
+              expiration:
+                type: 'string'
+                description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
         responses:
           '201':
             description: 'Successful Operation, Ping Check updated'
@@ -2006,6 +2059,9 @@ class CheckSmtpView(CheckView):
                   type: 'string'
                   description: 'Alert priority'
                   default: 'critical'
+                expiration:
+                  type: 'string'
+                  description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
         """
         return super().get(check_id, query)
 
@@ -2104,6 +2160,9 @@ class CheckSmtpView(CheckView):
                 type: 'string'
                 description: Where checks must be deployed
                 enum: ['info', 'warning', 'error', 'critical']
+              expiration:
+                type: 'string'
+                description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
         responses:
           '200':
             description: 'Successful Operation'
@@ -2211,6 +2270,9 @@ class CheckSmtpView(CheckView):
                 type: 'string'
                 description: Where checks must be deployed
                 enum: ['info', 'warning', 'error', 'critical']
+              expiration:
+                type: 'string'
+                description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
         responses:
           '201':
             description: 'Successful Operation, Ping Check updated'
@@ -2408,6 +2470,9 @@ class CheckRabbitView(CheckView):
                   type: 'string'
                   description: 'Alert priority'
                   default: 'critical'
+                expiration:
+                  type: 'string'
+                  description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
         """
         return super().get(check_id, query)
 
@@ -2509,6 +2574,9 @@ class CheckRabbitView(CheckView):
                 type: 'string'
                 description: Where checks must be deployed
                 enum: ['info', 'warning', 'error', 'critical']
+              expiration:
+                type: 'string'
+                description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
         responses:
           '200':
             description: 'Successful Operation'
@@ -2622,6 +2690,9 @@ class CheckRabbitView(CheckView):
                 type: 'string'
                 description: Where checks must be deployed
                 enum: ['info', 'warning', 'error', 'critical']
+              expiration:
+                type: 'string'
+                description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
         responses:
           '201':
             description: 'Successful Operation, Ping Check updated'

@@ -139,6 +139,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'redirects': $('#new-smon-redirects').val(),
 		'runbook': $('#new-smon-runbook').val(),
 		'priority': $('#new-smon-priority').val(),
+		'expiration': $('#new-smon-expiration').val(),
 	}
 	let method = "post";
 	let api_url = api_v_prefix + '/rmon/check/' + check_type;
@@ -233,7 +234,7 @@ function openSmonDialog(check_type, smon_id=0, edit=false) {
 		autoOpen: false,
 		resizable: false,
 		height: "auto",
-		width: 625,
+		width: 1225,
 		modal: true,
 		title: smon_add_tabel_title,
 		show: {
@@ -285,6 +286,7 @@ function getCheckSettings(smon_id, check_type) {
 			$('#new-smon-redirects').val(data['redirects']);
 			$('#new-smon-runbook').val(data['runbook']);
 			$('#new-smon-priority').val(data['priority']);
+			$('#new-smon-expiration').val(data['expiration']);
 			if (data['check_group']) {
 				$('#new-smon-group').val(data['check_group'].replaceAll("'", ""));
 			}
@@ -453,7 +455,7 @@ function check_and_clear_check_type(check_type) {
 }
 function clear_check_vals() {
 	const inputs_for_clean = ['url', 'body', 'body-req', 'port', 'packet_size', 'ip', 'header-req', 'username',
-		'password', 'vhost', 'group', 'description', 'runbook']
+		'password', 'vhost', 'group', 'description', 'runbook', 'expiration']
 	for (let i of inputs_for_clean) {
 		$('#new-smon-' + i).val('');
 	}

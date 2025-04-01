@@ -141,18 +141,33 @@ def update_smon(smon_id, json_data) -> None:
         raise Exception(f'here: {e}')
 
 
+def disable_multi_check(multi_check_id: int, group_id: int) -> None:
+    checks = smon_sql.select_multi_check(multi_check_id, group_id)
+    for check in checks:
+        delete_check_from_agent(check.id)
+    smon_sql.disable_check(multi_check_id)
+
+
+def delete_check_from_agent(smon_id: int) -> None:
+    try:
+        agent_id = smon_sql.get_agent_id_by_check_id(smon_id)
+        server_ip = smon_sql.get_agent_ip_by_id(agent_id)
+        smon_agent.delete_check(agent_id, server_ip, smon_id)
+        roxywi_common.logging_without_user(
+            f'Check {smon_id} has been deleted from Agent {agent_id}',
+            level='info',
+            extra={'check_id': smon_id, 'agent_id': agent_id})
+    except Exception as e:
+        roxywi_common.handle_exceptions(e, 'Cannot delete check')
+
+
 def delete_multi_check(smon_id: int, user_group: int):
     try:
         multi_check = smon_sql.select_multi_check(smon_id, user_group)
     except Exception as e:
         raise e
     for m in multi_check:
-        try:
-            agent_id = smon_sql.get_agent_id_by_check_id(m.id)
-            server_ip = smon_sql.get_agent_ip_by_id(agent_id)
-            smon_agent.delete_check(agent_id, server_ip, m.id)
-        except Exception as e:
-            roxywi_common.handle_exceptions(e, 'Cannot delete check', login=1)
+        delete_check_from_agent(m.id)
     try:
         smon_sql.delete_multi_check(smon_id, user_group)
     except Exception as e:

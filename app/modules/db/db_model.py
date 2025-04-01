@@ -1,3 +1,5 @@
+from peewee import DateTimeField, AutoField, CharField, ForeignKeyField, IntegerField, SQL, Model, TextField, \
+    BooleanField, FloatField
 from playhouse.migrate import *
 from datetime import datetime
 from playhouse.shortcuts import ReconnectMixin
@@ -270,6 +272,7 @@ class MultiCheck(BaseModel):
     check_group_id = ForeignKeyField(SmonGroup, null=True, on_delete='SET NULL')
     runbook = TextField(null=True)
     priority = CharField(constraints=[SQL("DEFAULT 'critical'")])
+    expiration = DateTimeField(null=True)
 
     class Meta:
         table_name = 'multi_check'

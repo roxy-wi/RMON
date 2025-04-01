@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Union
 
 from peewee import fn, IntegrityError
@@ -13,6 +13,7 @@ import app.modules.roxy_wi_tools as roxy_wi_tools
 import app.modules.tools.common as tool_common
 from app.modules.roxywi.class_models import CheckFiltersQuery
 from app.modules.roxywi.exception import RoxywiResourceNotFound
+from app.modules.tools.smon import disable_multi_check
 
 
 def get_agents(group_id: int):
@@ -173,13 +174,13 @@ def select_en_smon(agent_id: int, check_type: str) -> Union[SmonTcpCheck, SmonPi
 		out_error(e)
 
 
-def select_status(smon_id):
-	try:
-		return SMON.get(SMON.id == smon_id).status
-	except SMON.DoesNotExist:
-		raise RoxywiResourceNotFound
-	except Exception as e:
-		out_error(e)
+# def select_status(smon_id):
+# 	try:
+# 		return SMON.get(SMON.id == smon_id).status
+# 	except SMON.DoesNotExist:
+# 		raise RoxywiResourceNotFound
+# 	except Exception as e:
+# 		out_error(e)
 
 
 def change_status(status: int, smon_id: int, time: str) -> None:
@@ -348,7 +349,11 @@ def select_multi_check(multi_check_id: int, group_id: int) -> SMON:
 		return SMON.select().join(MultiCheck).where(
 			(SMON.group_id == group_id) &
 			(SMON.multi_check_id == multi_check_id)
-		).order_by(MultiCheck.check_group_id)
+		).order_by(MultiCheck.check_group_id).execute()
+	except SMON.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except MultiCheck.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
 
@@ -488,9 +493,9 @@ def get_one_multi_check(check_id: int) -> MultiCheck:
 		out_error(e)
 
 
-def update_multi_check_group(check_id: int, check_group_id: int, runbook: str, priority: str) -> None:
+def update_multi_check_group(check_id: int, **kwargs) -> None:
 	try:
-		MultiCheck.update(check_group_id=check_group_id, runbook=runbook, priority=priority).where(MultiCheck.id == check_id).execute()
+		MultiCheck.update(**kwargs).where(MultiCheck.id == check_id).execute()
 	except MultiCheck.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:
@@ -534,11 +539,9 @@ def delete_status_page_checks(page_id: int) -> None:
 
 def select_status_pages(group_id: int):
 	try:
-		query_res = SmonStatusPage.select().where(SmonStatusPage.group_id == group_id).execute()
+		return SmonStatusPage.select().where(SmonStatusPage.group_id == group_id).execute()
 	except Exception as e:
 		return out_error(e)
-	else:
-		return query_res
 
 
 def select_status_page_with_group(page_id: int, group_id: int) -> SmonStatusPage:
@@ -866,11 +869,9 @@ def select_smon_groups(group_id: int) -> object:
 		out_error(e)
 
 
-def create_multi_check(group_id: int, entity_type: str, check_group_id: int, runbook: str, priority: str) -> int:
+def create_multi_check(**kwargs) -> int:
 	try:
-		return MultiCheck.insert(
-			group_id=group_id, entity_type=entity_type, check_group_id=check_group_id, runbook=runbook, priority=priority
-		).execute()
+		return MultiCheck.insert(**kwargs).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -878,5 +879,28 @@ def create_multi_check(group_id: int, entity_type: str, check_group_id: int, run
 def update_check_current_retries(multi_check_id: int, current_retries: int) -> None:
 	try:
 		SMON.update(current_retries=current_retries).where(SMON.id == multi_check_id).execute()
+	except Exception as e:
+		out_error(e)
+
+
+def disable_expired_check() -> None:
+	try:
+		multi_checks = MultiCheck.select(MultiCheck, SMON).join_from(MultiCheck, SMON).where(
+			(SMON.enabled == 1) &
+			(MultiCheck.expiration < datetime.now()) &
+			(MultiCheck.expiration > datetime.now() - timedelta(minutes=5))
+		)
+	except Exception as e:
+		out_error(e)
+	try:
+		for multi_check in multi_checks:
+			disable_multi_check(multi_check.id, multi_check.group_id)
+	except Exception as e:
+		out_error(e)
+
+
+def disable_check(multi_check_id: int) -> None:
+	try:
+		SMON.update(enabled=0).where(SMON.multi_check_id == multi_check_id).execute()
 	except Exception as e:
 		out_error(e)

@@ -6,6 +6,7 @@ import distro
 
 from app import scheduler
 import app.modules.db.sql as sql
+import app.modules.db.smon as smon_sql
 import app.modules.db.roxy as roxy_sql
 import app.modules.db.history as history_sql
 import app.modules.roxywi.roxy as roxy
@@ -87,3 +88,10 @@ def delete_ansible_artifacts():
                 shutil.rmtree(f'{ansible_path}/{folder}')
             except Exception as e:
                 raise Exception(f'error: Cron cannot delete ansible folders: {e}')
+
+
+@scheduler.task('interval', id='disable_expired_check', minutes=1, misfire_grace_time=None)
+def disable_expired_check():
+    app = scheduler.app
+    with app.app_context():
+        smon_sql.disable_expired_check()

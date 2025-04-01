@@ -141,18 +141,17 @@ def send_post_request_to_agent(agent_id: int, server_ip: str, api_path: str, jso
         raise e
 
 
-def delete_check(agent_id: int, server_ip: str, check_id: int) -> bytes:
+def delete_check(agent_id: int, server_ip: str, check_id: int) -> None:
     headers = get_agent_headers(agent_id)
     agent = smon_sql.get_agent_data(agent_id)
     try:
-        req = requests.delete(f'http://{server_ip}:{agent.port}/check/{check_id}', headers=headers, timeout=5)
-        return req.content
+        requests.delete(f'http://{server_ip}:{agent.port}/check/{check_id}', headers=headers, timeout=5)
     except requests.exceptions.HTTPError as e:
-        roxywi_common.logger(f' Cannot delete check from agent: http error {e}', 'error')
+        roxywi_common.logger(f'Cannot delete check from agent: http error {e}', 'error')
     except requests.exceptions.ConnectTimeout:
-        roxywi_common.logger(' Cannot delete check from agent: connection timeout', 'error')
+        roxywi_common.logger('Cannot delete check from agent: connection timeout', 'error')
     except requests.exceptions.ConnectionError:
-        roxywi_common.logger(' Cannot delete check from agent: connection error', 'error')
+        roxywi_common.logger('Cannot delete check from agent: connection error', 'error')
     except Exception as e:
         raise Exception(f' Cannot delete check from Agent {server_ip}: {e}')
 

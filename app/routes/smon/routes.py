@@ -188,7 +188,7 @@ def smon_history():
 
     kwargs = {
         'lang': g.user_params['lang'],
-        'history': history_sql.alerts_history('RMON', g.user_params['group_id']),
+        'history': history_sql.all_alerts_history('RMON', g.user_params['group_id']),
         'smon_status': tools_common.is_tool_active('rmon-server'),
         'user_subscription': roxywi_common.return_user_subscription(),
         'action': 'smon'
@@ -203,7 +203,7 @@ def smon_history():
 def smon_host_history(check_id):
     roxywi_common.check_user_group_for_flask()
     smon_status = tools_common.is_tool_active('rmon-server')
-    history = history_sql.alerts_history('RMON', g.user_params['group_id'], check_id=check_id)
+    history = history_sql.all_alerts_history('RMON', g.user_params['group_id'], check_id=check_id)
     user_subscription = roxywi_common.return_user_subscription()
     kwargs = {
         'lang': g.user_params['lang'],
@@ -222,7 +222,7 @@ def smon_host_history(check_id):
 def smon_multi_check_history(multi_check_id):
     roxywi_common.check_user_group_for_flask()
     smon_status = tools_common.is_tool_active('rmon-server')
-    history = history_sql.rmon_multi_check_history(multi_check_id, g.user_params['group_id'])
+    history = history_sql.all_rmon_multi_check_history(multi_check_id, g.user_params['group_id'])
     user_subscription = roxywi_common.return_user_subscription()
     kwargs = {
         'lang': g.user_params['lang'],

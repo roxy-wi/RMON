@@ -553,9 +553,22 @@ def update_db_v_1_2_11():
 			print("An error occurred:", e)
 
 
+def update_db_v_1_2_12():
+	try:
+		migrate(
+			migrator.add_column('multi_check', 'expiration', DateTimeField(null=True)),
+		)
+	except Exception as e:
+		if (e.args[0] == 'duplicate column name: expiration' or 'column "expiration" of relation "multi_check" already exists'
+				or str(e) == '(1060, "Duplicate column name \'expiration\'")'):
+			print('Updating... DB has been updated to version 1.2.12')
+		else:
+			print("An error occurred:", e)
+
+
 def update_ver():
 	try:
-		Version.update(version='1.2.11').execute()
+		Version.update(version='1.2.12').execute()
 	except Exception:
 		print('Cannot update version')
 
@@ -599,6 +612,7 @@ def update_all():
 	update_db_v_1_2_7_1_1()
 	update_db_v_1_2_10()
 	update_db_v_1_2_11()
+	update_db_v_1_2_12()
 
 
 if __name__ == "__main__":

@@ -1,11 +1,48 @@
-from app.modules.db.db_model import ActionHistory, RMONAlertsHistory, SMON
+from typing import Union
+
+from app.modules.db.db_model import ActionHistory, RMONAlertsHistory, SMON, pgsql_enable
 from app.modules.db.sql import get_setting
 from app.modules.db.common import out_error
 import app.modules.roxy_wi_tools as roxy_wi_tools
 from app.modules.roxywi.exception import RoxywiResourceNotFound
+from app.modules.roxywi.class_models import HistoryQuery
 
 
-def alerts_history(service: str, group_id: int, **kwargs):
+def _return_sort_query(query: HistoryQuery) -> Union[str, None]:
+	sort_query = None
+	is_desc = False
+	if query.sort_by:
+		if query.sort_by.startswith('-'):
+			is_desc = True
+			query.sort_by = query.sort_by.replace('-', '')
+		sorts = {
+			'name': RMONAlertsHistory.name,
+			'id': RMONAlertsHistory.id,
+			'date': RMONAlertsHistory.date,
+		}
+		if is_desc:
+			sort_query = sorts[query.sort_by].desc()
+		else:
+			sort_query = sorts[query.sort_by].asc()
+	return sort_query
+
+
+def alerts_history(service: str, group_id: int, query: HistoryQuery):
+	where_query = (RMONAlertsHistory.service == service) & (RMONAlertsHistory.group_id == group_id)
+	sort_query = _return_sort_query(query)
+	# if pgsql_enable == '1':
+	if sort_query:
+		query = RMONAlertsHistory.select().where(where_query).order_by(sort_query).paginate(query.offset, query.limit)
+	else:
+		query = RMONAlertsHistory.select().where(where_query).paginate(query.offset, query.limit)
+
+	try:
+		return query.execute()
+	except Exception as e:
+		out_error(e)
+
+
+def all_alerts_history(service: str, group_id: int, **kwargs):
 	if kwargs.get('check_id'):
 		query = RMONAlertsHistory.select().where(
 			(RMONAlertsHistory.service == service) &
@@ -13,14 +50,48 @@ def alerts_history(service: str, group_id: int, **kwargs):
 			(RMONAlertsHistory.group_id == group_id)
 		)
 	else:
-		query = RMONAlertsHistory.select().where((RMONAlertsHistory.service == service) & (RMONAlertsHistory.group_id == group_id))
+		query = RMONAlertsHistory.select().where(
+			(RMONAlertsHistory.service == service) & (RMONAlertsHistory.group_id == group_id)
+		)
 	try:
 		return query.execute()
 	except Exception as e:
 		out_error(e)
 
 
-def rmon_multi_check_history(multi_check_id: int, group_id: int):
+def total_alerts_history(service: str, group_id: int, **kwargs):
+	if kwargs.get('check_id'):
+		query = RMONAlertsHistory.select().where(
+			(RMONAlertsHistory.service == service) &
+			(RMONAlertsHistory.rmon_id == kwargs.get('check_id')) &
+			(RMONAlertsHistory.group_id == group_id)
+		).count()
+	else:
+		query = RMONAlertsHistory.select().where(
+			(RMONAlertsHistory.service == service) & (RMONAlertsHistory.group_id == group_id)
+		).count()
+	try:
+		return query
+	except Exception as e:
+		out_error(e)
+
+
+def rmon_multi_check_history(multi_check_id: int, group_id: int, query: HistoryQuery):
+	sort_query = _return_sort_query(query)
+	where_query = (RMONAlertsHistory.service == 'RMON') & (RMONAlertsHistory.group_id == group_id) & (SMON.multi_check_id == multi_check_id)
+	if sort_query:
+		query = RMONAlertsHistory.select().join(SMON).where(where_query).order_by(sort_query).paginate(query.offset, query.limit)
+	else:
+		query = RMONAlertsHistory.select().join(SMON).where(where_query).paginate(query.offset, query.limit)
+	try:
+		return query.execute()
+	except RMONAlertsHistory.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		out_error(e)
+
+
+def all_rmon_multi_check_history(multi_check_id: int, group_id: int,):
 	query = RMONAlertsHistory.select().join(SMON).where(
 		(RMONAlertsHistory.service == 'RMON') &
 		(RMONAlertsHistory.group_id == group_id) &
@@ -28,6 +99,20 @@ def rmon_multi_check_history(multi_check_id: int, group_id: int):
 	)
 	try:
 		return query.execute()
+	except RMONAlertsHistory.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		out_error(e)
+
+
+def total_rmon_multi_check_history(multi_check_id: int, group_id: int):
+	query = RMONAlertsHistory.select().join(SMON).where(
+		(RMONAlertsHistory.service == 'RMON') &
+		(RMONAlertsHistory.group_id == group_id) &
+		(SMON.multi_check_id == multi_check_id)
+	).count()
+	try:
+		return query
 	except RMONAlertsHistory.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:

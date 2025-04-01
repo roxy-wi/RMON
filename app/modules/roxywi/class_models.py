@@ -76,6 +76,7 @@ class BaseCheckRequest(BaseModel):
     retries: Annotated[int, Gt(0)] = 3
     runbook: Optional[EscapedString] = None
     priority: Literal['info', 'warning', 'error', 'critical'] = 'critical'
+    expiration: Optional[str] = None
 
     @root_validator(pre=True)
     @classmethod
@@ -220,6 +221,12 @@ class CheckFiltersQuery(GroupQuery):
         'name', 'status', 'check_type', 'check_group', 'created_at', 'updated_at',
         '-name', '-status', '-check_type', '-check_group', '-created_at', '-updated_at']
     ] = None
+
+
+class HistoryQuery(GroupQuery):
+    offset: int = 1
+    limit: int = 25
+    sort_by: Optional[Literal['name', 'id', 'date', '-name', '-id', '-date']] = None
 
 
 class UserSearchRequest(GroupQuery):
