@@ -1,6 +1,6 @@
 from typing import Union
 
-from app.modules.db.db_model import ActionHistory, RMONAlertsHistory, SMON, pgsql_enable
+from app.modules.db.db_model import ActionHistory, RMONAlertsHistory, SMON
 from app.modules.db.sql import get_setting
 from app.modules.db.common import out_error
 import app.modules.roxy_wi_tools as roxy_wi_tools
@@ -30,7 +30,6 @@ def _return_sort_query(query: HistoryQuery) -> Union[str, None]:
 def alerts_history(service: str, group_id: int, query: HistoryQuery):
 	where_query = (RMONAlertsHistory.service == service) & (RMONAlertsHistory.group_id == group_id)
 	sort_query = _return_sort_query(query)
-	# if pgsql_enable == '1':
 	if sort_query:
 		query = RMONAlertsHistory.select().where(where_query).order_by(sort_query).paginate(query.offset, query.limit)
 	else:

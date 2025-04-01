@@ -720,15 +720,13 @@ def update_smon_alert_status(smon_id: str, alert_value: int, alert: str) -> None
 def get_smon_alert_status(smon_id: str, alert: str) -> int:
 	try:
 		if alert == 'ssl_expire_warning_alert':
-			alert_value = SMON.get(SMON.id == smon_id).ssl_expire_warning_alert
+			return SMON.get(SMON.id == smon_id).ssl_expire_warning_alert
 		else:
-			alert_value = SMON.get(SMON.id == smon_id).ssl_expire_critical_alert
+			return SMON.get(SMON.id == smon_id).ssl_expire_critical_alert
 	except SMON.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
-	else:
-		return alert_value
 
 
 def change_body_status(status, smon_id, time):

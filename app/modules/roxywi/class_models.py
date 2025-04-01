@@ -80,6 +80,14 @@ class BaseCheckRequest(BaseModel):
 
     @root_validator(pre=True)
     @classmethod
+    def transform_str_to_date(cls, values):
+        if 'expiration' in values:
+            if values['expiration'] == '' or values['expiration'] is None:
+                values['expiration'] = None
+        return values
+
+    @root_validator(pre=True)
+    @classmethod
     def timeout_must_be_lower_interval(cls, values):
         timeout = 2
         interval = 120

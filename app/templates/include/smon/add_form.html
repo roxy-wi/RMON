@@ -6,14 +6,12 @@
         width: 210px;
     }
     .overview {
-        width: 40%;
+        width: 50%;
     }
 </style>
 <script>
     $(function () {
         $.datetimepicker.setLocale('{{ chosen_lang }}');
-        let d1 = new Date();
-        let d2 = new Date( d1.getUTCFullYear(), d1.getUTCMonth(), d1.getUTCDate(), d1.getUTCHours(), d1.getUTCMinutes(), d1.getUTCSeconds() );
         $('#new-smon-expiration').datetimepicker({
             format: 'Y-m-d H:i',
             minDate: 0,
@@ -23,10 +21,10 @@
 </script>
 <div id="smon-add-table" style="display: none;">
 	<table class="overview" id="smon-add-table-overview" title="{{lang.words.create|title()}} {{lang.words.w_a}} {{lang.words.new}} {{lang.words.server}} {{lang.words.for}} {{lang.words.monitoring}}"
-    data-edit="{{lang.words.edit|title()}} {{lang.words.w_a}} {{lang.words.new}} {{lang.words.server}} {{lang.words.for}} {{lang.words.monitoring}}"
-    style="float: left;"
-    >
+    data-edit="{{lang.words.edit|title()}} {{lang.words.w_a}} {{lang.words.new}} {{lang.words.server}} {{lang.words.for}} {{lang.words.monitoring}}">
 		{% include 'include/tr_validate_tips.html' %}
+    </table>
+    <table class="overview"  style="float: left;">
 		<tr>
 			<td class="padding20">
 				{{lang.words.name|title()}}
@@ -236,7 +234,7 @@
 			</td>
 		</tr>
     </table>
-    <table class="overview" style="margin-top: 48px;border-left: 1px solid #ddd;margin-left: 10px;">
+    <table class="overview" style="border-left: 1px solid #ddd;margin-left: 10px;">
         <tr>
             <td class="padding20">{{ lang.phrases.expiration_date }}</td>
             <td>
