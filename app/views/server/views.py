@@ -195,9 +195,7 @@ class ServerView(MethodView):
 
         try:
             server_sql.update_server(body.hostname, group_id, body.enabled, server_id, body.cred_id, body.port, body.description)
-            server_ip = server_sql.select_server_ip_by_id(server_id)
-            roxywi_common.logger(f'The server {body.hostname} has been update', roxywi=1, login=1, keep_history=1,
-                                 service='server')
+            roxywi_common.logger(f'The server {body.hostname} has been update', keep_history=1, service='server')
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot update server')
 

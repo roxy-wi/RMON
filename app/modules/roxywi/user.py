@@ -41,13 +41,10 @@ def delete_user(user_id: int) -> None:
         count_super_admin_users = user_sql.get_super_admin_count()
         if count_super_admin_users < 2:
             raise Exception('error: you cannot delete a last user with superAdmin role')
-    user = user_sql.select_users(id=user_id)
-    username = ''
-    for u in user:
-        username = u.username
+    user = user_sql.get_user_id(user_id).username
     if user_sql.delete_user(user_id):
         user_sql.delete_user_groups(user_id)
-        roxywi_common.logger('has been deleted user')
+        roxywi_common.logger(f'has been deleted {user} user')
 
 
 def update_user(email, new_user, user_id, enabled, group_id, role_id):
@@ -60,9 +57,9 @@ def update_user(email, new_user, user_id, enabled, group_id, role_id):
 
 
 def update_user_password(password, user_id):
-    user = user_sql.get_user_id(user_id)
+    user = user_sql.get_user_id(user_id).username
     user_sql.update_user_password(password, user_id)
-    roxywi_common.logger('has changed password')
+    roxywi_common.logger(f'has changed password for {user} user')
 
 
 def save_user_group_and_role(user: str, groups_and_roles: dict):

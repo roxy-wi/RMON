@@ -90,8 +90,23 @@ def delete_ansible_artifacts():
                 raise Exception(f'error: Cron cannot delete ansible folders: {e}')
 
 
-@scheduler.task('interval', id='disable_expired_check', minutes=1, misfire_grace_time=None)
+@scheduler.task('interval', id='disable_expired_check', minutes=3, misfire_grace_time=None)
 def disable_expired_check():
     app = scheduler.app
     with app.app_context():
         smon_sql.disable_expired_check()
+
+
+@scheduler.task('interval', id='delete_alert_history', hours=24, misfire_grace_time=None)
+def delete_alert_history():
+    app = scheduler.app
+    with app.app_context():
+        history_range = int(sql.get_setting('keep_history_range'))
+        history_sql.delete_alert_history(history_range, 'RMON')
+
+
+@scheduler.task('interval', id='delete_smon_history', hours=24, misfire_grace_time=None)
+def delete_smon_history():
+    app = scheduler.app
+    with app.app_context():
+        smon_sql.delete_smon_history()

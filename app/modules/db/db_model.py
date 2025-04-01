@@ -4,6 +4,7 @@ from playhouse.migrate import *
 from datetime import datetime
 from playhouse.shortcuts import ReconnectMixin
 from playhouse.sqlite_ext import SqliteExtDatabase
+from playhouse.pool import PooledPostgresqlExtDatabase
 
 import app.modules.roxy_wi_tools as roxy_wi_tools
 
@@ -31,8 +32,10 @@ def connect(get_migrator=None):
             "password": get_config.get_config_var('pgsql', 'password'),
             "host": get_config.get_config_var('pgsql', 'host'),
             "port": int(get_config.get_config_var('pgsql', 'port')),
+            "max_connections": 32,
+            "stale_timeout": 300
         }
-        conn = PostgresqlDatabase(db, **kwargs)
+        conn = PooledPostgresqlExtDatabase(db, **kwargs)
         migration = PostgresqlMigrator(conn)
     elif mysql_enable == '1':
         mysql_db = get_config.get_config_var('mysql', 'mysql_db')
