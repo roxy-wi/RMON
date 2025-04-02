@@ -167,8 +167,8 @@ def logger(action: str, level: str = 'info', **kwargs) -> None:
 			log_level['error'](f'Cannot save history: {e}', extra={'ip': ip, 'user': login.username, 'group': user_group})
 
 
-def logging_without_user(action: str, level: str = 'error', **extra) -> None:
-	log_level[level](action, **extra)
+def logging_without_user(action: str, level: str = 'error', extra=None) -> None:
+	log_level[level](action, extra=extra)
 
 
 def keep_action_history(service: str, action: str, server_ip: str, login: str, user_ip: str):

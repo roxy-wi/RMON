@@ -2,6 +2,8 @@ import uuid
 from typing import Union
 
 import requests
+from requests import Response
+
 import app.modules.db.sql as sql
 import app.modules.db.smon as smon_sql
 import app.modules.db.server as server_sql
@@ -131,12 +133,12 @@ def send_get_request_to_agent(agent_id: int, server_ip: str, api_path: str) -> b
         raise Exception(' Cannot get agent status')
 
 
-def send_post_request_to_agent(agent_id: int, server_ip: str, api_path: str, json_data: object) -> bytes:
+def send_post_request_to_agent(agent_id: int, server_ip: str, api_path: str, json_data: object) -> Response:
     headers = get_agent_headers(agent_id)
     agent = smon_sql.get_agent_data(agent_id)
     try:
         req = requests.post(f'http://{server_ip}:{agent.port}/{api_path}', headers=headers, json=json_data, timeout=15)
-        return req.content
+        return req
     except Exception as e:
         raise e
 
@@ -156,6 +158,35 @@ def delete_check(agent_id: int, server_ip: str, check_id: int) -> None:
         raise Exception(f' Cannot delete check from Agent {server_ip}: {e}')
 
 
+def send_check_to_agent(agent_id: int, server_ip: str, check_id: int, multi_check_id: int, request_data: dict) -> None:
+    status_created = 201  # Introduced constant for clarity
+    endpoint = f'check/{check_id}'  # Renamed variable for better clarity
+
+    # Helper function to handle logging with a consistent message format
+    def log_agent_error(res, retry: int) -> None:
+        extra_info = {
+            'check_id': check_id,
+            'agent_id': agent_id,
+            'multi_check_id': multi_check_id
+        }
+        roxywi_common.logging_without_user(
+            f"Agent returned: {res.status_code} {res.text}. "
+            f"Retry {retry} while sending check {check_id} to agent {agent_id}.",
+            'warning',
+            extra_info
+        )
+
+    retries = 2  # Allowed attempts to send the request
+    for attempt in range(1, retries + 1):
+        response = send_post_request_to_agent(agent_id, server_ip, endpoint, request_data)
+        if response.status_code == status_created:  # Successfully created
+            return
+        log_agent_error(response, attempt)
+
+        if attempt == retries:  # On the final attempt, raise an exception
+            raise Exception(response.text)
+
+
 def send_tcp_checks(agent_id: int, server_ip: str, check_id=None) -> None:
     if check_id:
         checks = smon_sql.select_one_smon(check_id, 1)
@@ -170,11 +201,10 @@ def send_tcp_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             'interval': check.interval,
             'timeout': check.smon_id.check_timeout
         }
-        api_path = f'check/{check.smon_id}'
         try:
-            send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
+            send_check_to_agent(agent_id, server_ip, check.smon_id, check.smon_id.multi_check_id, json_data)
         except Exception as e:
-            roxywi_common.logging_without_user(f' Cannot send TCP checks: {e}', 'error')
+            roxywi_common.logging_without_user(f'Cannot send TCP checks: {e}', 'error')
 
 
 def send_ping_checks(agent_id: int, server_ip: str, check_id=None) -> None:
@@ -191,9 +221,8 @@ def send_ping_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             'interval': check.interval,
             'timeout': check.smon_id.check_timeout
         }
-        api_path = f'check/{check.smon_id}'
         try:
-            send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
+            send_check_to_agent(agent_id, server_ip, check.smon_id, check.smon_id.multi_check_id, json_data)
         except Exception as e:
             roxywi_common.logging_without_user(f' Cannot send Ping checks: {e}', 'error')
 
@@ -214,9 +243,8 @@ def send_dns_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             'interval': check.interval,
             'timeout': check.smon_id.check_timeout
         }
-        api_path = f'check/{check.smon_id}'
         try:
-            send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
+            send_check_to_agent(agent_id, server_ip, check.smon_id, check.smon_id.multi_check_id, json_data)
         except Exception as e:
             roxywi_common.logging_without_user(f'Cannot send DNS checks: {e}', 'error')
 
@@ -247,9 +275,8 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             'headers': check.headers,
             'redirects': check.redirects,
         }
-        api_path = f'check/{check.smon_id}'
         try:
-            send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
+            send_check_to_agent(agent_id, server_ip, check.smon_id, check.smon_id.multi_check_id, json_data)
         except Exception as e:
             roxywi_common.logging_without_user(f'Cannot send HTTP checks: {e}', 'error')
 
@@ -271,9 +298,8 @@ def send_smtp_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             'timeout': check.smon_id.check_timeout,
             'ignore_ssl_error': check.ignore_ssl_error,
         }
-        api_path = f'check/{check.smon_id}'
         try:
-            send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
+            send_check_to_agent(agent_id, server_ip, check.smon_id, check.smon_id.multi_check_id, json_data)
         except Exception as e:
             roxywi_common.logging_without_user(f'Cannot send SMTP checks: {e}', 'error')
 
@@ -296,9 +322,8 @@ def send_rabbit_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             'timeout': check.smon_id.check_timeout,
             'ignore_ssl_error': check.ignore_ssl_error,
         }
-        api_path = f'check/{check.smon_id}'
         try:
-            send_post_request_to_agent(agent_id, server_ip, api_path, json_data)
+            send_check_to_agent(agent_id, server_ip, check.smon_id, check.smon_id.multi_check_id, json_data)
         except Exception as e:
             roxywi_common.logging_without_user(f'Cannot send RabbitMQ checks: {e}', 'error')
 
