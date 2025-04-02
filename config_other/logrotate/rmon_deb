@@ -1,0 +1,9 @@
+/var/log/rmon/rmon.log {
+    daily
+    rotate 10
+    missingok
+    notifempty
+	create 0644 www-data www-data
+	dateext
+    sharedscripts
+}
