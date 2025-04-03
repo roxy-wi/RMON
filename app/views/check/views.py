@@ -134,7 +134,7 @@ class CheckView(MethodView):
             self._create_all_checks(data, multi_check_id)
         for entity_id in data.entities:
             self.multi_check_func[data.place](data, multi_check_id, entity_id)
-        roxywi_common.logger(f'Check {multi_check_id} has been created')
+        roxywi_common.logger(f'Check {multi_check_id} has been created', additional_extra={'multi_check_id': multi_check_id})
         return multi_check_id
 
     def put(self, multi_check_id: int, data) -> None:
@@ -170,7 +170,10 @@ class CheckView(MethodView):
                 smon_sql.delete_smon(check['check_id'], group_id)
                 agent_ip = smon_sql.get_agent_ip_by_id(check['agent_id'])
                 smon_agent.delete_check(check['agent_id'], agent_ip, check['check_id'])
-                roxywi_common.logger(f'Check {check["check_id"]} has been deleted from Agent {check["agent_id"]}')
+                roxywi_common.logger(
+                    f'Check {check["check_id"]} has been deleted from Agent {check["agent_id"]}',
+                    additional_extra={'check_id': check["check_id"], 'multi_check_id': multi_check_id, 'agent_id': check['agent_id']}
+                )
         for entity_id in need_to_update:
             for check in entity_id_check_id[entity_id]:
                 try:
@@ -193,13 +196,13 @@ class CheckView(MethodView):
                     self.multi_check_func[place](data, multi_check_id, entity_id)
                 except Exception as e:
                     raise Exception(f'here: {e}')
-        roxywi_common.logger(f'Check {multi_check_id} has been updated')
+        roxywi_common.logger(f'Multi check {multi_check_id} has been updated', additional_extra={'multi_check_id': multi_check_id})
 
     def delete(self, check_id: int, query: GroupQuery) -> Union[int, tuple]:
         group_id = SupportClass.return_group_id(query)
         try:
             smon_mod.delete_multi_check(check_id, group_id)
-            roxywi_common.logger(f'Check {check_id} has been deleted')
+            roxywi_common.logger(f'Check {check_id} has been deleted', additional_extra={'multi_check_id': check_id})
             return BaseResponse(status='Ok').model_dump(mode='json'), 204
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot delete {self.check_type} check')

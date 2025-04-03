@@ -161,6 +161,7 @@ def delete_check(agent_id: int, server_ip: str, check_id: int) -> None:
 def send_check_to_agent(agent_id: int, server_ip: str, check_id: int, multi_check_id: int, request_data: dict) -> None:
     status_created = 201  # Introduced constant for clarity
     endpoint = f'check/{check_id}'  # Renamed variable for better clarity
+    retries = 2  # Allowed attempts to send the request
 
     # Helper function to handle logging with a consistent message format
     def log_agent_error(res, retry: int) -> None:
@@ -176,10 +177,14 @@ def send_check_to_agent(agent_id: int, server_ip: str, check_id: int, multi_chec
             extra_info
         )
 
-    retries = 2  # Allowed attempts to send the request
     for attempt in range(1, retries + 1):
         response = send_post_request_to_agent(agent_id, server_ip, endpoint, request_data)
         if response.status_code == status_created:  # Successfully created
+            roxywi_common.logger(
+                f'Check {check_id} sent to agent {agent_id} successfully',
+                'info',
+                additional_extra={'check_id': check_id, 'agent_id': agent_id, 'multi_check_id': multi_check_id}
+            )
             return
         log_agent_error(response, attempt)
 
@@ -204,7 +209,10 @@ def send_tcp_checks(agent_id: int, server_ip: str, check_id=None) -> None:
         try:
             send_check_to_agent(agent_id, server_ip, check.smon_id, check.smon_id.multi_check_id, json_data)
         except Exception as e:
-            roxywi_common.logging_without_user(f'Cannot send TCP checks: {e}', 'error')
+            roxywi_common.logging_without_user(f'Cannot send TCP check: {e}',
+                                               'error',
+                                               extra={'check_id': check.id, 'agent_id': agent_id, 'multi_check_id': check.smon_id.multi_check_id}
+                                               )
 
 
 def send_ping_checks(agent_id: int, server_ip: str, check_id=None) -> None:
@@ -224,7 +232,10 @@ def send_ping_checks(agent_id: int, server_ip: str, check_id=None) -> None:
         try:
             send_check_to_agent(agent_id, server_ip, check.smon_id, check.smon_id.multi_check_id, json_data)
         except Exception as e:
-            roxywi_common.logging_without_user(f' Cannot send Ping checks: {e}', 'error')
+            roxywi_common.logging_without_user(f'Cannot send Ping check: {e}',
+                                               'error',
+                                               extra={'check_id': check.id, 'agent_id': agent_id, 'multi_check_id': check.smon_id.multi_check_id}
+                                               )
 
 
 def send_dns_checks(agent_id: int, server_ip: str, check_id=None) -> None:
@@ -246,7 +257,10 @@ def send_dns_checks(agent_id: int, server_ip: str, check_id=None) -> None:
         try:
             send_check_to_agent(agent_id, server_ip, check.smon_id, check.smon_id.multi_check_id, json_data)
         except Exception as e:
-            roxywi_common.logging_without_user(f'Cannot send DNS checks: {e}', 'error')
+            roxywi_common.logging_without_user(f'Cannot send DNS check: {e}',
+                                               'error',
+                                               extra={'check_id': check.id, 'agent_id': agent_id, 'multi_check_id': check.smon_id.multi_check_id}
+                                               )
 
 
 def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
@@ -260,7 +274,7 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             try:
                 body = check.body.replace("'", "")
             except Exception as e:
-                roxywi_common.logger(f'Cannot parse body for check {check.id}: {e}', 'error')
+                roxywi_common.logger(f'Cannot parse body for check {check.id}: {e}', 'error', additional_extra={'check_id': check.id})
         json_data = {
             'check_type': 'http',
             'name': check.smon_id.name,
@@ -278,7 +292,10 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
         try:
             send_check_to_agent(agent_id, server_ip, check.smon_id, check.smon_id.multi_check_id, json_data)
         except Exception as e:
-            roxywi_common.logging_without_user(f'Cannot send HTTP checks: {e}', 'error')
+            roxywi_common.logging_without_user(f'Cannot send HTTP check: {e}',
+                                               'error',
+                                               extra={'check_id': check.id, 'agent_id': agent_id, 'multi_check_id': check.smon_id.multi_check_id}
+                                               )
 
 
 def send_smtp_checks(agent_id: int, server_ip: str, check_id=None) -> None:
@@ -301,7 +318,10 @@ def send_smtp_checks(agent_id: int, server_ip: str, check_id=None) -> None:
         try:
             send_check_to_agent(agent_id, server_ip, check.smon_id, check.smon_id.multi_check_id, json_data)
         except Exception as e:
-            roxywi_common.logging_without_user(f'Cannot send SMTP checks: {e}', 'error')
+            roxywi_common.logging_without_user(f'Cannot send SMTP check: {e}',
+                                               'error',
+                                               extra={'check_id': check.id, 'agent_id': agent_id, 'multi_check_id': check.smon_id.multi_check_id}
+                                               )
 
 
 def send_rabbit_checks(agent_id: int, server_ip: str, check_id=None) -> None:
@@ -325,7 +345,10 @@ def send_rabbit_checks(agent_id: int, server_ip: str, check_id=None) -> None:
         try:
             send_check_to_agent(agent_id, server_ip, check.smon_id, check.smon_id.multi_check_id, json_data)
         except Exception as e:
-            roxywi_common.logging_without_user(f'Cannot send RabbitMQ checks: {e}', 'error')
+            roxywi_common.logging_without_user(f'Cannot send RabbitMQ checks: {e}',
+                                               'error',
+                                               extra={'check_id': check.id, 'agent_id': agent_id, 'multi_check_id': check.smon_id.multi_check_id}
+                                               )
 
 
 def send_checks(agent_id: int) -> None:

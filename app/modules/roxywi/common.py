@@ -141,11 +141,11 @@ log_level = {
 	}
 
 
-def logger(action: str, level: str = 'info', **kwargs) -> None:
+def logger(action: str, level: str = 'info', additional_extra: dict = None, **kwargs) -> None:
 	verify_jwt_in_request()
 	claims = get_jwt()
 	user_id = claims['user_id']
-	login = user_sql.get_user_id(user_id=user_id)
+	login = user_sql.get_user_id(user_id=user_id).username
 	hostname = socket.gethostname()
 
 	try:
@@ -157,14 +157,18 @@ def logger(action: str, level: str = 'info', **kwargs) -> None:
 		ip = request.remote_addr
 	except Exception:
 		ip = ''
+	extra = {'ip': ip, 'user': login, 'group': user_group}
 
-	log_level[level](action, extra={'ip': ip, 'user': login.username, 'group': user_group})
+	if additional_extra:
+		extra.update(additional_extra)
+
+	log_level[level](action, extra=extra)
 
 	if kwargs.get('keep_history'):
 		try:
-			keep_action_history(kwargs.get('service'), action, hostname, login.username, ip)
+			keep_action_history(kwargs.get('service'), action, hostname, login, ip)
 		except Exception as e:
-			log_level['error'](f'Cannot save history: {e}', extra={'ip': ip, 'user': login.username, 'group': user_group})
+			log_level['error'](f'Cannot save history: {e}', extra=extra)
 
 
 def logging_without_user(action: str, level: str = 'error', extra=None) -> None:
