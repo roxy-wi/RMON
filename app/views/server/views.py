@@ -133,13 +133,11 @@ class ServerView(MethodView):
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create a server')
 
-        roxywi_common.logger(f'A new server {body.hostname} has been created', login=1, keep_history=1,
-                             service='server')
+        roxywi_common.logger(f'A new server {body.hostname} has been created', keep_history=1, service='server')
         try:
             server_mod.update_server_after_creating(body.hostname, body.ip)
         except Exception as e:
-            roxywi_common.logger(f'Cannot get system info from {body.hostname}: {e}', login=1, keep_history=1,
-                                 service='server', mes_type='error')
+            roxywi_common.logger(f'Cannot get system info from {body.hostname}: {e}', 'error')
 
         if self.is_api:
             return IdResponse(id=last_id).model_dump(mode='json'), 201
@@ -220,6 +218,7 @@ class ServerView(MethodView):
         """
         try:
             server_mod.delete_server(server_id)
+            roxywi_common.logger(f'The server {server_id} has been deleted')
             return BaseResponse().model_dump(mode='json'), 204
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot delete server')
@@ -349,7 +348,7 @@ class ServerGroupView(MethodView):
         """
         try:
             last_id = group_sql.add_group(body.name, body.description)
-            roxywi_common.logger(f'A new group {body.name} has been created', roxywi=1, login=1)
+            roxywi_common.logger(f'A new group {body.name} has been created', service='group', keep_history=1)
             return IdResponse(id=last_id).model_dump(mode='json'), 201
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create group')
@@ -388,6 +387,7 @@ class ServerGroupView(MethodView):
 
         try:
             group_mod.update_group(group_id, body.name, body.description)
+            roxywi_common.logger(f'The group {body.name} has been updated', service='group', keep_history=1)
             return BaseResponse(), 201
         except Exception as e:
             roxywi_common.handler_exceptions_for_json_data(e, 'Cannot update group')
@@ -414,6 +414,7 @@ class ServerGroupView(MethodView):
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get user or group'), 404
         try:
             group_mod.delete_group(group_id)
+            roxywi_common.logger(f'The group {group_id} has been deleted', service='group', keep_history=1)
             return BaseResponse().model_dump(mode='json'), 204
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot delete group')

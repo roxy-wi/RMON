@@ -22,9 +22,9 @@ def check_login():
             print(f'{e}')
             abort(401)
 
-        if not user_sql.is_user_active(user_params['user_id']):
+        if not user_sql.get_user_id(user_params['user_id']).enabled:
             print(f'error: User {user_params["user_id"]} is not active')
-            abort(401)
+            abort(401, f'error: User {user_params["user_id"]} is not active')
 
         try:
             roxywi_auth.check_login(user_params['user_id'])

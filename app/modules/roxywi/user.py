@@ -11,7 +11,7 @@ import app.modules.tools.alerting as alerting
 def create_user(new_user: str, email: str, password: str, role: int, activeuser: int, group: int) -> int:
     try:
         user_id = user_sql.add_user(new_user, email, password, role, activeuser, group)
-        roxywi_common.logger('A new user has been created')
+        roxywi_common.logger('A new user has been created', service='user', keep_history=1)
     except Exception as e:
         roxywi_common.handle_exceptions(e, 'Cannot create a new user')
     try:
@@ -47,19 +47,10 @@ def delete_user(user_id: int) -> None:
         roxywi_common.logger(f'has been deleted {user} user')
 
 
-def update_user(email, new_user, user_id, enabled, group_id, role_id):
-    try:
-        user_sql.update_user(new_user, email, role_id, user_id, enabled)
-    except Exception as e:
-        roxywi_common.handle_exceptions(e, f'Cannot update user {new_user}')
-    user_sql.update_user_role(user_id, group_id, role_id)
-    roxywi_common.logger('has been updated user')
-
-
 def update_user_password(password, user_id):
     user = user_sql.get_user_id(user_id).username
     user_sql.update_user_password(password, user_id)
-    roxywi_common.logger(f'has changed password for {user} user')
+    roxywi_common.logger(f'Has changed password for {user} user', service='user', keep_history=1)
 
 
 def save_user_group_and_role(user: str, groups_and_roles: dict):
@@ -78,7 +69,7 @@ def save_user_group_and_role(user: str, groups_and_roles: dict):
             except Exception as e:
                 raise Exception(f'error: Cannot update groups: {e}')
         else:
-            roxywi_common.logger(f'Groups and roles have been updated for user: {user}')
+            roxywi_common.logger(f'Groups and roles have been updated for user: {user}', service='user', keep_history=1)
             return resp
 
 

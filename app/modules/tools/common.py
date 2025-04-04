@@ -92,10 +92,6 @@ def update_cur_tool_version(tool_name: str) -> None:
         pass
 
 
-def get_cur_tool_version(tool_name: str) -> str:
-    return roxy_sql.get_tool_cur_version(tool_name)
-
-
 def get_model_for_check(
         check_type: str = None, check_type_id: int = None
 ) -> Type[Union[SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonSMTPCheck, SmonRabbitCheck]]:

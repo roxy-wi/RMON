@@ -106,15 +106,6 @@ def update_tool_new_version(tool_name: str, version: str):
 		out_error(e)
 
 
-def get_tool_cur_version(tool_name: str):
-	try:
-		query = RoxyTool.get(RoxyTool.name == tool_name).current_version
-	except Exception as e:
-		out_error(e)
-	else:
-		return query
-
-
 def get_ver():
 	try:
 		ver = Version.get()

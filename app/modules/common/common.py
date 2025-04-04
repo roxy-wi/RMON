@@ -3,12 +3,9 @@ from datetime import datetime
 import dateutil
 
 from shlex import quote
-from shutil import which
 from pytz import timezone
 
 import app.modules.db.sql as sql
-
-error_mess = 'error: All fields must be completed'
 
 
 def get_present_time():
@@ -111,16 +108,6 @@ def return_nice_path(return_path: str, is_service=1) -> str:
 		return_path += '/'
 
 	return return_path
-
-
-def get_key(item):
-	return item[0]
-
-
-def is_tool(name):
-	is_tool_installed = which(name)
-
-	return True if is_tool_installed is not None else False
 
 
 def wrap_line(content: str, css_class: str = "line") -> str:

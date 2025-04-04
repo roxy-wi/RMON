@@ -29,13 +29,6 @@ def add_user(user, email, password, role, enabled, group):
 			return last_id
 
 
-def update_user(user, email, role, user_id, enabled):
-	try:
-		User.update(username=user, email=email, role=role, enabled=enabled).where(User.user_id == user_id).execute()
-	except Exception as e:
-		out_error(e)
-
-
 def update_user_from_admin_area(user, email, user_id, enabled):
 	try:
 		User.update(username=user, email=email, enabled=enabled).where(User.user_id == user_id).execute()
@@ -141,13 +134,6 @@ def select_users(**kwargs):
 		out_error(e)
 	else:
 		return query_res
-
-
-def is_user_active(user_id: int) -> int:
-	try:
-		return User.get(User.user_id == user_id).enabled
-	except Exception as e:
-		out_error(e)
 
 
 def check_user_group(user_id, group_id):

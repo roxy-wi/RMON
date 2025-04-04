@@ -74,32 +74,32 @@ def subprocess_execute_with_rc(cmd):
 	return_out = {'output': output, 'error': stderr, 'rc': rc}
 
 	return return_out
-
-
-def is_file_exists(server_ip: str, file: str) -> bool:
-	cmd = f'[ -f {file} ] && echo yes || echo no'
-
-	out = ssh_command(server_ip, cmd)
-	return True if 'yes' in out else False
-
-
-def is_service_active(server_ip: str, service_name: str) -> bool:
-	cmd = f'systemctl is-active {service_name}'
-
-	out = ssh_command(server_ip, cmd)
-	out = out.strip()
-	return True if 'active' == out else False
-
-
-def get_remote_files(server_ip: str, config_dir: str, file_format: str):
-	config_dir = common.return_nice_path(config_dir)
-	if file_format == 'conf':
-		command = f'sudo ls {config_dir}*/*.{file_format}'
-	else:
-		command = f'sudo ls {config_dir}|grep {file_format}$'
-	config_files = ssh_command(server_ip, command)
-
-	return config_files
+#
+#
+# def is_file_exists(server_ip: str, file: str) -> bool:
+# 	cmd = f'[ -f {file} ] && echo yes || echo no'
+#
+# 	out = ssh_command(server_ip, cmd)
+# 	return True if 'yes' in out else False
+#
+#
+# def is_service_active(server_ip: str, service_name: str) -> bool:
+# 	cmd = f'systemctl is-active {service_name}'
+#
+# 	out = ssh_command(server_ip, cmd)
+# 	out = out.strip()
+# 	return True if 'active' == out else False
+#
+#
+# def get_remote_files(server_ip: str, config_dir: str, file_format: str):
+# 	config_dir = common.return_nice_path(config_dir)
+# 	if file_format == 'conf':
+# 		command = f'sudo ls {config_dir}*/*.{file_format}'
+# 	else:
+# 		command = f'sudo ls {config_dir}|grep {file_format}$'
+# 	config_files = ssh_command(server_ip, command)
+#
+# 	return config_files
 
 
 def get_system_info(server_ip: str) -> None:

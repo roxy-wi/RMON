@@ -9,6 +9,7 @@ import socket
 from flask import request, g
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import verify_jwt_in_request
+from playhouse.sqlite_udf import hostname
 from pythonjsonlogger.json import JsonFormatter
 
 import app.modules.db.sql as sql
@@ -185,8 +186,14 @@ def keep_action_history(service: str, action: str, server_ip: str, login: str, u
 		user_ip = 'localhost'
 
 	try:
-		server = server_sql.get_server_by_ip(server_ip=server_ip)
-		history_sql.insert_action_history(service, action, server.server_id, user_id, user_ip, server_ip, server.hostname)
+		if service == 'server':
+			server = server_sql.get_server_by_ip(server_ip=server_ip)
+			server_id = server.server_id
+			hostname = server.hostname
+		else:
+			server_id = None
+			hostname = socket.gethostname()
+		history_sql.insert_action_history(service, action, server_id, user_id, user_ip, server_ip, hostname)
 	except Exception as e:
 		logger(f'Cannot save a history: {e}', 'error')
 

@@ -180,6 +180,7 @@ class UserView(MethodView):
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create a new user')
         else:
+            roxywi_common.logger(f'A new user {body.username} has been created', keep_history=1)
             if self.is_api:
                 return IdResponse(id=user_id), 201
             else:
@@ -237,7 +238,7 @@ class UserView(MethodView):
             user_sql.update_user_from_admin_area(body.username, body.email, user_id, body.enabled)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot update user')
-        roxywi_common.logger('has been updated user', roxywi=1, login=1)
+        roxywi_common.logger(f'Has been updated {body.username} user', keep_history=1)
         return BaseResponse(), 201
 
     @validate()

@@ -8,14 +8,12 @@ from playhouse.shortcuts import model_to_dict
 import app.modules.db.cred as cred_sql
 import app.modules.db.group as group_sql
 import app.modules.db.server as server_sql
-import app.modules.common.common as common
 from app.modules.server import ssh_connection
 from app.modules.db.db_model import Cred
 import app.modules.roxywi.common as roxywi_common
 import app.modules.roxy_wi_tools as roxy_wi_tools
 from app.modules.roxywi.class_models import IdResponse, IdDataResponse, CredRequest
 
-error_mess = common.error_mess
 get_config = roxy_wi_tools.GetConfigVar()
 
 
@@ -79,7 +77,7 @@ def create_ssh_cred(name: str, password: str, group: int, username: str, enable:
 		last_id = cred_sql.insert_new_ssh(name, enable, group, username, password, shared)
 	except Exception as e:
 		return roxywi_common.handle_json_exceptions(e, 'Cannot create new SSH credentials')
-	roxywi_common.logger(f'New SSH credentials {name} has been created', roxywi=1, login=1)
+	roxywi_common.logger(f'New SSH credentials {name} has been created', service='server', keep_history=1)
 
 	if is_api:
 		return IdResponse(id=last_id).model_dump(mode='json')
@@ -116,7 +114,7 @@ def upload_ssh_key(ssh_id: int, key: str, passphrase: str) -> None:
 	except Exception as e:
 		raise Exception(e)
 
-	roxywi_common.logger("A new SSH cert has been uploaded", roxywi=1, login=1)
+	roxywi_common.logger("A new SSH cert has been uploaded", service='server', keep_history=1)
 
 
 def update_ssh_key(body: CredRequest, group_id: int, ssh_id: int) -> None:
@@ -128,7 +126,7 @@ def update_ssh_key(body: CredRequest, group_id: int, ssh_id: int) -> None:
 
 	try:
 		cred_sql.update_ssh(ssh_id, body.name, body.key_enabled, group_id, body.username, body.password, body.shared)
-		roxywi_common.logger(f'The SSH credentials {body.name} has been updated ', roxywi=1, login=1)
+		roxywi_common.logger(f'The SSH credentials {body.name} has been updated ', service='server', keep_history=1)
 	except Exception as e:
 		raise Exception(e)
 
@@ -144,7 +142,7 @@ def delete_ssh_key(ssh_id: int) -> None:
 			pass
 	try:
 		cred_sql.delete_ssh(ssh_id)
-		roxywi_common.logger(f'The SSH credentials {sshs.name} has deleted', roxywi=1, login=1)
+		roxywi_common.logger(f'The SSH credentials {sshs.name} has deleted', service='server', keep_history=1)
 	except Exception as e:
 		raise e
 

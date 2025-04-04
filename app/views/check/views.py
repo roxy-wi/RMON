@@ -134,7 +134,10 @@ class CheckView(MethodView):
             self._create_all_checks(data, multi_check_id)
         for entity_id in data.entities:
             self.multi_check_func[data.place](data, multi_check_id, entity_id)
-        roxywi_common.logger(f'Check {multi_check_id} has been created', additional_extra={'multi_check_id': multi_check_id})
+        roxywi_common.logger(
+            f'Check {multi_check_id} has been created',
+            additional_extra={'multi_check_id': multi_check_id},
+            service='RMON', keep_history=1)
         return multi_check_id
 
     def put(self, multi_check_id: int, data) -> None:
@@ -172,7 +175,8 @@ class CheckView(MethodView):
                 smon_agent.delete_check(check['agent_id'], agent_ip, check['check_id'])
                 roxywi_common.logger(
                     f'Check {check["check_id"]} has been deleted from Agent {check["agent_id"]}',
-                    additional_extra={'check_id': check["check_id"], 'multi_check_id': multi_check_id, 'agent_id': check['agent_id']}
+                    additional_extra={'check_id': check["check_id"], 'multi_check_id': multi_check_id, 'agent_id': check['agent_id']},
+                    service='RMON', keep_history=1
                 )
         for entity_id in need_to_update:
             for check in entity_id_check_id[entity_id]:
@@ -202,7 +206,11 @@ class CheckView(MethodView):
         group_id = SupportClass.return_group_id(query)
         try:
             smon_mod.delete_multi_check(check_id, group_id)
-            roxywi_common.logger(f'Check {check_id} has been deleted', additional_extra={'multi_check_id': check_id})
+            roxywi_common.logger(
+                f'Check {check_id} has been deleted',
+                additional_extra={'multi_check_id': check_id},
+                service='RMON', keep_history=1
+            )
             return BaseResponse(status='Ok').model_dump(mode='json'), 204
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot delete {self.check_type} check')
