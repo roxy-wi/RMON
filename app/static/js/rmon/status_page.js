@@ -8,7 +8,7 @@ function createStatusPageStep1(edited=false, page_id=0) {
 		$('#new-status-page-slug').val($('#page_slug-' + page_id).text().split('/').pop());
 		$('#new-status-page-desc').val($('#page_desc-' + page_id).text().replace('(', '').replace(')', ''));
 		$.ajax({
-			url: api_v_prefix + '/rmon/status-page/' + page_id,
+			url: api_v_prefix + '/rmon/status-page/' + page_id + '?recurse=true',
 			async: false,
 			contentType: "application/json; charset=utf-8",
 			success: function (data) {

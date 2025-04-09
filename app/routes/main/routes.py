@@ -25,7 +25,7 @@ import app.modules.roxywi.nettools as nettools_mod
 import app.modules.roxywi.common as roxywi_common
 import app.modules.server.server as server_mod
 from app.modules.roxywi.exception import RoxywiValidationError
-from app.modules.roxywi.class_models import ErrorResponse, NettoolsRequest, DomainName
+from app.modules.roxywi.class_models import ErrorResponse, NettoolsRequest, DomainName, EscapedString
 
 
 @app.template_filter('strftime')
@@ -189,7 +189,7 @@ def nettools_check(check, body: NettoolsRequest):
 @jwt_required()
 @get_user_params()
 @validate()
-def service_history(service, server_ip: Union[IPvAnyAddress, DomainName]):
+def service_history(service, server_ip: Union[IPvAnyAddress, DomainName, EscapedString]):
     history = ''
 
     if service == 'server':
