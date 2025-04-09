@@ -7,7 +7,6 @@ from flask import render_template
 import app.modules.db.server as server_sql
 import app.modules.db.history as history_sql
 import app.modules.server.ssh as mod_ssh
-import app.modules.common.common as common
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.common as roxywi_common
 
@@ -42,9 +41,6 @@ def ssh_command(server_ip: str, commands: str, **kwargs):
 
 			if kwargs.get('raw'):
 				return stdout.readlines()
-			elif kwargs.get("show_log") == "1":
-				import app.modules.roxywi.logs as roxywi_logs
-				return roxywi_logs.show_log(stdout, grep=kwargs.get("grep"))
 			else:
 				return stdout.read().decode(encoding='UTF-8')
 	except Exception as e:
@@ -74,32 +70,6 @@ def subprocess_execute_with_rc(cmd):
 	return_out = {'output': output, 'error': stderr, 'rc': rc}
 
 	return return_out
-#
-#
-# def is_file_exists(server_ip: str, file: str) -> bool:
-# 	cmd = f'[ -f {file} ] && echo yes || echo no'
-#
-# 	out = ssh_command(server_ip, cmd)
-# 	return True if 'yes' in out else False
-#
-#
-# def is_service_active(server_ip: str, service_name: str) -> bool:
-# 	cmd = f'systemctl is-active {service_name}'
-#
-# 	out = ssh_command(server_ip, cmd)
-# 	out = out.strip()
-# 	return True if 'active' == out else False
-#
-#
-# def get_remote_files(server_ip: str, config_dir: str, file_format: str):
-# 	config_dir = common.return_nice_path(config_dir)
-# 	if file_format == 'conf':
-# 		command = f'sudo ls {config_dir}*/*.{file_format}'
-# 	else:
-# 		command = f'sudo ls {config_dir}|grep {file_format}$'
-# 	config_files = ssh_command(server_ip, command)
-#
-# 	return config_files
 
 
 def get_system_info(server_ip: str) -> None:
@@ -398,8 +368,8 @@ def show_firewalld_rules(server_ip) -> str:
 	return render_template('ajax/firewall_rules.html', input_chain=input_chain2, IN_public_allow=in_public_allow, output_chain=output_chain, lang=lang)
 
 
-def create_server(hostname, ip, group, enable, cred, port, desc, **kwargs) -> int:
-	if not roxywi_auth.is_admin(level=2, role_id=kwargs.get('role_id')):
+def create_server(hostname, ip, group, enable, cred, port, desc) -> int:
+	if not roxywi_auth.is_admin(level=2):
 		raise Exception('not enough permission')
 
 	try:

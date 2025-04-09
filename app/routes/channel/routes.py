@@ -36,17 +36,6 @@ def load_channels():
         return f'{e}'
 
 
-@bp.route('/check/<int:channel_id>/<receiver_name>')
-def check_receiver(channel_id, receiver_name):
-    receiver_name = common.checkAjaxInput(receiver_name)
-
-    try:
-        alerting.check_receiver(channel_id, receiver_name)
-        return jsonify({'status': 'success'})
-    except Exception as e:
-        return roxywi_common.handle_json_exceptions(e, f'Cannot send message via {receiver_name}')
-
-
 @bp.post('/check')
 @get_user_params()
 def check_sender():

@@ -102,42 +102,6 @@ function showLog() {
 		}
 	} );
 }
-function showRemoteLogFiles() {
-	let serv = $('#serv').val();
-	if (serv === undefined || serv === null) {
-		toastr.warning('Select a server firts');
-		return false;
-	}
-	var rows = $('#rows').val()
-	var grep = $('#grep').val()
-	var exgrep = $('#exgrep').val()
-	var hour = $('#time_range_out_hour').val()
-	var minute = $('#time_range_out_minut').val()
-	var hour1 = $('#time_range_out_hour1').val()
-	var minute1 = $('#time_range_out_minut1').val()
-	var service = $('#service').val()
-	if (service == 'None') {
-		service = 'haproxy';
-	}
-	$.ajax( {
-		url: "/logs/" + service + "/" + serv ,
-		data: {
-			serv: $("#serv").val(),
-			token: $('#token').val()
-		},
-		type: "POST",
-		success: function( data ) {
-			if (data.indexOf('error:') != '-1' || data.indexOf('ls: cannot access') != '-1') {
-				toastr.error(data);
-			} else {
-				toastr.clear();
-				$("#remote_log_files").html(data);
-				$.getScript('/static/js/configshow.js');
-			}
-		}
-	} );
-
-}
 function findGetParameter(parameterName) {
     var result = null,
         tmp = [];
@@ -539,54 +503,6 @@ async function ban() {
 	$( "input[type=submit], button" ).button('enable');
 	$('#ban_10').hide();
 }
-function replace_text(id_textarea, text_var) {
-	var str = $(id_textarea).val();
-	var len = str.length;
-	var len_var = text_var.length;
-	var beg = str.indexOf(text_var);
-	var end = beg + len_var
-	var text_val = str.substring(0, beg) + str.substring(end, len);
-	$(id_textarea).text(text_val);
-}
-function createHistory() {
-	if(localStorage.getItem('history') === null) {
-		var get_history_array = ['login', 'login','login'];
-		localStorage.setItem('history', JSON.stringify(get_history_array));
-	}
-}
-function listHistory() {
-	var browse_history = JSON.parse(localStorage.getItem('history'));
-	var history_link = '';
-	var title = []
-	var link_text = []
-	var cur_path = window.location.pathname;
-	for(let i = 0; i < browse_history.length; i++){
-		if (i == 0) {
-			browse_history[0] = browse_history[1];
-		}
-		if (i == 1) {
-			browse_history[1] = browse_history[2]
-		}
-		if (i == 2) {
-			browse_history[2] = cur_path
-		}
-		$( function() {
-			$('.menu li ul li').each(function () {
-				var link1 = $(this).find('a').attr('href');
-				if (browse_history[i].replace(/\/$/, "") == link1) {
-					title[i] = $(this).find('a').attr('title');
-					link_text[i] = $(this).find('a').text();
-					history_link = '<li><a href="'+browse_history[i]+'" title="'+title[i]+'">'+link_text[i]+'</a></li>'
-					$('#browse_history').append(history_link);
-				}
-			});
-		});
-	}
-	localStorage.setItem('history', JSON.stringify(browse_history));
-}
-createHistory();
-listHistory();
-
 function changeCurrentGroupF(user_id) {
 	$.ajax({
 		url: api_v_prefix + "/user/" + user_id + "/groups/" + $('#newCurrentGroup').val(),

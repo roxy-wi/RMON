@@ -18,6 +18,7 @@ from app.modules.common.common_classes import SupportClass
 
 class ServerView(MethodView):
     methods = ["GET", "POST", "PUT", "DELETE"]
+    decorators = [jwt_required(), get_user_params(), page_for_admin(level=2)]
 
     def __init__(self, is_api=False):
         super().__init__()
@@ -384,7 +385,6 @@ class ServerGroupView(MethodView):
           201:
             description: Group update successful
        """
-
         try:
             group_mod.update_group(group_id, body.name, body.description)
             roxywi_common.logger(f'The group {body.name} has been updated', service='group', keep_history=1)

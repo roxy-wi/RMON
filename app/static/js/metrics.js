@@ -1,11 +1,12 @@
 var charts = []
 function getChartDataHapWiRam(ip) {
+    let jsonData = {
+        'ip': ip,
+    }
     $.ajax({
         url: "/metrics/ram",
-		data: {
-			metrics_hapwi_ram: '1',
-			ip: ip,
-		},
+		data: JSON.stringify(jsonData),
+        contentType: "application/json; charset=utf-8",
 		beforeSend: function() {
 			$('#ram').html('<img class="loading_hapwi_overview" src="/static/images/loading.gif" alt="loading..." />')
 		},
@@ -77,13 +78,13 @@ function renderChartHapWiRam(data) {
     charts.push(myChart);
 }
 function getChartDataHapWiCpu(ip) {
-    console.log(csrf_token)
+    let jsonData = {
+        'ip': ip,
+    }
     $.ajax({
         url: "/metrics/cpu",
-		data: {
-			metrics_hapwi_cpu: '1',
-			ip: ip,
-		},
+		data: JSON.stringify(jsonData),
+        contentType: "application/json; charset=utf-8",
 		type: "POST",
         success: function (result) {
             // Получение значений из строки и разделение их на массив
@@ -155,8 +156,8 @@ function renderChartHapWiCpu(data) {
 
 function showOverviewHapWI() {
     removeData();
-	getChartDataHapWiCpu('1');
-	getChartDataHapWiRam('1');
+	getChartDataHapWiCpu('127.0.0.1');
+	getChartDataHapWiRam('127.0.0.1');
 	NProgress.configure({showSpinner: false});
 }
 function updatingCpuRamCharts() {

@@ -86,15 +86,6 @@ def is_system_info(server_id):
 			return False
 
 
-def is_serv_protected(serv):
-	try:
-		query_res = Server.get(Server.ip == serv)
-	except Exception:
-		return ""
-	else:
-		return True if query_res.protected else False
-
-
 def select_server_ip_by_id(server_id: int) -> str:
 	try:
 		return Server.get(Server.server_id == server_id).ip

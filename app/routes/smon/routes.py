@@ -3,7 +3,9 @@ import time
 
 from flask import render_template, request, g, Response, stream_with_context
 from flask_jwt_extended import jwt_required
+from flask_pydantic import validate
 
+from app.modules.roxywi.class_models import EscapedString
 from app.routes.smon import bp
 from app.middleware import get_user_params
 import app.modules.db.history as history_sql
@@ -169,9 +171,8 @@ def status_page():
 
 
 @bp.route('/status/<slug>')
-def show_smon_status_page(slug):
-    slug = common.checkAjaxInput(slug)
-
+@validate()
+def show_smon_status_page(slug: EscapedString):
     return smon_mod.show_status_page(slug)
 
 
@@ -188,7 +189,6 @@ def smon_history():
 
     kwargs = {
         'lang': g.user_params['lang'],
-        'history': history_sql.all_alerts_history('RMON', g.user_params['group_id']),
         'smon_status': tools_common.is_tool_active('rmon-server'),
         'user_subscription': roxywi_common.return_user_subscription(),
         'action': 'smon'
@@ -210,7 +210,7 @@ def smon_host_history(check_id):
         'history': history,
         'smon_status': smon_status,
         'user_subscription': user_subscription,
-        'action': 'smon'
+        'action': 'smon',
     }
 
     return render_template('smon/history.html', **kwargs)
@@ -222,14 +222,13 @@ def smon_host_history(check_id):
 def smon_multi_check_history(multi_check_id):
     roxywi_common.check_user_group_for_flask()
     smon_status = tools_common.is_tool_active('rmon-server')
-    history = history_sql.all_rmon_multi_check_history(multi_check_id, g.user_params['group_id'])
     user_subscription = roxywi_common.return_user_subscription()
     kwargs = {
         'lang': g.user_params['lang'],
-        'history': history,
         'smon_status': smon_status,
         'user_subscription': user_subscription,
-        'action': 'smon'
+        'action': 'smon',
+        'multi_check_id': multi_check_id
     }
 
     return render_template('smon/history.html', **kwargs)
@@ -292,11 +291,14 @@ def smon_history_metric_chart(check_id, check_type_id):
                 json_metric['app_connect'] = str(chart_metrics.app_connect)
                 if check_type_id == 3:
                     continue
+                if chart_metrics.redirect is None:
+                    continue
                 json_metric['pre_transfer'] = str(chart_metrics.pre_transfer)
-                if float(chart_metrics.redirect) <= 0:
-                    json_metric['redirect'] = '0'
-                else:
-                    json_metric['redirect'] = str(chart_metrics.redirect)
+                if chart_metrics.redirect:
+                    if float(chart_metrics.redirect) <= 0:
+                        json_metric['redirect'] = '0'
+                    else:
+                        json_metric['redirect'] = str(chart_metrics.redirect)
                 if float(chart_metrics.start_transfer) <= 0:
                     json_metric['start_transfer'] = '0'
                 else:

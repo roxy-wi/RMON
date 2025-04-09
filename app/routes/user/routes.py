@@ -4,7 +4,6 @@ from flask import request, g, jsonify
 from flask_jwt_extended import jwt_required
 
 from app.routes.user import bp
-import app.modules.common.common as common
 import app.modules.roxywi.user as roxywi_user
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.common as roxywi_common
@@ -59,7 +58,7 @@ def update_user_password(user_id):
 
 @bp.post('/groups/save')
 def change_user_groups_and_roles():
-    user = common.checkAjaxInput(request.form.get('changeUserGroupsUser'))
+    user = request.form.get('changeUserGroupsUser')
     groups_and_roles = json.loads(request.form.get('jsonDatas'))
 
     return roxywi_user.save_user_group_and_role(user, groups_and_roles)

@@ -61,7 +61,7 @@ def show_overview(server_ip) -> str:
     verify_jwt_in_request()
     claims = get_jwt()
     lang = roxywi_common.get_user_lang_for_flask()
-    role = user_sql.get_user_role_in_group(claims['user_id'], claims['group'])
+    role = user_sql.get_role_id(claims['user_id'], claims['group'])
     server_name = server_sql.get_server_by_ip(server_ip).hostname
     try:
         agent_id = smon_sql.get_agent_id_by_ip(server_ip)

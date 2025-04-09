@@ -25,23 +25,18 @@ def check_login(user_id: int) -> str:
         return 'ok'
 
 
-def is_admin(level=1, **kwargs):
-    if kwargs.get('role_id'):
-        role = kwargs.get('role_id')
-    else:
-        verify_jwt_in_request()
-        claims = get_jwt()
-        user_id = claims['user_id']
-        group_id = claims['group']
+def is_admin(level: int = 1) -> bool:
+    verify_jwt_in_request()
+    claims = get_jwt()
+    user_id = claims['user_id']
+    group_id = claims['group']
 
-        try:
-            role = user_sql.get_user_role_in_group(user_id, group_id)
-        except Exception:
-            role = 4
     try:
-        return True if int(role) <= int(level) else False
+        role = user_sql.get_role_id(user_id, group_id)
     except Exception:
-        return False
+        role = 4
+
+    return True if int(role) <= int(level) else False
 
 
 def page_for_admin(level=1) -> None:

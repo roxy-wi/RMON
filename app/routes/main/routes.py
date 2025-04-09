@@ -1,10 +1,13 @@
 import os
+from typing import Union
+
 import pytz
 
 from flask import render_template, request, g, abort, send_from_directory, jsonify, redirect, url_for
 from flask_jwt_extended import jwt_required
 from flask_pydantic import validate
 from flask_pydantic.exceptions import ValidationError
+from pydantic import IPvAnyAddress
 
 from app import app, cache
 from app.routes.main import bp
@@ -22,7 +25,7 @@ import app.modules.roxywi.nettools as nettools_mod
 import app.modules.roxywi.common as roxywi_common
 import app.modules.server.server as server_mod
 from app.modules.roxywi.exception import RoxywiValidationError
-from app.modules.roxywi.class_models import ErrorResponse, NettoolsRequest
+from app.modules.roxywi.class_models import ErrorResponse, NettoolsRequest, DomainName
 
 
 @app.template_filter('strftime')
@@ -185,9 +188,9 @@ def nettools_check(check, body: NettoolsRequest):
 @bp.route('/history/<service>/<server_ip>')
 @jwt_required()
 @get_user_params()
-def service_history(service, server_ip):
+@validate()
+def service_history(service, server_ip: Union[IPvAnyAddress, DomainName]):
     history = ''
-    server_ip = common.checkAjaxInput(server_ip)
 
     if service == 'server':
         if roxywi_common.check_is_server_in_group(server_ip):

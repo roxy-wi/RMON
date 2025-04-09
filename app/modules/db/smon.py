@@ -55,7 +55,7 @@ def get_agent_with_group(agent_id: int, group_id: int):
 	try:
 		return SmonAgent.select(SmonAgent, Server).join(Server).where(
 			(SmonAgent.id == agent_id) &
-			(Server.group_id == group_id)
+			((Server.group_id == group_id) | (SmonAgent.shared == 1))
 		).objects().order_by(SmonAgent.id).execute()
 	except SmonAgent.DoesNotExist:
 		raise RoxywiResourceNotFound
@@ -197,13 +197,13 @@ def response_time(time, smon_id):
 		out_error(e)
 
 
-def insert_smon_history(smon_id: int, resp_time: float, status: int, check_type_id: int, mes: str, now_utc: datetime):
-	if status == '':
-		status = 0
-	if resp_time == '':
-		resp_time = 0
+def insert_smon_history(**kwargs) -> None:
+	if kwargs.get('status') == '':
+		kwargs['status'] = 0
+	if kwargs.get('response_time') == '':
+		kwargs['response_time'] = 0
 	try:
-		SmonHistory.insert(smon_id=smon_id, response_time=resp_time, status=status, date=now_utc, check_id=check_type_id, mes=mes).execute()
+		SmonHistory.insert(**kwargs).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -723,6 +723,15 @@ def get_smon_alert_status(smon_id: str, alert: str) -> int:
 			return SMON.get(SMON.id == smon_id).ssl_expire_warning_alert
 		else:
 			return SMON.get(SMON.id == smon_id).ssl_expire_critical_alert
+	except SMON.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		out_error(e)
+
+
+def get_smon(smon_id: int) -> SMON:
+	try:
+		return SMON.get(SMON.id == smon_id)
 	except SMON.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:

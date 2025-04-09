@@ -174,7 +174,7 @@ class CheckView(MethodView):
                 agent_ip = smon_sql.get_agent_ip_by_id(check['agent_id'])
                 smon_agent.delete_check(check['agent_id'], agent_ip, check['check_id'])
                 roxywi_common.logger(
-                    f'Check {check["check_id"]} has been deleted from Agent {check["agent_id"]}',
+                    f'Check {check["check_id"]} has been recreated on Agent {check["agent_id"]}',
                     additional_extra={'check_id': check["check_id"], 'multi_check_id': multi_check_id, 'agent_id': check['agent_id']},
                     service='RMON', keep_history=1
                 )

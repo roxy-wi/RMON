@@ -90,6 +90,10 @@ class ChecksHistoryView(MethodView):
                   type: integer
                   description: Total entries.
                   example: 175
+                total_filtered:
+                  type: integer
+                  description: Total filtered entries.
+                  example: 10
           400:
             description: Request error
           401:
@@ -105,8 +109,13 @@ class ChecksHistoryView(MethodView):
             history = history_sql.alerts_history('RMON', group_id, query)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get history')
-        total_history = history_sql.total_alerts_history('RMON', group_id)
-        history_list = {'results': [], 'total': total_history}
+        if query.check_name:
+            total_history = len(history_sql.all_alerts_history('RMON', group_id))
+            total_filtered = len(history)
+        else:
+            total_history = history_sql.total_alerts_history('RMON', group_id)
+            total_filtered = total_history
+        history_list = {'results': [], 'total': total_history, 'total_filtered': total_filtered}
         for h in history:
             history = model_to_dict(h, recurse=query.recurse, exclude={RMONAlertsHistory.service}, max_depth=1)
             history['name'] = history['name'].replace("'", "")

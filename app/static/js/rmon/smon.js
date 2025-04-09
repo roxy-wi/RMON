@@ -522,7 +522,7 @@ function isSmonGroupShowed(group_id) {
 }
 function getSmonHistoryCheckData(check_id, check_type) {
 	$.ajax({
-		url: api_v_prefix + "/rmon/check/" + check_type + "/" + check_id + "/metrics",
+		url: api_v_prefix + "/rmon/check/" + check_type + "/" + check_id + "/metrics?step=1m&start=30m&end=now",
 		success: function (result) {
 			let labels = result.chartData.labels;
 			if (check_type === 'http') {

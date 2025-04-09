@@ -235,6 +235,7 @@ class HistoryQuery(GroupQuery):
     offset: int = 1
     limit: int = 25
     sort_by: Optional[Literal['name', 'id', 'date', '-name', '-id', '-date']] = None
+    check_name: Optional[EscapedString] = None
 
 
 class UserSearchRequest(GroupQuery):
@@ -360,3 +361,7 @@ class CheckMetricsQuery(GroupQuery):
             else:
                 values['end'] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S%z")
         return values
+
+
+class IpRequest(BaseModel):
+    ip: Union[IPvAnyAddress, DomainName]

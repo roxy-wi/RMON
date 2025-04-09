@@ -16,8 +16,7 @@ def select_groups() -> Groups:
 
 def add_group(name: str, description: str) -> int:
 	try:
-		last_insert = Groups.insert(name=name, description=description)
-		last_insert_id = last_insert.execute()
+		last_insert_id = Groups.insert(name=name, description=description).execute()
 	except Exception as e:
 		out_error(e)
 	else:

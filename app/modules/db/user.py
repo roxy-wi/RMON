@@ -152,8 +152,7 @@ def select_user_groups_with_names(user_id, **kwargs) -> UserGroups:
 	if kwargs.get("all") is not None:
 		query = (UserGroups.select().join(Groups))
 	else:
-		query = (UserGroups.select(
-		).join(Groups).where(UserGroups.user_id == user_id))
+		query = (UserGroups.select().join(Groups).where(UserGroups.user_id == user_id))
 	try:
 		return query.execute()
 	except Exception as e:
@@ -188,18 +187,6 @@ def get_user_by_username(username: str) -> User:
 		return User.get(User.username == username)
 	except Exception as e:
 		out_error(e)
-
-
-def get_user_role_in_group(user_id, group_id):
-	try:
-		query_res = UserGroups.select().where(
-			(UserGroups.user_id == user_id) & (UserGroups.user_group_id == group_id)
-		).execute()
-	except Exception as e:
-		out_error(e)
-	else:
-		for user_id in query_res:
-			return int(user_id.user_role_id)
 
 
 def get_super_admin_count() -> int:
@@ -238,11 +225,11 @@ def is_user_super_admin(user_id: int) -> bool:
 
 def get_role_id(user_id: int, group_id: int) -> int:
 	try:
-		role_id = UserGroups.get((UserGroups.user_id == user_id) & (UserGroups.user_group_id == group_id))
+		return UserGroups.get((UserGroups.user_id == user_id) & (UserGroups.user_group_id == group_id)).user_role_id
+	except UserGroups.DoesNotExist:
+		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
-	else:
-		return int(role_id.user_role_id)
 
 
 def get_user_id(user_id: int) -> User:

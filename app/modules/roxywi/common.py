@@ -9,7 +9,6 @@ import socket
 from flask import request, g
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import verify_jwt_in_request
-from playhouse.sqlite_udf import hostname
 from pythonjsonlogger.json import JsonFormatter
 
 import app.modules.db.sql as sql

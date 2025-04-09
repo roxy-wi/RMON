@@ -47,9 +47,9 @@ function showServicesOverview() {
 		}
 	} );
 }
-function showOverviewServer(id) {
-	getChartDataHapWiRam();
-	getChartDataHapWiCpu();
+function showOverviewServer(ip) {
+	getChartDataHapWiRam(ip);
+	getChartDataHapWiCpu(ip);
 }
 $( function() {
 	try {

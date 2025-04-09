@@ -29,6 +29,8 @@ def _return_sort_query(query: HistoryQuery) -> Union[str, None]:
 
 def alerts_history(service: str, group_id: int, query: HistoryQuery):
 	where_query = (RMONAlertsHistory.service == service) & (RMONAlertsHistory.group_id == group_id)
+	if query.check_name:
+		where_query = where_query & (RMONAlertsHistory.name.contains(query.check_name))
 	sort_query = _return_sort_query(query)
 	if sort_query:
 		query = RMONAlertsHistory.select().where(where_query).order_by(sort_query).paginate(query.offset, query.limit)
@@ -58,19 +60,11 @@ def all_alerts_history(service: str, group_id: int, **kwargs):
 		out_error(e)
 
 
-def total_alerts_history(service: str, group_id: int, **kwargs):
-	if kwargs.get('check_id'):
-		query = RMONAlertsHistory.select().where(
-			(RMONAlertsHistory.service == service) &
-			(RMONAlertsHistory.rmon_id == kwargs.get('check_id')) &
-			(RMONAlertsHistory.group_id == group_id)
-		).count()
-	else:
-		query = RMONAlertsHistory.select().where(
+def total_alerts_history(service: str, group_id: int):
+	try:
+		return RMONAlertsHistory.select().where(
 			(RMONAlertsHistory.service == service) & (RMONAlertsHistory.group_id == group_id)
 		).count()
-	try:
-		return query
 	except Exception as e:
 		out_error(e)
 
@@ -82,20 +76,6 @@ def rmon_multi_check_history(multi_check_id: int, group_id: int, query: HistoryQ
 		query = RMONAlertsHistory.select().join(SMON).where(where_query).order_by(sort_query).paginate(query.offset, query.limit)
 	else:
 		query = RMONAlertsHistory.select().join(SMON).where(where_query).paginate(query.offset, query.limit)
-	try:
-		return query.execute()
-	except RMONAlertsHistory.DoesNotExist:
-		raise RoxywiResourceNotFound
-	except Exception as e:
-		out_error(e)
-
-
-def all_rmon_multi_check_history(multi_check_id: int, group_id: int,):
-	query = RMONAlertsHistory.select().join(SMON).where(
-		(RMONAlertsHistory.service == 'RMON') &
-		(RMONAlertsHistory.group_id == group_id) &
-		(SMON.multi_check_id == multi_check_id)
-	)
 	try:
 		return query.execute()
 	except RMONAlertsHistory.DoesNotExist:

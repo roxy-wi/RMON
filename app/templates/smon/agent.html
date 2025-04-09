@@ -16,12 +16,11 @@
 <div class="up-pannel" style="padding-top: 10px;">
     {% for agent in agents %}
     <div id="agent-{{agent.id}}" class="div-server-hapwi animated-background"></div>
-    {% endfor %}
     <div class="server-info" style="padding-top: 7px;">
         <div class="server-name">
             {{lang.words.agent|title()}} {{lang.words.monitoring}}
             <span class="update-icon">
-                <a onclick="showOverviewServer('{{id}}')" title="{{lang.words.refresh|title()}}">
+                <a onclick="showOverviewServer('{{agent.ip}}')" title="{{lang.words.refresh|title()}}">
                     <span class="service-reload"></span>
                 </a>
             </span>
@@ -35,6 +34,7 @@
             </div>
         </div>
     </div>
+    {% endfor %}
 </div>
 <div id="add-agent-page" style="display: none;">
     <table class="overview" id="add-agent-page-overview"

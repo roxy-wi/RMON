@@ -1,6 +1,10 @@
+from typing import Union
+
 from flask import render_template, g, request, jsonify
 from flask_jwt_extended import jwt_required
+from flask_pydantic import validate
 
+from app.modules.roxywi.class_models import DomainName
 from app.routes.overview import bp
 from app.middleware import get_user_params
 import app.modules.db.sql as sql
@@ -9,6 +13,7 @@ import app.modules.roxywi.logs as roxy_logs
 import app.modules.roxywi.metrics as metric
 import app.modules.roxywi.overview as roxy_overview
 import app.modules.common.common as common
+from app.modules.roxywi.class_models import IpRequest
 
 
 @bp.before_request
@@ -58,14 +63,12 @@ def overview_logs():
 
 @bp.route('/metrics/cpu', methods=['POST'])
 @get_user_params()
-def metrics_cpu():
-    metrics_type = common.checkAjaxInput(request.form.get('ip'))
-
-    return jsonify(metric.show_cpu_metrics(metrics_type))
+@validate()
+def metrics_cpu(body: IpRequest):
+    return jsonify(metric.show_cpu_metrics(body.ip))
 
 
 @bp.route('/metrics/ram', methods=['POST'])
-def metrics_ram():
-    metrics_type = common.checkAjaxInput(request.form.get('ip'))
-
-    return jsonify(metric.show_ram_metrics(metrics_type))
+@validate()
+def metrics_ram(body: IpRequest):
+    return jsonify(metric.show_ram_metrics(body.ip))

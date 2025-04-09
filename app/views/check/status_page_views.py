@@ -37,85 +37,45 @@ class StatusPageView(MethodView):
           description: The group ID for the superAdmin role.
           required: false
           type: integer
+        - name: recurse
+          in: query
+          description: Whether to recursively include associated checks.
+          default: false
+        - name: max_depth
+          in: query
+          description: The maximum depth of recursion to apply.
+          default: 1
         responses:
           200:
-            description: OK
+            description: Successful response
             schema:
               type: object
               properties:
+                checks:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      check_id:
+                        type: integer
+                custom_style:
+                  type: string
+                  example: ""
+                description:
+                  type: string
+                  example: "Some checks for the status page"
+                group_id:
+                  type: integer
+                  example: 1
                 id:
                   type: integer
-                  description: The ID of the status page.
                   example: 1
                 name:
                   type: string
-                  description: The name of the status page.
-                  example: "test"
+                  example: "Status-page"
                 slug:
                   type: string
-                  description: The slug of the status page.
-                  example: "test"
-                description:
-                  type: string
-                  description: The description of the status page.
-                  example: "admin"
-                group_id:
-                  type: integer
-                  description: The group ID associated with the status page.
-                  example: 1
-                custom_style:
-                  type: string
-                  description: The custom CSS style for the status page.
-                  example: "body { background-color: orange }"
-                check_id:
-                  type: object
-                  properties:
-                    body_status:
-                      type: integer
-                      description: The body status of the check.
-                      example: 1
-                    check_timeout:
-                      type: integer
-                      description: The check timeout.
-                      example: 2
-                    check_type:
-                      type: string
-                      description: The type of the check.
-                      example: "ping"
-                    created_at:
-                      type: string
-                      format: date-time
-                      description: The check creation time.
-                      example: "Fri, 28 Jun 2024 18:08:26 GMT"
-                    description:
-                      type: string
-                      description: The description of the check.
-                      example: ""
-                    enabled:
-                      type: integer
-                      description: Whether the check is enabled.
-                      example: 1
-                    group_id:
-                      type: integer
-                      description: The group ID associated with the check.
-                      example: 4
-                    id:
-                      type: integer
-                      description: The ID of the check.
-                      example: 63
-                    name:
-                      type: string
-                      description: The name of the check.
-                      example: "'test ping 2'"
-                    response_time:
-                      type: string
-                      description: The response time of the check.
-                      example: "4.415750503540039"
-                    updated_at:
-                      type: string
-                      format: date-time
-                      description: The last update time of the check.
-                      example: "Tue, 06 Aug 2024 14:45:27 GMT"
+                  example: "status-page"
         """
         try:
             group_id = SupportClass.return_group_id(query)
@@ -132,7 +92,7 @@ class StatusPageView(MethodView):
             checks = smon_sql.select_status_page_checks(page_id)
             page['checks'] = []
             for check in checks:
-                page['checks'].append(model_to_dict(check, exclude=[SmonStatusPageCheck.page_id]))
+                page['checks'].append(model_to_dict(check, recurse=query.recurse, max_depth=query.max_depth, exclude=[SmonStatusPageCheck.page_id]))
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get Status page checks')
 

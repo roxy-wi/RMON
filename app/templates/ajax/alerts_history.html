@@ -11,16 +11,19 @@
 {% else %}
 {% set column_for_sort = 4 %}
 {% endif %}
+{% if multi_check_id %}
+{% set additional_uri = '/' + multi_check_id|string() %}
+{% endif %}
 <script>
     $(document).ready(function() {
         $('#alerts_table').on( 'page.dt' )
-            .DataTable( {
+            .DataTable({
                 dom: 'Blfrtip',
                 colReorder: true,
                 "pageLength": 25,
-                "order": [ {{ column_for_sort }}, "desc" ],
+                "order": [{{ column_for_sort }}, "desc"],
                 stateSave: true,
-                "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
+                "lengthMenu": [[10, 25, 50], [10, 25, 50]],
                 "columnDefs": [
                     {
                         "searchable": false,
@@ -32,6 +35,71 @@
                     'csvHtml5',
                     'pdfHtml5'
                 ],
+        {% if not history %}
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: api_v_prefix + '/rmon/history{{ additional_uri }}',
+                    data: function (d) {
+                        d.offset = Math.floor(d.start / d.length) + 1; // Номер страницы
+                        d.limit = d.length; // Размер страницы (остается как есть)
+                        d.check_name = d.search.value;
+                        let sort_column = d.order[0].column;
+                        let sort_direction = d.order[0].dir;
+                        let sort_column_name = d.columns[sort_column].data;
+                        let sort_by = ''
+                        if (sort_direction === 'asc') {
+                            sort_by = '-' + sort_column_name;
+                        } else {
+                            sort_by = sort_column_name;
+                        }
+                        d.sort_by = sort_by;
+                        // Можно удалить параметр start, если сервер его не ожидает
+                        delete d.columns;
+                        delete d.start;
+                        delete d.draw;
+                        delete d.order;
+                        delete d.search;
+                        delete d.length;
+
+                        return d;
+                    },
+                    dataSrc: function (json) {
+                        // Преобразование поля Total -> recordsTotal
+                        json.recordsTotal = json.total;
+                        json.recordsFiltered = json.total_filtered;
+
+                        // Возвращаем данные из results
+                        return json.results;
+                    }
+                },
+                columns: [
+                    {
+                        data: "level", orderable: false,
+                        render: function (data, type, row, meta) {
+                            // Здесь преобразуем поле "level"
+                            if (data === 'critical') {
+                                return '<span style="color: red; font-weight: bold;">' + data + '</span>';
+                            } else if (data === 'warning' || data === 'error') {
+                                return '<span style="color: orange; font-weight: bold;">' + data + '</span>';
+                            } else if (data === 'info') {
+                                return '<span style="color: green; font-weight: bold;">' + data + '</span>';
+                            } else {
+                                return data; // Любое другое значение отображается без изменений
+                            }
+                        }, searchable: false
+                    },
+                    {
+                        data: "name",
+                        render: function (data, type, row, meta) {
+                            return '<a href="/rmon/history/host/' + row.rmon_id + '" title="Open history for ' + data + '">' + data + '</a>'
+                        }
+                    },
+                    {data: "port", orderable: false, searchable: false},
+                    {data: "message", orderable: false, searchable: false},
+                    {data: "date", searchable: false},
+                ]
+        {% endif %}
             } );
     } );
 </script>
@@ -49,7 +117,6 @@
             {% endif %}
             <th>{{lang.words.alert|title()}}</th>
             <th>{{lang.words.date|title()}}</th>
-            <th>{{lang.words.time|title()}}</th>
         </tr>
     </thead>
     <tbody>
@@ -64,7 +131,7 @@
             {% else %}
                 {% set color = '#be2424' %}
             {% endif %}
-            <span style="color: {{color}};"><b>{{t.level |upper}}</b></span>
+            <span style="color: {{color}};"><b>{{t.level}}</b></span>
         </td>
         <td>
             {% if action == 'smon' %}
@@ -77,9 +144,7 @@
         <td>{{t.port}}</td>
         {% endif %}
         <td>{{t.message}}</td>
-        <td>{{t.date|strftime('%Y %m %d')}}
-        </td>
-        <td>{{t.date|strftime('%H:%M:%S')}}</td>
+        <td>{{t.date}}</td>
     </tr>
     {% endfor %}
     {% else %}
