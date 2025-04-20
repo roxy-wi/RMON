@@ -1,5 +1,5 @@
 from peewee import DateTimeField, AutoField, CharField, ForeignKeyField, IntegerField, SQL, Model, TextField, \
-    BooleanField, FloatField
+    BooleanField, FloatField, MySQLDatabase
 from playhouse.migrate import *
 from datetime import datetime
 from playhouse.shortcuts import ReconnectMixin

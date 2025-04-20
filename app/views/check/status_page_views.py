@@ -39,12 +39,16 @@ class StatusPageView(MethodView):
           type: integer
         - name: recurse
           in: query
+          type: boolean
           description: Whether to recursively include associated checks.
+          required: false
           default: false
         - name: max_depth
           in: query
+          type: integer
           description: The maximum depth of recursion to apply.
           default: 1
+          required: false
         responses:
           200:
             description: Successful response

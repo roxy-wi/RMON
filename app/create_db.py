@@ -568,7 +568,7 @@ def update_db_v_1_2_12():
 
 def update_ver():
 	try:
-		Version.update(version='1.2.13').execute()
+		Version.update(version='1.2.14').execute()
 	except Exception:
 		print('Cannot update version')
 

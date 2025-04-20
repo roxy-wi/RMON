@@ -1,9 +1,7 @@
 import os
-from typing import Union
+from typing import Union, Literal
 
-import pytz
-
-from flask import render_template, request, g, abort, send_from_directory, jsonify, redirect, url_for
+from flask import render_template, request, g, send_from_directory, jsonify, redirect, url_for
 from flask_jwt_extended import jwt_required
 from flask_pydantic import validate
 from flask_pydantic.exceptions import ValidationError
@@ -11,16 +9,12 @@ from pydantic import IPvAnyAddress
 
 from app import app, cache
 from app.routes.main import bp
-import app.modules.db.sql as sql
-import app.modules.db.cred as cred_sql
 import app.modules.db.user as user_sql
-import app.modules.db.group as group_sql
 import app.modules.db.server as server_sql
 import app.modules.db.history as history_sql
 from app.middleware import get_user_params
 import app.modules.common.common as common
 import app.modules.roxywi.roxy as roxy
-import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.nettools as nettools_mod
 import app.modules.roxywi.common as roxywi_common
 import app.modules.server.server as server_mod
@@ -189,7 +183,7 @@ def nettools_check(check, body: NettoolsRequest):
 @jwt_required()
 @get_user_params()
 @validate()
-def service_history(service, server_ip: Union[IPvAnyAddress, DomainName, EscapedString]):
+def service_history(service: Literal['server', 'user'], server_ip: Union[IPvAnyAddress, DomainName, EscapedString]):
     history = ''
 
     if service == 'server':
@@ -198,8 +192,6 @@ def service_history(service, server_ip: Union[IPvAnyAddress, DomainName, Escaped
             history = history_sql.select_action_history_by_server_id(server_id)
     elif service == 'user':
         history = history_sql.select_action_history_by_user_id(server_ip)
-    else:
-        abort(404, 'History not found')
 
     kwargs = {
         'user_subscription': roxywi_common.return_user_subscription(),
@@ -210,32 +202,6 @@ def service_history(service, server_ip: Union[IPvAnyAddress, DomainName, Escaped
     }
 
     return render_template('history.html', **kwargs)
-
-
-@bp.route('/servers')
-@jwt_required()
-@get_user_params()
-def servers():
-    roxywi_auth.page_for_admin(level=2)
-
-    user_group = roxywi_common.get_user_group(id=1)
-    kwargs = {
-        'h2': 1,
-        'users': user_sql.select_users(group=user_group),
-        'groups': group_sql.select_groups(),
-        'servers': roxywi_common.get_dick_permit(disable=0, only_group=1),
-        'roles': sql.select_roles(),
-        'sshs': cred_sql.select_ssh(group=user_group),
-        'group': roxywi_common.get_user_group(id=1),
-        'timezones': pytz.all_timezones,
-        'settings': sql.get_setting('', all=1),
-        'page': 'servers.py',
-        'ldap_enable': sql.get_setting('ldap_enable'),
-        'user_roles': user_sql.select_user_roles_by_group(user_group),
-        'lang': g.user_params['lang']
-    }
-
-    return render_template('servers.html', **kwargs)
 
 
 @bp.route('/internal/show_version')
@@ -267,15 +233,3 @@ def scan_port(server_id, server_ip):
     else:
         lang = roxywi_common.get_user_lang_for_flask()
         return render_template('ajax/scan_ports.html', ports=stdout, info=stdout1, lang=lang)
-
-
-@bp.route('/cpu-ram-metrics/<server_id>')
-@jwt_required()
-@get_user_params()
-def cpu_ram_metrics(server_id):
-    kwargs = {
-        'id': server_id,
-        'lang': g.user_params['lang']
-    }
-
-    return render_template('ajax/overviewServers.html', **kwargs)

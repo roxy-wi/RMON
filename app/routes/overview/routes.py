@@ -1,8 +1,9 @@
 from typing import Union
 
-from flask import render_template, g, request, jsonify
+from flask import render_template, g, jsonify
 from flask_jwt_extended import jwt_required
 from flask_pydantic import validate
+from pydantic import IPvAnyAddress
 
 from app.modules.roxywi.class_models import DomainName
 from app.routes.overview import bp
@@ -12,7 +13,6 @@ import app.modules.db.group as group_sql
 import app.modules.roxywi.logs as roxy_logs
 import app.modules.roxywi.metrics as metric
 import app.modules.roxywi.overview as roxy_overview
-import app.modules.common.common as common
 from app.modules.roxywi.class_models import IpRequest
 
 
@@ -41,7 +41,9 @@ def show_services_overview():
 
 
 @bp.route('/overview/server/<server_ip>')
-def overview_server(server_ip):
+@validate()
+def overview_server(server_ip: Union[IPvAnyAddress, DomainName]):
+    server_ip = str(server_ip)
     return roxy_overview.show_overview(server_ip)
 
 

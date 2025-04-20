@@ -8,7 +8,7 @@ class SshConnection:
         self.ssh = paramiko.SSHClient()
         self.ssh.load_system_host_keys()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.server_ip = server_ip
+        self.server_ip = str(server_ip)
         self.ssh_port = ssh_settings['port']
         self.ssh_user_name = ssh_settings['user']
         self.ssh_user_password = ssh_settings['password']
