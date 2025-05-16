@@ -123,8 +123,12 @@ function addAgent(dialog_id, agent_id=0, edit=false, reconfigure=false) {
 					$(dialog_id).dialog("close");
 					if (edit) {
 						getAgent(agent_id, false);
+						if (reconfigure) {
+							runInstallationTaskCheck(data.tasks_ids);
+						}
 					} else {
 						getAgent(data.id, new_agent = true);
+						runInstallationTaskCheck(data.tasks_ids);
 					}
 				}
 			}
@@ -318,6 +322,11 @@ function removeAgent(id, dialog_id) {
         data: JSON.stringify({}),
 		contentType: "application/json; charset=utf-8",
 		statusCode: {
+			202: function (xhr) {
+				toastr.clear();
+                $(dialog_id).dialog("close");
+				$('#agent-'+id).remove();
+			},
 			204: function (xhr) {
 				toastr.clear();
                 $(dialog_id).dialog("close");
@@ -446,3 +455,62 @@ function moveChecks(agent_id, agent_ip, dialog_id) {
 		}
 	});
 }
+const INSTALLATION_TASKS_KEY = 'installationTasks';
+function getInstallationTasksFromSessionStorage() {
+    const tasks = sessionStorage.getItem(INSTALLATION_TASKS_KEY);
+    return tasks ? JSON.parse(tasks) : [];
+}
+function addItemToSessionStorageInstallTask(taskId) {
+	if (!sessionStorage.getItem(INSTALLATION_TASKS_KEY)) {
+		sessionStorage.setItem(INSTALLATION_TASKS_KEY, JSON.stringify([])); // Создаем пустой массив
+	}
+	let tasks = getInstallationTasksFromSessionStorage();
+
+	tasks.push(taskId);
+
+	sessionStorage.setItem(INSTALLATION_TASKS_KEY, JSON.stringify(tasks));
+}
+function removeItemFromSessionStorage(taskId) {
+      let tasks = getInstallationTasksFromSessionStorage();
+
+      tasks = tasks.filter(item => item !== taskId);
+
+      sessionStorage.setItem(INSTALLATION_TASKS_KEY, JSON.stringify(tasks));
+    }
+
+function checkInstallationTask() {
+	let tasks = getInstallationTasksFromSessionStorage(); // Извлекаем список
+	if (tasks && tasks.length > 0) {
+		tasks.forEach(item => {
+			checkInstallationStatus(item);
+		});
+	} else {
+		console.log('No tasks');
+		clearInterval(checkInstallationTaskInterval);
+	}
+}
+function runInstallationTaskCheck(tasks_ids) {
+	toastr.info('Installation started. You can continue to use the system while it is installing');
+	tasks_ids.forEach(item => {
+		addItemToSessionStorageInstallTask(item);
+		setTimeout(function () {
+			setInterval(checkInstallationTask, 3000);
+		}, 5000);
+	});
+}
+function checkInstallationStatus(taskId) {
+	NProgress.configure({showSpinner: false});
+	$.ajax({
+		url: api_v_prefix + "/rmon/task-status/" + taskId,
+		success: function (data) {
+			if (data.status === 'completed') {
+				toastr.success('Installation completed for ' + data.service_name + ' successfully on ' + data.server);
+				removeItemFromSessionStorage(taskId);
+			} else if (data.status === 'failed') {
+				toastr.error('Cannot install ' + data.service_name + '. Error: ' + data.error);
+				removeItemFromSessionStorage(taskId);
+			}
+		}
+	});
+}
+let checkInstallationTaskInterval = setInterval(checkInstallationTask, 3000);

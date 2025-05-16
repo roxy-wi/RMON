@@ -124,6 +124,7 @@ def update_smon(smon_id, json_data) -> None:
             'email_channel_id': json_data.email_channel_id,
             'check_timeout': json_data.check_timeout,
             'retries': json_data.retries,
+            'updated_at': common.get_present_time(),
         }
     except Exception as e:
         raise Exception(f'wrong data: {e}')

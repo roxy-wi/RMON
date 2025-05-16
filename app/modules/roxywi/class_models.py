@@ -58,6 +58,16 @@ class ErrorResponse(BaseModel):
     error: Union[str, list]
 
 
+class TaskAcceptedPostResponse(IdResponse):
+    status: str = 'accepted'
+    tasks_ids: List[int]
+
+
+class TaskAcceptedOtherResponse(BaseModel):
+    status: str = 'accepted'
+    tasks_ids: List[int]
+
+
 class BaseCheckRequest(BaseModel):
     name: EscapedString
     description: Optional[str] = ''

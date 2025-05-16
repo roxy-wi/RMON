@@ -1,5 +1,5 @@
 from app.api.v1.routes.rmon import bp
-from app.views.agent.views import AgentView, AgentsView
+from app.views.agent.views import AgentView, AgentsView, ReconfigureAgentView, AgentTaskStatusView
 from app.views.agent.region_views import RegionView, RegionListView
 from app.views.agent.country_views import CountryView, CountryListView
 from app.views.check.views import CheckHttpView, CheckTcpView, CheckDnsView, CheckPingView, CheckSmtpView, CheckRabbitView
@@ -40,6 +40,8 @@ bp.add_url_rule('/check/<int:check_id>/status', view_func=CheckStatusView.as_vie
 bp.add_url_rule('/check-groups', view_func=CheckGroupsView.as_view('check_groups'))
 bp.add_url_rule('/history', view_func=ChecksHistoryView.as_view('checks_history'))
 bp.add_url_rule('/history/<int:check_id>', view_func=CheckHistoryView.as_view('check_history'))
+bp.add_url_rule('/agent/<int:agent_id>/reconfigure', view_func=ReconfigureAgentView.as_view('reconfigure_agent'))
+bp.add_url_rule('/task-status/<int:task_id>', view_func=AgentTaskStatusView.as_view('task_status'))
 
 register_api(AgentView, 'agent', '/agent', 'agent_id')
 register_api(RegionView, 'region', '/region', 'region_id')

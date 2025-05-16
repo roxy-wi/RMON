@@ -61,7 +61,7 @@
         getAgentVersion('{{ agent.ip }}', '{{ agent.id }}');
         getAgentStatus('{{ agent.ip }}', '{{ agent.id }}');
         getAgentTotalChecks('{{ agent.ip }}', '{{ agent.id }}');
-        setInterval(getAgentStatus, 60000, '{{agent.ip}}', '{{agent.id}}');
+        setInterval(getAgentStatus, 30000, '{{agent.ip}}', '{{agent.id}}');
         setInterval(getAgentTotalChecks, 60000, '{{agent.ip}}', '{{agent.id}}');
         getAgentUptime('{{ agent.ip }}', '{{ agent.id }}');
         $( function() {

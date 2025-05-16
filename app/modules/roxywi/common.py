@@ -25,12 +25,18 @@ from app.modules.roxywi.class_models import ErrorResponse
 get_config_var = roxy_wi_tools.GetConfigVar()
 
 
+def get_jwt_token_claims() -> dict:
+	verify_jwt_in_request()
+	claims = get_jwt()
+	claim = {'user_id': claims['user_id'], 'group': claims['group']}
+	return claim
+
+
 def get_user_group(**kwargs) -> int:
 	user_group = ''
 
 	try:
-		verify_jwt_in_request()
-		claims = get_jwt()
+		claims = get_jwt_token_claims()
 		user_group_id = claims['group']
 		group = group_sql.get_group(user_group_id)
 		if group.group_id == int(user_group_id):
@@ -44,8 +50,7 @@ def get_user_group(**kwargs) -> int:
 
 
 def check_user_group_for_flask():
-	verify_jwt_in_request()
-	claims = get_jwt()
+	claims = get_jwt_token_claims()
 	user_id = claims['user_id']
 	group_id = claims['group']
 
@@ -142,8 +147,7 @@ log_level = {
 
 
 def logger(action: str, level: str = 'info', additional_extra: dict = None, **kwargs) -> None:
-	verify_jwt_in_request()
-	claims = get_jwt()
+	claims = get_jwt_token_claims()
 	user_id = claims['user_id']
 	login = user_sql.get_user_id(user_id=user_id).username
 	hostname = socket.gethostname()
@@ -218,8 +222,7 @@ def get_dick_permit(**kwargs):
 
 
 def get_users_params(**kwargs):
-	verify_jwt_in_request()
-	user_data = get_jwt()
+	user_data = get_jwt_token_claims()
 
 	try:
 		user_id = user_data['user_id']

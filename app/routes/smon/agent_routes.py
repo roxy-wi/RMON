@@ -2,7 +2,9 @@ import json
 
 from flask import render_template, request, jsonify, g
 from flask_jwt_extended import jwt_required
+from playhouse.shortcuts import model_to_dict
 
+from app.modules.db.db_model import InstallationTasks
 from app.routes.smon import bp
 from app.middleware import get_user_params
 import app.modules.db.smon as smon_sql

@@ -60,7 +60,7 @@ def bad_request(e):
 def no_auth(e):
     if 'api' in request.url:
         return jsonify({'error': str(e)}), 401
-    return redirect(url_for('login_page'))
+    return redirect(url_for('login_page', next=request.full_path))
 
 
 @app.errorhandler(403)

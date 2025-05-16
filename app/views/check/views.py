@@ -246,16 +246,8 @@ class CheckView(MethodView):
             roxywi_common.logger(f'A new check {data.name.encode("utf-8")} has been created on Region {region.name}')
 
     def _create_region_check(self, data, multi_check_id: int, region_id: int, country_id: int = None):
-        try:
-            random_agent_id = smon_sql.get_randon_agent(region_id)
-        except RoxywiResourceNotFound:
-            if not country_id:
-                raise Exception(f'There are no agents in the region_id: {region_id}')
-            pass
-        except Exception as e:
-            raise Exception(f'Cannot get agent from region: {e}')
-        else:
-            self._create_agent_check(data, multi_check_id, random_agent_id, region_id, country_id)
+        agent_id = self._get_agent_id(region_id)
+        self._create_agent_check(data, multi_check_id, agent_id, region_id, country_id)
 
     def _create_agent_check(self, data, multi_check_id: int, agent_id, region_id: int = None, country_id: int = None, check_id: int = None):
         if check_id is None:
@@ -299,6 +291,21 @@ class CheckView(MethodView):
                 return check_group_id
         else:
             return None
+
+    @staticmethod
+    def _get_agent_id(region_id: int) -> int:
+        sort_type = 'least_check'
+        try:
+            if sort_type == 'least_check':
+                agent_id = smon_sql.get_less_check_agent(region_id)
+            else:
+                agent_id = smon_sql.get_randon_agent(region_id)
+        except RoxywiResourceNotFound:
+            raise RoxywiResourceNotFound(f'There are no agents in the region_id: {region_id}')
+        except Exception as e:
+            raise Exception(f'Cannot get agent from region: {e}')
+
+        return agent_id
 
 
 class CheckHttpView(CheckView):

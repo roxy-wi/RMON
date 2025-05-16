@@ -8,7 +8,7 @@ import app.modules.db.sql as sql
 import app.modules.db.smon as smon_sql
 import app.modules.db.server as server_sql
 import app.modules.roxywi.common as roxywi_common
-from app.modules.service.installation import run_ansible
+from app.modules.service.installation import run_ansible_thread
 from app.modules.roxywi.class_models import RmonAgent
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 
@@ -43,7 +43,7 @@ def check_agent_limit():
         raise Exception(' You have reached limit for Enterprise plan')
 
 
-def add_agent(data: RmonAgent) -> Union[int, tuple]:
+def add_agent(data: RmonAgent) -> Union[tuple[int, int], tuple[dict, int], None]:
     try:
         server_ip = server_sql.select_server_ip_by_id(data.server_id)
     except Exception as e:
@@ -64,14 +64,14 @@ def add_agent(data: RmonAgent) -> Union[int, tuple]:
     except Exception as e:
         roxywi_common.handle_exceptions(e, 'Cannot generate inventory')
     try:
-        run_ansible(inv, server_ips, 'rmon_agent')
+        task_id = run_ansible_thread(inv, server_ips, 'rmon_agent', 'Agent', 'install')
     except Exception as e:
         roxywi_common.handle_exceptions(e, 'Cannot install RMON agent')
 
     try:
         last_id = smon_sql.add_agent(**agent_kwargs)
         roxywi_common.logger('A new RMON agent has been created', 'error', keep_history=1, service='RMON')
-        return last_id
+        return last_id, task_id
     except Exception as e:
         roxywi_common.handle_exceptions(e, 'Cannot create Agent')
 
@@ -84,7 +84,7 @@ def delete_agent(agent_id: int):
     agent_uuid = ''
     try:
         inv, server_ips = generate_agent_inv(server_ip, 'uninstall', agent_uuid)
-        run_ansible(inv, server_ips, 'rmon_agent')
+        return run_ansible_thread(inv, server_ips, 'rmon_agent', 'Agent', 'delete')
     except Exception as e:
         raise e
 
@@ -98,7 +98,7 @@ def update_agent(agent_id: int, data: RmonAgent):
         raise e
 
     if data.reconfigure:
-        reconfigure_agent(agent_id)
+        return reconfigure_agent(agent_id)
 
 
 def reconfigure_agent(agent_id: int):
@@ -106,7 +106,7 @@ def reconfigure_agent(agent_id: int):
     server_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
     try:
         inv, server_ips = generate_agent_inv(server_ip, 'install', agent.uuid, agent.port)
-        run_ansible(inv, server_ips, 'rmon_agent')
+        return run_ansible_thread(inv, server_ips, 'rmon_agent', 'Agent', 'reconfigure')
     except Exception as e:
         raise e
 

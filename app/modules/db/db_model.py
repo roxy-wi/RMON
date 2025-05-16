@@ -503,6 +503,22 @@ class RoxyTool(BaseModel):
         constraints = [SQL('UNIQUE (name)')]
 
 
+class InstallationTasks(BaseModel):
+    id = AutoField
+    service_name = CharField()
+    status = CharField(default='created')
+    action = CharField(null=True)
+    error = CharField(null=True)
+    start_date = DateTimeField(default=datetime.now)
+    finish_date = DateTimeField(default=datetime.now)
+    group_id = ForeignKeyField(Groups, null=True, on_delete='SET NULL')
+    user_id = ForeignKeyField(User, null=True, on_delete='SET NULL')
+    server_id = ForeignKeyField(Server, null=True, on_delete='SET NULL')
+
+    class Meta:
+        table_name = 'installation_tasks'
+
+
 def create_tables():
     conn = connect()
     with conn:
@@ -510,5 +526,5 @@ def create_tables():
             [Groups, User, Server, Role, Telegram, Slack, UserGroups, Setting, Cred, Version, ActionHistory, Region,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
              SmonStatusPage, SmonStatusPageCheck, SMON, SmonGroup, MM, RMONAlertsHistory, SmonSMTPCheck, SmonRabbitCheck,
-             Country, MultiCheck, Email]
+             Country, MultiCheck, Email, InstallationTasks]
         )

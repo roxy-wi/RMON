@@ -9,7 +9,6 @@ from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 import requests
 from flask import render_template, abort, g
-from flask_jwt_extended import get_jwt, verify_jwt_in_request
 
 import app.modules.db.sql as sql
 import app.modules.db.smon as smon_sql
@@ -67,12 +66,12 @@ def send_email(email_to: str, subject: str, message: str) -> None:
 	except Exception:
 		from email.mime.text import MIMEText
 
-	mail_ssl = sql.get_setting('mail_ssl')
-	mail_from = sql.get_setting('mail_from')
-	mail_smtp_host = sql.get_setting('mail_smtp_host')
-	mail_smtp_port = sql.get_setting('mail_smtp_port')
-	mail_smtp_user = sql.get_setting('mail_smtp_user')
-	mail_smtp_password = sql.get_setting('mail_smtp_password').replace("'", "")
+	mail_ssl = sql.get_setting('mail_ssl', group_id=1)
+	mail_from = sql.get_setting('mail_from', group_id=1)
+	mail_smtp_host = sql.get_setting('mail_smtp_host', group_id=1)
+	mail_smtp_port = sql.get_setting('mail_smtp_port', group_id=1)
+	mail_smtp_user = sql.get_setting('mail_smtp_user', group_id=1)
+	mail_smtp_password = sql.get_setting('mail_smtp_password', group_id=1).replace("'", "")
 	rmon_name = sql.get_setting('rmon_name')
 
 	msg = MIMEText(message)
@@ -311,8 +310,7 @@ def mm_send_mess(mess, level, **kwargs):
 
 
 def check_rabbit_alert() -> Union[str, dict]:
-	verify_jwt_in_request()
-	claims = get_jwt()
+	claims = roxywi_common.get_jwt_token_claims()
 	try:
 		user_group_id = claims['group']
 	except Exception as e:
@@ -348,7 +346,6 @@ def email_send_mess(mess, o_level, **kwargs):
 	for e in emails:
 		emails_raw = e.token
 		emails = [email.strip() for email in emails_raw.replace(',', ' ').split()]
-
 		for email in emails:
 			email = email.replace("'", "")
 			if o_level != 'info':

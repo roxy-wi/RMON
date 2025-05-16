@@ -8,8 +8,9 @@ import app.modules.db.smon as smon_sql
 import app.modules.roxywi.common as roxywi_common
 import app.modules.tools.smon_agent as smon_agent
 from app.middleware import get_user_params, check_group, page_for_admin
+from app.modules.db.db_model import InstallationTasks
 from app.modules.roxywi.exception import RoxywiResourceNotFound
-from app.modules.roxywi.class_models import BaseResponse, IdResponse, RmonAgent, GroupQuery
+from app.modules.roxywi.class_models import BaseResponse, RmonAgent, GroupQuery, TaskAcceptedPostResponse, TaskAcceptedOtherResponse
 from app.modules.common.common_classes import SupportClass
 
 
@@ -153,20 +154,28 @@ class AgentView(MethodView):
                   description: If 1 agent will be reconfigured
                   example: 1
         responses:
-          201:
-            description: Agent successfully created
+          202:
+            description: Task to installation accepted successfully
             schema:
-              id: AgentCreated
+              type: object
               properties:
+                tasks_ids:
+                  type: array
+                  description: ID of the requested task
+                  items:
+                    type: integer
                 id:
+                  type: integer
+                  description: ID of the agent created in the system
+                status:
                   type: string
-                  description: The ID of the created Agent
+                  description: Current status of the task
           400:
             description: Invalid payload received
         """
         try:
-            last_id = smon_agent.add_agent(body)
-            return IdResponse(id=last_id).model_dump(mode='json'), 201
+            last_id, task_id = smon_agent.add_agent(body)
+            return TaskAcceptedPostResponse(id=last_id, tasks_ids=[task_id]).model_dump(mode='json'), 202
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot add agent')
 
@@ -229,13 +238,29 @@ class AgentView(MethodView):
                   description: If 1 agent will be reconfigured
                   example: 1
         responses:
-          201:
-            description: Agent successfully updated
+          202:
+            description: Task to installation accepted successfully
+            schema:
+              type: object
+              properties:
+                tasks_ids:
+                  type: array
+                  description: ID of the requested task
+                  items:
+                    type: integer
+                id:
+                  type: integer
+                  description: ID of the agent created in the system
+                status:
+                  type: string
+                  description: Current status of the task
           400:
             description: Invalid payload received
         """
         try:
-            smon_agent.update_agent(agent_id, body)
+            task_id = smon_agent.update_agent(agent_id, body)
+            if body.reconfigure:
+                return TaskAcceptedOtherResponse(tasks_ids=[task_id]).model_dump(mode='json'), 202
             return BaseResponse().model_dump(mode='json'), 201
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot update agent')
@@ -259,8 +284,22 @@ class AgentView(MethodView):
           required: true
           type: 'integer'
         responses:
-          201:
-            description: Agent successfully reconfigured
+          202:
+            description: Task to installation accepted successfully
+            schema:
+              type: object
+              properties:
+                tasks_ids:
+                  type: array
+                  description: ID of the requested task
+                  items:
+                    type: integer
+                id:
+                  type: integer
+                  description: ID of the agent created in the system
+                status:
+                  type: string
+                  description: Current status of the task
           400:
             description: Invalid ID supplied
           404:
@@ -272,8 +311,8 @@ class AgentView(MethodView):
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get agent')
         try:
-            smon_agent.reconfigure_agent(agent_id)
-            return BaseResponse().model_dump(mode='json'), 201
+            task_id = smon_agent.reconfigure_agent(agent_id)
+            return TaskAcceptedOtherResponse(tasks_ids=[task_id]).model_dump(mode='json'), 202
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot reconfigure agent')
 
@@ -291,8 +330,22 @@ class AgentView(MethodView):
             required: true
             type: 'integer'
         responses:
-          204:
-            description: Agent successfully deleted
+          202:
+            description: Task to installation accepted successfully
+            schema:
+              type: object
+              properties:
+                tasks_ids:
+                  type: array
+                  description: ID of the requested task
+                  items:
+                    type: integer
+                id:
+                  type: integer
+                  description: ID of the agent created in the system
+                status:
+                  type: string
+                  description: Current status of the task
           400:
             description: Invalid ID supplied
           404:
@@ -304,9 +357,9 @@ class AgentView(MethodView):
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get agent uuid')
 
         try:
-            smon_agent.delete_agent(agent_id)
+            task_id = smon_agent.delete_agent(agent_id)
             smon_sql.delete_agent(agent_id)
-            return BaseResponse().model_dump(mode='json'), 204
+            return TaskAcceptedOtherResponse(tasks_ids=[task_id]).model_dump(mode='json'), 202
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot delete agent')
 
@@ -441,7 +494,71 @@ class ReconfigureAgentView(MethodView):
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get agent')
         try:
-            smon_agent.reconfigure_agent(agent_id)
-            return BaseResponse().model_dump(mode='json'), 201
+            task_id = smon_agent.reconfigure_agent(agent_id)
+            return TaskAcceptedOtherResponse(tasks_ids=[task_id]).model_dump(mode='json'), 202
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot reconfigure agent')
+
+
+class AgentTaskStatusView(MethodView):
+    method_decorators = ["GET"]
+    decorators = [jwt_required(), get_user_params(), check_group()]
+
+    @staticmethod
+    def get(task_id: int):
+        """
+        Get task status
+        ---
+        summary: Get task status
+        description: Retrieve the status and details of a specific task by its task ID.
+        tags:
+          - Task status
+        parameters:
+          - name: task_id
+            in: path
+            description: The ID of the task to retrieve
+            required: true
+            schema:
+              type: integer
+        responses:
+          200:
+            description: Task details retrieved successfully
+            schema:
+              type: object
+              properties:
+                task_id:
+                  type: integer
+                  description: ID of the requested task
+                status:
+                  type: string
+                  description: Current status of the task
+                service_name:
+                  type: string
+                  description: Name of the service related to the task
+                error:
+                  type: string
+                  nullable: true
+                  description: Error message, if any
+                server:
+                  type: string
+                  description: Hostname of the server associated with the task
+          404:
+            description: Task not found
+          401:
+            description: Unauthorized - token is missing or invalid
+        """
+        try:
+            task = InstallationTasks.get(id=task_id)
+        except InstallationTasks.DoesNotExist:
+            return RoxywiResourceNotFound
+        except Exception as e:
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get agent task')
+        return jsonify(
+            {
+                'task_id': task_id,
+                'status': task.status,
+                'service_name': task.service_name,
+                'error': task.error,
+                'server': task.server_id.hostname,
+            }
+        ), 200

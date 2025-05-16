@@ -939,7 +939,7 @@ function update_cur_statues(check_id, data) {
 	if (last_resp_time.length === 0) {
 		last_resp_time = 'N/A';
 	} else {
-		last_resp_time = last_resp_time + 'ms'
+		last_resp_time = last_resp_time + 's'
 	}
 	if ($('#translate').attr('data-history_of')) {
 		let title_text = `${$('#translate').attr('data-history_of')} ${data.name.replaceAll("'", "")}`
@@ -948,7 +948,7 @@ function update_cur_statues(check_id, data) {
 	}
 	$('#last_resp_time').html(last_resp_time);
 	$('#uptime').html(data.uptime + '%');
-	$('#avg_res_time').html(data.avg_res_time + 'ms');
+	$('#avg_res_time').html(data.avg_res_time + 's');
 	$('#interval').text(data.interval);
 	$('#updated_at').text(data.updated_at);
 	$('#ssl_expire_date').text(data.ssl_expire_date);

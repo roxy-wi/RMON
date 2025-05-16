@@ -1,17 +1,21 @@
 import os
 import random
+import threading
+from datetime import datetime
 from packaging import version
 
 import ansible
 import ansible_runner
 
 import app.modules.db.sql as sql
+import app.modules.db.server as server_sql
 import app.modules.server.server as server_mod
 import app.modules.roxywi.common as roxywi_common
 from app.modules.server.ssh import return_ssh_keys_path
+from app.modules.db.db_model import InstallationTasks
 
 
-def run_ansible(inv: dict, server_ips: str, ansible_role: str) -> object:
+def run_ansible(inv: dict, server_ips: list, ansible_role: str) -> dict:
 	inventory_path = '/var/www/rmon/app/scripts/ansible/inventory'
 	inventory = f'{inventory_path}/{ansible_role}-{random.randint(0, 135)}.json'
 	proxy = sql.get_setting('proxy')
@@ -122,3 +126,30 @@ def _install_ansible_collections():
 				if exit_code != 0:
 					raise Exception(
 						f'error: Ansible collection installation was not successful: {exit_code}. {trouble_link}')
+
+
+def run_ansible_thread(inv: dict, server_ips: list, ansible_role: str, service_name: str, action: str) -> int:
+	claims = roxywi_common.get_jwt_token_claims()
+	server_id = server_sql.get_server_by_ip(server_ips[0]).server_id
+
+	task_id = InstallationTasks.insert(
+		service_name=service_name, server_id=server_id, user_id=claims['user_id'], group_id=claims['group'], action=action
+	).execute()
+	thread = threading.Thread(target=run_installations, args=(inv, server_ips, ansible_role, task_id))
+	thread.start()
+	return task_id
+
+
+def run_installations(inv: dict, server_ips: list, service: str, task_id: int) -> None:
+	try:
+		InstallationTasks.update(status='running').where(InstallationTasks.id == task_id).execute()
+		output = run_ansible(inv, server_ips, service)
+		if len(output['failures']) > 0 or len(output['dark']) > 0:
+			InstallationTasks.update(
+				status='failed', finish_date=datetime.now(), error=f'Cannot install {service}. Check Apache error log'
+			).where(InstallationTasks.id == task_id).execute()
+			roxywi_common.logger('', f'error: Cannot install {service}')
+		InstallationTasks.update(status='completed', finish_date=datetime.now()).where(InstallationTasks.id == task_id).execute()
+	except Exception as e:
+		InstallationTasks.update(status='failed', finish_date=datetime.now(), error=str(e)).where(InstallationTasks.id == task_id).execute()
+		roxywi_common.logger('', f'error: Cannot install {service}: {e}')

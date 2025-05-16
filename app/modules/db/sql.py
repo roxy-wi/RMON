@@ -5,15 +5,15 @@ from app.modules.db.common import out_error
 
 
 def get_setting(param, **kwargs):
-	try:
-		verify_jwt_in_request()
-		claims = get_jwt()
-		user_group_id = claims['group']
-	except Exception:
-		user_group_id = 1
-
 	if kwargs.get('group_id'):
 		user_group_id = kwargs.get('group_id')
+	else:
+		try:
+			verify_jwt_in_request()
+			claims = get_jwt()
+			user_group_id = claims['group']
+		except Exception:
+			user_group_id = 1
 
 	if param in (
 			'proxy', 'agent_port', 'master_port', 'master_ip', 'rmon_name', 'use_victoria_metrics',

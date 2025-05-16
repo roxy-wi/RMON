@@ -157,6 +157,24 @@ def get_randon_agent(region_id: int) -> SmonAgent:
 		out_error(e)
 
 
+def get_less_check_agent(region_id: int) -> int:
+	try:
+		result = (
+			SmonAgent
+			.select(SmonAgent, fn.COUNT(SMON.id).alias('checks_count'))
+			.join(SMON)
+			.where(SmonAgent.region_id == region_id)
+			.group_by(SmonAgent.id)
+			.order_by(fn.COUNT(SMON.id).asc())
+			.limit(1)
+		)
+		return result.get()
+	except SmonAgent.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		out_error(e)
+
+
 def select_server_ip_by_agent_id(agent_id: int) -> str:
 	try:
 		return Server.get(Server.server_id == SmonAgent.get(SmonAgent.id == agent_id).server_id).ip
@@ -172,15 +190,6 @@ def select_en_smon(agent_id: int, check_type: str) -> Union[SmonTcpCheck, SmonPi
 		return model.select(model, SMON).join_from(model, SMON).where((SMON.enabled == '1') & (SMON.agent_id == agent_id)).execute()
 	except Exception as e:
 		out_error(e)
-
-
-# def select_status(smon_id):
-# 	try:
-# 		return SMON.get(SMON.id == smon_id).status
-# 	except SMON.DoesNotExist:
-# 		raise RoxywiResourceNotFound
-# 	except Exception as e:
-# 		out_error(e)
 
 
 def change_status(status: int, smon_id: int, time: str) -> None:
