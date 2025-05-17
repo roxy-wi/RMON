@@ -259,15 +259,14 @@ def history_metrics(server_id: int, check_type_id: int) -> dict:
     return metrics
 
 
-def check_uptime(smon_id: int) -> int:
+def check_uptime(smon_id: int) -> float:
     count_checks = smon_sql.get_smon_history_count_checks(smon_id)
-
     try:
         uptime = round(count_checks['up'] * 100 / count_checks['total'], 2)
     except Exception:
         uptime = 0
 
-    return uptime
+    return float(uptime)
 
 
 def create_status_page(name: str, slug: str, desc: str, checks: list, styles: str, group_id: int) -> int:

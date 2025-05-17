@@ -1,9 +1,8 @@
 from typing import Union, Tuple
 
 from flask.views import MethodView
-from flask_apscheduler.json import jsonify
 from flask_jwt_extended import jwt_required
-from flask import g, abort
+from flask import g, abort, jsonify
 from flask_pydantic import validate
 from playhouse.shortcuts import model_to_dict
 

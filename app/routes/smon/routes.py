@@ -264,17 +264,6 @@ def smon_history_metric_chart(check_id, check_type_id):
         # Default interval in case we can't get it from the database
         interval = 120
 
-        # Get check details once before entering the loop
-        # This data doesn't change frequently, so we can cache it
-        try:
-            smon = smon_sql.select_one_smon(check_id, check_type_id)
-            for s in smon:
-                interval = s.interval
-                break
-        except Exception:
-            # Use default interval if we can't get it from the database
-            pass
-
         while True:
             try:
                 # Get all the data we need in a single iteration
@@ -348,3 +337,5 @@ def smon_history_metric_chart(check_id, check_type_id):
     response.headers["Cache-Control"] = "no-cache"
     response.headers["X-Accel-Buffering"] = "no"
     return response
+
+
