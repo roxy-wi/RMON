@@ -215,6 +215,15 @@ class Version(BaseModel):
         primary_key = False
 
 
+class Migration(BaseModel):
+    id = AutoField()
+    name = CharField(unique=True)
+    applied_at = DateTimeField(default=datetime.now)
+
+    class Meta:
+        table_name = 'migrations'
+
+
 class SmonGroup(BaseModel):
     id = AutoField()
     name = CharField()
@@ -252,14 +261,14 @@ class Region(BaseModel):
 
 class SmonAgent(BaseModel):
     id = AutoField()
-    server_id = ForeignKeyField(Server, on_delete='RESTRICT')
+    server_id = ForeignKeyField(Server, on_delete='RESTRICT', index=True)  # Added index for performance
     name = CharField()
-    uuid = CharField()
+    uuid = CharField(index=True)  # Added index for performance
     enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
     description = CharField()
-    shared = IntegerField(constraints=[SQL('DEFAULT 0')])
+    shared = IntegerField(constraints=[SQL('DEFAULT 0')], index=True)  # Added index for performance
     port = IntegerField(constraints=[SQL('DEFAULT 5701')])
-    region_id = ForeignKeyField(Region, null=True, on_delete='SET NULL')
+    region_id = ForeignKeyField(Region, null=True, on_delete='SET NULL', index=True)  # Added index for performance
 
     class Meta:
         table_name = 'smon_agents'
@@ -288,7 +297,7 @@ class SMON(BaseModel):
     time_state = DateTimeField(default=datetime.now)
     body_status = IntegerField(constraints=[SQL('DEFAULT 1')])
     telegram_channel_id = IntegerField(null=True)
-    group_id = IntegerField()
+    group_id = IntegerField(index=True)  # Added index for performance
     slack_channel_id = IntegerField(null=True)
     ssl_expire_warning_alert = IntegerField(constraints=[SQL('DEFAULT 0')])
     ssl_expire_critical_alert = IntegerField(constraints=[SQL('DEFAULT 0')])
@@ -300,15 +309,19 @@ class SMON(BaseModel):
     created_at = DateTimeField(default=datetime.now)
     updated_at = DateTimeField(default=datetime.now)
     check_timeout = IntegerField(constraints=[SQL('DEFAULT 2')])
-    region_id = ForeignKeyField(Region, null=True, on_delete='SET NULL')
-    country_id = ForeignKeyField(Country, null=True, on_delete='SET NULL')
-    agent_id = ForeignKeyField(SmonAgent, null=True, on_delete='RESTRICT')
-    multi_check_id = ForeignKeyField(MultiCheck, null=True, on_delete='CASCADE')
+    region_id = ForeignKeyField(Region, null=True, on_delete='SET NULL', index=True)  # Added index for performance
+    country_id = ForeignKeyField(Country, null=True, on_delete='SET NULL', index=True)  # Added index for performance
+    agent_id = ForeignKeyField(SmonAgent, null=True, on_delete='RESTRICT', index=True)  # Added index for performance
+    multi_check_id = ForeignKeyField(MultiCheck, null=True, on_delete='CASCADE', index=True)  # Added index for performance
     retries = IntegerField(constraints=[SQL('DEFAULT 3')])
     current_retries = IntegerField(constraints=[SQL('DEFAULT 0')])
 
     class Meta:
         table_name = 'smon'
+        indexes = (
+            # Composite index for group_id and multi_check_id which are often queried together
+            (('group_id', 'multi_check_id'), False),
+        )
 
 
 class RMONAlertsHistory(BaseModel):
@@ -367,12 +380,12 @@ class UserName(BaseModel):
 
 
 class SmonHistory(BaseModel):
-    smon_id = ForeignKeyField(SMON, on_delete='Cascade')
-    check_id = IntegerField()
+    smon_id = ForeignKeyField(SMON, on_delete='Cascade', index=True)  # Added index for performance
+    check_id = IntegerField(index=True)  # Added index for performance
     response_time = FloatField()
-    status = IntegerField()
+    status = IntegerField(index=True)  # Added index for performance
     mes = CharField()
-    date = DateTimeField(default=datetime.now)
+    date = DateTimeField(default=datetime.now, index=True)  # Added index for performance
     name_lookup = CharField(null=True)
     connect = CharField(null=True)
     app_connect = CharField(null=True)
@@ -384,6 +397,12 @@ class SmonHistory(BaseModel):
     class Meta:
         table_name = 'smon_history'
         primary_key = False
+        indexes = (
+            # Composite index for smon_id and check_id which are often queried together
+            (('smon_id', 'check_id'), False),
+            # Composite index for smon_id and date which are often used for sorting and filtering
+            (('smon_id', 'date'), False),
+        )
 
 
 class SmonTcpCheck(BaseModel):
@@ -526,5 +545,5 @@ def create_tables():
             [Groups, User, Server, Role, Telegram, Slack, UserGroups, Setting, Cred, Version, ActionHistory, Region,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
              SmonStatusPage, SmonStatusPageCheck, SMON, SmonGroup, MM, RMONAlertsHistory, SmonSMTPCheck, SmonRabbitCheck,
-             Country, MultiCheck, Email, InstallationTasks]
+             Country, MultiCheck, Email, InstallationTasks, Migration]
         )

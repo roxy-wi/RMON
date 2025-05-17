@@ -1,10 +1,9 @@
 import os
 from typing import Union, Literal
 
-from flask import render_template, request, g, send_from_directory, jsonify, redirect, url_for
+from flask import render_template, g, send_from_directory, jsonify
 from flask_jwt_extended import jwt_required
 from flask_pydantic import validate
-from flask_pydantic.exceptions import ValidationError
 from pydantic import IPvAnyAddress
 
 from app import app, cache
@@ -18,113 +17,12 @@ import app.modules.roxywi.roxy as roxy
 import app.modules.roxywi.nettools as nettools_mod
 import app.modules.roxywi.common as roxywi_common
 import app.modules.server.server as server_mod
-from app.modules.roxywi.exception import RoxywiValidationError
 from app.modules.roxywi.class_models import ErrorResponse, NettoolsRequest, DomainName, EscapedString
 
 
 @app.template_filter('strftime')
 def _jinja2_filter_datetime(date, fmt=None):
     return common.get_time_zoned_date(date, fmt)
-
-
-@app.errorhandler(RoxywiValidationError)
-def handle_pydantic_validation_errors(e):
-    return ErrorResponse(error=str(e)), 400
-
-
-@app.errorhandler(ValidationError)
-def handle_pydantic_validation_errors1(e):
-    errors = []
-    if e.body_params:
-        req_type = e.body_params
-    elif e.form_params:
-        req_type = e.form_params
-    elif e.path_params:
-        req_type = e.path_params
-    else:
-        req_type = e.query_params
-    for er in req_type:
-        if len(er["loc"]) > 0:
-            errors.append(f'{er["loc"][0]}: {er["msg"]}<br>')
-        else:
-            errors.append(er["msg"])
-    return ErrorResponse(error=errors).model_dump(mode='json'), 400
-
-
-@app.errorhandler(400)
-def bad_request(e):
-    return jsonify({'error': str(e)}), 400
-
-
-@app.errorhandler(401)
-def no_auth(e):
-    if 'api' in request.url:
-        return jsonify({'error': str(e)}), 401
-    return redirect(url_for('login_page', next=request.full_path))
-
-
-@app.errorhandler(403)
-@get_user_params()
-def page_is_forbidden(e):
-    if 'api' in request.url:
-        return jsonify({'error': str(e)}), 403
-    kwargs = {
-        'user_params': g.user_params,
-        'title': e,
-        'e': e
-    }
-    return render_template('error.html', **kwargs), 403
-
-
-@app.errorhandler(404)
-@get_user_params()
-def page_not_found(e):
-    if 'api' in request.url:
-        return jsonify({'error': str(e)}), 404
-    kwargs = {
-        'user_params': g.user_params,
-        'title': e,
-        'e': e
-    }
-    return render_template('error.html', **kwargs), 404
-
-
-@app.errorhandler(405)
-@get_user_params()
-def method_not_allowed(e):
-    if 'api' in request.url:
-        return jsonify({'error': str(e)}), 405
-    kwargs = {
-        'user_params': g.user_params,
-        'title': e,
-        'e': e
-    }
-    return render_template('error.html', **kwargs), 405
-
-
-@app.errorhandler(409)
-@get_user_params()
-def conflict(e):
-    return jsonify({'error': str(e)}), 409
-
-
-@app.errorhandler(415)
-@get_user_params()
-def unsupported_media_type(e):
-    return jsonify({'error': str(e)}), 415
-
-
-@app.errorhandler(500)
-@get_user_params()
-def internal_error(e):
-    if 'api' in request.url:
-        return jsonify({'error': str(e)}), 500
-    kwargs = {
-        'user_params': g.user_params,
-        'title': e,
-        'e': e
-    }
-    return render_template('error.html', **kwargs), 500
 
 
 @app.route('/favicon.ico')

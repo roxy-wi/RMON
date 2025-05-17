@@ -14,6 +14,7 @@ import app.modules.tools.common as tool_common
 from app.modules.roxywi.class_models import CheckFiltersQuery
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 from app.modules.tools.smon import disable_multi_check
+from app.modules.common.common import cached_query
 
 
 def get_agents(group_id: int):
@@ -51,6 +52,7 @@ def get_agent(agent_id: int):
 		out_error(e)
 
 
+@cached_query(expiry=120)  # Cache for 2 minutes
 def get_agent_with_group(agent_id: int, group_id: int):
 	try:
 		return SmonAgent.select(SmonAgent, Server).join(Server).where(
@@ -228,6 +230,7 @@ def insert_smon_history_http_metrics(date, **kwargs) -> None:
 		out_error(e)
 
 
+@cached_query(expiry=60)  # Cache for 1 minute
 def select_one_smon(smon_id: int, check_type_id: int) -> tuple:
 	correct_model = tool_common.get_model_for_check(check_type_id=check_type_id)
 	try:
@@ -353,6 +356,7 @@ def delete_multi_check(check_id: int, group_id: int) -> None:
 		out_error(e)
 
 
+@cached_query(expiry=60)  # Cache for 1 minute
 def select_multi_check(multi_check_id: int, group_id: int) -> SMON:
 	try:
 		return SMON.select().join(MultiCheck).where(
@@ -367,6 +371,7 @@ def select_multi_check(multi_check_id: int, group_id: int) -> SMON:
 		out_error(e)
 
 
+@cached_query(expiry=60)  # Cache for 1 minute
 def select_multi_checks(group_id: int) -> SMON:
 	try:
 		if pgsql_enable == '1':
@@ -601,6 +606,7 @@ def get_last_smon_status_by_check(smon_id: int) -> object:
 			return ''
 
 
+@cached_query(expiry=30)  # Cache for 30 seconds
 def get_last_smon_res_time_by_check(smon_id: int, check_id: int) -> int:
 	query = SmonHistory.select().where(
 		(SmonHistory.smon_id == smon_id) &
@@ -618,61 +624,98 @@ def get_last_smon_res_time_by_check(smon_id: int, check_id: int) -> int:
 			return ''
 
 
+@cached_query(expiry=60)  # Cache for 1 minute
 def get_smon_history_count_checks(smon_id: int) -> dict:
-	count_checks_dict = {}
-	query = SmonHistory.select(fn.Count(SmonHistory.status).alias('status')).where(
-		SmonHistory.smon_id == smon_id
-	)
-	try:
-		query_res = query.execute()
-	except Exception as e:
-		out_error(e)
-	else:
-		try:
-			for i in query_res:
-				count_checks_dict['total'] = i.status
-		except Exception as e:
-			raise Exception(f'error: {e}')
+	"""
+	Get counts of total checks and successful checks for a given smon_id.
+	Optimized to use a single query with conditional counting.
 
-	query = SmonHistory.select(fn.Count(SmonHistory.status).alias('status')).where(
-		(SmonHistory.smon_id == smon_id) &
-		(SmonHistory.status == 1)
-	)
+	:param smon_id: The ID of the SMON check
+	:return: Dictionary with 'total' and 'up' counts
+	"""
+	count_checks_dict = {'total': 0, 'up': 0}
+
 	try:
-		query_res = query.execute()
+		# Use a single query with conditional counting for better performance
+		if mysql_enable == '1' or pgsql_enable == '1':
+			# SQL databases support SUM with CASE
+			query = SmonHistory.select(
+				fn.Count(SmonHistory.smon_id).alias('total'),
+				fn.SUM(SmonHistory.status == 1).alias('up')
+			).where(SmonHistory.smon_id == smon_id)
+
+			result = query.scalar(as_tuple=True)
+			if result:
+				count_checks_dict['total'] = result[0] or 0
+				count_checks_dict['up'] = result[1] or 0
+		else:
+			# SQLite fallback - still more efficient than two separate queries
+			query = SmonHistory.select(
+				fn.Count(SmonHistory.smon_id).alias('total'),
+				fn.Count(SmonHistory.smon_id).filter(SmonHistory.status == 1).alias('up')
+			).where(SmonHistory.smon_id == smon_id)
+
+			result = query.scalar(as_tuple=True)
+			if result:
+				count_checks_dict['total'] = result[0] or 0
+				count_checks_dict['up'] = result[1] or 0
 	except Exception as e:
 		out_error(e)
-	else:
-		try:
-			for i in query_res:
-				count_checks_dict['up'] = i.status
-		except Exception as e:
-			raise Exception(f'error: {e}')
 
 	return count_checks_dict
 
 
+@cached_query(expiry=300)  # Cache for 5 minutes
 def get_smon_service_name_by_id(smon_id: int) -> str:
-	query = SMON.select().join(SmonHistory, on=(SmonHistory.smon_id == SMON.id)).where(SmonHistory.smon_id == smon_id)
+	"""
+	Get the service name for a given smon_id.
+	Optimized to use a direct query without unnecessary JOIN.
+
+	:param smon_id: The ID of the SMON check
+	:return: The name of the service or empty string if not found
+	"""
 	try:
-		query_res = query.execute()
+		# More efficient direct query without JOIN
+		smon = SMON.select(SMON.name).where(SMON.id == smon_id).scalar()
+		return smon if smon else ''
 	except Exception as e:
 		out_error(e)
-	else:
-		try:
-			for i in query_res:
-				return f'{i.name}'
-		except Exception:
-			return ''
+		return ''
 
 
+@cached_query(expiry=30)  # Cache for 30 seconds
 def select_smon_history(smon_id: int, limit: int = 40) -> SmonHistory:
+	"""
+	Get the history records for a given smon_id with pagination.
+
+	:param smon_id: The ID of the SMON check
+	:param limit: Maximum number of records to return
+	:return: Query result with history records
+	"""
 	try:
-		return SmonHistory.select().where(SmonHistory.smon_id == smon_id).limit(limit).order_by(SmonHistory.date.desc())
+		# Using the composite index on (smon_id, date) for efficient filtering and sorting
+		return SmonHistory.select(
+			SmonHistory.smon_id, 
+			SmonHistory.check_id,
+			SmonHistory.response_time,
+			SmonHistory.status,
+			SmonHistory.mes,
+			SmonHistory.date,
+			SmonHistory.name_lookup,
+			SmonHistory.connect,
+			SmonHistory.app_connect,
+			SmonHistory.pre_transfer,
+			SmonHistory.redirect,
+			SmonHistory.start_transfer,
+			SmonHistory.download
+		).where(
+			SmonHistory.smon_id == smon_id
+		).limit(limit).order_by(SmonHistory.date.desc())
 	except Exception as e:
 		out_error(e)
 
 
+@cached_query(expiry=30)  # Cache for 30 seconds
 def get_history(smon_id: int) -> SmonHistory:
 	try:
 		return SmonHistory.select().where(SmonHistory.smon_id == smon_id).order_by(SmonHistory.date.desc()).get()
@@ -878,6 +921,7 @@ def delete_smon_group(check_group_id: int, group_id: int) -> None:
 		out_error(e)
 
 
+@cached_query(expiry=300)  # Cache for 5 minutes
 def select_smon_groups(group_id: int) -> object:
 	try:
 		return SmonGroup.select().where(SmonGroup.group_id == group_id)

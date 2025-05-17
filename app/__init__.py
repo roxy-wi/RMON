@@ -56,3 +56,7 @@ app.register_blueprint(admin_bp, url_prefix='/admin')
 
 from app import login
 from app import jobs
+
+# Register error handlers
+from app.modules.roxywi.error_handler import register_error_handlers
+register_error_handlers(app)

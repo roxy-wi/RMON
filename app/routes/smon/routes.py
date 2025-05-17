@@ -239,6 +239,7 @@ def smon_multi_check_history(multi_check_id):
 def smon_history_metric_chart(check_id, check_type_id):
     """
     This method generates a streaming event chart for the history of a metric associated with a given check ID and check type ID.
+    Optimized to reduce database queries and improve performance.
 
     Parameters:
     - check_id (int): The ID of the check for which to generate the metric history chart.
@@ -251,6 +252,7 @@ def smon_history_metric_chart(check_id, check_type_id):
     def get_chart_data():
         """
         Return a generator that continuously yields chart data in JSON format for the specified check ID and check type ID.
+        Optimized to reduce database queries by using cached functions and combining queries.
 
         Parameters:
         - check_id (int): The ID of the check.
@@ -259,53 +261,87 @@ def smon_history_metric_chart(check_id, check_type_id):
         Returns:
         A generator that yields chart data in the format of a JSON string.
         """
+        # Default interval in case we can't get it from the database
         interval = 120
-        while True:
-            json_metric = {}
-            is_enabled = 1
-            chart_metrics = smon_sql.get_history(check_id)
-            uptime = smon_mod.check_uptime(check_id)
+
+        # Get check details once before entering the loop
+        # This data doesn't change frequently, so we can cache it
+        try:
             smon = smon_sql.select_one_smon(check_id, check_type_id)
-            avg_res_time = smon_mod.get_average_response_time(check_id, check_type_id)
-
             for s in smon:
-                json_metric['updated_at'] = common.get_time_zoned_date(s.smon_id.updated_at)
-                json_metric['name'] = str(s.smon_id.name)
                 interval = s.interval
-                is_enabled = s.smon_id.enabled
-                if s.smon_id.ssl_expire_date is not None:
-                    json_metric['ssl_expire_date'] = smon_mod.get_ssl_expire_date(s.smon_id.ssl_expire_date)
-                else:
-                    json_metric['ssl_expire_date'] = 'N/A'
+                break
+        except Exception:
+            # Use default interval if we can't get it from the database
+            pass
 
-            json_metric['time'] = common.get_time_zoned_date(chart_metrics.date, '%H:%M:%S')
-            json_metric['response_time'] = chart_metrics.response_time
-            json_metric['mes'] = str(chart_metrics.mes)
-            json_metric['uptime'] = uptime
-            json_metric['avg_res_time'] = avg_res_time
-            json_metric['interval'] = interval
-            json_metric['status'] = int(chart_metrics.status) if is_enabled else 4
-            if check_type_id in (2, 3):
-                json_metric['name_lookup'] = str(chart_metrics.name_lookup)
-                json_metric['connect'] = str(chart_metrics.connect)
-                json_metric['app_connect'] = str(chart_metrics.app_connect)
-                if check_type_id == 3:
-                    continue
-                if chart_metrics.redirect is None:
-                    continue
-                json_metric['pre_transfer'] = str(chart_metrics.pre_transfer)
-                if chart_metrics.redirect:
-                    if float(chart_metrics.redirect) <= 0:
-                        json_metric['redirect'] = '0'
+        while True:
+            try:
+                # Get all the data we need in a single iteration
+                json_metric = {}
+
+                # Get the latest history record
+                chart_metrics = smon_sql.get_history(check_id)
+
+                # Get check details (using cached function)
+                smon = smon_sql.select_one_smon(check_id, check_type_id)
+                is_enabled = 1
+
+                # Process check details
+                for s in smon:
+                    json_metric['updated_at'] = common.get_time_zoned_date(s.smon_id.updated_at)
+                    json_metric['name'] = str(s.smon_id.name)
+                    interval = s.interval  # Update interval in case it changed
+                    is_enabled = s.smon_id.enabled
+                    if s.smon_id.ssl_expire_date is not None:
+                        json_metric['ssl_expire_date'] = smon_mod.get_ssl_expire_date(s.smon_id.ssl_expire_date)
                     else:
-                        json_metric['redirect'] = str(chart_metrics.redirect)
-                if float(chart_metrics.start_transfer) <= 0:
-                    json_metric['start_transfer'] = '0'
-                else:
-                    json_metric['start_transfer'] = str(chart_metrics.start_transfer)
-                json_metric['m_download'] = str(chart_metrics.download)
-            yield f"data:{json.dumps(json_metric)}\n\n"
-            del chart_metrics, smon
+                        json_metric['ssl_expire_date'] = 'N/A'
+
+                # Get uptime and average response time (using cached functions)
+                uptime = smon_mod.check_uptime(check_id)
+                avg_res_time = smon_mod.get_average_response_time(check_id, check_type_id)
+
+                # Build the response JSON
+                json_metric['time'] = common.get_time_zoned_date(chart_metrics.date, '%H:%M:%S')
+                json_metric['response_time'] = chart_metrics.response_time
+                json_metric['mes'] = str(chart_metrics.mes)
+                json_metric['uptime'] = uptime
+                json_metric['avg_res_time'] = avg_res_time
+                json_metric['interval'] = interval
+                json_metric['status'] = int(chart_metrics.status) if is_enabled else 4
+
+                # Add HTTP-specific metrics if applicable
+                if check_type_id in (2, 3):  # HTTP or HTTPS check types
+                    json_metric['name_lookup'] = str(chart_metrics.name_lookup)
+                    json_metric['connect'] = str(chart_metrics.connect)
+                    json_metric['app_connect'] = str(chart_metrics.app_connect)
+
+                    if check_type_id != 3 and chart_metrics.redirect is not None:
+                        json_metric['pre_transfer'] = str(chart_metrics.pre_transfer)
+
+                        if chart_metrics.redirect:
+                            json_metric['redirect'] = '0' if float(chart_metrics.redirect) <= 0 else str(chart_metrics.redirect)
+
+                        json_metric['start_transfer'] = '0' if float(chart_metrics.start_transfer) <= 0 else str(chart_metrics.start_transfer)
+                        json_metric['m_download'] = str(chart_metrics.download)
+
+                # Send the data
+                yield f"data:{json.dumps(json_metric)}\n\n"
+
+            except Exception as e:
+                # Log the error but continue the loop
+                print(f"Error in chart data generation: {e}")
+                # Send minimal data to avoid breaking the client
+                yield f"data:{json.dumps({'error': str(e), 'interval': interval})}\n\n"
+
+            # Clean up to prevent memory leaks
+            if 'chart_metrics' in locals():
+                del chart_metrics
+            if 'smon' in locals():
+                del smon
+
+            # Sleep for the interval duration
             time.sleep(interval)
 
     response = Response(stream_with_context(get_chart_data()), mimetype="text/event-stream")

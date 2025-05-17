@@ -1,9 +1,20 @@
 from datetime import datetime
 import dateutil
+import functools
+from typing import Any, Callable, Dict, Optional, Tuple, TypeVar
+import time
 
 from pytz import timezone
 
 import app.modules.db.sql as sql
+
+# Type variable for generic function return type
+T = TypeVar('T')
+
+# Cache for storing query results
+_query_cache: Dict[str, Tuple[Any, float]] = {}
+# Default cache expiration time in seconds (5 minutes)
+DEFAULT_CACHE_EXPIRY = 300
 
 
 def get_present_time():
@@ -60,3 +71,49 @@ def return_proxy_dict() -> dict:
 	if proxy is not None and proxy != '' and proxy != 'None':
 		proxy_dict = {"https": proxy, "http": proxy}
 	return proxy_dict
+
+
+def cached_query(expiry: Optional[int] = None) -> Callable[[Callable[..., T]], Callable[..., T]]:
+	"""
+	Decorator for caching database query results.
+
+	:param expiry: Cache expiration time in seconds. If None, uses DEFAULT_CACHE_EXPIRY.
+	:return: Decorated function that caches results.
+	"""
+	def decorator(func: Callable[..., T]) -> Callable[..., T]:
+		@functools.wraps(func)
+		def wrapper(*args, **kwargs) -> T:
+			# Create a cache key based on function name and arguments
+			cache_key = f"{func.__module__}.{func.__name__}:{str(args)}:{str(kwargs)}"
+
+			# Check if result is in cache and not expired
+			if cache_key in _query_cache:
+				result, timestamp = _query_cache[cache_key]
+				cache_expiry = expiry if expiry is not None else DEFAULT_CACHE_EXPIRY
+				if time.time() - timestamp < cache_expiry:
+					return result
+
+			# Execute the function and cache the result
+			result = func(*args, **kwargs)
+			_query_cache[cache_key] = (result, time.time())
+			return result
+		return wrapper
+	return decorator
+
+
+def clear_cache() -> None:
+	"""
+	Clear the entire query cache.
+	"""
+	_query_cache.clear()
+
+
+def clear_cache_for_function(func_name: str) -> None:
+	"""
+	Clear cache entries for a specific function.
+
+	:param func_name: The name of the function to clear cache for.
+	"""
+	keys_to_remove = [key for key in _query_cache if key.startswith(func_name)]
+	for key in keys_to_remove:
+		del _query_cache[key]

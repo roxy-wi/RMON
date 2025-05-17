@@ -1,6 +1,4 @@
 import os
-import sys
-import traceback
 import glob
 import logging
 from typing import Any
@@ -18,9 +16,9 @@ import app.modules.db.group as group_sql
 import app.modules.db.server as server_sql
 import app.modules.db.history as history_sql
 import app.modules.roxy_wi_tools as roxy_wi_tools
-from app.modules.roxywi.exception import (RoxywiResourceNotFound, RoxywiCheckLimits, RoxywiGroupMismatch, RoxywiPermissionError,
-										  RoxywiConflictError)
+from app.modules.roxywi.exception import RoxywiGroupMismatch
 from app.modules.roxywi.class_models import ErrorResponse
+from app.modules.roxywi.error_handler import handle_exception
 
 get_config_var = roxy_wi_tools.GetConfigVar()
 
@@ -300,11 +298,6 @@ def handle_exceptions(ex: Exception, message: str, **kwargs: Any) -> None:
 	raise Exception(f'error: {message}: {ex}')
 
 
-def handle_json_exceptions(ex: Exception, message: str) -> dict:
-	logger(f'{message}: {ex}', 'error')
-	return ErrorResponse(error=f'{message}: {ex}').model_dump(mode='json')
-
-
 def is_user_has_access_to_its_group(user_id: int) -> None:
 	if not user_sql.check_user_group(user_id, g.user_params['group_id']) and g.user_params['role'] != 1:
 		raise RoxywiGroupMismatch
@@ -315,22 +308,36 @@ def is_user_has_access_to_group(user_id: int, group_id: int) -> None:
 		raise RoxywiGroupMismatch
 
 
-def handler_exceptions_for_json_data(ex: Exception, main_ex_mes: str) -> tuple[dict, int]:
-	if isinstance(ex, KeyError):
-		exc_type, exc_obj, exc_tb = sys.exc_info()
-		file_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-		stk = traceback.extract_tb(exc_tb, 1)
-		function_name = stk[0][2]
-		return handle_json_exceptions(ex, f'Missing key in JSON data in function: {function_name} in file: {file_name}'), 500
-	elif isinstance(ex, ValueError):
-		return handle_json_exceptions(ex, 'Wrong type or missing value in JSON data'), 500
-	elif isinstance(ex, RoxywiPermissionError):
-		return handle_json_exceptions(ex, 'You cannot edit this resource'), 403
-	elif isinstance(ex, RoxywiResourceNotFound):
-		return handle_json_exceptions(ex, 'Resource not found'), 404
-	elif isinstance(ex, RoxywiCheckLimits):
-		return handle_json_exceptions(ex, 'Limit exceeded'), 409
-	elif isinstance(ex, RoxywiConflictError):
-		return handle_json_exceptions(ex, 'Conflict'), 429
-	else:
-		return handle_json_exceptions(ex, main_ex_mes), 500
+def handle_json_exceptions(ex: Exception, message: str) -> dict:
+	"""
+	Handle an exception and return a JSON error response.
+
+	Args:
+		ex: The exception that was raised
+		message: Additional information to include in the response
+
+	Returns:
+		A dictionary containing the error response
+	"""
+	logger('{message}: {ex}', 'error')
+	return ErrorResponse(error=f'{message}: {ex}').model_dump(mode='json')
+
+
+def handler_exceptions_for_json_data(ex: Exception, main_ex_mes: str = '') -> tuple[dict, int]:
+	"""
+	Handle an exception and return a JSON error response with an appropriate HTTP status code.
+
+	Args:
+		ex: The exception that was raised
+		main_ex_mes: Additional information to include in the response
+
+	Returns:
+		A tuple containing the error response and HTTP status code
+	"""
+
+	# If main_ex_mes is provided, use it as additional_info
+	additional_info = main_ex_mes if main_ex_mes else ""
+
+	# Use the centralized error handler
+	return handle_exception(ex, additional_info=additional_info)
+
