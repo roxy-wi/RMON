@@ -15,11 +15,30 @@
 - name: Upgrade pip3
   pip:
     name: pip
-    executable: pip3
     state: latest
     extra_args: --upgrade --ignore-installed
+  register: pip_upgrade1_result
+  ignore_errors: true
 
 - name: Install RMON Agent python requirements
   ansible.builtin.pip:
+    requirements: /var/lib/rmon/rmon-agent/requirements.txt
+  when: pip_upgrade1_result is succeeded
+  register: pip_install1_result
+  ignore_errors: true
+
+- name: Upgrade pip3 if cannot find pip
+  pip:
+    name: pip
+    executable: /usr/local/bin/pip3
+    state: latest
+    extra_args: --upgrade --ignore-installed
+  when: pip_upgrade1_result is failed
+  ignore_errors: true
+
+- name: Install RMON Agent python requirements if cannot find pip
+  ansible.builtin.pip:
     executable: /usr/local/bin/pip3
     requirements: /var/lib/rmon/rmon-agent/requirements.txt
+  when: pip_install1_result is failed
+  ignore_errors: true
