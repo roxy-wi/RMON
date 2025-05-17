@@ -14,7 +14,6 @@ import app.modules.tools.common as tool_common
 from app.modules.roxywi.class_models import CheckFiltersQuery
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 from app.modules.tools.smon import disable_multi_check
-from app.modules.common.common import cached_query
 
 
 def get_agents(group_id: int):
@@ -52,7 +51,6 @@ def get_agent(agent_id: int):
 		out_error(e)
 
 
-@cached_query(expiry=120)  # Cache for 2 minutes
 def get_agent_with_group(agent_id: int, group_id: int):
 	try:
 		return SmonAgent.select(SmonAgent, Server).join(Server).where(
@@ -230,7 +228,6 @@ def insert_smon_history_http_metrics(date, **kwargs) -> None:
 		out_error(e)
 
 
-@cached_query(expiry=60)  # Cache for 1 minute
 def select_one_smon(smon_id: int, check_type_id: int) -> tuple:
 	correct_model = tool_common.get_model_for_check(check_type_id=check_type_id)
 	try:
@@ -356,7 +353,6 @@ def delete_multi_check(check_id: int, group_id: int) -> None:
 		out_error(e)
 
 
-@cached_query(expiry=60)  # Cache for 1 minute
 def select_multi_check(multi_check_id: int, group_id: int) -> SMON:
 	try:
 		return SMON.select().join(MultiCheck).where(
@@ -371,7 +367,6 @@ def select_multi_check(multi_check_id: int, group_id: int) -> SMON:
 		out_error(e)
 
 
-@cached_query(expiry=60)  # Cache for 1 minute
 def select_multi_checks(group_id: int) -> SMON:
 	try:
 		if pgsql_enable == '1':
@@ -606,7 +601,6 @@ def get_last_smon_status_by_check(smon_id: int) -> object:
 			return ''
 
 
-@cached_query(expiry=30)  # Cache for 30 seconds
 def get_last_smon_res_time_by_check(smon_id: int, check_id: int) -> int:
 	query = SmonHistory.select().where(
 		(SmonHistory.smon_id == smon_id) &
@@ -624,7 +618,6 @@ def get_last_smon_res_time_by_check(smon_id: int, check_id: int) -> int:
 			return ''
 
 
-@cached_query(expiry=60)  # Cache for 1 minute
 def get_smon_history_count_checks(smon_id: int) -> dict:
 	"""
 	Get counts of total checks and successful checks for a given smon_id.
@@ -665,7 +658,6 @@ def get_smon_history_count_checks(smon_id: int) -> dict:
 	return count_checks_dict
 
 
-@cached_query(expiry=300)  # Cache for 5 minutes
 def get_smon_service_name_by_id(smon_id: int) -> str:
 	"""
 	Get the service name for a given smon_id.
@@ -683,7 +675,6 @@ def get_smon_service_name_by_id(smon_id: int) -> str:
 		return ''
 
 
-@cached_query(expiry=30)  # Cache for 30 seconds
 def select_smon_history(smon_id: int, limit: int = 40) -> SmonHistory:
 	"""
 	Get the history records for a given smon_id with pagination.
@@ -715,7 +706,6 @@ def select_smon_history(smon_id: int, limit: int = 40) -> SmonHistory:
 		out_error(e)
 
 
-@cached_query(expiry=30)  # Cache for 30 seconds
 def get_history(smon_id: int) -> SmonHistory:
 	try:
 		return SmonHistory.select().where(SmonHistory.smon_id == smon_id).order_by(SmonHistory.date.desc()).get()
@@ -921,7 +911,6 @@ def delete_smon_group(check_group_id: int, group_id: int) -> None:
 		out_error(e)
 
 
-@cached_query(expiry=300)  # Cache for 5 minutes
 def select_smon_groups(group_id: int) -> object:
 	try:
 		return SmonGroup.select().where(SmonGroup.group_id == group_id)

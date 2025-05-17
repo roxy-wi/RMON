@@ -63,6 +63,7 @@ def login_page():
             return roxywi_auth.do_login(user_params, next_url)
         except Exception as e:
             return roxywi_common.handle_json_exceptions(e, 'Cannot do login'), 401
+    return None
 
 
 @app.route('/logout', methods=['GET', 'POST'])

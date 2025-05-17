@@ -8,7 +8,7 @@ appropriate HTTP responses.
 
 from typing import Any, Dict, Tuple
 
-from flask import jsonify, request, render_template, g, redirect, url_for
+from flask import jsonify, request, render_template, g, redirect, url_for, has_request_context
 from werkzeug.exceptions import HTTPException
 from flask_pydantic.exceptions import ValidationError
 
@@ -23,6 +23,7 @@ from app.modules.roxywi.exception import (
     RoxywiCheckLimits
 )
 from app.middleware import get_user_params
+from app.modules.roxywi.logger import log_level
 
 # Map exception types to HTTP status codes
 ERROR_CODE_MAPPING = {
@@ -65,7 +66,24 @@ def handle_exception(exception: Exception, additional_info: str = "", keep_histo
         A tuple containing the error response and HTTP status code
     """
     # Log the error
-    # logger(str(exception), 'error', additional_info, keep_history=keep_history)
+    extra = {}
+
+    if has_request_context():
+        extra['request'] = {
+            'method': request.method,
+            'path': request.path,
+            'ip': request.remote_addr,
+        }
+
+        # Add user info if available
+        if hasattr(g, 'user_params'):
+            extra['user'] = {
+                'id': g.user_params.get('user_id'),
+                'username': g.user_params.get('user'),
+                'group_id': g.user_params.get('group_id'),
+            }
+
+    log_level['error'](str(exception), extra=extra)
 
     # Determine the exception type and get the appropriate status code and message
     for exception_type, status_code in ERROR_CODE_MAPPING.items():
@@ -96,9 +114,6 @@ def register_error_handlers(app):
         if isinstance(e, HTTPException):
             # Pass through HTTP exceptions
             return e
-
-        # Log the error
-        # logger(e, 'error')
 
         # Return a JSON response
         error_response, status_code = handle_exception(e)

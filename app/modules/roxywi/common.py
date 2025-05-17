@@ -1,15 +1,12 @@
 import os
 import glob
-import logging
 from typing import Any
 import socket
 
-from flask import request, g
+from flask import request, g, has_request_context
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import verify_jwt_in_request
-from pythonjsonlogger.json import JsonFormatter
 
-import app.modules.db.sql as sql
 import app.modules.db.roxy as roxy_sql
 import app.modules.db.user as user_sql
 import app.modules.db.group as group_sql
@@ -19,6 +16,7 @@ import app.modules.roxy_wi_tools as roxy_wi_tools
 from app.modules.roxywi.exception import RoxywiGroupMismatch
 from app.modules.roxywi.class_models import ErrorResponse
 from app.modules.roxywi.error_handler import handle_exception
+from app.modules.roxywi.logger import log_level
 
 get_config_var = roxy_wi_tools.GetConfigVar()
 
@@ -105,61 +103,28 @@ def get_files(folder, file_format, server_ip=None) -> list:
 		return file
 
 
-def set_logger():
-	try:
-		logs_in_json = sql.get_setting('json_format')
-	except Exception:
-		logs_in_json = 1
-	log_path = get_config_var.get_config_var('main', 'log_path')
-	log_file = f"{log_path}/rmon.log"
-
-	if logs_in_json:
-		log_handler = logging.FileHandler(log_file)
-		hostname = socket.gethostname()
-		formatter = JsonFormatter(
-			"%(asctime)s %(levelname)s %(message)s",
-			rename_fields={"asctime": "timestamp", "levelname": "level"},
-			defaults={"service_name": "rmon", "hostname": hostname}
-		)
-		log_handler.setFormatter(formatter)
-
-		logger_s = logging.getLogger('rmon')
-		logger_s.addHandler(log_handler)
-		logger_s.setLevel(logging.INFO)
-
-		if not os.path.exists(log_path):
-			os.makedirs(log_path)
-
-		return logger_s
-	else:
-		logging.basicConfig(filename=log_file, format='%(asctime)s %(levelname)s: %(message)s', level=logging.INFO)
-		return logging
-
-
-logger_setup = set_logger()
-log_level = {
-		'info': logger_setup.info,
-		'warning': logger_setup.warning,
-		'error': logger_setup.error,
-	}
-
-
 def logger(action: str, level: str = 'info', additional_extra: dict = None, **kwargs) -> None:
 	claims = get_jwt_token_claims()
 	user_id = claims['user_id']
 	login = user_sql.get_user_id(user_id=user_id).username
 	hostname = socket.gethostname()
+	ip = ""
+	extra = {}
 
 	try:
 		user_group = get_user_group()
 	except Exception:
 		user_group = ''
 
-	try:
+	if has_request_context():
+		extra['request'] = {
+			'method': request.method,
+			'path': request.path,
+			'ip': request.remote_addr,
+		}
 		ip = request.remote_addr
-	except Exception:
-		ip = ''
-	extra = {'ip': ip, 'user': login, 'group': user_group}
+
+	extra.update({'ip': ip, 'user': login, 'group': user_group})
 
 	if additional_extra:
 		extra.update(additional_extra)
