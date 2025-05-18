@@ -96,6 +96,7 @@ def smon_dashboard(smon_id, check_id):
     for s in smon:
         if s.smon_id.ssl_expire_date is not None:
             cert_day_diff = smon_mod.get_ssl_expire_date(s.smon_id.ssl_expire_date)
+        smon_name = s.smon_id.name
 
     kwargs = {
         'lang': g.user_params['lang'],
@@ -104,7 +105,7 @@ def smon_dashboard(smon_id, check_id):
         'user_subscription': roxywi_common.return_user_subscription(),
         'uptime': smon_mod.check_uptime(smon_id),
         'avg_res_time': avg_res_time,
-        'smon_name': smon_sql.get_smon_service_name_by_id(smon_id),
+        'smon_name': smon_name,
         'cert_day_diff': cert_day_diff,
         'check_type_id': check_id,
         'dashboard_id': smon_id,

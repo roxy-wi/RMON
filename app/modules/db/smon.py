@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Union
 
-from peewee import fn, IntegrityError
+from peewee import fn, IntegrityError, Case
 
 from app.modules.db.db_model import (
 	SmonAgent, Server, SMON, SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonHistory, SmonStatusPageCheck,
@@ -235,7 +235,7 @@ def select_one_smon(smon_id: int, check_type_id: int) -> tuple:
 	except correct_model.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:
-		out_error(e)
+		raise out_error(e)
 
 
 def select_check_with_group(check_id: int, group_id: int) -> SMON:
@@ -244,7 +244,7 @@ def select_check_with_group(check_id: int, group_id: int) -> SMON:
 	except SMON.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:
-		out_error(e)
+		raise out_error(e)
 
 
 def insert_smon(**kwargs):
@@ -632,13 +632,8 @@ def get_smon_history_count_checks(smon_id: int) -> dict:
 			# SQL databases support SUM with CASE
 			query = SmonHistory.select(
 				fn.Count(SmonHistory.smon_id).alias('total'),
-				fn.SUM(SmonHistory.status == 1).alias('up')
+				fn.SUM(Case(None, [(SmonHistory.status == 1, 1)], 0)).alias('up')
 			).where(SmonHistory.smon_id == smon_id)
-
-			result = query.scalar(as_tuple=True)
-			if result:
-				count_checks_dict['total'] = result[0] or 0
-				count_checks_dict['up'] = result[1] or 0
 		else:
 			# SQLite fallback - still more efficient than two separate queries
 			query = SmonHistory.select(
@@ -646,31 +641,14 @@ def get_smon_history_count_checks(smon_id: int) -> dict:
 				fn.Count(SmonHistory.smon_id).filter(SmonHistory.status == 1).alias('up')
 			).where(SmonHistory.smon_id == smon_id)
 
-			result = query.scalar(as_tuple=True)
-			if result:
-				count_checks_dict['total'] = result[0] or 0
-				count_checks_dict['up'] = result[1] or 0
+		result = query.scalar(as_tuple=True)
+		if result:
+			count_checks_dict['total'] = result[0] or 0
+			count_checks_dict['up'] = result[1] or 0
 	except Exception as e:
-		out_error(e)
+		raise out_error(e)
 
 	return count_checks_dict
-
-
-def get_smon_service_name_by_id(smon_id: int) -> str:
-	"""
-	Get the service name for a given smon_id.
-	Optimized to use a direct query without unnecessary JOIN.
-
-	:param smon_id: The ID of the SMON check
-	:return: The name of the service or empty string if not found
-	"""
-	try:
-		# More efficient direct query without JOIN
-		smon = SMON.select(SMON.name).where(SMON.id == smon_id).scalar()
-		return smon if smon else ''
-	except Exception as e:
-		out_error(e)
-		return ''
 
 
 def select_smon_history(smon_id: int, limit: int = 40) -> SmonHistory:
@@ -724,7 +702,7 @@ def update_check_agent(smon_id: int, agent_id: int) -> None:
 	try:
 		return SMON.update(agent_id=agent_id).where(SMON.id == smon_id).execute()
 	except Exception as e:
-		out_error(e)
+		raise out_error(e)
 
 
 def get_avg_resp_time(smon_id: int, check_id: int) -> int:
