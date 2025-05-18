@@ -611,11 +611,9 @@ def get_last_smon_res_time_by_check(smon_id: int, check_id: int) -> int:
 	except Exception as e:
 		out_error(e)
 	else:
-		try:
-			for i in query_res:
-				return i.response_time
-		except Exception:
-			return ''
+		for i in query_res:
+			return i.response_time
+	return 0
 
 
 def get_smon_history_count_checks(smon_id: int) -> dict:
