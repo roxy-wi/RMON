@@ -86,7 +86,7 @@ def smon_dashboard(smon_id, check_id):
     smon = smon_sql.select_one_smon(multi_check.id, check_id)
     all_checks = smon_sql.select_multi_check(smon_id, group_id)
     cert_day_diff = 'N/A'
-    avg_res_time = smon_mod.get_average_response_time(smon_id, check_id)
+    avg_res_time = 0
 
     try:
         last_resp_time = round(smon_sql.get_last_smon_res_time_by_check(smon_id, check_id), 2)

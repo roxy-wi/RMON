@@ -293,17 +293,37 @@ class CheckView(MethodView):
 
     @staticmethod
     def _get_agent_id(region_id: int) -> int:
+        """
+        Determines and retrieves an agent ID based on the specified region and sorting type.
+
+        The method first tries to retrieve an agent ID using the 'least_check' sorting type
+        if it matches the criteria. If this retrieval fails or if the sorting type is
+        unspecified, it falls back to retrieving a random agent ID. If no agents are found
+        for the given region, a specific exception `RoxywiResourceNotFound` is raised.
+
+        Raises:
+            RoxywiResourceNotFound: If no agents are available in the specified region.
+            Exception: If an unexpected error occurs during the retrieval process.
+
+        Args:
+            region_id (int): The identifier for the region where the agent search is performed.
+
+        Returns:
+            int: The ID of the selected agent.
+        """
         sort_type = 'least_check'
         try:
             if sort_type == 'least_check':
-                agent_id = smon_sql.get_less_check_agent(region_id)
+                try:
+                    agent_id = smon_sql.get_less_check_agent(region_id)
+                except RoxywiResourceNotFound:
+                    agent_id = smon_sql.get_randon_agent(region_id)
             else:
                 agent_id = smon_sql.get_randon_agent(region_id)
         except RoxywiResourceNotFound:
             raise RoxywiResourceNotFound(f'There are no agents in the region_id: {region_id}')
         except Exception as e:
             raise Exception(f'Cannot get agent from region: {e}')
-
         return agent_id
 
 

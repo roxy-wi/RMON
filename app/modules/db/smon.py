@@ -117,10 +117,8 @@ def get_agent_ip_by_id(agent_id: int):
 	try:
 		query = SmonAgent.select(SmonAgent, Server).join(Server).where(SmonAgent.id == agent_id)
 		query_res = query.objects().execute()
-	except SmonAgent.DoesNotExist:
-		raise RoxywiResourceNotFound
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, SmonAgent)
 	else:
 		for r in query_res:
 			return r.ip
@@ -131,30 +129,27 @@ def get_agent_by_uuid(agent_uuid: int) -> SmonAgent:
 	try:
 		return SmonAgent.get(SmonAgent.uuid == agent_uuid)
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, SmonAgent)
 
 
 def get_agent_id_by_ip(agent_ip) -> int:
 	try:
 		return SmonAgent.get(SmonAgent.server_id == Server.get(Server.ip == agent_ip).server_id).id
-	except SmonAgent.DoesNotExist:
-		raise RoxywiResourceNotFound
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, SmonAgent)
 
 
-def get_randon_agent(region_id: int) -> SmonAgent:
+def get_randon_agent(region_id: int) -> int:
 	try:
 		if mysql_enable == '1':
-			agent = SmonAgent.select().where(SmonAgent.region_id == region_id).order_by(fn.Rand())
-			return agent.get()
+			random_func = fn.Rand()  # MySQL uses Rand()
 		else:
-			agent = SmonAgent.select().where(SmonAgent.region_id == region_id).order_by(fn.Random())
-			return agent.get()
-	except SmonAgent.DoesNotExist:
-		raise RoxywiResourceNotFound
+			random_func = fn.Random()
+
+		agent = SmonAgent.select().where(SmonAgent.region_id == region_id).order_by(random_func)
+		return agent.get()
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, SmonAgent)
 
 
 def get_less_check_agent(region_id: int) -> int:
@@ -169,19 +164,15 @@ def get_less_check_agent(region_id: int) -> int:
 			.limit(1)
 		)
 		return result.get()
-	except SmonAgent.DoesNotExist:
-		raise RoxywiResourceNotFound
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, SmonAgent)
 
 
 def select_server_ip_by_agent_id(agent_id: int) -> str:
 	try:
 		return Server.get(Server.server_id == SmonAgent.get(SmonAgent.id == agent_id).server_id).ip
-	except Server.DoesNotExist:
-		raise RoxywiResourceNotFound
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, Server)
 
 
 def select_en_smon(agent_id: int, check_type: str) -> Union[SmonTcpCheck, SmonPingCheck, SmonDnsCheck, SmonHttpCheck, SmonSMTPCheck]:
@@ -189,7 +180,7 @@ def select_en_smon(agent_id: int, check_type: str) -> Union[SmonTcpCheck, SmonPi
 	try:
 		return model.select(model, SMON).join_from(model, SMON).where((SMON.enabled == '1') & (SMON.agent_id == agent_id)).execute()
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, model)
 
 
 def change_status(status: int, smon_id: int, time: str) -> None:
@@ -711,10 +702,9 @@ def get_avg_resp_time(smon_id: int, check_id: int) -> int:
 			(SmonHistory.smon_id == smon_id) &
 			(SmonHistory.check_id == check_id)
 		).scalar()
+		return query_res if query_res is not None else 0
 	except Exception as e:
-		out_error(e)
-	else:
-		return query_res
+		raise out_error(e)
 
 
 def update_smon_ssl_expire_date(smon_id: str, expire_date: str) -> None:

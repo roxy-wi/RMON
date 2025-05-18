@@ -2,10 +2,13 @@ import os
 import sys
 import traceback
 
-from app.modules.roxywi.exception import RoxywiConflictError
+from app.modules.roxywi.exception import RoxywiConflictError, RoxywiResourceNotFound
 
 
-def out_error(error):
+def out_error(error: Exception, model=None):
+	if model:
+		if isinstance(error, model.DoesNotExist):
+			raise RoxywiResourceNotFound
 	exc_type, exc_obj, exc_tb = sys.exc_info()
 	file_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
 	stk = traceback.extract_tb(exc_tb, 1)
