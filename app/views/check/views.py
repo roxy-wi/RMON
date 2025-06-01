@@ -80,6 +80,7 @@ class CheckView(MethodView):
                 entities.append(m.region_id.id)
             elif m.agent_id:
                 entities.append(m.agent_id.id)
+            entities = list(set(entities))
             checks = smon_sql.select_one_smon(check_id, check_type_id=check_type_id)
             for check in checks:
                 check_dict = model_to_dict(check, max_depth=query.max_depth)

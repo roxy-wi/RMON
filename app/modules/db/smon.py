@@ -323,13 +323,10 @@ def insert_smon_http(smon_id, url, body, method, interval, body_req, header_req,
 
 
 def select_smon_by_id(last_id):
-	query = SMON.select().where(SMON.id == last_id)
 	try:
-		query_res = query.execute()
+		return SMON.select().where(SMON.id == last_id).execute()
 	except Exception as e:
-		out_error(e)
-	else:
-		return query_res
+		raise out_error(e, SMON)
 
 
 def delete_multi_check(check_id: int, group_id: int) -> None:
@@ -338,10 +335,8 @@ def delete_multi_check(check_id: int, group_id: int) -> None:
 			(MultiCheck.id == check_id) &
 			(MultiCheck.group_id == group_id)
 		).execute()
-	except MultiCheck.DoesNotExist:
-		raise RoxywiResourceNotFound
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, MultiCheck)
 
 
 def select_multi_check(multi_check_id: int, group_id: int) -> SMON:
@@ -352,10 +347,15 @@ def select_multi_check(multi_check_id: int, group_id: int) -> SMON:
 		).order_by(MultiCheck.check_group_id).execute()
 	except SMON.DoesNotExist:
 		raise RoxywiResourceNotFound
-	except MultiCheck.DoesNotExist:
-		raise RoxywiResourceNotFound
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, MultiCheck)
+
+
+def select_one_smon_by_multi_check(multi_check_id: int) -> SMON:
+	try:
+		return SMON.select().join(MultiCheck).where(SMON.multi_check_id == multi_check_id).order_by(MultiCheck.check_group_id).limit(1).execute()
+	except Exception as e:
+		raise out_error(e, SMON)
 
 
 def select_multi_checks(group_id: int) -> SMON:
@@ -365,7 +365,7 @@ def select_multi_checks(group_id: int) -> SMON:
 		else:
 			return SMON.select().join(MultiCheck).where(SMON.group_id == group_id).order_by(MultiCheck.check_group_id).group_by(SMON.multi_check_id)
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, SMON)
 
 
 def select_multi_checks_with_type(check_type: int, group_id: int) -> SMON:
@@ -380,7 +380,7 @@ def select_multi_checks_with_type(check_type: int, group_id: int) -> SMON:
 			(SMON.check_type == check_type)
 		).order_by(MultiCheck.check_group_id).group_by(SMON.multi_check_id)
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, SMON)
 
 
 def select_multi_check_with_filters(group_id: int, query: CheckFiltersQuery) -> SMON:
@@ -425,10 +425,8 @@ def select_multi_check_with_filters(group_id: int, query: CheckFiltersQuery) -> 
 			else:
 				query = SMON.select().join(MultiCheck).where(where_query).order_by(SMON.multi_check_id).group_by(SMON.multi_check_id).paginate(query.offset, query.limit)
 		return query
-	except SMON.DoesNotExist:
-		raise RoxywiResourceNotFound
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, SMON)
 
 
 def get_count_multi_with_status_checks(group_id: int, status: int) -> int:
@@ -437,10 +435,8 @@ def get_count_multi_with_status_checks(group_id: int, status: int) -> int:
 			return SMON.select().join(MultiCheck).where((SMON.group_id == group_id) & (SMON.status == status)).distinct(SMON.multi_check_id).count()
 		else:
 			return SMON.select().join(MultiCheck).where((SMON.group_id == group_id) & (SMON.status == status)).order_by(MultiCheck.check_group_id).group_by(SMON.multi_check_id).count()
-	except SMON.DoesNotExist:
-		raise RoxywiResourceNotFound
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, SMON)
 
 
 def get_count_multi_checks(group_id: int) -> int:
@@ -449,10 +445,8 @@ def get_count_multi_checks(group_id: int) -> int:
 			return SMON.select().join(MultiCheck).where(SMON.group_id == group_id).distinct(SMON.multi_check_id).count()
 		else:
 			return SMON.select().join(MultiCheck).where(SMON.group_id == group_id).order_by(MultiCheck.check_group_id).group_by(SMON.multi_check_id).count()
-	except SMON.DoesNotExist:
-		raise RoxywiResourceNotFound
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, SMON)
 
 
 def select_one_multi_check_join(multi_check_id: int, check_type_id: int) -> SMON:
@@ -466,10 +460,8 @@ def select_one_multi_check_join(multi_check_id: int, check_type_id: int) -> SMON
 			return correct_model.select(correct_model, SMON).join_from(correct_model, SMON).where(
 				SMON.multi_check_id == multi_check_id
 			).group_by(SMON.multi_check_id)
-	except correct_model.DoesNotExist:
-		raise RoxywiResourceNotFound
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, correct_model)
 
 
 def get_multi_check(check_id: int, group_id: int) -> SMON:
@@ -478,28 +470,22 @@ def get_multi_check(check_id: int, group_id: int) -> SMON:
 			(SMON.group_id == group_id) &
 			(SMON.multi_check_id == check_id)
 		)
-	except SMON.DoesNotExist:
-		raise RoxywiResourceNotFound
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, SMON)
 
 
 def get_one_multi_check(check_id: int) -> MultiCheck:
 	try:
 		return MultiCheck.get(MultiCheck.id == check_id)
-	except MultiCheck.DoesNotExist:
-		raise RoxywiResourceNotFound
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, MultiCheck)
 
 
 def update_multi_check_group(check_id: int, **kwargs) -> None:
 	try:
 		MultiCheck.update(**kwargs).where(MultiCheck.id == check_id).execute()
-	except MultiCheck.DoesNotExist:
-		raise RoxywiResourceNotFound
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, MultiCheck)
 
 
 def add_status_page(name: str, slug: str, desc: str, group_id: int, checks: list, styles: str) -> int:
@@ -507,9 +493,9 @@ def add_status_page(name: str, slug: str, desc: str, group_id: int, checks: list
 		last_id = SmonStatusPage.insert(name=name, slug=slug, group_id=group_id, description=desc, custom_style=styles).execute()
 	except Exception as e:
 		if 'Duplicate entry' in str(e):
-			raise Exception('error: The Slug is already taken, please enter another one')
+			raise Exception('error: The Slug is already taken, please, use another one')
 		else:
-			out_error(e)
+			raise out_error(e)
 	else:
 		add_status_page_checks(last_id, checks)
 		return last_id
@@ -525,7 +511,7 @@ def edit_status_page(page_id: int, name: str, slug: str, desc: str, styles: str)
 def add_status_page_checks(page_id: int, checks: list) -> None:
 	for check in checks:
 		try:
-			SmonStatusPageCheck.insert(page_id=page_id, check_id=int(check)).execute()
+			SmonStatusPageCheck.insert(page_id=page_id, multi_check_id=int(check)).execute()
 		except Exception as e:
 			out_error(e)
 
@@ -547,49 +533,48 @@ def select_status_pages(group_id: int):
 def select_status_page_with_group(page_id: int, group_id: int) -> SmonStatusPage:
 	try:
 		return SmonStatusPage.get((SmonStatusPage.group_id == group_id) & (SmonStatusPage.id == page_id))
-	except SmonStatusPage.DoesNotExist:
-		raise RoxywiResourceNotFound
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, SmonStatusPage)
 
 
 def get_status_page(slug: str) -> SmonStatusPage:
 	try:
 		return SmonStatusPage.get(SmonStatusPage.slug == slug)
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, SmonStatusPage)
 
 
 def select_status_page_checks(page_id: int):
 	try:
-		query_res = SmonStatusPageCheck.select().where(SmonStatusPageCheck.page_id == page_id).execute()
+		return SmonStatusPageCheck.select().where(SmonStatusPageCheck.page_id == page_id).execute()
 	except Exception as e:
-		out_error(e)
-	else:
-		return query_res
+		raise out_error(e, SmonStatusPage)
 
 
 def delete_status_page(page_id):
 	try:
 		SmonStatusPage.delete().where(SmonStatusPage.id == page_id).execute()
 	except Exception as e:
-		out_error(e)
+		out_error(e, SmonStatusPage)
 
 
-def get_last_smon_status_by_check(smon_id: int) -> object:
-	query = SmonHistory.select().where(
-		SmonHistory.smon_id == smon_id
-	).limit(1).order_by(SmonHistory.date.desc())
+def get_last_smon_status_by_multi_check(multi_check_id: int) -> object:
 	try:
-		query_res = query.execute()
+		smon_ids = SMON.select(SMON.id).where(SMON.multi_check_id == multi_check_id)
+
+		query = (
+			SmonHistory
+			.select()
+			.where(SmonHistory.smon_id.in_(smon_ids))
+			.order_by(SmonHistory.date.desc())
+			.limit(1)
+		)
+
+		for record in query:
+			return record.status
+		return ''
 	except Exception as e:
-		out_error(e)
-	else:
-		try:
-			for i in query_res:
-				return i.status
-		except Exception:
-			return ''
+		raise out_error(e, SMON)
 
 
 def get_last_smon_res_time_by_check(smon_id: int, check_id: int) -> int:
@@ -919,3 +904,50 @@ def disable_check(multi_check_id: int) -> None:
 		SMON.update(enabled=0).where(SMON.multi_check_id == multi_check_id).execute()
 	except Exception as e:
 		out_error(e)
+
+
+def get_uptime_and_status(multi_check_id: int, group_id: int = None) -> dict:
+	# Найти все SMON с этим multi_check_id
+	if group_id is None:
+		smon_q = SMON.select(SMON.id).where(SMON.multi_check_id == multi_check_id)
+	else:
+		smon_q = SMON.select(SMON.id).where((SMON.multi_check_id == multi_check_id) & (SMON.group_id == group_id))
+
+	# Найти последние 40 записей из SmonHistory по этим SMON
+	history_q = (
+		SmonHistory
+		.select()
+		.where(SmonHistory.smon_id.in_(smon_q))
+		.order_by(SmonHistory.date.desc())
+		.limit(40)
+	)
+
+	history_entries = list(history_q)
+
+	if not history_entries:
+		return {
+			'uptime': 0,
+			'status': 'Down',
+			'history': []
+		}
+
+	# Посчитать средний uptime (status == 1)
+	total = len(history_entries)
+	ok_count = sum(1 for entry in history_entries if entry.status == 1)
+	uptime = ok_count / total
+
+	# Определить общее состояние
+	statuses = set(entry.status for entry in history_entries)
+
+	if statuses == {1}:
+		state = 1
+	elif statuses == {0}:
+		state = 0
+	else:
+		state = 2
+
+	return {
+		'uptime': round(uptime * 100, 2),  # в процентах
+		'status': state,
+		'history': [{'date': h.date, 'status': h.status, 'error': h.mes} for h in history_entries]
+	}

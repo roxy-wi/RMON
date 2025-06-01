@@ -16,7 +16,7 @@ function createStatusPageStep1(edited=false, page_id=0) {
 					toastr.error(data.error);
 				} else {
 					for (let i = 0; i < data.checks.length; i++) {
-						addCheckToStatus(data.checks[i]['check_id']['id']);
+						addCheckToStatus(data.checks[i]['multi_check_id']['id']);
 					}
 					$('#new-status-page-style').val(data.custom_style.replaceAll("'", ""));
 				}

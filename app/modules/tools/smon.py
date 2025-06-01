@@ -299,13 +299,13 @@ def show_status_page(slug: str) -> str:
         desc = ''
         group = ''
         check_type = ''
-        check_id = str(check.check_id.id)
-        smon = smon_sql.select_smon_by_id(check_id)
-        uptime = check_uptime(check_id)
+        multi_check_id = int(check.multi_check_id.id)
+        smon = smon_sql.select_one_smon_by_multi_check(multi_check_id)
         en = ''
-        multi_check_id = ''
         for s in smon:
             name = s.name
+            check_id = s.id
+            uptime = check_uptime(check_id)
             desc = s.description
             check_type = s.check_type
             en = s.enabled
@@ -316,18 +316,17 @@ def show_status_page(slug: str) -> str:
                 group = 'No group'
 
         checks_status[check_id] = {'uptime': uptime, 'name': name, 'description': desc, 'group': group,
-                                   'check_type': check_type, 'en': en, 'multi_check_id': multi_check_id.id}
+                                   'check_type': check_type, 'en': en, 'multi_check_id': multi_check_id}
 
     return render_template('smon/status_page.html', page=page, checks_status=checks_status)
 
 
 def avg_status_page_status(page_id: int) -> str:
-    page_id = int(page_id)
     checks = smon_sql.select_status_page_checks(page_id)
 
     for check in checks:
-        check_id = str(check.check_id)
-        if not smon_sql.get_last_smon_status_by_check(check_id):
+        check_id = int(check.multi_check_id.id)
+        if not smon_sql.get_last_smon_status_by_multi_check(check_id):
             return '0'
 
     return '1'

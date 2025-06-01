@@ -121,54 +121,19 @@ def smon_dashboard(smon_id, check_id):
     return render_template('include/smon/smon_history.html', **kwargs)
 
 
-@bp.route('/status-page', methods=['GET', 'POST', 'DELETE', 'PUT'])
+@bp.route('/status-page', methods=['GET'])
 @jwt_required()
 @get_user_params()
 def status_page():
-    """
-       This function handles the '/status-page' route with methods GET, POST, DELETE, and PUT.
-       It requires the user to be logged in and retrieves user parameters.
+    kwargs = {
+        'lang': g.user_params['lang'],
+        'smon': smon_sql.select_multi_checks(g.user_params['group_id']),
+        'pages': smon_sql.select_status_pages(g.user_params['group_id']),
+        'smon_status': tools_common.is_tool_active('rmon-server'),
+        'user_subscription': roxywi_common.return_user_subscription()
+    }
 
-       :return:
-          - GET method: Renders the 'smon/manage_status_page.html' template with the following keyword arguments:
-              - 'lang': The language from user parameters
-              - 'smon': The list of smon from sql.smon_list() using the 'group_id' from user parameters
-              - 'pages': The status pages from sql.select_status_pages() using the 'group_id' from user parameters
-              - 'smon_status': The status of the 'rmon-server' tool from tools_common.is_tool_active()
-              - 'user_subscription': The user subscription from roxywi_common.return_user_subscription()
-          - POST method: Creates a status page with the following parameters:
-              - 'name': The name of the status page
-              - 'slug': The slug of the status page
-              - 'desc': The description of the status page
-              - 'checks': The checks for the status page
-          - PUT method: Edits a status page with the following parameters:
-              - 'page_id': The ID of the status page
-              - 'name': The updated name of the status page
-              - 'slug': The updated slug of the status page
-              - 'desc': The updated description of the status page
-              - 'checks': The updated checks for the status page
-          - DELETE method: Deletes a status page with the following parameter:
-              - 'page_id': The ID of the status page
-
-       The function returns different values based on the method used:
-          - POST method: Returns the result of smon_mod.create_status_page() for creating the status page or an exception message in case of an error.
-          - PUT method: Returns the result of smon_mod.edit_status_page() for editing the status page or an exception message in case of an error.
-          - DELETE method: Returns 'ok' if the status page is successfully deleted or an exception message in case of an error.
-
-       .. note::
-          - The checks for the status page should not be empty. If no checks are selected, it returns an error message.
-          - Any exceptions raised during the process will be returned as exception messages.
-    """
-    if request.method == 'GET':
-        kwargs = {
-            'lang': g.user_params['lang'],
-            'smon': smon_sql.select_multi_checks(g.user_params['group_id']),
-            'pages': smon_sql.select_status_pages(g.user_params['group_id']),
-            'smon_status': tools_common.is_tool_active('rmon-server'),
-            'user_subscription': roxywi_common.return_user_subscription()
-        }
-
-        return render_template('smon/manage_status_page.html', **kwargs)
+    return render_template('smon/manage_status_page.html', **kwargs)
 
 
 @bp.route('/status/<slug>')
@@ -338,5 +303,3 @@ def smon_history_metric_chart(check_id, check_type_id):
     response.headers["Cache-Control"] = "no-cache"
     response.headers["X-Accel-Buffering"] = "no"
     return response
-
-

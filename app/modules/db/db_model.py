@@ -502,7 +502,7 @@ class SmonStatusPage(BaseModel):
 
 class SmonStatusPageCheck(BaseModel):
     page_id = ForeignKeyField(SmonStatusPage, on_delete='Cascade')
-    check_id = ForeignKeyField(SMON, on_delete='Cascade')
+    multi_check_id = ForeignKeyField(MultiCheck, on_delete='Cascade')
 
     class Meta:
         table_name = 'smon_status_page_checks'

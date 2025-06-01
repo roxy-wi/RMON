@@ -7,8 +7,8 @@ from app.views.check.checks_view import (ChecksViewHttp, ChecksViewDns, ChecksVi
                                          ChecksViewRabbit, AllChecksViewWithFilters)
 from app.views.check.check_metric_view import (ChecksMetricViewHttp, ChecksMetricViewTcp, ChecksMetricViewDNS,
                                                ChecksMetricViewPing, ChecksMetricViewSMTP, ChecksMetricViewRabbitmq,
-                                               CheckStatusesView, CheckStatusView)
-from app.views.check.status_page_views import StatusPageView
+                                               CheckStatusesView, CheckStatusView, CheckHistoryStatuses)
+from app.views.check.status_page_views import StatusPageView, StatusPages, StatusPageSlug
 from app.views.check.histrory_views import ChecksHistoryView, CheckHistoryView
 from app.views.check.group_views import CheckGroupView, CheckGroupsView
 
@@ -35,6 +35,7 @@ bp.add_url_rule('/check/dns/<int:check_id>/metrics', view_func=ChecksMetricViewD
 bp.add_url_rule('/check/ping/<int:check_id>/metrics', view_func=ChecksMetricViewPing.as_view('ping_metric'))
 bp.add_url_rule('/check/smtp/<int:check_id>/metrics', view_func=ChecksMetricViewSMTP.as_view('smtp_metric'))
 bp.add_url_rule('/check/rabbitmq/<int:check_id>/metrics', view_func=ChecksMetricViewRabbitmq.as_view('rabbitmq_metric'))
+bp.add_url_rule('/check/history/<int:check_id>', view_func=CheckHistoryStatuses.as_view('check_history_statuses'))
 bp.add_url_rule('/check/<int:check_id>/statuses', view_func=CheckStatusesView.as_view('check_statuses'))
 bp.add_url_rule('/check/<int:check_id>/status', view_func=CheckStatusView.as_view('check_status'))
 bp.add_url_rule('/check-groups', view_func=CheckGroupsView.as_view('check_groups'))
@@ -42,6 +43,8 @@ bp.add_url_rule('/history', view_func=ChecksHistoryView.as_view('checks_history'
 bp.add_url_rule('/history/<int:check_id>', view_func=CheckHistoryView.as_view('check_history'))
 bp.add_url_rule('/agent/<int:agent_id>/reconfigure', view_func=ReconfigureAgentView.as_view('reconfigure_agent'))
 bp.add_url_rule('/task-status/<int:task_id>', view_func=AgentTaskStatusView.as_view('task_status'))
+bp.add_url_rule('/status-pages', view_func=StatusPages.as_view('status_pages'))
+bp.add_url_rule('/status-page/slug/<slug>', view_func=StatusPageSlug.as_view('status_page_slug'))
 
 register_api(AgentView, 'agent', '/agent', 'agent_id')
 register_api(RegionView, 'region', '/region', 'region_id')

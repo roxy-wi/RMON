@@ -9,8 +9,9 @@ import app.modules.tools.smon as smon_mod
 import app.modules.roxywi.common as roxywi_common
 from app.middleware import get_user_params, check_group
 from app.modules.common.common_classes import SupportClass
-from app.modules.db.db_model import SmonStatusPageCheck
-from app.modules.roxywi.class_models import GroupQuery, BaseResponse, StatusPageRequest, ErrorResponse, IdResponse
+from app.modules.db.db_model import SmonStatusPageCheck, SmonStatusPage
+from app.modules.roxywi.class_models import GroupQuery, BaseResponse, StatusPageRequest, ErrorResponse, IdResponse, \
+    EscapedString
 
 
 class StatusPageView(MethodView):
@@ -89,6 +90,7 @@ class StatusPageView(MethodView):
         try:
             page = smon_sql.select_status_page_with_group(page_id, group_id)
             page = model_to_dict(page)
+            page['description'] = page['description'].replace("'", "")
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get Status page')
 
@@ -138,7 +140,7 @@ class StatusPageView(MethodView):
               checks:
                 type: array
                 items:
-                  type: object
+                  type: integer
                 example: []
                 description: List of checks associated with the status page.
               group_id:
@@ -204,7 +206,7 @@ class StatusPageView(MethodView):
               checks:
                 type: array
                 items:
-                  type: object
+                  type: integer
                 example: []
                 description: List of checks associated with the status page.
               group_id:
@@ -275,3 +277,137 @@ class StatusPageView(MethodView):
             return BaseResponse().model_dump(mode='json'), 204
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot delete Status page')
+
+
+class StatusPages(MethodView):
+    methods = ['GET', 'POST', 'PUT', 'DELETE']
+    decorators = [jwt_required(), get_user_params(), check_group()]
+
+    @validate(query=GroupQuery)
+    def get(self, query: GroupQuery):
+        """
+        Get Status Pages
+        ---
+        tags:
+          - Status Pages
+        summary: Retrieve the status pages details.
+        description: Fetches list of status pages for a user group. The `group_id` query parameter can be used only by users with the superAdmin role.
+        parameters:
+        - name: group_id
+          in: query
+          description: The group ID for the superAdmin role.
+          required: false
+          type: integer
+        responses:
+          200:
+            description: Successful response
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  description:
+                    type: string
+                    example: "Some checks for the status page"
+                  group_id:
+                    type: integer
+                    example: 1
+                  id:
+                    type: integer
+                    example: 1
+                  name:
+                    type: string
+                    example: "Status-page"
+                  slug:
+                    type: string
+                    example: "status-page"
+        """
+        pages_list = []
+        try:
+            group_id = SupportClass.return_group_id(query)
+        except Exception as e:
+            return roxywi_common.handle_json_exceptions(e, 'Cannot get Status page group')
+
+        try:
+            pages = smon_sql.select_status_pages(group_id)
+        except Exception as e:
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get Status page')
+
+        for page in pages:
+            page = model_to_dict(page, exclude={SmonStatusPage.custom_style})
+            page['description'] = page['description'].replace("'", "")
+            pages_list.append(page)
+
+        return jsonify(pages_list)
+
+
+class StatusPageSlug(MethodView):
+    methods = ['GET']
+
+    def get(self, slug: EscapedString):
+        """
+        Get Status Page by slug
+        ---
+        tags:
+          - Status Page
+        summary: Retrieve the status page details.
+        description: Fetches the details of a specific status page by `slug`.
+        parameters:
+        - name: slug
+          in: path
+          description: The ID of the status page to retrieve.
+          required: true
+          type: string
+        responses:
+          200:
+            description: Successful response
+            schema:
+              type: object
+              properties:
+                checks:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      check_id:
+                        type: integer
+                custom_style:
+                  type: string
+                  example: ""
+                description:
+                  type: string
+                  example: "Some checks for the status page"
+                group_id:
+                  type: integer
+                  example: 1
+                id:
+                  type: integer
+                  example: 1
+                name:
+                  type: string
+                  example: "Status-page"
+                slug:
+                  type: string
+                  example: "status-page"
+        """
+        try:
+            page = smon_sql.get_status_page(slug)
+            page = model_to_dict(page)
+            page['description'] = page['description'].replace("'", "")
+            page_id = page['id']
+        except Exception as e:
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get Status page')
+
+        try:
+            checks = smon_sql.select_status_page_checks(page_id)
+            page['checks'] = []
+            for check in checks:
+                check_data = smon_sql.select_one_smon_by_multi_check(check.multi_check_id)
+                for c_d in check_data:
+                    page['checks'].append(model_to_dict(c_d, recurse=False))
+            for check in page['checks']:
+                check.update(smon_sql.get_uptime_and_status(check['multi_check_id']))
+        except Exception as e:
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get Status page checks')
+
+        return jsonify(page)

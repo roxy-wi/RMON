@@ -10,7 +10,7 @@ import app.modules.common.common as common
 import app.modules.roxywi.common as roxywi_common
 from app.modules.common.common_classes import SupportClass
 from app.middleware import get_user_params, check_group
-from app.modules.roxywi.class_models import CheckMetricsQuery
+from app.modules.roxywi.class_models import CheckMetricsQuery, GroupQuery
 
 
 class ChecksMetricView(MethodView):
@@ -528,3 +528,65 @@ class CheckStatusView(MethodView):
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get statuses')
 
         return jsonify({'status': status.status})
+
+
+class CheckHistoryStatuses(MethodView):
+    methods = ['GET']
+    decorators = [jwt_required(), get_user_params(), check_group()]
+
+    @validate(query=GroupQuery)
+    def get(self, check_id: int, query: GroupQuery):
+        """
+        Get Check history Statuses.
+        ---
+        tags:
+        - 'Check Statuses'
+        parameters:
+        - in: 'path'
+          name: 'check_id'
+          description: 'ID of the check to retrieve history for'
+          required: true
+          type: 'integer'
+        - name: group_id
+          in: query
+          description: This parameter is used only for the superAdmin role.
+          required: false
+          type: integer
+        responses:
+          '200':
+            description: 'Successful Operation'
+            schema:
+              type: object
+              properties:
+                history:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      date:
+                        type: string
+                        format: date-time
+                        example: "Tue, 29 Oct 2024 19:47:20 GMT"
+                      status:
+                        type: integer
+                        example: 1
+                      error:
+                        type: string
+                status:
+                  type: integer
+                  description: Summary of the check status.
+                  example: 1
+                uptime:
+                  type: integer
+                  description: Uptime of the check in percent.
+        """
+        try:
+            group_id = SupportClass.return_group_id(query)
+        except Exception as e:
+            return roxywi_common.handle_json_exceptions(e, 'Cannot get the group')
+        try:
+            results = smon_sql.get_uptime_and_status(check_id, group_id)
+        except Exception as e:
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get the status page check history')
+
+        return jsonify(results)

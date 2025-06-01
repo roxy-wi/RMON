@@ -299,7 +299,7 @@ class StatusPageRequest(BaseModel):
     slug: EscapedString
     description: Optional[EscapedString] = None
     custom_style: Optional[EscapedString] = None
-    checks: list
+    checks: list[int]
     group_id: Optional[int] = None
 
 

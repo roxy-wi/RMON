@@ -518,8 +518,7 @@ class AgentTaskStatusView(MethodView):
             in: path
             description: The ID of the task to retrieve
             required: true
-            schema:
-              type: integer
+            type: integer
         responses:
           200:
             description: Task details retrieved successfully
@@ -537,7 +536,6 @@ class AgentTaskStatusView(MethodView):
                   description: Name of the service related to the task
                 error:
                   type: string
-                  nullable: true
                   description: Error message, if any
                 server:
                   type: string
