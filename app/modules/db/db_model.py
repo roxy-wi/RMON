@@ -549,7 +549,6 @@ class AlertEvent(BaseModel):
     class Meta:
         table_name = 'alert_event'
         indexes = (
-            (('multi_check_id',), False),
             (('created_at',), False),
         )
 
