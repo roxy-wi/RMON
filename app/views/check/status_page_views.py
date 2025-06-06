@@ -389,6 +389,8 @@ class StatusPageSlug(MethodView):
                 slug:
                   type: string
                   example: "status-page"
+                check_group:
+                  type: string
         """
         try:
             page = smon_sql.get_status_page(slug)
@@ -401,12 +403,18 @@ class StatusPageSlug(MethodView):
         try:
             checks = smon_sql.select_status_page_checks(page_id)
             page['checks'] = []
+            group_name = ''
             for check in checks:
+                group_name = ''
                 check_data = smon_sql.select_one_smon_by_multi_check(check.multi_check_id)
                 for c_d in check_data:
+                    if c_d.multi_check_id.check_group_id:
+                        group_name = smon_sql.get_smon_group_by_id(c_d.multi_check_id.check_group_id).name
+                        group_name = group_name.replace("'", "")
                     page['checks'].append(model_to_dict(c_d, recurse=False))
             for check in page['checks']:
                 check.update(smon_sql.get_uptime_and_status(check['multi_check_id']))
+                check.update({'check_group': group_name})
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get Status page checks')
 

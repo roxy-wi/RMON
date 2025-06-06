@@ -927,7 +927,7 @@ def get_uptime_and_status(multi_check_id: int, group_id: int = None) -> dict:
 	if not history_entries:
 		return {
 			'uptime': 0,
-			'status': 'Down',
+			'status': 0,
 			'history': []
 		}
 

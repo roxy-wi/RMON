@@ -538,6 +538,34 @@ class InstallationTasks(BaseModel):
         table_name = 'installation_tasks'
 
 
+class AlertEvent(BaseModel):
+    multi_check_id = ForeignKeyField(MultiCheck, on_delete='CASCADE', backref='events', index=True)
+    level = TextField()
+    message = TextField()
+    entity_name = TextField(null=True)
+    kwargs = JSONField(null=True)
+    created_at = DateTimeField(default=datetime.now)
+
+    class Meta:
+        table_name = 'alert_event'
+        indexes = (
+            (('multi_check_id',), False),
+            (('created_at',), False),
+        )
+
+
+class AlertState(BaseModel):
+    multi_check_id = ForeignKeyField(MultiCheck, on_delete='CASCADE', backref='state', unique=True, index=True)
+    active = BooleanField(default=False)
+    updated_at = DateTimeField(default=datetime.now)
+
+    class Meta:
+        table_name = 'alert_state'
+        indexes = (
+            (('updated_at',), False),
+        )
+
+
 def create_tables():
     conn = connect()
     with conn:
@@ -545,5 +573,5 @@ def create_tables():
             [Groups, User, Server, Role, Telegram, Slack, UserGroups, Setting, Cred, Version, ActionHistory, Region,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
              SmonStatusPage, SmonStatusPageCheck, SMON, SmonGroup, MM, RMONAlertsHistory, SmonSMTPCheck, SmonRabbitCheck,
-             Country, MultiCheck, Email, InstallationTasks, Migration]
+             Country, MultiCheck, Email, InstallationTasks, Migration, AlertEvent, AlertState]
         )

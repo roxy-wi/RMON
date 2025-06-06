@@ -4,6 +4,7 @@
     - python3-pip
     - python3-pycurl
     state: present
+    update_cache: true
 
 - name: Upgrade pip3 for new Debian
   pip:
