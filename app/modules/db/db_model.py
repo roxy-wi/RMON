@@ -469,6 +469,7 @@ class SmonPingCheck(BaseModel):
     ip = CharField()
     packet_size = IntegerField(constraints=[SQL('DEFAULT 56')])
     interval = IntegerField(constraints=[SQL('DEFAULT 120')])
+    count_packets = IntegerField(default=4)
 
     class Meta:
         table_name = 'smon_ping_check'
@@ -565,6 +566,15 @@ class AlertState(BaseModel):
         )
 
 
+class AggregatorLock(BaseModel):
+    lock_name = CharField(primary_key=True)
+    owner = CharField()
+    expires_at = DateTimeField()
+
+    class Meta:
+        table_name = 'aggregator_lock'
+
+
 def create_tables():
     conn = connect()
     with conn:
@@ -572,5 +582,5 @@ def create_tables():
             [Groups, User, Server, Role, Telegram, Slack, UserGroups, Setting, Cred, Version, ActionHistory, Region,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
              SmonStatusPage, SmonStatusPageCheck, SMON, SmonGroup, MM, RMONAlertsHistory, SmonSMTPCheck, SmonRabbitCheck,
-             Country, MultiCheck, Email, InstallationTasks, Migration, AlertEvent, AlertState]
+             Country, MultiCheck, Email, InstallationTasks, Migration, AlertEvent, AlertState, AggregatorLock]
         )

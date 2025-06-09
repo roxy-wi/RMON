@@ -1713,6 +1713,10 @@ class CheckPingView(CheckView):
                 expiration:
                   type: 'string'
                   description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+                count_packets:
+                  type: 'integer'
+                  description: 'Number of packets to send'
+                  default: 4
         """
         return super().get(check_id, query)
 
@@ -1802,6 +1806,10 @@ class CheckPingView(CheckView):
               expiration:
                 type: 'string'
                 description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+              count_packets:
+                type: 'integer'
+                description: 'Number of packets to send'
+                default: 4
         responses:
           '200':
             description: 'Successful Operation'
@@ -1906,6 +1914,10 @@ class CheckPingView(CheckView):
               expiration:
                 type: 'string'
                 description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+              count_packets:
+                type: 'integer'
+                description: 'Number of packets to send'
+                default: 4
         responses:
           '201':
             description: 'Successful Operation, Ping Check updated'

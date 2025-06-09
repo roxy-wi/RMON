@@ -85,7 +85,14 @@ def create_dns_check(data: DnsCheckRequest, last_id: int) -> Optional[tuple[dict
 
 def create_ping_check(data: PingCheckRequest, last_id: int) -> Optional[tuple[dict, int]]:
     try:
-        smon_sql.insert_smon_ping(last_id, data.ip, data.packet_size, data.interval)
+        kwargs = {
+            'smon_id': last_id,
+            'ip': str(data.ip),
+            'packet_size': data.packet_size,
+            'interval': data.interval,
+            'count_packets': data.count_packets
+        }
+        smon_sql.insert_smon_ping(**kwargs)
     except Exception as e:
         return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create Ping check')
 

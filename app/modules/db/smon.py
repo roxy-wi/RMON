@@ -246,13 +246,14 @@ def insert_smon(**kwargs):
 		out_error(e)
 
 
-def insert_smon_ping(smon_id, hostname, packet_size, interval):
+def insert_smon_ping(**kwargs):
+	smon_id = kwargs.get('smon_id')
 	try:
 		SmonPingCheck.delete().where(SmonPingCheck.smon_id == smon_id).execute()
 	except SmonPingCheck.DoesNotExist:
 		print('There is no check, let\'s create')
 	try:
-		SmonPingCheck.insert(smon_id=smon_id, ip=hostname, packet_size=packet_size, interval=interval).execute()
+		SmonPingCheck.insert(**kwargs).execute()
 	except Exception as e:
 		out_error(e)
 

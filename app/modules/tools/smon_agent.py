@@ -227,7 +227,8 @@ def send_ping_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             'server_ip': check.ip,
             'packet_size': check.packet_size,
             'interval': check.interval,
-            'timeout': check.smon_id.check_timeout
+            'timeout': check.smon_id.check_timeout,
+            'count_packets': check.count_packets
         }
         try:
             send_check_to_agent(agent_id, server_ip, check.smon_id, check.smon_id.multi_check_id, json_data)

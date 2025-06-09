@@ -56,7 +56,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		valid = valid && checkLength($('#new-smon-url'), "URL", 1);
 	}
 	if (check_type === 'ping') {
-		allFields = $([]).add($('#new-smon-ip')).add($('#new-smon-name')).add($('#new-smon-packet_size')).add($('#new-smon-interval')).add($('#new-smon-timeout'))
+		allFields = $([]).add($('#new-smon-ip')).add($('#new-smon-name')).add($('#new-smon-packet_size')).add($('#new-smon-count_packets')).add($('#new-smon-interval')).add($('#new-smon-timeout'))
 		allFields.removeClass("ui-state-error");
 		valid = valid && checkLength($('#new-smon-ip'), "Hostname", 1);
 	}
@@ -126,6 +126,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'mm_channel_id': $('#new-smon-mm').val(),
 		'email_channel_id': $('#new-smon-email').val(),
 		'packet_size': $('#new-smon-packet_size').val(),
+		'count_packets': $('#new-smon-count_packets').val(),
 		'method': $('#new-smon-method').val(),
 		'interval': $('#new-smon-interval').val(),
 		'entities': entities,
@@ -279,6 +280,7 @@ function getCheckSettings(smon_id, check_type) {
 			$('#new-smon-url').val(data['checks'][0]['url']);
 			$('#new-smon-description').val(data['checks'][0]['smon_id']['description'].replaceAll("'", ""))
 			$('#new-smon-packet_size').val(data['checks'][0]['packet_size']);
+			$('#new-smon-count_packets').val(data['checks'][0]['count_packets']);
 			$('#new-smon-interval').val(data['checks'][0]['interval']);
 			$('#new-smon-username').val(data['checks'][0]['username']);
 			$('#new-smon-password').val(data['checks'][0]['password']);
@@ -450,12 +452,13 @@ function check_and_clear_check_type(check_type) {
 		$('.smon_rabbit_check').hide();
 		clear_check_vals();
 		$('#new-smon-packet_size').val('56');
+		$('#new-smon-count_packets').val('4');
 		$('.smon_ping_check').show();
 	}
 }
 function clear_check_vals() {
 	const inputs_for_clean = ['url', 'body', 'body-req', 'port', 'packet_size', 'ip', 'header-req', 'username',
-		'password', 'vhost', 'group', 'description', 'runbook', 'expiration']
+		'password', 'vhost', 'group', 'description', 'runbook', 'expiration', 'count_packets']
 	for (let i of inputs_for_clean) {
 		$('#new-smon-' + i).val('');
 	}
@@ -529,6 +532,8 @@ function getSmonHistoryCheckData(check_id, check_type) {
 				renderSMONChartHttp(result, labels, check_id, check_types[check_type]);
 			} else if (check_type === 'smtp') {
 				renderSMONChartSmtp(result, labels, check_id, check_types[check_type]);
+			} else if (check_type === 'ping') {
+				renderSMONChartPing(result, labels, check_id, check_types[check_type]);
 			} else {
 				let data = [];
 				data.push(result.chartData.response_time);
@@ -808,6 +813,130 @@ function renderSMONChartSmtp(result, labels, check_id, check_type_id) {
     const myChart = new Chart(ctx, config);
 	stream_chart(myChart, check_id, check_type_id);
 }
+function renderSMONChartPing(result, labels, check_id, check_type_id) {
+    const ctx = document.getElementById('metrics_' + check_id);
+    // Преобразование данных в массивы
+    const labelArray = labels.split(',');
+    const avg_resp_time = result.chartData.avg_resp_time.split(',');
+    const max_resp_time = result.chartData.max_resp_time.split(',');
+    const min_resp_time = result.chartData.min_resp_time.split(',');
+    const packet_loss_percent = result.chartData.packet_loss_percent.split(',');
+    const response_time = result.chartData.response_time.split(',');
+
+    // Удаление последнего пустого элемента в каждом массиве
+    labelArray.pop();
+    avg_resp_time.pop();
+    max_resp_time.pop();
+    min_resp_time.pop();
+    packet_loss_percent.pop();
+    response_time.pop();
+
+    // Создание объекта dataset
+    const dataset = [{
+        label: resp_time_word + ' (s)',
+        data: response_time,
+        borderColor: 'rgba(41, 115, 147, 0.5)',
+        backgroundColor: 'rgba(49, 175, 225, 0.5)',
+        tension: 0.4,
+        pointRadius: 3,
+        borderWidth: 1,
+        fill: true
+    }, {
+		label: 'Avg response time (s)',
+        data: avg_resp_time,
+        borderColor: 'rgba(41,147,78,0.5)',
+        backgroundColor: 'rgba(49,225,84,0.5)',
+        tension: 0.4,
+        pointRadius: 3,
+        borderWidth: 1,
+        fill: true
+	}, {
+		label: 'Max response time (s)',
+        data: max_resp_time,
+        borderColor: 'rgba(140,147,41,0.5)',
+        backgroundColor: 'rgba(225,210,49,0.5)',
+        tension: 0.4,
+        pointRadius: 3,
+        borderWidth: 1,
+        fill: true
+	}, {
+		label: 'Min response time (s)',
+        data: min_resp_time,
+        borderColor: 'rgba(147,126,41,0.5)',
+        backgroundColor: 'rgba(225,175,49,0.5)',
+        tension: 0.4,
+        pointRadius: 3,
+        borderWidth: 1,
+        fill: true
+	}, {
+		label: 'Packet loss (%)',
+        data: packet_loss_percent,
+        borderColor: 'rgba(147,41,41,0.5)',
+        backgroundColor: 'rgba(225,49,49,0.5)',
+        tension: 0.4,
+        pointRadius: 3,
+        borderWidth: 1,
+        fill: true
+	}];
+
+    const config = {
+        type: 'line',
+        data: {
+            labels: labelArray,
+            datasets: dataset
+        },
+        options: {
+            animation: true,
+			maintainAspectRatio: false,
+			plugins: {
+				title: {
+					display: true,
+					font: { size: 15 },
+					padding: { top: 10 }
+				},
+				legend: {
+					display: true,
+					position: 'bottom',
+					align: 'left',
+					labels: {
+						color: 'rgb(255, 99, 132)',
+						font: { size: 10, family: 'BlinkMacSystemFont' },
+						boxWidth: 13,
+						// padding: 5
+					},
+				}
+			},
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Time'
+                    },
+                    ticks: {
+                        source: 'data',
+                        autoSkip: true,
+                        autoSkipPadding: 45,
+                        maxRotation: 0
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: resp_time_word + ' (ms)'
+                    },
+                    ticks: {
+                        font: {
+                            size: 10
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    const myChart = new Chart(ctx, config);
+	stream_chart(myChart, check_id, check_type_id);
+}
 
 function renderSMONChart(data, labels, check_id, check_type_id) {
     const ctx = document.getElementById('metrics_' + check_id);
@@ -908,19 +1037,29 @@ function stream_chart(chart_id, check_id, check_type_id) {
 						chart_id.data.datasets[5].data.shift();
 						chart_id.data.datasets[6].data.shift();
 					}
+				} else if (check_type_id === '4') {
+					chart_id.data.datasets[1].data.shift();
+					chart_id.data.datasets[2].data.shift();
+					chart_id.data.datasets[3].data.shift();
+					chart_id.data.datasets[4].data.shift();
 				}
 			}
 			chart_id.data.labels.push(data.time);
 			chart_id.data.datasets[0].data.push(data.response_time);
-			if (check_type_id === '2' || check_type_id === '3') {
+			if (check_type_id === 2 || check_type_id === 3) {
 				chart_id.data.datasets[1].data.push(data.name_lookup);
 				chart_id.data.datasets[2].data.push(data.connect);
 				chart_id.data.datasets[3].data.push(data.app_connect);
-				if (check_type_id === '2') {
+				if (check_type_id === 2) {
 					chart_id.data.datasets[4].data.push(data.pre_transfer);
 					chart_id.data.datasets[5].data.push(data.redirect);
 					chart_id.data.datasets[6].data.push(data.m_download);
 				}
+			} else if (check_type_id === 4) {
+				chart_id.data.datasets[1].data.push(data.avg_resp_time)
+				chart_id.data.datasets[2].data.push(data.max_resp_time)
+				chart_id.data.datasets[3].data.push(data.min_resp_time)
+				chart_id.data.datasets[4].data.push(data.packet_loss_percent)
 			}
 			if (data.status === "0") {
 				chart_id.data.datasets[0].fillColor = 'rgb(239,5,59)';

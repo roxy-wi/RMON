@@ -280,6 +280,11 @@ def smon_history_metric_chart(check_id, check_type_id):
 
                         json_metric['start_transfer'] = '0' if float(chart_metrics.start_transfer) <= 0 else str(chart_metrics.start_transfer)
                         json_metric['m_download'] = str(chart_metrics.download)
+                elif check_type_id == 4:
+                    json_metric['avg_resp_time'] = str(chart_metrics.name_lookup)
+                    json_metric['max_resp_time'] = str(chart_metrics.connect)
+                    json_metric['min_resp_time'] = str(chart_metrics.app_connect)
+                    json_metric['packet_loss_percent'] = str(chart_metrics.pre_transfer)
 
                 # Send the data
                 yield f"data:{json.dumps(json_metric)}\n\n"
