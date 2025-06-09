@@ -70,7 +70,7 @@ def add_agent(data: RmonAgent) -> Union[tuple[int, int], tuple[dict, int], None]
 
     try:
         last_id = smon_sql.add_agent(**agent_kwargs)
-        roxywi_common.logger('A new RMON agent has been created', 'error', keep_history=1, service='RMON')
+        roxywi_common.logger('A new RMON agent has been created', 'info', keep_history=1, service='RMON')
         return last_id, task_id
     except Exception as e:
         roxywi_common.handle_exceptions(e, 'Cannot create Agent')

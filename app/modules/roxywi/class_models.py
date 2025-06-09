@@ -128,16 +128,6 @@ class BaseCheckRequest(BaseModel):
             raise ValueError('Check must have at least on entity, if place is not "All"')
         return values
 
-    @model_validator(mode="after")
-    def validate_total_timeout(self) -> "PingCheckRequest":
-        total_timeout = self.check_timeout * self.count_packets
-        interval = self.interval or 0
-        if total_timeout > interval:
-            raise ValueError(
-                f"Total timeout ({total_timeout}s) exceeds interval ({interval}s)"
-            )
-        return self
-
 
 class HttpCheckRequest(BaseCheckRequest):
     url: AnyUrl
@@ -195,6 +185,16 @@ class PingCheckRequest(BaseCheckRequest):
     ip: Union[IPvAnyAddress, DomainName]
     packet_size: Annotated[int, Gt(16)]
     count_packets: int
+
+    @model_validator(mode="after")
+    def validate_total_timeout(self) -> "PingCheckRequest":
+        total_timeout = self.check_timeout * self.count_packets
+        interval = self.interval or 0
+        if total_timeout >= interval:
+            raise ValueError(
+                f"Total timeout ({total_timeout}s) exceeds or equal interval ({interval}s)"
+            )
+        return self
 
 
 class TcpCheckRequest(BaseCheckRequest):
