@@ -247,6 +247,48 @@
 		</tr>
     </table>
     <table class="overview" style="border-left: 1px solid #ddd;margin-left: 10px;">
+		<tr class="smon_http_check">
+			<td class="padding20">Authentication method</td>
+			<td>
+				<select id="smon_http_check_auth_method">
+                    <option value="0">None</option>
+                    <option value="basic">Basic</option>
+                    <option value="bearer">Bearer</option>
+                    <option value="mtls">MTLS</option>
+                </select>
+			</td>
+		</tr>
+		<tr class="smon_http_check_mtls" style="display: none;">
+			<td class="padding20">Key</td>
+			<td>
+				<textarea id="new-smon-mtls_key" cols="50" rows="5" class="form-control" placeholder="Key body"></textarea>
+			</td>
+		</tr>
+		<tr class="smon_http_check_mtls" style="display: none;">
+			<td class="padding20">Cert</td>
+			<td>
+				<textarea id="new-smon-mtls_cert" cols="50" rows="5" class="form-control" placeholder="Cert body"></textarea>
+			</td>
+		</tr>
+		<tr class="smon_http_check_mtls" style="display: none;">
+			<td class="padding20">CA</td>
+			<td>
+				<textarea id="new-smon-mtls_ca" cols="50" rows="5" class="form-control" placeholder="CA body"></textarea>
+			</td>
+		</tr>
+		<tr class="smon_http_check_basic" style="display: none;">
+			<td class="padding20">{{ lang.words.username|title() }}</td>
+			<td>
+                {{ input('new-smon-basic_username') }}
+			</td>
+		</tr>
+		<tr class="smon_http_check_basic" style="display: none;">
+			<td class="padding20">{{ lang.words.password|title() }}</td>
+			<td>
+                {{ input('new-smon-basic_password', type='password') }}
+			</td>
+		</tr>
+
         <tr>
             <td class="padding20">{{ lang.phrases.expiration_date }}</td>
             <td>

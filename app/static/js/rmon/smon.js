@@ -22,6 +22,18 @@ $(function () {
 			$('#new-smon-group').focus();
 		},
 	});
+	$( "#smon_http_check_auth_method" ).on('selectmenuchange',function() {
+		if ($('#smon_http_check_auth_method').val() === 'basic') {
+			$('.smon_http_check_basic').show();
+			$('.smon_http_check_mtls').hide();
+		} else if ($('#smon_http_check_auth_method').val() === 'mtls') {
+			$('.smon_http_check_basic').hide();
+			$('.smon_http_check_mtls').show();
+		} else {
+			$('.smon_http_check_basic').hide();
+			$('.smon_http_check_mtls').hide();
+		}
+	});
 });
 function sort_by_status() {
 	$('<div id="err_services" style="clear: both;"></div>').appendTo('.main');
@@ -106,6 +118,21 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 			return false;
 		}
 	}
+	let auth = null;
+	if ($('#smon_http_check_auth_method').val() === 'basic') {
+		auth = {'basic':{
+				'username': $('#new-smon-basic_username').val(),
+				'password': $('#new-smon-basic_password').val(),
+			}
+		}
+	} else if ($('#smon_http_check_auth_method').val() === 'mtls') {
+		auth = {'mtls':{
+				'key': $('#new-smon-mtls_key').val(),
+				'cert': $('#new-smon-mtls_cert').val(),
+				'ca': $('#new-smon-mtls_ca').val(),
+			}
+		}
+	}
 	let jsonData = {
 		'name': $('#new-smon-name').val(),
 		'ip': $('#new-smon-ip').val(),
@@ -141,6 +168,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'runbook': $('#new-smon-runbook').val(),
 		'priority': $('#new-smon-priority').val(),
 		'expiration': $('#new-smon-expiration').val(),
+		'auth': auth,
 	}
 	let method = "post";
 	let api_url = api_v_prefix + '/rmon/check/' + check_type;
@@ -355,6 +383,21 @@ function getCheckSettings(smon_id, check_type) {
 			} else {
 				$('#new-smon-ignore_ssl_error').prop('checked', false)
 			}
+			if (data['checks'][0]['auth']) {
+				if (data['checks'][0]['auth'].hasOwnProperty('basic')) {
+					$('#new-smon-basic_username').val(data['checks'][0]['auth']['basic']['username']);
+					$('#new-smon-basic_password').val(data['checks'][0]['auth']['basic']['password']);
+					$('#smon_http_check_auth_method').val('basic');
+					$('#smon_http_check_basic').show();
+				} else if (data['checks'][0]['auth'].hasOwnProperty('mtls')) {
+					$('#new-smon-mtls_key').val(data['checks'][0]['auth']['mtls']['key']);
+					$('#new-smon-mtls_cert').val(data['checks'][0]['auth']['mtls']['cert']);
+					$('#new-smon-mtls_ca').val(data['checks'][0]['auth']['mtls']['ca']);
+					$('#smon_http_check_auth_method').val('mtls');
+					$('.smon_http_check_mtls').show();
+				}
+				$('#smon_http_check_auth_method').selectmenu("refresh");
+			}
 			$('#new-smon-enable').checkboxradio("refresh");
 			$('#new-smon-ignore_ssl_error').checkboxradio("refresh");
 		}
@@ -400,6 +443,9 @@ function check_and_clear_check_type(check_type) {
 		$('.smon_smtp_check').hide();
 		$('.smon_rabbit_check').hide();
 		clear_check_vals();
+		hideAuthFields();
+		$("#smon_http_check_auth_method").val('0');
+		$('#smon_http_check_auth_method').selectmenu("refresh");
 		$('.smon_http_check').show();
 	} else if (check_type === 'tcp') {
 		$('.new_smon_hostname').show();
@@ -409,6 +455,7 @@ function check_and_clear_check_type(check_type) {
 		$('.smon_smtp_check').hide();
 		$('.smon_rabbit_check').hide();
 		clear_check_vals();
+		hideAuthFields();
 		$('.smon_tcp_check').show();
 	} else if (check_type === 'dns') {
 		$('.new_smon_hostname').show();
@@ -418,6 +465,7 @@ function check_and_clear_check_type(check_type) {
 		$('.smon_smtp_check').hide();
 		$('.smon_rabbit_check').hide();
 		clear_check_vals();
+		hideAuthFields();
 		$('#new-smon-port').val('53');
 		$('.smon_dns_check').show();
 	} else if (check_type === 'smtp') {
@@ -428,6 +476,7 @@ function check_and_clear_check_type(check_type) {
 		$('.smon_dns_check').hide();
 		$('.smon_rabbit_check').hide();
 		clear_check_vals();
+		hideAuthFields();
 		$('#new-smon-port').val('587');
 		$('#new-smon-username').attr('placeholder', 'examplte@example.com');
 		$('.smon_smtp_check').show();
@@ -439,6 +488,7 @@ function check_and_clear_check_type(check_type) {
 		$('.smon_dns_check').hide();
 		$('.smon_smtp_check').hide();
 		clear_check_vals();
+		hideAuthFields();
 		$('#new-smon-port').val('5672');
 		$('#new-smon-vhost').val('/');
 		$('#new-smon-username').attr('placeholder', 'guest');
@@ -451,6 +501,7 @@ function check_and_clear_check_type(check_type) {
 		$('.smon_smtp_check').hide();
 		$('.smon_rabbit_check').hide();
 		clear_check_vals();
+		hideAuthFields();
 		$('#new-smon-packet_size').val('56');
 		$('#new-smon-count_packets').val('4');
 		$('.smon_ping_check').show();
@@ -458,10 +509,16 @@ function check_and_clear_check_type(check_type) {
 }
 function clear_check_vals() {
 	const inputs_for_clean = ['url', 'body', 'body-req', 'port', 'packet_size', 'ip', 'header-req', 'username',
-		'password', 'vhost', 'group', 'description', 'runbook', 'expiration', 'count_packets']
+		'password', 'vhost', 'group', 'description', 'runbook', 'expiration', 'count_packets', 'new-smon-mtls_key',
+		'new-smon-mtls_cert', 'new-smon-mtls_ca', 'new-smon-basic_username', 'new-smon-basic_password'
+	]
 	for (let i of inputs_for_clean) {
 		$('#new-smon-' + i).val('');
 	}
+}
+function hideAuthFields() {
+	$('.smon_http_check_mtls').hide();
+	$('.smon_http_check_basic').hide();
 }
 function show_smon_history_statuses(check_id, id_for_history_replace) {
 	$.ajax({
@@ -1092,4 +1149,43 @@ function update_cur_statues(check_id, data) {
 	$('#updated_at').text(data.updated_at);
 	$('#ssl_expire_date').text(data.ssl_expire_date);
 	updateCurrentStatus(check_id, data);
+}
+function showRoute(checkId) {
+	$.ajax({
+		url: api_v_prefix + '/rmon/check/' + checkId + '/route',
+		contentType: "application/json; charset=utf-8",
+		success: function (data) {
+			if (data.status === 'failed') {
+				toastr.error(data.error);
+				return;
+			}
+			let html_data = '';
+			let total_hops = 0;
+			let add_class = ''
+			data = data.report.hubs
+			for (let i = 0; i < data.length; i++) {
+				add_class = '';
+				if (data[i].host === '???') {w
+					add_class = 'color: red;'
+				}
+				html_data += `<div style="${add_class}">${data[i].count} - <b>${data[i].host}</b> - Avg: ${data[i].Avg}</div>`;
+				total_hops += 1;
+			}
+			html_data += `<br/><div><b>Total hops: ${total_hops}</b></div>`;
+			$('#show_route').html(html_data);
+			$("#route").dialog({
+				resizable: false,
+				height: "auto",
+				width: 400,
+				modal: true,
+				title: "Route for check",
+				buttons: [{
+					text: cancel_word,
+					click: function () {
+						$(this).dialog("close");
+					}
+				}]
+			});
+		}
+	});
 }

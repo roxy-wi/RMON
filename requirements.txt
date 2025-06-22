@@ -6,7 +6,7 @@ requests>=2.22.0
 urllib3<2
 pyTelegramBotAPI>=3.6.3
 slack-sdk>=3.4.0
-pdpyras>=4.5.2
+pagerduty>=2.1.2
 peewee==3.17.7
 PyMySQL>=1.0.2
 psycopg2-binary==2.9.10

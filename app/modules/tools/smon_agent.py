@@ -289,6 +289,7 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             'body_req': check.body_req,
             'headers': check.headers,
             'redirects': check.redirects,
+            'auth': check.auth,
         }
         try:
             send_check_to_agent(agent_id, server_ip, check.smon_id, check.smon_id.multi_check_id, json_data)

@@ -2,7 +2,7 @@ import json
 from typing import Union
 
 import pika
-import pdpyras
+import pagerduty
 import telebot
 from telebot import apihelper
 from slack_sdk import WebClient
@@ -204,8 +204,8 @@ def pd_send_mess(mess, level, **kwargs):
 
 	try:
 		proxy = sql.get_setting('proxy')
-		session = pdpyras.EventsAPISession(token)
-		dedup_key = f'{kwargs.get("multi_check_id")} {kwargs.get("agent_name")}'
+		session = pagerduty.EventsApiV2Client(token)
+		dedup_key = f'{kwargs.get("multi_check_id")} {kwargs.get("state_id")}'
 	except Exception as e:
 		roxywi_common.logger(str(e), "error")
 		raise Exception(f'{e}')

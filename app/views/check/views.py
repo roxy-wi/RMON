@@ -95,6 +95,7 @@ class CheckView(MethodView):
                 check_json.update(smon_id['smon_id'])
                 check_json.update(model_to_dict(check, recurse=query.recurse))
                 check_json['name'] = check_json['name'].replace("'", "")
+                check_json['email_channel_id'] = check_json['email_channel_id'] if check_json['email_channel_id'] else 0
                 check_json['checks'][i]['smon_id']['name'] = check.smon_id.name.replace("'", "")
                 check_json['checks'][i]['smon_id']['uptime'] = smon_mod.check_uptime(check_json['checks'][i]['smon_id']['id'])
                 if check_json['checks'][i]['smon_id']['check_type'] == 'http':
@@ -506,6 +507,33 @@ class CheckHttpView(CheckView):
                 expiration:
                   type: 'string'
                   description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+                auth:
+                  type: 'object'
+                  properties:
+                    mtls:
+                      type: object
+                      required: [ca, cert, key]
+                      properties:
+                        ca:
+                          type: string
+                          description: CA certificate content in PEM format
+                        cert:
+                          type: string
+                          description: Client certificate content in PEM format
+                        key:
+                          type: string
+                          description: Client private key content in PEM format
+                    basic:
+                      type: object
+                      required: [user, password]
+                      properties:
+                        username:
+                          type: string
+                          description: 'Username'
+                        password:
+                          type: string
+                          description: 'Password'
+
         """
         return super().get(check_id, query)
 
@@ -617,6 +645,32 @@ class CheckHttpView(CheckView):
               expiration:
                 type: 'string'
                 description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+              auth:
+                type: 'object'
+                properties:
+                  mtls:
+                    type: object
+                    required: [cert, key]
+                    properties:
+                      ca:
+                        type: string
+                        description: CA certificate content in PEM format
+                      cert:
+                        type: string
+                        description: Client certificate content in PEM format
+                      key:
+                        type: string
+                        description: Client private key content in PEM format
+                  basic:
+                    type: object
+                    required: [username, password]
+                    properties:
+                      username:
+                        type: string
+                        description: 'Username'
+                      password:
+                        type: string
+                        description: 'Password'
         responses:
           '200':
             description: 'Successful Operation'
@@ -739,6 +793,32 @@ class CheckHttpView(CheckView):
               expiration:
                 type: 'string'
                 description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+              auth:
+                type: 'object'
+                properties:
+                  mtls:
+                    type: object
+                    required: [cert, key]
+                    properties:
+                      ca:
+                        type: string
+                        description: CA certificate content in PEM format
+                      cert:
+                        type: string
+                        description: Client certificate content in PEM format
+                      key:
+                        type: string
+                        description: Client private key content in PEM format
+                  basic:
+                    type: object
+                    required: [username, password]
+                    properties:
+                      username:
+                        type: string
+                        description: 'Username'
+                      password:
+                        type: string
+                        description: 'Password'
         responses:
           '201':
             description: 'Successful Operation, HTTP Check updated'

@@ -138,6 +138,7 @@ class HttpCheckRequest(BaseCheckRequest):
     accepted_status_codes: Annotated[int, Gt(99), Le(599)]
     ignore_ssl_error: Optional[bool] = 0
     redirects: Optional[int] = 10
+    auth: Optional[dict] = None
 
     @field_validator('method', mode='before')
     @classmethod

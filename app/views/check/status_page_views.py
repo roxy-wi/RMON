@@ -90,7 +90,8 @@ class StatusPageView(MethodView):
         try:
             page = smon_sql.select_status_page_with_group(page_id, group_id)
             page = model_to_dict(page)
-            page['description'] = page['description'].replace("'", "")
+            for key in ('name', 'description', 'custom_style'):
+                page[key] = page[key].replace("'", "")
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get Status page')
 
@@ -335,7 +336,8 @@ class StatusPages(MethodView):
 
         for page in pages:
             page = model_to_dict(page, exclude={SmonStatusPage.custom_style})
-            page['description'] = page['description'].replace("'", "")
+            for key in ('name', 'description'):
+                page[key] = page[key].replace("'", "")
             pages_list.append(page)
 
         return jsonify(pages_list)
@@ -344,7 +346,8 @@ class StatusPages(MethodView):
 class StatusPageSlug(MethodView):
     methods = ['GET']
 
-    def get(self, slug: EscapedString):
+    @staticmethod
+    def get(slug: EscapedString):
         """
         Get Status Page by slug
         ---
@@ -395,7 +398,8 @@ class StatusPageSlug(MethodView):
         try:
             page = smon_sql.get_status_page(slug)
             page = model_to_dict(page)
-            page['description'] = page['description'].replace("'", "")
+            for key in ('name', 'description'):
+                page[key] = page[key].replace("'", "")
             page_id = page['id']
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get Status page')
@@ -403,18 +407,18 @@ class StatusPageSlug(MethodView):
         try:
             checks = smon_sql.select_status_page_checks(page_id)
             page['checks'] = []
-            group_name = ''
+            groups_name = {}
             for check in checks:
-                group_name = ''
                 check_data = smon_sql.select_one_smon_by_multi_check(check.multi_check_id)
                 for c_d in check_data:
                     if c_d.multi_check_id.check_group_id:
                         group_name = smon_sql.get_smon_group_by_id(c_d.multi_check_id.check_group_id).name
                         group_name = group_name.replace("'", "")
+                        groups_name.update({int(c_d.multi_check_id.id): group_name})
                     page['checks'].append(model_to_dict(c_d, recurse=False))
             for check in page['checks']:
                 check.update(smon_sql.get_uptime_and_status(check['multi_check_id']))
-                check.update({'check_group': group_name})
+                check.update({'check_group': groups_name.get(check['multi_check_id'], '')})
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get Status page checks')
 

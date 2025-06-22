@@ -1,4 +1,5 @@
 import json
+from keyword import kwlist
 from typing import Union, Optional
 
 import pytz
@@ -67,11 +68,21 @@ def send_new_check(
 
 
 def create_http_check(data: HttpCheckRequest, check_id: int) -> Optional[tuple[dict, int]]:
+    kwargs = {
+        'smon_id': check_id,
+        'url': data.url,
+        'body': data.body,
+        'method': data.method,
+        'interval': data.interval,
+        'body_req': data.body_req,
+        'headers': data.header_req,
+        'accepted_status_codes': data.accepted_status_codes,
+        'ignore_ssl_error': data.ignore_ssl_error,
+        'redirects': data.redirects,
+        'auth': data.auth
+    }
     try:
-        smon_sql.insert_smon_http(
-            check_id, data.url, data.body, data.method, data.interval, data.body_req, data.header_req,
-            data.accepted_status_codes, data.ignore_ssl_error, data.redirects
-        )
+        smon_sql.insert_smon_http(**kwargs)
     except Exception as e:
         return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create HTTP check')
 
@@ -369,7 +380,7 @@ def get_ssl_expire_date(date: str) -> int:
 
 
 def return_check_name_by_id(check_id: int) -> str:
-    check_types = {1: 'tcp', 2: 'http', 4: 'ping', 5: 'dns'}
+    check_types = {1: 'tcp', 2: 'http', 4: 'ping', 5: 'dns', 6: 'rabbitmq'}
     return check_types[check_id]
 
 

@@ -88,7 +88,12 @@
             <b>{{ lang.words.agent|title() }}</b> {{ check.agent_id.name }}:
         {% endif %}
         </span>
-        <div id="smon_history_statuses-{{ check.id }}"></div>
+        <div id="smon_history_statuses-{{ check.id }}" style="width: 370px;"></div>
+        <div style="cursor: pointer;display: inline;float: right;margin-top: -14px;margin-right: 60%;"
+             title="{{ lang.words.show|title() }} {{ lang.words.route }}"
+             onclick="showRoute('{{ check.id }}')">
+            <i class="fas fa-route" style="color: var(--color-grey);"></i>
+        </div>
         {% endfor %}
         <div id="check_interval" class="gray_text">
             {{lang.words.checking|title()}} {{lang.words.every}} <span id="interval">{{s.interval}}</span> {{lang.words.seconds2}},
@@ -183,4 +188,7 @@
 	showSmonHistory();
 </script>
     {% include 'include/smon/add_form.html' %}
+    <div id="route">
+        <div id="show_route"></div>
+    </div>
 {% endblock %}

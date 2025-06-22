@@ -309,16 +309,14 @@ def insert_smon_dns(smon_id: int, hostname: str, port: int, resolver: str, recor
 		out_error(e)
 
 
-def insert_smon_http(smon_id, url, body, method, interval, body_req, header_req, status_code, ignore_ssl_error, redirects):
+def insert_smon_http(**kwargs):
+	smon_id = kwargs.get('smon_id')
 	try:
 		SmonHttpCheck.delete().where(SmonHttpCheck.smon_id == smon_id).execute()
 	except SmonHttpCheck.DoesNotExist:
 		print('There is no check, let\'s create')
 	try:
-		SmonHttpCheck.insert(
-			smon_id=smon_id, url=url, body=body, method=method, interval=interval, body_req=body_req,
-			headers=header_req, accepted_status_codes=status_code, ignore_ssl_error=ignore_ssl_error, redirects=redirects
-		).execute()
+		SmonHttpCheck.insert(**kwargs).execute()
 	except Exception as e:
 		out_error(e)
 

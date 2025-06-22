@@ -6,6 +6,7 @@
     - python3-pycurl
     - epel-release
     - python3-devel
+    - mtr
 
 - name: Install PIP
   yum:

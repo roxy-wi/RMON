@@ -458,6 +458,7 @@ class SmonHttpCheck(BaseModel):
     body_req = JSONField(null=True)
     ignore_ssl_error = IntegerField(constraints=[SQL('DEFAULT 0')])
     redirects = IntegerField(constraints=[SQL('DEFAULT 10')])
+    auth = JSONField(null=True)
 
     class Meta:
         table_name = 'smon_http_check'
