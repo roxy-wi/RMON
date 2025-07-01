@@ -87,6 +87,17 @@ class BaseCheckRequest(BaseModel):
     runbook: Optional[EscapedString] = None
     priority: Literal['info', 'warning', 'error', 'critical'] = 'critical'
     expiration: Optional[str] = None
+    threshold_timeout: Optional[float] = 0
+
+    @model_validator(mode="after")
+    def validate_threshold_timeout(self) -> "BaseCheckRequest":
+        timeout = float(self.check_timeout)
+        threshold_timeout = float(self.threshold_timeout) / 1000 or 0
+        if threshold_timeout >= timeout:
+            raise ValueError(
+                f"Timeout ({timeout}) exceeds or equal interval Threshold timeout ({threshold_timeout})"
+            )
+        return self
 
     @root_validator(pre=True)
     @classmethod
@@ -135,7 +146,7 @@ class HttpCheckRequest(BaseCheckRequest):
     header_req: Optional[str] = None
     body_req: Optional[str] = None
     body: Optional[EscapedString] = None
-    accepted_status_codes: Annotated[int, Gt(99), Le(599)]
+    accepted_status_codes: List[Union[int, str]]
     ignore_ssl_error: Optional[bool] = 0
     redirects: Optional[int] = 10
     auth: Optional[dict] = None
@@ -155,6 +166,45 @@ class HttpCheckRequest(BaseCheckRequest):
     def set_url(cls, v):
         if v.find('http://') == -1 and v.find('https://') == -1:
             raise ValueError('URL must start with http:// or https://')
+        return v
+
+    @field_validator('accepted_status_codes')
+    @classmethod
+    def validate_status_codes(cls, v):
+        if len(v) == 0:
+            raise ValueError('Accepted Status Codes must not be empty')
+        if not isinstance(v, list):
+            raise ValueError('Accepted Status Codes must be a list')
+
+        for item in v:
+            try:
+                item = int(item)
+            except ValueError:
+                pass
+            if isinstance(item, int):
+                # Validate integer status codes
+                if not (100 <= item <= 599):
+                    raise ValueError(f'Status code {item} must be between 100 and 599')
+                continue
+            if isinstance(item, str):
+                # Validate range format (e.g., "300-304")
+                if '-' in item:
+                    try:
+                        start, end = map(int, item.split('-'))
+                        if not (100 <= start <= 599) or not (100 <= end <= 599) or start > end:
+                            raise ValueError(f'Invalid status code range: {item}')
+                    except ValueError:
+                        raise ValueError(f'Invalid status code range format: {item}')
+                # Validate wildcard format (e.g., "4**")
+                elif item.endswith('**'):
+                    prefix = item.rstrip('*')
+                    if not prefix or not prefix.isdigit() or not (1 <= int(prefix) <= 5):
+                        raise ValueError(f'Invalid wildcard status code format: {item}')
+                else:
+                    raise ValueError(f'String status code must be in format "300-304" or "4**": {item}')
+            else:
+                raise ValueError(f'Status code must be an integer or string: {item}')
+
         return v
 
 

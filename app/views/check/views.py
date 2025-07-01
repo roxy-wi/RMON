@@ -90,6 +90,7 @@ class CheckView(MethodView):
                 check_json['place'] = place
                 check_json['runbook'] = runbook
                 check_json['priority'] = m.multi_check_id.priority
+                check_json['threshold_timeout'] = m.multi_check_id.threshold_timeout
                 check_json['expiration'] = expiration
                 smon_id = model_to_dict(check, max_depth=query.max_depth)
                 check_json.update(smon_id['smon_id'])
@@ -99,8 +100,8 @@ class CheckView(MethodView):
                 check_json['checks'][i]['smon_id']['name'] = check.smon_id.name.replace("'", "")
                 check_json['checks'][i]['smon_id']['uptime'] = smon_mod.check_uptime(check_json['checks'][i]['smon_id']['id'])
                 if check_json['checks'][i]['smon_id']['check_type'] == 'http':
-                    check_json['checks'][i]['accepted_status_codes'] = int(check_json['checks'][i]['accepted_status_codes'])
-                    check_json['accepted_status_codes'] = int(check_json['accepted_status_codes'])
+                    check_json['checks'][i]['accepted_status_codes'] = check_json['checks'][i]['accepted_status_codes']
+                    check_json['accepted_status_codes'] = check_json['accepted_status_codes']
                     check_json['body'] = check.body.replace("'", "")
                 i += 1
         if len(check_json['checks']) == 0:
@@ -221,7 +222,8 @@ class CheckView(MethodView):
             'check_group_id': self._get_check_group_id(data.check_group),
             'runbook': data.runbook,
             'priority': data.priority,
-            'expiration': data.expiration
+            'expiration': data.expiration,
+            'threshold_timeout': float(data.threshold_timeout)
         }
         return check_parameters
 
@@ -365,8 +367,9 @@ class CheckHttpView(CheckView):
                     type: 'object'
                     properties:
                       accepted_status_codes:
-                        type: 'string'
+                        type: 'array'
                         description: 'Expected status code'
+                        example: [200, "100-199", "3**"]
                       body:
                         type: 'string'
                         description: 'Body content'
@@ -507,6 +510,9 @@ class CheckHttpView(CheckView):
                 expiration:
                   type: 'string'
                   description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+                threshold_timeout:
+                  type: 'integer'
+                  description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
                 auth:
                   type: 'object'
                   properties:
@@ -616,10 +622,9 @@ class CheckHttpView(CheckView):
                 type: 'string'
                 description: 'Header Request (optional)'
               accepted_status_codes:
-                type: 'integer'
-                description: 'Expected status code (default to 200, optional)'
-                minimum: 100
-                maximum: 599
+                type: 'array'
+                description: 'Expected status code'
+                example: [200, "100-199", "3**"]
               check_timeout:
                 type: 'integer'
                 description: 'Timeout (optional)'
@@ -645,6 +650,9 @@ class CheckHttpView(CheckView):
               expiration:
                 type: 'string'
                 description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+              threshold_timeout:
+                type: 'integer'
+                description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
               auth:
                 type: 'object'
                 properties:
@@ -764,10 +772,9 @@ class CheckHttpView(CheckView):
                 type: 'string'
                 description: 'Header Request (optional)'
               accepted_status_codes:
-                type: 'integer'
-                description: 'Expected status code (default to 200, optional)'
-                minimum: 100
-                maximum: 599
+                type: 'array'
+                description: 'Expected status code'
+                example: [200, "100-199", "3**"]
               check_timeout:
                 type: 'integer'
                 description: 'Timeout (optional)'
@@ -793,6 +800,9 @@ class CheckHttpView(CheckView):
               expiration:
                 type: 'string'
                 description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+              threshold_timeout:
+                type: 'integer'
+                description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
               auth:
                 type: 'object'
                 properties:
@@ -1007,6 +1017,9 @@ class CheckTcpView(CheckView):
                 expiration:
                   type: 'string'
                   description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+                threshold_timeout:
+                  type: 'integer'
+                  description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
         """
         return super().get(check_id, query)
 
@@ -1097,6 +1110,9 @@ class CheckTcpView(CheckView):
               expiration:
                 type: 'string'
                 description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+              threshold_timeout:
+                type: 'integer'
+                description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
         responses:
           '200':
             description: 'Successful Operation'
@@ -1197,6 +1213,9 @@ class CheckTcpView(CheckView):
               expiration:
                 type: 'string'
                 description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+              threshold_timeout:
+                type: 'integer'
+                description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
         responses:
           '201':
             description: 'Successful Operation, TCP Check updated'
@@ -1394,6 +1413,9 @@ class CheckDnsView(CheckView):
                 expiration:
                   type: 'string'
                   description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+                threshold_timeout:
+                  type: 'integer'
+                  description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
         """
         return super().get(check_id, query)
 
@@ -1493,6 +1515,9 @@ class CheckDnsView(CheckView):
               expiration:
                 type: 'string'
                 description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+              threshold_timeout:
+                type: 'integer'
+                description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
         responses:
           '200':
             description: 'Successful Operation'
@@ -1602,6 +1627,9 @@ class CheckDnsView(CheckView):
               expiration:
                 type: 'string'
                 description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+              threshold_timeout:
+                type: 'integer'
+                description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
         responses:
           '201':
             description: 'Successful Operation, DNS Check updated'
@@ -1797,6 +1825,9 @@ class CheckPingView(CheckView):
                   type: 'integer'
                   description: 'Number of packets to send'
                   default: 4
+                threshold_timeout:
+                  type: 'integer'
+                  description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
         """
         return super().get(check_id, query)
 
@@ -1890,6 +1921,9 @@ class CheckPingView(CheckView):
                 type: 'integer'
                 description: 'Number of packets to send'
                 default: 4
+              threshold_timeout:
+                type: 'integer'
+                description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
         responses:
           '200':
             description: 'Successful Operation'
@@ -1998,6 +2032,9 @@ class CheckPingView(CheckView):
                 type: 'integer'
                 description: 'Number of packets to send'
                 default: 4
+              threshold_timeout:
+                type: 'integer'
+                description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
         responses:
           '201':
             description: 'Successful Operation, Ping Check updated'
@@ -2192,6 +2229,9 @@ class CheckSmtpView(CheckView):
                 expiration:
                   type: 'string'
                   description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+                threshold_timeout:
+                  type: 'integer'
+                  description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
         """
         return super().get(check_id, query)
 
@@ -2293,6 +2333,9 @@ class CheckSmtpView(CheckView):
               expiration:
                 type: 'string'
                 description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+              threshold_timeout:
+                type: 'integer'
+                description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
         responses:
           '200':
             description: 'Successful Operation'
@@ -2403,6 +2446,9 @@ class CheckSmtpView(CheckView):
               expiration:
                 type: 'string'
                 description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+              threshold_timeout:
+                type: 'integer'
+                description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
         responses:
           '201':
             description: 'Successful Operation, Ping Check updated'
@@ -2603,6 +2649,9 @@ class CheckRabbitView(CheckView):
                 expiration:
                   type: 'string'
                   description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+                threshold_timeout:
+                  type: 'integer'
+                  description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
         """
         return super().get(check_id, query)
 
@@ -2707,6 +2756,9 @@ class CheckRabbitView(CheckView):
               expiration:
                 type: 'string'
                 description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+              threshold_timeout:
+                type: 'integer'
+                description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
         responses:
           '200':
             description: 'Successful Operation'
@@ -2823,6 +2875,9 @@ class CheckRabbitView(CheckView):
               expiration:
                 type: 'string'
                 description: 'Expiration date. After this date, the check will be disabled. Format: YYYY-MM-DD HH:MM:SS. Must be in UTC time.'
+              threshold_timeout:
+                type: 'integer'
+                description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
         responses:
           '201':
             description: 'Successful Operation, Ping Check updated'

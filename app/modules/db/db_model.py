@@ -282,6 +282,7 @@ class MultiCheck(BaseModel):
     runbook = TextField(null=True)
     priority = CharField(constraints=[SQL("DEFAULT 'critical'")])
     expiration = DateTimeField(null=True)
+    threshold_timeout = IntegerField(default=0)
 
     class Meta:
         table_name = 'multi_check'
@@ -451,7 +452,7 @@ class SmonHttpCheck(BaseModel):
     smon_id = ForeignKeyField(SMON, on_delete='Cascade', unique=True)
     url = CharField()
     method = CharField(constraints=[SQL("DEFAULT 'get'")])
-    accepted_status_codes = CharField(constraints=[SQL("DEFAULT '200'")])
+    accepted_status_codes = JSONField(null=True)
     body = CharField(null=True)
     interval = IntegerField(constraints=[SQL('DEFAULT 120')])
     headers = JSONField(null=True)
@@ -540,31 +541,30 @@ class InstallationTasks(BaseModel):
         table_name = 'installation_tasks'
 
 
-class AlertEvent(BaseModel):
-    multi_check_id = ForeignKeyField(MultiCheck, on_delete='CASCADE', backref='events', index=True)
-    level = TextField()
-    message = TextField()
-    entity_name = TextField(null=True)
-    kwargs = JSONField(null=True)
-    created_at = DateTimeField(default=datetime.now)
-
-    class Meta:
-        table_name = 'alert_event'
-        indexes = (
-            (('created_at',), False),
-        )
-
-
 class AlertState(BaseModel):
-    multi_check_id = ForeignKeyField(MultiCheck, on_delete='CASCADE', backref='state', unique=True, index=True)
+    multi_check_id = ForeignKeyField(MultiCheck, on_delete='CASCADE', backref='state', index=True)
+    alert_key = CharField(default='', index=True)
     active = BooleanField(default=False)
     updated_at = DateTimeField(default=datetime.now)
 
     class Meta:
         table_name = 'alert_state'
         indexes = (
-            (('updated_at',), False),
+            (('multi_check_id', 'alert_key'), True),
         )
+
+
+class AlertEvent(BaseModel):
+    multi_check_id = ForeignKeyField(MultiCheck, on_delete='CASCADE', index=True)
+    alert_key = CharField(default='', index=True)
+    message = TextField()
+    entity_name = CharField()
+    level = CharField()
+    kwargs = JSONField()
+    created_at = DateTimeField(default=datetime.now)
+
+    class Meta:
+        table_name = 'alert_event'
 
 
 class AggregatorLock(BaseModel):

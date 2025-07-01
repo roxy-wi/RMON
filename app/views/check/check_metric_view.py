@@ -301,6 +301,24 @@ class ChecksMetricViewPing(ChecksMetricView):
                     response_time:
                       type: 'string'
                       description: 'Current connections, comma-separated'
+                    avg_resp_time:
+                      type: 'integer'
+                      description: 'Average response time'
+                    max_resp_time:
+                      type: 'integer'
+                      description: 'Maximum response time'
+                    min_resp_time:
+                      type: 'integer'
+                      description: 'Minimum response time'
+                    packet_loss_percent:
+                      type: 'integer'
+                      description: 'Packet loss percentage'
+                    packets_received:
+                      type: 'integer'
+                      description: 'Packets received'
+                    packets_sent:
+                      type: 'integer'
+                      description: 'Packets sent'
                     labels:
                       type: 'string'
                       description: 'Time labels, comma-separated'
@@ -465,7 +483,7 @@ class CheckStatusesView(MethodView):
                     description: 'Error message, if any'
                   status:
                     type: 'integer'
-                    description: 'Status value'
+                    description: 'Status of the check: 0 - down, 1 - up, 3 - unknown, 5 - warning, 6 - threshold timeout, 7 - Body check failed.'
         """
         group_id = SupportClass.return_group_id(query)
 
@@ -570,6 +588,7 @@ class CheckHistoryStatuses(MethodView):
                       status:
                         type: integer
                         example: 1
+                        description: 'Status of the check: 0 - down, 1 - up, 3 - unknown, 5 - warning, 6 - threshold timeout, 7 - body check failed.'
                       error:
                         type: string
                 status:

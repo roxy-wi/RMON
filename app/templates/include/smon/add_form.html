@@ -11,6 +11,9 @@
     .validateTips {
         width: 1175px;
     }
+    .tagify {
+        width: 240px !important;
+    }
 </style>
 <script>
     $(function () {
@@ -22,6 +25,17 @@
         });
     });
 </script>
+<!-- Tagify CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" />
+
+<!-- Input поле -->
+{#<input id="status-codes" placeholder="Введите коды: 200, 2xx, 404, 200-299" />#}
+
+<!-- Tagify JS -->
+<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+
+
+
 <div id="smon-add-table" style="display: none;">
 	<table class="overview" id="smon-add-table-overview" title="{{lang.words.create|title()}} {{lang.words.w_a}} {{lang.words.new}} {{lang.words.server}} {{lang.words.for}} {{lang.words.monitoring}}"
     data-edit="{{lang.words.edit|title()}} {{lang.words.w_a}} {{lang.words.new}} {{lang.words.server}} {{lang.words.for}} {{lang.words.monitoring}}">
@@ -210,7 +224,7 @@
 				<span class="need-field">*</span>
 			</td>
 			<td>
-				{{ input('new-smon-status-code', type='number', style="width: 240px;", value=200) }}
+				{{ input('new-smon-status-code') }}
 			</td>
 		</tr>
 		<tr class="smon_http_check">
@@ -294,6 +308,13 @@
             <td>
                 {{ input('new-smon-expiration', placeholder="YYYY-MM-DD HH:MM") }}
                 <div class="tooltip" style="padding: 0">{{ lang.words.time|title() }} UTC</div>
+            </td>
+        </tr>
+        <tr>
+            <td class="padding20">{{ lang.phrases.threshold_timeout }}</td>
+            <td>
+                {{ input('new-smon-threshold_timeout', value=0) }}
+                <div class="tooltip" style="padding: 0">{{ lang.phrases.threshold_timeout_desc }}</div>
             </td>
         </tr>
 		<tr>

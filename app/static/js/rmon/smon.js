@@ -56,6 +56,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 	let valid = true;
 	let check_type = $('#check_type').val();
 	let allFields = '';
+	let statusList = [];
 	if (check_type === 'tcp') {
 		allFields = $([]).add($('#new-smon-ip')).add($('#new-smon-port')).add($('#new-smon-name')).add($('#new-smon-interval')).add($('#new-smon-timeout'))
 		allFields.removeClass("ui-state-error");
@@ -66,6 +67,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		allFields = $([]).add($('#new-smon-url')).add($('#new-smon-name')).add($('#new-smon-interval')).add($('#new-smon-timeout'))
 		allFields.removeClass("ui-state-error");
 		valid = valid && checkLength($('#new-smon-url'), "URL", 1);
+		statusList = window.tagify.value.map(tag => tag.value);
 	}
 	if (check_type === 'ping') {
 		allFields = $([]).add($('#new-smon-ip')).add($('#new-smon-name')).add($('#new-smon-packet_size')).add($('#new-smon-count_packets')).add($('#new-smon-interval')).add($('#new-smon-timeout'))
@@ -160,7 +162,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'place': $('#new-smon-place option:selected').val(),
 		'body_req': $('#new-smon-body-req').val(),
 		'header_req': $('#new-smon-header-req').val(),
-		'accepted_status_codes': $('#new-smon-status-code').val(),
+		'accepted_status_codes': statusList,
 		'check_timeout': $('#new-smon-timeout').val(),
 		'ignore_ssl_error': ignore_ssl_error,
 		'retries': $('#new-smon-retries').val(),
@@ -168,6 +170,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'runbook': $('#new-smon-runbook').val(),
 		'priority': $('#new-smon-priority').val(),
 		'expiration': $('#new-smon-expiration').val(),
+		'threshold_timeout': $('#new-smon-threshold_timeout').val(),
 		'auth': auth,
 	}
 	let method = "post";
@@ -274,6 +277,33 @@ function openSmonDialog(check_type, smon_id=0, edit=false) {
 			effect: "fade",
 			duration: 200
 		},
+		open: function () {
+			const input = document.querySelector('#new-smon-status-code')
+
+			if (input && !input._tagify) { // предотвращаем повторную инициализацию
+				const allStatusCodes = []
+				allStatusCodes.push("1**", "2**", "3**", "4**", "5**", "100-199", "200-299", "300-399", "400-499", "500-599")
+				for (let i = 100; i <= 599; i++) allStatusCodes.push(i.toString())
+
+				window.tagify = new Tagify(input, {
+					whitelist: allStatusCodes,
+					duplicates: false,
+					enforceWhitelist: true,
+					dropdown: {
+						enabled: 1,
+						maxItems: 15
+					},
+				});
+				if (!edit) {
+					window.tagify.addTags(["200"]);
+				}
+			}
+		},
+		close: function () {
+			if (window.tagify) {
+				window.tagify.removeAllTags();
+			}
+		},
 		buttons: [{
 			text: add_word,
 			click: function () {
@@ -317,6 +347,7 @@ function getCheckSettings(smon_id, check_type) {
 			$('#new-smon-runbook').val(data['runbook']);
 			$('#new-smon-priority').val(data['priority']);
 			$('#new-smon-expiration').val(data['expiration']);
+			$('#new-smon-threshold_timeout').val(data['threshold_timeout']);
 			if (data['check_group']) {
 				$('#new-smon-group').val(data['check_group'].replaceAll("'", ""));
 			}
@@ -338,7 +369,7 @@ function getCheckSettings(smon_id, check_type) {
 			} catch (e) {
 				$('#new-smon-header-req').val(data['checks'][0]['headers']);
 			}
-			$('#new-smon-status-code').val(data['checks'][0]['accepted_status_codes']);
+			window.tagify.addTags(data['checks'][0]['accepted_status_codes']);
 			$('#new-smon-place').val(data['place']).change();
 			$('#new-smon-telegram').selectmenu("refresh");
 			$('#new-smon-place').trigger('selectmenuchange');
@@ -528,9 +559,9 @@ function show_smon_history_statuses(check_id, id_for_history_replace) {
 			let statuses = '';
 			for (let status of data.reverse()) {
 				let add_class = 'serverUp';
-				if (status.status === 0) {
+				if (status.status === 0 || status.status === 7) {
 					add_class = 'serverDown';
-				} else if (status.status === 5) {
+				} else if (status.status === 5 || status.status === 6) {
 					add_class = 'serverWarn';
 				}
 				statuses += '<div class="smon_server_statuses ' + add_class + '" title="" data-help="' + status.date + ' ' + status.error + '"></div>';
@@ -1118,7 +1149,7 @@ function stream_chart(chart_id, check_id, check_type_id) {
 				chart_id.data.datasets[3].data.push(data.min_resp_time)
 				chart_id.data.datasets[4].data.push(data.packet_loss_percent)
 			}
-			if (data.status === "0") {
+			if (data.status === 0) {
 				chart_id.data.datasets[0].fillColor = 'rgb(239,5,59)';
 			}
 			chart_id.update();

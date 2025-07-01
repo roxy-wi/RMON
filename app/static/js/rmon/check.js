@@ -149,7 +149,7 @@ function updateCurrentStatusRequest(check_id) {
 function updateCurrentStatus(check_id, data) {
 	let add_class = 'serverUp';
 	let cur_status = translate_div.attr('data-up');
-	if (data.status === 0) {
+	if (data.status === 0 || data.status === 7) {
 		add_class = 'serverDown';
 		cur_status = translate_div.attr('data-down');
 	} else if (data.status === 3) {
@@ -158,7 +158,7 @@ function updateCurrentStatus(check_id, data) {
 	} else if (data.status === 4) {
 		add_class = 'serverNone';
 		cur_status = translate_div.attr('data-disabled');
-	} else if (data.status === 5) {
+	} else if (data.status === 5 || data.status === 6) {
 		add_class = 'serverWarn';
 		cur_status = translate_div.attr('data-warning');
 	}
