@@ -1196,7 +1196,7 @@ function showRoute(checkId) {
 			data = data.report.hubs
 			for (let i = 0; i < data.length; i++) {
 				add_class = '';
-				if (data[i].host === '???') {w
+				if (data[i].host === '???') {
 					add_class = 'color: red;'
 				}
 				html_data += `<div style="${add_class}">${data[i].count} - <b>${data[i].host}</b> - Avg: ${data[i].Avg}</div>`;

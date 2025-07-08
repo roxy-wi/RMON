@@ -1,5 +1,5 @@
 from peewee import DateTimeField, AutoField, CharField, ForeignKeyField, IntegerField, SQL, Model, TextField, \
-    BooleanField, FloatField, MySQLDatabase
+    BooleanField, FloatField, MySQLDatabase, ModelSelect
 from playhouse.migrate import *
 from datetime import datetime
 from playhouse.shortcuts import ReconnectMixin
@@ -61,9 +61,23 @@ def connect(get_migrator=None):
         return conn
 
 
+class AutoReconnectSelect(ModelSelect):
+    def execute(self, database=None):
+        db = database or self.model._meta.database
+        if db.is_closed():
+            db.connect()
+        return super().execute(database)
+
+
 class BaseModel(Model):
     class Meta:
         database = connect()
+
+    @classmethod
+    def select(cls, *fields):
+        if not fields:
+            fields = cls._meta.sorted_fields
+        return AutoReconnectSelect(cls, fields)
 
 
 class Groups(BaseModel):
