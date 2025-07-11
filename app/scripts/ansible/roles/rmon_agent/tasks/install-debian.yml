@@ -20,7 +20,6 @@
     requirements: /var/lib/rmon/rmon-agent/requirements.txt
     extra_args: --break-system-packages
   when: pip_upgrade1_result is succeeded
-  register: pip_install1_result
   ignore_errors: true
 
 - name: Upgrade pip3 for old Debian

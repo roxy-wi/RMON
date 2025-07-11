@@ -305,4 +305,3 @@ def handler_exceptions_for_json_data(ex: Exception, main_ex_mes: str = '') -> tu
 
 	# Use the centralized error handler
 	return handle_exception(ex, additional_info=additional_info)
-

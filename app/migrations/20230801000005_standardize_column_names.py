@@ -1,3 +1,4 @@
+from playhouse.migrate import *
 from app.modules.db.db_model import connect
 
 # Get the migrator for the current database

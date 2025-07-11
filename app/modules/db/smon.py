@@ -637,7 +637,7 @@ def select_smon_history(smon_id: int, limit: int = 40) -> SmonHistory:
 	try:
 		# Using the composite index on (smon_id, date) for efficient filtering and sorting
 		return SmonHistory.select(
-			SmonHistory.smon_id, 
+			SmonHistory.smon_id,
 			SmonHistory.check_id,
 			SmonHistory.response_time,
 			SmonHistory.status,
@@ -654,30 +654,28 @@ def select_smon_history(smon_id: int, limit: int = 40) -> SmonHistory:
 			SmonHistory.smon_id == smon_id
 		).limit(limit).order_by(SmonHistory.date.desc())
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, SmonHistory)
 
 
 def get_history(smon_id: int) -> SmonHistory:
 	try:
 		return SmonHistory.select().where(SmonHistory.smon_id == smon_id).order_by(SmonHistory.date.desc()).get()
-	except SmonHistory.DoesNotExist:
-		raise RoxywiResourceNotFound
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, SmonHistory)
 
 
 def update_check(smon_id, **kwargs) -> None:
 	try:
 		SMON.update(**kwargs).where(SMON.id == smon_id).execute()
 	except Exception as e:
-		out_error(e)
+		raise out_error(e, SMON)
 
 
 def update_check_agent(smon_id: int, agent_id: int) -> None:
 	try:
 		return SMON.update(agent_id=agent_id).where(SMON.id == smon_id).execute()
 	except Exception as e:
-		raise out_error(e)
+		raise out_error(e, SMON)
 
 
 def get_avg_resp_time(smon_id: int, check_id: int) -> int:
@@ -688,7 +686,7 @@ def get_avg_resp_time(smon_id: int, check_id: int) -> int:
 		).scalar()
 		return query_res if query_res is not None else 0
 	except Exception as e:
-		raise out_error(e)
+		raise out_error(e, SmonHistory)
 
 
 def update_smon_ssl_expire_date(smon_id: str, expire_date: str) -> None:
