@@ -35,5 +35,5 @@
 - name: Install RMON Agent python requirements for old Debian
   ansible.builtin.pip:
     requirements: /var/lib/rmon/rmon-agent/requirements.txt
-  when: pip_install1_result is failed
+  when: pip_upgrade1_result is failed
   ignore_errors: true

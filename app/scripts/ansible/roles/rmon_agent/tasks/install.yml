@@ -43,9 +43,6 @@
   with_items:
     - {file: "rmon-agent.service.j2", path: "/etc/systemd/system/rmon-agent.service"}
     - {file: "logrotate.j2", path: "/etc/logrotate.d/rmon-agent"}
-    - {file: "rsyslog.conf.j2", path: "/etc/rsyslog.d/rmon-agent.conf"}
-  notify:
-    - Restart rsyslog
 
 - name: Install requirements
   ansible.builtin.include_tasks: "{{ role_path }}/tasks/install-{{ ansible_facts['os_family'] | lower }}.yml"

@@ -61,6 +61,7 @@ def run_ansible(inv: dict, server_ips: list, ansible_role: str) -> dict:
 		'ANSIBLE_DISPLAY_SKIPPED_HOSTS': "no",
 		'ANSIBLE_DEPRECATION_WARNINGS': "no",
 		'ANSIBLE_HOST_KEY_CHECKING': "no",
+		'ANSIBLE_TIMEOUT': 15,
 		'ACTION_WARNINGS': "no",
 		'LOCALHOST_WARNING': "no",
 		'COMMAND_WARNINGS': "no",
