@@ -20,6 +20,8 @@ def _return_checks(checks: SMON, check_type_id: int = None) -> list:
         check_json = {'checks': []}
         place = m.multi_check_id.entity_type
         check_id = m.id
+        name = m.multi_check_id.name.replace("'", "")
+        description = m.multi_check_id.description.replace("'", "")
         if m.multi_check_id.check_group_id:
             group_name = smon_sql.get_smon_group_by_id(m.multi_check_id.check_group_id).name
             group_name = group_name.replace("'", "")
@@ -42,8 +44,8 @@ def _return_checks(checks: SMON, check_type_id: int = None) -> list:
             smon_id = model_to_dict(check, max_depth=1)
             check_json.update(smon_id['smon_id'])
             check_json.update(model_to_dict(check, recurse=False))
-            check_json['name'] = check_json['name'].replace("'", "")
-            check_json['checks'][i]['smon_id']['name'] = check.smon_id.name.replace("'", "")
+            check_json['name'] = name
+            check_json['description'] = description
             if check_json['checks'][i]['smon_id']['check_type'] == 'http':
                 check_json['checks'][i]['accepted_status_codes'] = int(check_json['checks'][i]['accepted_status_codes'])
                 check_json['accepted_status_codes'] = int(check_json['accepted_status_codes'])
@@ -1112,6 +1114,8 @@ class AllChecksViewWithFilters(MethodView):
         for m in checks:
             check_json = {}
             place = m.multi_check_id.entity_type
+            name = m.multi_check_id.name.replace("'", "")
+            description = m.multi_check_id.description.replace("'", "")
             if m.multi_check_id.check_group_id:
                 group_name = smon_sql.get_smon_group_by_id(m.multi_check_id.check_group_id).name
                 group_name = group_name.replace("'", "")
@@ -1123,6 +1127,7 @@ class AllChecksViewWithFilters(MethodView):
             check_json['place'] = place
             smon_id = model_to_dict(m, recurse=False, exclude={SMON.agent_id, SMON.region_id, SMON.country_id})
             check_json.update(smon_id)
-            check_json['name'] = check_json['name'].replace("'", "")
+            check_json['name'] = name
+            check_json['description'] = description
             check_list['results'].append(check_json)
         return jsonify(check_list)

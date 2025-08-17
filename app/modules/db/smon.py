@@ -208,17 +208,6 @@ def insert_smon_history(**kwargs) -> None:
 		out_error(e)
 
 
-def insert_smon_history_http_metrics(date, **kwargs) -> None:
-	try:
-		query = (SmonHistory.update(kwargs).where(
-			(SmonHistory.date == date) &
-			(SmonHistory.smon_id == kwargs.get('smon_id'))
-		))
-		query.execute()
-	except Exception as e:
-		out_error(e)
-
-
 def select_one_smon(smon_id: int, check_type_id: int) -> tuple:
 	correct_model = tool_common.get_model_for_check(check_type_id=check_type_id)
 	try:
@@ -319,13 +308,6 @@ def insert_smon_http(**kwargs):
 		SmonHttpCheck.insert(**kwargs).execute()
 	except Exception as e:
 		out_error(e)
-
-
-def select_smon_by_id(last_id):
-	try:
-		return SMON.select().where(SMON.id == last_id).execute()
-	except Exception as e:
-		raise out_error(e, SMON)
 
 
 def delete_multi_check(check_id: int, group_id: int) -> None:
@@ -707,18 +689,6 @@ def update_smon_alert_status(smon_id: str, alert_value: int, alert: str) -> None
 		out_error(e)
 
 
-def get_smon_alert_status(smon_id: str, alert: str) -> int:
-	try:
-		if alert == 'ssl_expire_warning_alert':
-			return SMON.get(SMON.id == smon_id).ssl_expire_warning_alert
-		else:
-			return SMON.get(SMON.id == smon_id).ssl_expire_critical_alert
-	except SMON.DoesNotExist:
-		raise RoxywiResourceNotFound
-	except Exception as e:
-		out_error(e)
-
-
 def get_smon(smon_id: int) -> SMON:
 	try:
 		return SMON.get(SMON.id == smon_id)
@@ -726,22 +696,6 @@ def get_smon(smon_id: int) -> SMON:
 		raise RoxywiResourceNotFound
 	except Exception as e:
 		out_error(e)
-
-
-def change_body_status(status, smon_id, time):
-	try:
-		SMON.update(body_status=status, time_state=time).where(SMON.id == smon_id).execute()
-	except Exception as e:
-		out_error(e)
-
-
-def select_body_status(smon_id):
-	try:
-		query_res = SMON.get(SMON.id == smon_id).body_status
-	except Exception as e:
-		out_error(e)
-	else:
-		return query_res
 
 
 def count_agents() -> int:

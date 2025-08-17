@@ -329,7 +329,7 @@ class ChecksMetricViewPing(ChecksMetricView):
 class ChecksMetricViewDNS(ChecksMetricView):
     def __init__(self):
         super().__init__()
-        self.check_type = 'ping'
+        self.check_type = 'dns'
         self.check_type_id = 5
 
     @validate(query=CheckMetricsQuery)

@@ -23,9 +23,7 @@ def create_check(
 ) -> int:
     name = json_data.name.encode('utf-8')
     kwargs = {
-        "name": name,
         "enabled": json_data.enabled,
-        "description": json_data.description,
         "telegram_channel_id": json_data.telegram_channel_id,
         "slack_channel_id": json_data.slack_channel_id,
         "pd_channel_id": json_data.pd_channel_id,
@@ -132,9 +130,7 @@ def create_tcp_check(data: TcpCheckRequest, last_id: int) -> Optional[tuple[dict
 def update_smon(smon_id, json_data) -> None:
     try:
         kwargs = {
-            'name': json_data.name,
             'enabled': json_data.enabled,
-            'description': json_data.description,
             'telegram_channel_id': json_data.telegram_channel_id,
             'slack_channel_id': json_data.slack_channel_id,
             'pd_channel_id': json_data.pd_channel_id,
@@ -321,10 +317,10 @@ def show_status_page(slug: str) -> str:
         smon = smon_sql.select_one_smon_by_multi_check(multi_check_id)
         en = ''
         for s in smon:
-            name = s.name
+            name = s.multi_check_id.name
             check_id = s.id
             uptime = check_uptime(check_id)
-            desc = s.description
+            desc = s.multi_check_id.description
             check_type = s.check_type
             en = s.enabled
             multi_check_id = s.multi_check_id

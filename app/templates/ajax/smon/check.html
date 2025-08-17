@@ -18,13 +18,17 @@
 <div class="smon_services" id="smon-{{ s.smon_id.multi_check_id }}">
 <div class="ip server-name">
     <span class="check-name-tile overflow">
-        <a href="/rmon/dashboard/{{s.smon_id.multi_check_id}}/{{check_type_id}}" title="{{lang.words.view|title()}} {{lang.words.history}} {{lang.words.for}} {{s.smon_id.name}} {{lang.words.host}}" class="link" id="smon-name-{{ s.smon_id.id }}">{{s.smon_id.name.strip("'")}}</a>
+        <a href="/rmon/dashboard/{{s.smon_id.multi_check_id}}/{{check_type_id}}"
+           title="{{lang.words.view|title()}} {{lang.words.history}} {{lang.words.for}} {{s.smon_id.multi_check_id.name}} {{lang.words.host}}"
+           class="link" id="smon-name-{{ s.smon_id.id }}">
+            {{s.smon_id.multi_check_id.name.strip("'")}}
+        </a>
     </span>
     <span class="server-action">
         <a class="edit" onclick="editSmon('{{s.smon_id.multi_check_id}}', '{{ s.smon_id.check_type }}')"></a>
-        <a class="add" onclick="cloneSmon({{s.smon_id.multi_check_id}}, '{{ s.smon_id.check_type }}')" id="clone-{{s.smon_id.multi_check_id}}" title="{{lang.words.clone|title()}} {{s.smon_id.name}}" style="cursor: pointer; color: #000;"></a>
-        <a class="delete" onclick="confirmDeleteSmon({{s.smon_id.multi_check_id}}, '{{ s.smon_id.check_type }}')" title="{{lang.words.delete|title()}} {{s.smon_id.name}}" style="cursor: pointer; color: #000;"></a>
-        <a href="/rmon/history/check/{{s.smon_id.multi_check_id}}" title="{{lang.words.view|title()}} {{lang.words.alerts}} {{lang.words.history}} {{lang.words.for}} {{s.smon_id.name}} {{lang.words.host}}" class="history"></a>
+        <a class="add" onclick="cloneSmon({{s.smon_id.multi_check_id}}, '{{ s.smon_id.check_type }}')" id="clone-{{s.smon_id.multi_check_id}}" title="{{lang.words.clone|title()}} {{s.smon_id.multi_check_id.name}}" style="cursor: pointer; color: #000;"></a>
+        <a class="delete" onclick="confirmDeleteSmon({{s.smon_id.multi_check_id}}, '{{ s.smon_id.check_type }}')" title="{{lang.words.delete|title()}} {{s.smon_id.multi_check_id.name}}" style="cursor: pointer; color: #000;"></a>
+        <a href="/rmon/history/check/{{s.smon_id.multi_check_id}}" title="{{lang.words.view|title()}} {{lang.words.alerts}} {{lang.words.history}} {{lang.words.for}} {{s.smon_id.multi_check_id.name}} {{lang.words.host}}" class="history"></a>
     </span>
 </div>
 <div class="desc check-name-desc overflow">

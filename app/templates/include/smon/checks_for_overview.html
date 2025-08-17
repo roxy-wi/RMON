@@ -14,7 +14,7 @@
         {% for check in http_checks %}
             <div class="overview-check" id="check-{{ check.multi_check_id }}">
                 <span class="overview-check-name"><b>{{ lang.words.name|title() }}:</b>
-                    <a href="/rmon/dashboard/{{ check.multi_check_id }}/{{ checking_types[check.check_type] }}" target="_blank">{{ check.name|replace("'", "") }}</a>
+                    <a href="/rmon/dashboard/{{ check.multi_check_id }}/{{ checking_types[check.check_type] }}" target="_blank">{{ check.smon_id.multi_check_id.name|replace("'", "") }}</a>
                 </span>
                 <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
                 <span class="check-name-tile overview-check-hostname"><b>URL:</b> <a href="{{ check.url }}" target="_blank">{{ check.url }}</a></span>
@@ -35,7 +35,7 @@
         {% for check in tcp_checks %}
             <div class="overview-check" id="check-{{ check.multi_check_id }}">
                 <span class="overview-check-name"><b>{{ lang.words.name|title() }}:</b>
-                    <a href="/rmon/dashboard/{{ check.multi_check_id }}/{{ checking_types[check.check_type] }}" target="_blank">{{ check.name|replace("'", "") }}</a>
+                    <a href="/rmon/dashboard/{{ check.multi_check_id }}/{{ checking_types[check.check_type] }}" target="_blank">{{ check.smon_id.multi_check_id.name|replace("'", "") }}</a>
                 </span>
                 <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
                 <span class="check-name-tile overview-check-hostname"><b>{{ lang.words.Hostname }}:</b> {{ check.ip }}</span>
@@ -56,7 +56,7 @@
             {% for check in dns_checks %}
                 <div class="overview-check" id="check-{{ check.multi_check_id }}">
                     <span class="overview-check-name"><b>{{ lang.words.name|title() }}:</b>
-                        <a href="/rmon/dashboard/{{ check.multi_check_id }}/{{ checking_types[check.check_type] }}" target="_blank">{{ check.name|replace("'", "") }}</a>
+                        <a href="/rmon/dashboard/{{ check.multi_check_id }}/{{ checking_types[check.check_type] }}" target="_blank">{{ check.smon_id.multi_check_id.name|replace("'", "") }}</a>
                     </span>
                     <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
                     <span class="check-name-tile overview-check-hostname"><b>{{ lang.words.record|title() }}:</b> {{ check.ip }}</span>
@@ -79,7 +79,7 @@
         {% for check in ping_checks %}
             <div class="overview-check" id="check-{{ check.multi_check_id }}">
                 <span class="overview-check-name"><b>{{ lang.words.name|title() }}:</b>
-                    <a href="/rmon/dashboard/{{ check.multi_check_id }}/{{ checking_types[check.check_type] }}" target="_blank">{{ check.name|replace("'", "") }}</a>
+                    <a href="/rmon/dashboard/{{ check.multi_check_id }}/{{ checking_types[check.check_type] }}" target="_blank">{{ check.smon_id.multi_check_id.name|replace("'", "") }}</a>
                 </span>
                 <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
                 <span class="check-name-tile overview-check-hostname"><b>{{ lang.words.Hostname }}:</b> {{ check.ip }} </span>
@@ -100,7 +100,7 @@
         {% for check in smtp_checks %}
             <div class="overview-check" id="check-{{ check.multi_check_id }}">
                 <span class="overview-check-name"><b>{{ lang.words.name|title() }}:</b>
-                    <a href="/rmon/dashboard/{{ check.multi_check_id }}/{{ checking_types[check.check_type] }}" target="_blank">{{ check.name|replace("'", "") }}</a>
+                    <a href="/rmon/dashboard/{{ check.multi_check_id }}/{{ checking_types[check.check_type] }}" target="_blank">{{ check.smon_id.multi_check_id.name|replace("'", "") }}</a>
                 </span>
                 <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
                 <span class="check-name-tile overview-check-hostname"><b>{{ lang.words.Hostname }}:</b> {{ check.ip }} </span>
@@ -121,7 +121,7 @@
         {% for check in rabbitmq_checks %}
             <div class="overview-check" id="check-{{ check.multi_check_id }}">
                 <span class="overview-check-name"><b>{{ lang.words.name|title() }}:</b>
-                    <a href="/rmon/dashboard/{{ check.multi_check_id }}/{{ checking_types[check.check_type] }}" target="_blank">{{ check.name|replace("'", "") }}</a>
+                    <a href="/rmon/dashboard/{{ check.multi_check_id }}/{{ checking_types[check.check_type] }}" target="_blank">{{ check.smon_id.multi_check_id.name|replace("'", "") }}</a>
                 </span>
                 <span class="overview-check-col"><b>{{ lang.words.interval|title() }}:</b> {{ check.interval }}</span>
                 <span class="check-name-tile overview-check-hostname"><b>{{ lang.words.Hostname }}:</b> {{ check.ip }} </span>

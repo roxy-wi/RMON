@@ -408,6 +408,7 @@ class StatusPageSlug(MethodView):
             checks = smon_sql.select_status_page_checks(page_id)
             page['checks'] = []
             groups_name = {}
+            check_names = {}
             for check in checks:
                 check_data = smon_sql.select_one_smon_by_multi_check(check.multi_check_id)
                 for c_d in check_data:
@@ -415,10 +416,18 @@ class StatusPageSlug(MethodView):
                         group_name = smon_sql.get_smon_group_by_id(c_d.multi_check_id.check_group_id).name
                         group_name = group_name.replace("'", "")
                         groups_name.update({int(c_d.multi_check_id.id): group_name})
+                    check_names.update({
+                        f'name_{int(c_d.multi_check_id.id)}': c_d.multi_check_id.name,
+                        f'description_{int(c_d.multi_check_id.id)}': c_d.multi_check_id.description
+                    })
                     page['checks'].append(model_to_dict(c_d, recurse=False))
             for check in page['checks']:
                 check.update(smon_sql.get_uptime_and_status(check['multi_check_id']))
-                check.update({'check_group': groups_name.get(check['multi_check_id'], '')})
+                check.update({
+                    'name': check_names.get(f"name_{check['multi_check_id']}", ''),
+                    'description': check_names.get(f"description_{check['multi_check_id']}", ''),
+                    'check_group': groups_name.get(check['multi_check_id'], ''),
+                })
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get Status page checks')
 

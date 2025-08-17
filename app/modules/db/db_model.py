@@ -61,6 +61,9 @@ def connect(get_migrator=None):
         return conn
 
 
+conn = connect()
+
+
 class AutoReconnectSelect(ModelSelect):
     def execute(self, database=None):
         db = database or self.model._meta.database
@@ -71,7 +74,7 @@ class AutoReconnectSelect(ModelSelect):
 
 class BaseModel(Model):
     class Meta:
-        database = connect()
+        database = conn
 
     @classmethod
     def select(cls, *fields):
@@ -297,6 +300,8 @@ class MultiCheck(BaseModel):
     priority = CharField(constraints=[SQL("DEFAULT 'critical'")])
     expiration = DateTimeField(null=True)
     threshold_timeout = IntegerField(default=0)
+    name = CharField(null=True)
+    description = CharField(null=True)
 
     class Meta:
         table_name = 'multi_check'

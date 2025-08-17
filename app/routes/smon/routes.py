@@ -96,7 +96,7 @@ def smon_dashboard(smon_id, check_id):
     for s in smon:
         if s.smon_id.ssl_expire_date is not None:
             cert_day_diff = smon_mod.get_ssl_expire_date(s.smon_id.ssl_expire_date)
-        smon_name = s.smon_id.name
+        smon_name = s.smon_id.multi_check_id.name
 
     kwargs = {
         'lang': g.user_params['lang'],
@@ -245,7 +245,7 @@ def smon_history_metric_chart(check_id, check_type_id):
                 # Process check details
                 for s in smon:
                     json_metric['updated_at'] = common.get_time_zoned_date(s.smon_id.updated_at)
-                    json_metric['name'] = str(s.smon_id.name)
+                    json_metric['name'] = str(s.smon_id.multi_check_id.name)
                     interval = s.interval  # Update interval in case it changed
                     is_enabled = s.smon_id.enabled
                     if s.smon_id.ssl_expire_date is not None:

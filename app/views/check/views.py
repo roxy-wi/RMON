@@ -61,6 +61,8 @@ class CheckView(MethodView):
 
         for m in multi_check:
             place = m.multi_check_id.entity_type
+            name = m.multi_check_id.name.replace("'", "")
+            description = m.multi_check_id.description.replace("'", "")
             if m.multi_check_id.runbook:
                 runbook = m.multi_check_id.runbook.replace("'", "")
             else:
@@ -95,9 +97,9 @@ class CheckView(MethodView):
                 smon_id = model_to_dict(check, max_depth=query.max_depth)
                 check_json.update(smon_id['smon_id'])
                 check_json.update(model_to_dict(check, recurse=query.recurse))
-                check_json['name'] = check_json['name'].replace("'", "")
+                check_json['name'] = name
+                check_json['description'] = description
                 check_json['email_channel_id'] = check_json['email_channel_id'] if check_json['email_channel_id'] else 0
-                check_json['checks'][i]['smon_id']['name'] = check.smon_id.name.replace("'", "")
                 check_json['checks'][i]['smon_id']['uptime'] = smon_mod.check_uptime(check_json['checks'][i]['smon_id']['id'])
                 if check_json['checks'][i]['smon_id']['check_type'] == 'http':
                     check_json['checks'][i]['accepted_status_codes'] = check_json['checks'][i]['accepted_status_codes']
@@ -112,7 +114,7 @@ class CheckView(MethodView):
     def post(self, data) -> int:
         """
 
-        Handles the post request to create multiple checks.
+        Handles the post-request to create multiple checks.
 
         Args:
             data: An object containing the required data to create checks.
@@ -223,7 +225,9 @@ class CheckView(MethodView):
             'runbook': data.runbook,
             'priority': data.priority,
             'expiration': data.expiration,
-            'threshold_timeout': float(data.threshold_timeout)
+            'threshold_timeout': float(data.threshold_timeout),
+            'name': data.name,
+            'description': data.description,
         }
         return check_parameters
 

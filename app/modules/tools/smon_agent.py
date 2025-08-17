@@ -200,7 +200,7 @@ def send_tcp_checks(agent_id: int, server_ip: str, check_id=None) -> None:
     for check in checks:
         json_data = {
             'check_type': 'tcp',
-            'name': check.smon_id.name,
+            'name': check.smon_id.multi_check_id.name,
             'server_ip': check.ip,
             'port': check.port,
             'interval': check.interval,
@@ -223,7 +223,7 @@ def send_ping_checks(agent_id: int, server_ip: str, check_id=None) -> None:
     for check in checks:
         json_data = {
             'check_type': 'ping',
-            'name': check.smon_id.name,
+            'name': check.smon_id.multi_check_id.name,
             'server_ip': check.ip,
             'packet_size': check.packet_size,
             'interval': check.interval,
@@ -247,7 +247,7 @@ def send_dns_checks(agent_id: int, server_ip: str, check_id=None) -> None:
     for check in checks:
         json_data = {
             'check_type': 'dns',
-            'name': check.smon_id.name,
+            'name': check.smon_id.multi_check_id.name,
             'server_ip': check.ip,
             'port': check.port,
             'record_type': check.record_type,
@@ -278,7 +278,7 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
                 roxywi_common.logger(f'Cannot parse body for check {check.id}: {e}', 'error', additional_extra={'check_id': check.id})
         json_data = {
             'check_type': 'http',
-            'name': check.smon_id.name,
+            'name': check.smon_id.multi_check_id.name,
             'url': check.url,
             'http_method': check.method,
             'body': body,
@@ -308,7 +308,7 @@ def send_smtp_checks(agent_id: int, server_ip: str, check_id=None) -> None:
     for check in checks:
         json_data = {
             'check_type': 'smtp',
-            'name': check.smon_id.name,
+            'name': check.smon_id.multi_check_id.name,
             'server': check.ip,
             'port': check.port,
             'username': check.username,
@@ -334,7 +334,7 @@ def send_rabbit_checks(agent_id: int, server_ip: str, check_id=None) -> None:
     for check in checks:
         json_data = {
             'check_type': 'rabbitmq',
-            'name': check.smon_id.name,
+            'name': check.smon_id.multi_check_id.name,
             'server': check.ip,
             'port': check.port,
             'username': check.username,
