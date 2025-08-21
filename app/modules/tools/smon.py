@@ -66,10 +66,19 @@ def send_new_check(
 
 
 def create_http_check(data: HttpCheckRequest, check_id: int) -> Optional[tuple[dict, int]]:
+    body_keyword: str = None
+    body_json: dict = None
+    if data.body:
+        body_keyword = data.body
+        body_json = None
+    if data.body_json:
+        body_keyword = None
+        body_json = data.body_json
     kwargs = {
         'smon_id': check_id,
         'url': data.url,
-        'body': data.body,
+        'body': body_keyword,
+        'body_json': body_json,
         'method': data.method,
         'interval': data.interval,
         'body_req': data.body_req,

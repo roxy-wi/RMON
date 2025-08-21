@@ -282,6 +282,7 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             'url': check.url,
             'http_method': check.method,
             'body': body,
+            'body_json': check.body_json,
             'interval': check.interval,
             'timeout': check.smon_id.check_timeout,
             'accepted_status_codes': check.accepted_status_codes,

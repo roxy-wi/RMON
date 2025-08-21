@@ -278,14 +278,14 @@ class Region(BaseModel):
 
 class SmonAgent(BaseModel):
     id = AutoField()
-    server_id = ForeignKeyField(Server, on_delete='RESTRICT', index=True)  # Added index for performance
+    server_id = ForeignKeyField(Server, on_delete='RESTRICT', index=True)
     name = CharField()
-    uuid = CharField(index=True)  # Added index for performance
+    uuid = CharField(index=True)
     enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
     description = CharField()
-    shared = IntegerField(constraints=[SQL('DEFAULT 0')], index=True)  # Added index for performance
+    shared = IntegerField(constraints=[SQL('DEFAULT 0')], index=True)
     port = IntegerField(constraints=[SQL('DEFAULT 5701')])
-    region_id = ForeignKeyField(Region, null=True, on_delete='SET NULL', index=True)  # Added index for performance
+    region_id = ForeignKeyField(Region, null=True, on_delete='SET NULL', index=True)
 
     class Meta:
         table_name = 'smon_agents'
@@ -309,15 +309,12 @@ class MultiCheck(BaseModel):
 
 class SMON(BaseModel):
     id = AutoField()
-    name = CharField(null=True)
     status = IntegerField(constraints=[SQL('DEFAULT 1')])
     enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
-    description = CharField(null=True)
     response_time = CharField(null=True)
     time_state = DateTimeField(default=datetime.now)
-    body_status = IntegerField(constraints=[SQL('DEFAULT 1')])
     telegram_channel_id = IntegerField(null=True)
-    group_id = IntegerField(index=True)  # Added index for performance
+    group_id = IntegerField(index=True)
     slack_channel_id = IntegerField(null=True)
     ssl_expire_warning_alert = IntegerField(constraints=[SQL('DEFAULT 0')])
     ssl_expire_critical_alert = IntegerField(constraints=[SQL('DEFAULT 0')])
@@ -329,10 +326,10 @@ class SMON(BaseModel):
     created_at = DateTimeField(default=datetime.now)
     updated_at = DateTimeField(default=datetime.now)
     check_timeout = IntegerField(constraints=[SQL('DEFAULT 2')])
-    region_id = ForeignKeyField(Region, null=True, on_delete='SET NULL', index=True)  # Added index for performance
-    country_id = ForeignKeyField(Country, null=True, on_delete='SET NULL', index=True)  # Added index for performance
-    agent_id = ForeignKeyField(SmonAgent, null=True, on_delete='RESTRICT', index=True)  # Added index for performance
-    multi_check_id = ForeignKeyField(MultiCheck, null=True, on_delete='CASCADE', index=True)  # Added index for performance
+    region_id = ForeignKeyField(Region, null=True, on_delete='SET NULL', index=True)
+    country_id = ForeignKeyField(Country, null=True, on_delete='SET NULL', index=True)
+    agent_id = ForeignKeyField(SmonAgent, null=True, on_delete='RESTRICT', index=True)
+    multi_check_id = ForeignKeyField(MultiCheck, null=True, on_delete='CASCADE', index=True)
     retries = IntegerField(constraints=[SQL('DEFAULT 3')])
     current_retries = IntegerField(constraints=[SQL('DEFAULT 0')])
 
@@ -400,12 +397,12 @@ class UserName(BaseModel):
 
 
 class SmonHistory(BaseModel):
-    smon_id = ForeignKeyField(SMON, on_delete='Cascade', index=True)  # Added index for performance
-    check_id = IntegerField(index=True)  # Added index for performance
+    smon_id = ForeignKeyField(SMON, on_delete='Cascade', index=True)
+    check_id = IntegerField(index=True)
     response_time = FloatField()
-    status = IntegerField(index=True)  # Added index for performance
+    status = IntegerField(index=True)
     mes = CharField()
-    date = DateTimeField(default=datetime.now, index=True)  # Added index for performance
+    date = DateTimeField(default=datetime.now, index=True)
     name_lookup = CharField(null=True)
     connect = CharField(null=True)
     app_connect = CharField(null=True)
@@ -479,6 +476,7 @@ class SmonHttpCheck(BaseModel):
     ignore_ssl_error = IntegerField(constraints=[SQL('DEFAULT 0')])
     redirects = IntegerField(constraints=[SQL('DEFAULT 10')])
     auth = JSONField(null=True)
+    body_json = JSONField(null=True)
 
     class Meta:
         table_name = 'smon_http_check'

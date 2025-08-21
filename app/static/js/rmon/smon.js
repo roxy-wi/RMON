@@ -34,6 +34,18 @@ $(function () {
 			$('.smon_http_check_mtls').hide();
 		}
 	});
+	$( "#smon_http_check_body_type" ).on('selectmenuchange',function() {
+		if ($('#smon_http_check_body_type').val() == 'keyword') {
+			$('.smon_http_check_body_type_keyword').show();
+			$('.smon_http_check_body_type_json').hide();
+		} else if ($('#smon_http_check_body_type').val() == 'json') {
+			$('.smon_http_check_body_type_keyword').hide();
+			$('.smon_http_check_body_type_json').show();
+		} else {
+			$('.smon_http_check_body_type_keyword').hide();
+			$('.smon_http_check_body_type_json').hide();
+		}
+	});
 });
 function sort_by_status() {
 	$('<div id="err_services" style="clear: both;"></div>').appendTo('.main');
@@ -135,6 +147,16 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 			}
 		}
 	}
+	let body = null;
+	let body_json = null;
+	if ($("#smon_http_check_body_type").val() === "keyword") {
+		body = $('#new-smon-body-keyword').val()
+	} else if ($("#smon_http_check_body_type").val() === "json") {
+		body_json = {
+			'path': $('#new-smon-body-json-path').val(),
+			'value': $('#new-smon-body-json-value').val()
+		}
+	}
 	let jsonData = {
 		'name': $('#new-smon-name').val(),
 		'ip': $('#new-smon-ip').val(),
@@ -146,7 +168,8 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'vhost': $('#new-smon-vhost').val(),
 		'enabled': enable,
 		'url': $('#new-smon-url').val(),
-		'body': $('#new-smon-body').val(),
+		'body': body,
+		'body_json': body_json,
 		'check_group': $('#new-smon-group').val(),
 		'description': $('#new-smon-description').val(),
 		'telegram_channel_id': $('#new-smon-telegram').val(),
@@ -330,13 +353,13 @@ function getCheckSettings(smon_id, check_type) {
 		async: false,
 		dataType: "json",
 		success: function (data) {
-			$('#new-smon-name').val(data['checks'][0]['smon_id']['name'].replaceAll("'", ""));
+			$('#new-smon-name').val(data['name'].replaceAll("'", ""));
 			$('#new-smon-ip').val(data['checks'][0]['ip']);
 			$('#new-smon-port').val(data['checks'][0]['port']);
 			$('#new-smon-resolver-server').val(data['checks'][0]['resolver']);
 			$('#new-smon-dns_record_typer').val(data['checks'][0]['record_type']);
 			$('#new-smon-url').val(data['checks'][0]['url']);
-			$('#new-smon-description').val(data['checks'][0]['smon_id']['description'].replaceAll("'", ""))
+			$('#new-smon-description').val(data['description'].replaceAll("'", ""))
 			$('#new-smon-packet_size').val(data['checks'][0]['packet_size']);
 			$('#new-smon-count_packets').val(data['checks'][0]['count_packets']);
 			$('#new-smon-interval').val(data['checks'][0]['interval']);
@@ -353,11 +376,6 @@ function getCheckSettings(smon_id, check_type) {
 			}
 			if (data['checks'][0]['smon_id']['check_timeout']) {
 				$('#new-smon-timeout').val(data['checks'][0]['smon_id']['check_timeout']);
-			}
-			try {
-				$('#new-smon-body').val(data['checks'][0]['body'].replaceAll("'", ""));
-			} catch (e) {
-				$('#new-smon-body').val(data['checks'][0]['body']);
 			}
 			try {
 				$('#new-smon-body-req').val(data['checks'][0]['body_req'].replaceAll("'", ""));
@@ -378,6 +396,21 @@ function getCheckSettings(smon_id, check_type) {
 				for (let entity_id of data['entities']) {
 					getEntityJson(entity_id, data['place']);
 				}
+			}
+			if (data['body']) {
+				$('#new-smon-body-keyword').val(data['body'].replaceAll("'", ""));
+				$('#smon_http_check_body_type').val('keyword').change();
+				$('#smon_http_check_body_type').selectmenu("refresh");
+				$('.smon_http_check_body_type_keyword').show();
+				$('.smon_http_check_body_type_json').hide();
+			}
+			if (data['body_json']) {
+				$('#new-smon-body-json-path').val(data['body_json']['path']);
+				$('#new-smon-body-json-value').val(data['body_json']['value']);
+				$('#smon_http_check_body_type').val('json').change();
+				$('#smon_http_check_body_type').selectmenu("refresh");
+				$('.smon_http_check_body_type_keyword').hide();
+				$('.smon_http_check_body_type_json').show();
 			}
 			if (data['checks'][0]['smon_id']['email_channel_id']) {
 				$('#new-smon-email').val(data['checks'][0]['smon_id']['email_channel_id']).change();

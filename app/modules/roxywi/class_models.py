@@ -140,12 +140,25 @@ class BaseCheckRequest(BaseModel):
         return values
 
 
+class JSONPathRule(BaseModel):
+    path: str
+    value: Any = None
+
+    @field_validator('path')
+    @classmethod
+    def path_must_be_non_empty(cls, v: str):
+        if not isinstance(v, str) or not v.strip():
+            raise ValueError("JSON path must be a non-empty string")
+        return v
+
+
 class HttpCheckRequest(BaseCheckRequest):
     url: AnyUrl
     method: Literal['get', 'post', 'put', 'patch', 'delete', 'head', 'options']
     header_req: Optional[str] = None
     body_req: Optional[str] = None
     body: Optional[EscapedString] = None
+    body_json: Optional[JSONPathRule] = None
     accepted_status_codes: List[Union[int, str]]
     ignore_ssl_error: Optional[bool] = 0
     redirects: Optional[int] = 10

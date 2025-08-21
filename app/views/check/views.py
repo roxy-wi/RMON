@@ -62,7 +62,10 @@ class CheckView(MethodView):
         for m in multi_check:
             place = m.multi_check_id.entity_type
             name = m.multi_check_id.name.replace("'", "")
-            description = m.multi_check_id.description.replace("'", "")
+            if m.multi_check_id.description:
+                description = m.multi_check_id.description.replace("'", "")
+            else:
+                description = ''
             if m.multi_check_id.runbook:
                 runbook = m.multi_check_id.runbook.replace("'", "")
             else:
@@ -104,7 +107,8 @@ class CheckView(MethodView):
                 if check_json['checks'][i]['smon_id']['check_type'] == 'http':
                     check_json['checks'][i]['accepted_status_codes'] = check_json['checks'][i]['accepted_status_codes']
                     check_json['accepted_status_codes'] = check_json['accepted_status_codes']
-                    check_json['body'] = check.body.replace("'", "")
+                    if check.body:
+                        check_json['body'] = check.body.replace("'", "")
                 i += 1
         if len(check_json['checks']) == 0:
             abort(404, f'{self.check_type} check not found')
@@ -543,6 +547,15 @@ class CheckHttpView(CheckView):
                         password:
                           type: string
                           description: 'Password'
+                body_json:
+                  type: 'object'
+                  properties:
+                    path:
+                      type: string
+                      description: JSON path for checking
+                    value:
+                      type: string
+                      description: Value for checking. Can be empty
 
         """
         return super().get(check_id, query)
@@ -683,6 +696,15 @@ class CheckHttpView(CheckView):
                       password:
                         type: string
                         description: 'Password'
+              body_json:
+                type: 'object'
+                properties:
+                  path:
+                    type: string
+                    description: JSON path for checking
+                  value:
+                    type: string
+                    description: Value for checking. Can be empty
         responses:
           '200':
             description: 'Successful Operation'
@@ -833,6 +855,15 @@ class CheckHttpView(CheckView):
                       password:
                         type: string
                         description: 'Password'
+              body_json:
+                type: 'object'
+                properties:
+                  path:
+                    type: string
+                    description: JSON path for checking
+                  value:
+                    type: string
+                    description: Value for checking. Can be empty
         responses:
           '201':
             description: 'Successful Operation, HTTP Check updated'

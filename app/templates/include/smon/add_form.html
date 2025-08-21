@@ -25,15 +25,9 @@
         });
     });
 </script>
-<!-- Tagify CSS -->
+<!-- Tagify -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" />
-
-<!-- Input поле -->
-{#<input id="status-codes" placeholder="Введите коды: 200, 2xx, 404, 200-299" />#}
-
-<!-- Tagify JS -->
 <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
-
 
 
 <div id="smon-add-table" style="display: none;">
@@ -190,8 +184,30 @@
 			<td>{{ input('new-smon-url', value='https://', title='proto://url[:port]/', placeholder='proto://url[:port]/', style="width: 240px;") }}</td>
 		</tr>
 		<tr class="smon_http_check">
-			<td class="padding20">{{lang.words.body|title()}} {{lang.words.response}}</td>
-			<td>{{ input('new-smon-body', style="width: 240px;") }}</td>
+			<td class="padding20">
+                {{lang.words.body|title()}} {{lang.words.response}}
+            </td>
+			<td>
+                <select id="smon_http_check_body_type">
+                    <option value="0">None</option>
+                    <option value="keyword">Keyword</option>
+                    <option value="json">JSON Path</option>
+                </select>
+                <div class="smon_http_check_body_type_keyword" style="display: none;margin-bottom: 10px;margin-top: 10px;">
+                    {{ input('new-smon-body-keyword', style="width: 240px;") }}
+				    <span class="need-field">*</span>
+                </div>
+                <div class="smon_http_check_body_type_json" style="display: none; margin-bottom: 10px;margin-top: 10px;">
+                    {{ input('new-smon-body-json-path', style="width: 240px;", placeholder="Example: $.foo") }}
+				    <span class="need-field">*</span>
+                    <div class="tooltip" style="padding: 0">
+                        Check out <a href="https://jsonata.org/" target="_blank">jsonata.org</a>
+                        for the documentation about the query language. A playground can be found <a href="https://try.jsonata.org/" target="_blank">here</a>.
+                    </div>
+                    {{ input('new-smon-body-json-value', style="width: 240px;", placeholder="Example: \"bar\"") }}
+                    <div class="tooltip" style="padding: 0">Leave value empty, if want to check only path</div>
+                </div>
+            </td>
 		</tr>
 		<tr class="smon_http_check">
 			<td class="padding20">HTTP {{lang.words.method}}</td>
@@ -267,19 +283,24 @@
 				<select id="smon_http_check_auth_method">
                     <option value="0">None</option>
                     <option value="basic">Basic</option>
-                    <option value="bearer">Bearer</option>
                     <option value="mtls">MTLS</option>
                 </select>
 			</td>
 		</tr>
 		<tr class="smon_http_check_mtls" style="display: none;">
-			<td class="padding20">Key</td>
+			<td class="padding20">
+                Key
+				<span class="need-field">*</span>
+            </td>
 			<td>
 				<textarea id="new-smon-mtls_key" cols="50" rows="5" class="form-control" placeholder="Key body"></textarea>
 			</td>
 		</tr>
 		<tr class="smon_http_check_mtls" style="display: none;">
-			<td class="padding20">Cert</td>
+			<td class="padding20">
+                Cert
+				<span class="need-field">*</span>
+            </td>
 			<td>
 				<textarea id="new-smon-mtls_cert" cols="50" rows="5" class="form-control" placeholder="Cert body"></textarea>
 			</td>
