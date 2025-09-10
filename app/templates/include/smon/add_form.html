@@ -277,6 +277,38 @@
 		</tr>
     </table>
     <table class="overview" style="border-left: 1px solid #ddd;margin-left: 10px;">
+        <tr class="smon_http_check">
+            <td class="padding20">Proxy</td>
+            <td>
+				<select id="smon_http_check_proxy_method">
+                    <option value="0">None</option>
+                    <option value="http">http</option>
+                    <option value="https">https</option>
+                    <option value="socks4">socks4</option>
+                    <option value="socks4a">socks4a</option>
+                    <option value="socks5">socks5</option>
+                    <option value="socks5h">socks5h</option>
+                </select>
+			</td>
+        </tr>
+        <tr class="smon_http_check_proxy" style="display: none;">
+            <td class="padding20">
+                Host {{ lang.words.and }} {{ lang.words.port }}
+                <span class="need-field">*</span>
+            </td>
+            <td>
+                {{ input('new-smon-http_proxy_host', placeholder='proxy-server.com') }} {{ input('new-smon-http_proxy_port', placeholder='3128') }}
+            </td>
+        </tr>
+        <tr class="smon_http_check_proxy" style="display: none;">
+            <td class="padding20">
+                Authentication
+            </td>
+            <td>
+                {{ input('new-smon-http_proxy_username', placeholder='username') }}
+                {{ input('new-smon-http_proxy_password', placeholder='password', type='password') }}
+            </td>
+        </tr>
 		<tr class="smon_http_check">
 			<td class="padding20">Authentication method</td>
 			<td>

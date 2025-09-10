@@ -86,8 +86,10 @@ def create_http_check(data: HttpCheckRequest, check_id: int) -> Optional[tuple[d
         'accepted_status_codes': data.accepted_status_codes,
         'ignore_ssl_error': data.ignore_ssl_error,
         'redirects': data.redirects,
-        'auth': data.auth
+        'auth': data.auth,
+        'proxy': data.proxy.model_dump(mode='json') if data.proxy else None,
     }
+    print(kwargs)
     try:
         smon_sql.insert_smon_http(**kwargs)
     except Exception as e:

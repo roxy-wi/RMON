@@ -477,6 +477,7 @@ class SmonHttpCheck(BaseModel):
     redirects = IntegerField(constraints=[SQL('DEFAULT 10')])
     auth = JSONField(null=True)
     body_json = JSONField(null=True)
+    proxy = JSONField(null=True)
 
     class Meta:
         table_name = 'smon_http_check'

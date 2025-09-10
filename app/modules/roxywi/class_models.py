@@ -152,6 +152,14 @@ class JSONPathRule(BaseModel):
         return v
 
 
+class HttpProxy(BaseModel):
+    type: Literal['http', 'https', 'socks4', 'socks4a', 'socks5', 'socks5a'] = 'http'
+    host: str
+    port: Annotated[int, Gt(1), Le(65535)] = 3128
+    username: EscapedString
+    password: EscapedString
+
+
 class HttpCheckRequest(BaseCheckRequest):
     url: AnyUrl
     method: Literal['get', 'post', 'put', 'patch', 'delete', 'head', 'options']
@@ -163,6 +171,7 @@ class HttpCheckRequest(BaseCheckRequest):
     ignore_ssl_error: Optional[bool] = 0
     redirects: Optional[int] = 10
     auth: Optional[dict] = None
+    proxy: Optional[HttpProxy] = None
 
     @field_validator('method', mode='before')
     @classmethod

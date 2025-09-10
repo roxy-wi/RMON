@@ -556,6 +556,26 @@ class CheckHttpView(CheckView):
                     value:
                       type: string
                       description: Value for checking. Can be empty
+                proxy:
+                  type: 'object'
+                  properties:
+                    'type':
+                      type: string
+                      description: 'Proxy type. Values: `http`, `https`, `socks4`, `socks4a`, `socks5`, `socks5a`.'
+                      default: 'http'
+                    host:
+                      type: string
+                      description: Proxy host
+                    port:
+                      type: integer
+                      description: Proxy port
+                      default: 3128
+                    username:
+                      type: string
+                      description: 'Username for authentication. Can be empty.'
+                    password:
+                      type: string
+                      description: 'Password for authentication. Can be empty.'
 
         """
         return super().get(check_id, query)
@@ -705,6 +725,26 @@ class CheckHttpView(CheckView):
                   value:
                     type: string
                     description: Value for checking. Can be empty
+              proxy:
+                type: 'object'
+                properties:
+                  'type':
+                    type: string
+                    description: 'Proxy type. Values: `http`, `https`, `socks4`, `socks4a`, `socks5`, `socks5a`.'
+                    default: http
+                  host:
+                    type: string
+                    description: Proxy host
+                  port:
+                    type: integer
+                    description: Proxy port
+                    default: 3128
+                  username:
+                    type: string
+                    description: 'Username for authentication. Can be empty.'
+                  password:
+                    type: string
+                    description: 'Password for authentication. Can be empty.'
         responses:
           '200':
             description: 'Successful Operation'
@@ -864,6 +904,26 @@ class CheckHttpView(CheckView):
                   value:
                     type: string
                     description: Value for checking. Can be empty
+              proxy:
+                type: 'object'
+                properties:
+                  'type':
+                    type: string
+                    description: 'Proxy type. Values: `http`, `https`, `socks4`, `socks4a`, `socks5`, `socks5a`.'
+                    default: 'http'
+                  host:
+                    type: string
+                    description: Proxy host
+                  port:
+                    type: integer
+                    description: Proxy port
+                    default: 3128
+                  username:
+                    type: string
+                    description: 'Username for authentication. Can be empty.'
+                  password:
+                    type: string
+                    description: 'Password for authentication. Can be empty.'
         responses:
           '201':
             description: 'Successful Operation, HTTP Check updated'

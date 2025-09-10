@@ -365,47 +365,74 @@ def select_multi_checks_with_type(check_type: int, group_id: int) -> SMON:
 
 
 def select_multi_check_with_filters(group_id: int, query: CheckFiltersQuery) -> SMON:
-	where_query = (SMON.group_id == group_id)
-	sort_query = None
-	is_desc = False
+	sort_expr = None
+	MC = MultiCheck.alias()
+	where_expr = (SMON.group_id == group_id)
+
 	if any((query.check_name, query.check_group, query.check_type)):
 		if query.check_name:
-			where_query = where_query & (SMON.name.contains(query.check_name))
+			where_expr &= fn.LOWER(MC.name).contains(query.check_name.lower())
+
 		if query.check_type:
-			where_query = where_query & (SMON.check_type == query.check_type)
+			where_expr &= (SMON.check_type == query.check_type)
+
 		if query.check_group:
 			check_group_id = get_smon_group_by_name(group_id, query.check_group)
-			where_query = where_query & (MultiCheck.check_group_id == check_group_id)
+			if check_group_id is None:
+				raise RoxywiResourceNotFound('Check group not found')
+			where_expr &= (MC.check_group_id == check_group_id)
+
 	if isinstance(query.check_status, int):
-		where_query = where_query & (SMON.status == query.check_status)
+		where_expr &= (SMON.status == query.check_status)
+
 	if query.sort_by:
-		if query.sort_by.startswith('-'):
-			is_desc = True
-			query.sort_by = query.sort_by.replace('-', '')
+		is_desc = query.sort_by.startswith('-')
+		sort_key = query.sort_by[1:] if is_desc else query.sort_by
 		sorts = {
-			'name': SMON.name,
+			'name': MC.name,
 			'status': SMON.status,
 			'check_type': SMON.check_type,
-			'check_group': MultiCheck.check_group_id,
+			'check_group': MC.check_group_id,
 			'created_at': SMON.created_at,
 			'updated_at': SMON.updated_at,
 		}
-		if is_desc:
-			sort_query = sorts[query.sort_by].desc()
-		else:
-			sort_query = sorts[query.sort_by].asc()
+		if sort_key in sorts:
+			sort_expr = sorts[sort_key].desc() if is_desc else sorts[sort_key].asc()
+
 	try:
 		if pgsql_enable == '1':
-			if sort_query:
-				query = SMON.select().join(MultiCheck).distinct(SMON.multi_check_id, sort_query).where(where_query).order_by(sort_query, SMON.multi_check_id).paginate(query.offset, query.limit)
+			if sort_expr is not None:
+				q = (
+					SMON
+					.select(SMON, MC)
+					.join(MC, on=(SMON.multi_check_id == MC.id))
+					.where(where_expr)
+					.distinct(SMON.multi_check_id)
+					.order_by(SMON.multi_check_id, sort_expr)
+					.paginate(query.offset, query.limit))
 			else:
-				query = SMON.select().join(MultiCheck).where(where_query).distinct(SMON.multi_check_id).paginate(query.offset, query.limit)
+				q = (
+					SMON
+					.select(SMON, MC)
+					.join(MC, on=(SMON.multi_check_id == MC.id))
+					.where(where_expr)
+					.distinct(SMON.multi_check_id)
+					.order_by(SMON.multi_check_id)
+					.paginate(query.offset, query.limit))
 		else:
-			if sort_query:
-				query = SMON.select().join(MultiCheck).where(where_query).order_by(sort_query).group_by(SMON.multi_check_id).paginate(query.offset, query.limit)
+			base = (SMON
+					.select(SMON, MC)
+					.join(MC, on=(SMON.multi_check_id == MC.id))
+					.where(where_expr)
+					.group_by(SMON.multi_check_id))
+			if sort_expr is not None:
+				base = base.order_by(sort_expr)
 			else:
-				query = SMON.select().join(MultiCheck).where(where_query).order_by(SMON.multi_check_id).group_by(SMON.multi_check_id).paginate(query.offset, query.limit)
-		return query
+				base = base.order_by(SMON.multi_check_id)
+			q = base.paginate(query.offset, query.limit)
+
+		return q
+
 	except Exception as e:
 		raise out_error(e, SMON)
 
