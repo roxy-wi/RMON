@@ -109,6 +109,8 @@ class CheckView(MethodView):
                     check_json['accepted_status_codes'] = check_json['accepted_status_codes']
                     if check.body:
                         check_json['body'] = check.body.replace("'", "")
+                    else:
+                        check_json['body'] = ''
                 i += 1
         if len(check_json['checks']) == 0:
             abort(404, f'{self.check_type} check not found')
