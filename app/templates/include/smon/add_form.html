@@ -183,6 +183,27 @@
 			</td>
 			<td>{{ input('new-smon-url', value='https://', title='proto://url[:port]/', placeholder='proto://url[:port]/', style="width: 240px;") }}</td>
 		</tr>
+        <tr class="smon_http_check">
+            <td class="padding20">
+                {{lang.words.headers|title()}} {{lang.words.response}}
+            </td>
+            <td id="smon_http_check_headers_response">
+                <select id="smon_http_check_headers_response_type">
+                    <option value="0">None</option>
+                    <option value="check">{{lang.words.check|title()}}</option>
+                </select>
+                <div id="new-smon-headers-response" style="display: none;margin-bottom: 10px;margin-top: 10px;">
+                    <textarea id="new-smon-header-response-required" cols="50" rows="5" class="form-control" title="Required headers. JSON only." placeholder="Required headers example:
+{
+    &quot;Header&quot;: &quot;Value&quot;,
+    &quot;Header2&quot;: &quot;Value2&quot;
+}"></textarea>
+                    <textarea id="new-smon-header-response-forbidden" cols="50" rows="5" class="form-control" title="Forbidden headers" placeholder="Forbidden headers example:
+    &quot;Header&quot;, &quot;Header2&quot;
+"></textarea>
+                </div>
+            </td>
+        </tr>
 		<tr class="smon_http_check">
 			<td class="padding20">
                 {{lang.words.body|title()}} {{lang.words.response}}
@@ -252,12 +273,6 @@
                 <div class="tooltip" style="padding: 0">{{ lang.smon_page.desc.redirects_desc }}</div>
 			</td>
 		</tr>
-		<tr>
-			<td class="padding20">{{lang.words.enable|title()}}</td>
-			<td>
-				{{ checkbox('new-smon-enable', checked='checked') }}
-			</td>
-		</tr>
 		<tr class="smon_http_check smon_smtp_check">
 			<td class="padding20">{{lang.phrases.ignore_ssl_error}}</td>
 			<td>
@@ -277,6 +292,12 @@
 		</tr>
     </table>
     <table class="overview" style="border-left: 1px solid #ddd;margin-left: 10px;">
+		<tr>
+			<td class="padding20">{{lang.words.enable|title()}}</td>
+			<td>
+				{{ checkbox('new-smon-enable', checked='checked') }}
+			</td>
+		</tr>
         <tr class="smon_http_check">
             <td class="padding20">Proxy</td>
             <td>

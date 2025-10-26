@@ -578,6 +578,17 @@ class CheckHttpView(CheckView):
                     password:
                       type: string
                       description: 'Password for authentication. Can be empty.'
+                headers_response:
+                  type: 'object'
+                  properties:
+                    required_response_headers:
+                      type: object
+                      description: Required response headers
+                      example: '{"Content-Type": "text/html", "Access-Control-Allow-Origin": "*"}'
+                    forbidden_headers:
+                      type: 'array'
+                      description: Forbidden headers
+                      example: '["X-Powered-By", "Server"]'
 
         """
         return super().get(check_id, query)
@@ -747,6 +758,17 @@ class CheckHttpView(CheckView):
                   password:
                     type: string
                     description: 'Password for authentication. Can be empty.'
+              headers_response:
+                type: 'object'
+                properties:
+                  required_response_headers:
+                    type: object
+                    description: Required response headers
+                    example: '{"Content-Type": "text/html", "Access-Control-Allow-Origin": "*"}'
+                  forbidden_headers:
+                    type: 'array'
+                    description: Forbidden headers
+                    example: '["X-Powered-By", "Server"]'
         responses:
           '200':
             description: 'Successful Operation'
@@ -926,6 +948,17 @@ class CheckHttpView(CheckView):
                   password:
                     type: string
                     description: 'Password for authentication. Can be empty.'
+              headers_response:
+                type: 'object'
+                properties:
+                  required_response_headers:
+                    type: object
+                    description: Required response headers
+                    example: '{"Content-Type": "text/html", "Access-Control-Allow-Origin": "*"}'
+                  forbidden_headers:
+                    type: 'array'
+                    description: Forbidden headers
+                    example: '["X-Powered-By", "Server"]'
         responses:
           '201':
             description: 'Successful Operation, HTTP Check updated'

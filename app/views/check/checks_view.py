@@ -1104,7 +1104,10 @@ class AllChecksViewWithFilters(MethodView):
         checks = smon_sql.select_multi_check_with_filters(group_id, query)
         entities = []
         if any((query.check_name, query.check_group, query.check_type)):
-            len_checks = len(checks)
+            if query.check_type:
+                len_checks = smon_sql.get_count_multi_check_check_type(group_id, query.check_type)
+            else:
+                len_checks = len(checks)
         elif isinstance(query.check_status, int):
             len_checks = smon_sql.get_count_multi_with_status_checks(group_id, query.check_status)
         else:

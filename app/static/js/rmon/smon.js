@@ -41,6 +41,13 @@ $(function () {
 			$('.smon_http_check_proxy').hide();
 		}
 	});
+	$( "#smon_http_check_headers_response_type" ).on('selectmenuchange',function() {
+		if ($('#smon_http_check_headers_response_type').val() != '0') {
+			$('#new-smon-headers-response').show();
+		} else {
+			$('#new-smon-headers-response').hide();
+		}
+	});
 	$( "#smon_http_check_body_type" ).on('selectmenuchange',function() {
 		if ($('#smon_http_check_body_type').val() == 'keyword') {
 			$('.smon_http_check_body_type_keyword').show();
@@ -174,6 +181,13 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 			'password': $('#new-smon-http_proxy_password').val(),
 		}
 	}
+	let headers_response = null;
+	if ($("#smon_http_check_headers_response_type").val() != "0") {
+		headers_response = {
+			'required_response_headers': $('#new-smon-header-response-required').val(),
+			'forbidden_headers': $('#new-smon-header-response-forbidden').val(),
+		}
+	}
 	let jsonData = {
 		'name': $('#new-smon-name').val(),
 		'ip': $('#new-smon-ip').val(),
@@ -213,6 +227,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'threshold_timeout': $('#new-smon-threshold_timeout').val(),
 		'auth': auth,
 		'proxy': proxy,
+		'headers_response': headers_response
 	}
 	let method = "post";
 	let api_url = api_v_prefix + '/rmon/check/' + check_type;
@@ -493,7 +508,19 @@ function getCheckSettings(smon_id, check_type) {
 				$('#smon_http_check_proxy_method').val('0');
 				$('.smon_http_check_proxy').hide();
 			}
+			if (data['checks'][0]['headers_response']) {
+				$('#smon_http_check_headers_response_type').val('check');
+				$('#new-smon-headers-response').show();
+				$('#new-smon-header-response-forbidden').val(data['checks'][0]['headers_response']['forbidden_headers'].map(h => `"${h}"`).join(",\n "));
+				if (data['checks'][0]['headers_response']['required_response_headers']) {
+					$('#new-smon-header-response-required').val(JSON.stringify(data['checks'][0]['headers_response']['required_response_headers'], null, 2));
+				}
+			} else {
+				$('#smon_http_check_headers_response_type').val('0');
+				$('#new-smon-headers-response').hide();
+			}
 			$('#smon_http_check_proxy_method').selectmenu("refresh");
+			$('#smon_http_check_headers_response_type').selectmenu("refresh");
 		}
 	});
 }
@@ -538,10 +565,20 @@ function check_and_clear_check_type(check_type) {
 		$('.smon_rabbit_check').hide();
 		clear_check_vals();
 		hideAuthFields();
+		$("#new-smon-body-keyword").val('');
+		$("#new-smon-body-json-path").val('');
+		$("#new-smon-body-json-value").val('');
+		$("#smon_http_check_body_type").val('0');
+		$('#smon_http_check_body_type').selectmenu("refresh");
 		$("#smon_http_check_auth_method").val('0');
 		$('#smon_http_check_auth_method').selectmenu("refresh");
+		$("#smon_http_check_headers_response_type").val('0');
+		$('#smon_http_check_headers_response_type').selectmenu("refresh");
 		$('.smon_http_check').show();
 		$('.smon_http_check_proxy').hide();
+		$('.smon_http_check_body_type_keyword').hide();
+		$('.smon_http_check_body_type_json').hide();
+		$('#new-smon-headers-response').hide();
 	} else if (check_type === 'tcp') {
 		$('.new_smon_hostname').show();
 		$('.smon_http_check').hide();
@@ -629,7 +666,7 @@ function show_smon_history_statuses(check_id, id_for_history_replace) {
 			let statuses = '';
 			for (let status of data.reverse()) {
 				let add_class = 'serverUp';
-				if (status.status === 0 || status.status === 7) {
+				if (status.status === 0 || status.status === 7 || status.status === 8) {
 					add_class = 'serverDown';
 				} else if (status.status === 5 || status.status === 6) {
 					add_class = 'serverWarn';

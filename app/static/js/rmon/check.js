@@ -149,7 +149,7 @@ function updateCurrentStatusRequest(check_id) {
 function updateCurrentStatus(check_id, data) {
 	let add_class = 'serverUp';
 	let cur_status = translate_div.attr('data-up');
-	if (data.status === 0 || data.status === 7) {
+	if (data.status === 0 || data.status === 7 || data.status === 8) {
 		add_class = 'serverDown';
 		cur_status = translate_div.attr('data-down');
 	} else if (data.status === 3) {

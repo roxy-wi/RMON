@@ -71,14 +71,11 @@ def create_http_check(data: HttpCheckRequest, check_id: int) -> Optional[tuple[d
     if data.body:
         body_keyword = data.body
         body_json = None
-    if data.body_json:
-        body_keyword = None
-        body_json = data.body_json
     kwargs = {
         'smon_id': check_id,
         'url': data.url,
         'body': body_keyword,
-        'body_json': body_json,
+        'body_json': body_json.model_dump(mode='json') if body_json else None,
         'method': data.method,
         'interval': data.interval,
         'body_req': data.body_req,
@@ -88,8 +85,8 @@ def create_http_check(data: HttpCheckRequest, check_id: int) -> Optional[tuple[d
         'redirects': data.redirects,
         'auth': data.auth,
         'proxy': data.proxy.model_dump(mode='json') if data.proxy else None,
+        'headers_response': data.headers_response.model_dump(mode='json') if data.headers_response else None,
     }
-    print(kwargs)
     try:
         smon_sql.insert_smon_http(**kwargs)
     except Exception as e:

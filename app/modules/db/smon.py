@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timedelta
-from typing import Union
+from typing import Union, Literal
 
 from peewee import fn, IntegrityError, Case
 
@@ -443,6 +443,16 @@ def get_count_multi_with_status_checks(group_id: int, status: int) -> int:
 			return SMON.select().join(MultiCheck).where((SMON.group_id == group_id) & (SMON.status == status)).distinct(SMON.multi_check_id).count()
 		else:
 			return SMON.select().join(MultiCheck).where((SMON.group_id == group_id) & (SMON.status == status)).order_by(MultiCheck.check_group_id).group_by(SMON.multi_check_id).count()
+	except Exception as e:
+		raise out_error(e, SMON)
+
+
+def get_count_multi_check_check_type(group_id: int, check_type: Literal['http', 'tcp', 'ping', 'dns', 'rabbitmq', 'smtp']) -> int:
+	try:
+		if pgsql_enable == '1':
+			return SMON.select().join(MultiCheck).where((SMON.group_id == group_id) & (SMON.check_type == check_type)).distinct(SMON.multi_check_id).count()
+		else:
+			return SMON.select().join(MultiCheck).where((SMON.group_id == group_id) & (SMON.check_type == check_type)).order_by(MultiCheck.check_group_id).group_by(SMON.multi_check_id).count()
 	except Exception as e:
 		raise out_error(e, SMON)
 

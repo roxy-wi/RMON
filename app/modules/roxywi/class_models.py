@@ -1,4 +1,5 @@
 import re
+import json
 from annotated_types import Gt, Le
 from typing import Optional, Annotated, Union, Literal, Any, List
 
@@ -160,6 +161,51 @@ class HttpProxy(BaseModel):
     password: EscapedString
 
 
+class HttpHeadersResponse(BaseModel):
+    required_response_headers: Optional[dict[str, str]] = None
+    forbidden_headers: Optional[list[str]] = None
+
+    @field_validator('required_response_headers', mode='before')
+    @classmethod
+    def parse_json_if_str(cls, v):
+        if v is None or v == '':
+            return None
+        if isinstance(v, str):
+            v = v.strip()
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                raise ValueError(
+                    'headers_response must be a dict '
+                    'or JSON. '
+                    'Examples: {"content-type":"text/html"} '
+                )
+        return v
+
+    @field_validator("forbidden_headers", mode="before")
+    @classmethod
+    def parse_forbidden_headers(cls, v):
+        if not v:
+            return None
+
+        if isinstance(v, list):
+            return [str(i).strip() for i in v]
+
+        if isinstance(v, str):
+            cleaned = (
+                v.replace('"', '')
+                .replace("'", '')
+                .replace("\n", ',')
+                .replace("\r", ',')
+                .strip()
+            )
+
+            parts = [x.strip() for x in cleaned.split(",") if x.strip()]
+            return parts or None
+
+        raise ValueError("forbidden_headers must be a list or string listing headers.")
+
+
 class HttpCheckRequest(BaseCheckRequest):
     url: AnyUrl
     method: Literal['get', 'post', 'put', 'patch', 'delete', 'head', 'options']
@@ -172,6 +218,7 @@ class HttpCheckRequest(BaseCheckRequest):
     redirects: Optional[int] = 10
     auth: Optional[dict] = None
     proxy: Optional[HttpProxy] = None
+    headers_response: Optional[HttpHeadersResponse] = None
 
     @field_validator('method', mode='before')
     @classmethod
