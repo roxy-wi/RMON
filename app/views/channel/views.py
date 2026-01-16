@@ -109,7 +109,7 @@ class ChannelView(MethodView):
                 type: string
                 description: The token used for the channel.
                 example: "some token"
-              channel:
+              channel_name:
                 type: string
                 description: The channel identifier.
                 example: "channel name"
@@ -150,15 +150,15 @@ class ChannelView(MethodView):
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
         try:
-            data = alerting.add_receiver(receiver, body.token, body.channel, group_id, self.is_api)
-            roxywi_common.logger(f'A new {receiver.title()} channel {body.channel.encode("utf-8")} has been created ',
+            data = alerting.add_receiver(receiver, body.token, body.channel_name, group_id, self.is_api)
+            roxywi_common.logger(f'A new {receiver.title()} channel {body.channel_name.encode("utf-8")} has been created ',
                                  keep_history=1)
             if self.is_api:
                 return IdResponse(id=data).model_dump(mode='json'), 201
             else:
                 return IdDataResponse(data=data, id=0).model_dump(mode='json'), 201
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot create {body.channel.encode("utf-8")} {receiver.title()} channel')
+            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot create {body.channel_name.encode("utf-8")} {receiver.title()} channel')
 
     @validate(body=ChannelRequest)
     def put(self, receiver: Literal['telegram', 'slack', 'pd', 'mm', 'email'], channel_id: int, body: ChannelRequest):
@@ -192,7 +192,7 @@ class ChannelView(MethodView):
                 type: string
                 description: The token used for the channel.
                 example: "some token"
-              channel:
+              channel_name:
                 type: string
                 description: The channel identifier.
                 example: "cool channel"
@@ -215,12 +215,12 @@ class ChannelView(MethodView):
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
 
         try:
-            alerting.update_receiver_channel(receiver, body.token, body.channel, group_id, channel_id)
+            alerting.update_receiver_channel(receiver, body.token, body.channel_name, group_id, channel_id)
             roxywi_common.logger(
-                f'The {receiver.title()} token has been updated for channel: {body.channel.encode("utf-8")}', keep_history=1)
+                f'The {receiver.title()} token has been updated for channel: {body.channel_name.encode("utf-8")}', keep_history=1)
             return BaseResponse().model_dump(mode='json'), 201
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot update {body.channel.encode("utf-8")} {receiver} channel')
+            return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot update {body.channel_name.encode("utf-8")} {receiver} channel')
 
     @validate(query=GroupQuery)
     def delete(self, receiver: Literal['telegram', 'slack', 'pd', 'mm', 'email'], channel_id: int, query: GroupQuery):

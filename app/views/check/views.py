@@ -2963,7 +2963,7 @@ class CheckRabbitView(CheckView):
                 type: 'integer'
                 description: 'Pager Duty channel ID (optional)'
               mm_channel_id:
-                type: 'string'
+                type: 'integer'
                 description: 'Mattermost channel ID (optional)'
               email_channel_id:
                 type: 'integer'

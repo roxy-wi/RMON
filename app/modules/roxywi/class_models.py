@@ -416,7 +416,7 @@ class CredUploadRequest(BaseModel):
 
 class ChannelRequest(BaseModel):
     token: EscapedString
-    channel: EscapedString
+    channel_name: EscapedString
     group_id: Optional[int] = None
 
 

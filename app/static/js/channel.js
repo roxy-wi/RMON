@@ -227,7 +227,7 @@ function updateReceiver(id, receiver_name) {
 	toastr.clear();
 	let json_data = {
 		"token": $('#' + receiver_name + '-token-' + id).val(),
-		"channel": $('#' + receiver_name + '-chanel-' + id).val(),
+		"channel_name": $('#' + receiver_name + '-chanel-' + id).val(),
 		"group_id": group,
 	}
 	$.ajax({
