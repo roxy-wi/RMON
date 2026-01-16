@@ -5,6 +5,7 @@ from datetime import datetime
 from playhouse.shortcuts import ReconnectMixin
 from playhouse.sqlite_ext import SqliteExtDatabase
 from playhouse.pool import PooledPostgresqlExtDatabase
+from psycopg2 import InterfaceError, OperationalError
 
 import app.modules.roxy_wi_tools as roxy_wi_tools
 
@@ -24,6 +25,19 @@ class ReconnectMySQLDatabase(ReconnectMixin, MySQLDatabase):
     pass
 
 
+class SafePooledPostgresqlExtDatabase(PooledPostgresqlExtDatabase):
+    def execute_sql(self, sql, params=None, commit=True, **kwargs):
+        try:
+            return super().execute_sql(sql, params=params, commit=commit, **kwargs)
+        except (InterfaceError, OperationalError):
+            try:
+                self.close()
+            except Exception:
+                pass
+            self.connect(reuse_if_open=True)
+            return super().execute_sql(sql, params=params, commit=commit, **kwargs)
+
+
 def connect(get_migrator=None):
     if pgsql_enable == '1':
         db = get_config.get_config_var('pgsql', 'db')
@@ -35,7 +49,7 @@ def connect(get_migrator=None):
             "max_connections": 32,
             "stale_timeout": 300
         }
-        conn = PooledPostgresqlExtDatabase(db, **kwargs)
+        conn = SafePooledPostgresqlExtDatabase(db, **kwargs)
         migration = PostgresqlMigrator(conn)
     elif mysql_enable == '1':
         mysql_db = get_config.get_config_var('mysql', 'mysql_db')

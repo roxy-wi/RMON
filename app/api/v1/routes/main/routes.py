@@ -33,6 +33,9 @@ def register_api_with_group(view, endpoint, url_beg, pk='receiver', pk_type='int
 register_api_with_group(ChannelView, 'channel', '/channel')
 bp.add_url_rule('/channels/<any(telegram, slack, pd, mm, email):receiver>', view_func=ChannelsView.as_view('channels'), methods=['GET'])
 bp.add_url_rule('/channel/<any(telegram, slack, pd, mm, email):receiver>/<int:channel_id>/check', view_func=ChannelCheckView.as_view('channel_check'), methods=['POST'])
+register_api_with_group(ChannelView, 'rmon_channel', '/rmon/channel')
+bp.add_url_rule('/rmon/channels/<any(telegram, slack, pd, mm, email):receiver>', view_func=ChannelsView.as_view('rmon_channels'), methods=['GET'])
+bp.add_url_rule('/rmon/channel/<any(telegram, slack, pd, mm, email):receiver>/<int:channel_id>/check', view_func=ChannelCheckView.as_view('rmon_channel_check'), methods=['POST'])
 
 bp.add_url_rule(
     '/settings',

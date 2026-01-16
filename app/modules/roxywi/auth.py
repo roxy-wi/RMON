@@ -5,6 +5,7 @@ from flask_jwt_extended import verify_jwt_in_request
 
 import app.modules.db.sql as sql
 import app.modules.db.user as user_sql
+import app.modules.roxywi.common as roxywi_common
 import app.modules.roxy_wi_tools as roxy_wi_tools
 
 
@@ -66,7 +67,7 @@ def check_in_ldap(user, password):
         ldap_bind.set_option(ldap.OPT_REFERRALS, 0)
         _ = ldap_bind.simple_bind_s(root_user, root_password)
     except ldap.INVALID_CREDENTIALS:
-        print('Invalid username or password to connect to LDAP')
+        roxywi_common.logging_without_user('Invalid username or password to connect to LDAP', 'error')
         return False
 
     try:
@@ -76,17 +77,17 @@ def check_in_ldap(user, password):
 
         _ = ldap_bind.simple_bind_s(result[0][0], password)
     except ldap.INVALID_CREDENTIALS:
-        print('invalid credentials')
+        roxywi_common.logging_without_user('Invalid username or password to connect to LDAP', 'error')
         return False
     except ldap.SERVER_DOWN:
-        print('server down')
+        roxywi_common.logging_without_user('LDAP is down', 'error')
         raise Exception('error: LDAP server is down')
     except ldap.LDAPError as e:
         if isinstance(e.message, dict) and 'desc' in e.message:
-            print('error: LDAP error: {}'.format(e.message['desc']))
+            roxywi_common.logging_without_user(f'LDAP: {e.message["desc"]}', 'error')
             raise Exception(f'error: {e.message["desc"]}')
         else:
-            print('error: LDAP error: {}'.format(e.message))
+            roxywi_common.logging_without_user(f'LDAP: {e.message["desc"]}', 'error')
             raise Exception(f'error: {e}')
     else:
         return True
