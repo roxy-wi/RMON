@@ -22,7 +22,7 @@
         </td>
         <td>
             {% set id = 'telegram-chanel-' + telegram.id|string() %}
-            {{ input(id, value=telegram.chanel_name.replace("'", ""), size='30') }}
+            {{ input(id, value=telegram.channel_name.replace("'", ""), size='30') }}
         </td>
         {% if user_params['role']|int() == 1 %}
         <td>
@@ -42,10 +42,10 @@
             <button title="{{lang.phrases.send_test_mes}}" onclick="checkReceiver({{telegram.id}}, 'telegram')">{{lang.words.test|title()}}</button>
         </td>
         <td>
-            <a class="add" onclick="cloneReceiver({{telegram.id}}, 'telegram')" id="clone-{{telegram.id}}" title="{{lang.words.w_copy|title()}} {{lang.words.the}} {{lang.words.settings}} {{telegram.chanel_name}}" style="cursor: pointer;"></a>
+            <a class="add" onclick="cloneReceiver({{telegram.id}}, 'telegram')" id="clone-{{telegram.id}}" title="{{lang.words.w_copy|title()}} {{lang.words.the}} {{lang.words.settings}} {{telegram.channel_name}}" style="cursor: pointer;"></a>
         </td>
         <td>
-            <a class="delete" onclick="confirmDeleteReceiver({{telegram.id}}, 'telegram')" title="{{lang.words.delete|title()}} {{lang.words.channel}} {{telegram.chanel_name}}" style="cursor: pointer;"></a>
+            <a class="delete" onclick="confirmDeleteReceiver({{telegram.id}}, 'telegram')" title="{{lang.words.delete|title()}} {{lang.words.channel}} {{telegram.channel_name}}" style="cursor: pointer;"></a>
         </td>
     </tr>
     {% endfor %}
@@ -74,7 +74,7 @@
         </td>
         <td>
             {% set id = 'slack-chanel-' + slack.id|string() %}
-            {{ input(id, value=slack.chanel_name.replace("'", ""), size='30') }}
+            {{ input(id, value=slack.channel_name.replace("'", ""), size='30') }}
         </td>
         {% if user_params['role']|int() == 1 %}
         <td>
@@ -94,10 +94,10 @@
             <button title="{{lang.phrases.send_test_mes}}" onclick="checkReceiver({{slack.id}}, 'slack')">{{lang.words.test|title()}}</button>
         </td>
         <td>
-            <a class="add" onclick="cloneReceiver({{slack.id}}, 'slack')" id="clone-{{slack.id}}" title="{{lang.words.w_copy|title()}} {{lang.words.the}} {{lang.words.settings}} {{slack.chanel_name}}" style="cursor: pointer;"></a>
+            <a class="add" onclick="cloneReceiver({{slack.id}}, 'slack')" id="clone-{{slack.id}}" title="{{lang.words.w_copy|title()}} {{lang.words.the}} {{lang.words.settings}} {{slack.channel_name}}" style="cursor: pointer;"></a>
         </td>
         <td>
-            <a class="delete" onclick="confirmDeleteReceiver({{slack.id}}, 'slack')" title="{{lang.words.delete|title()}} {{lang.words.channel}} {{slack.chanel_name}}" style="cursor: pointer;"></a>
+            <a class="delete" onclick="confirmDeleteReceiver({{slack.id}}, 'slack')" title="{{lang.words.delete|title()}} {{lang.words.channel}} {{slack.channel_name}}" style="cursor: pointer;"></a>
         </td>
     </tr>
     {% endfor %}
@@ -126,7 +126,7 @@
         </td>
         <td>
             {% set id = 'pd-chanel-' + pd.id|string() %}
-            {{ input(id, value=pd.chanel_name.replace("'", ""), size='30') }}
+            {{ input(id, value=pd.channel_name.replace("'", ""), size='30') }}
         </td>
         {% if user_params['role']|int() == 1 %}
         <td>
@@ -146,10 +146,10 @@
             <button title="{{lang.phrases.send_test_mes}}" onclick="checkReceiver({{pd.id}}, 'pd')">{{lang.words.test|title()}}</button>
         </td>
         <td>
-            <a class="add" onclick="cloneReceiver({{pd.id}}, 'pd')" id="clone-{{pd.id}}" title="{{lang.words.w_copy|title()}} {{lang.words.the}} {{lang.words.settings}} {{pd.chanel_name}}" style="cursor: pointer;"></a>
+            <a class="add" onclick="cloneReceiver({{pd.id}}, 'pd')" id="clone-{{pd.id}}" title="{{lang.words.w_copy|title()}} {{lang.words.the}} {{lang.words.settings}} {{pd.channel_name}}" style="cursor: pointer;"></a>
         </td>
         <td>
-            <a class="delete" onclick="confirmDeleteReceiver({{pd.id}}, 'pd')" title="{{lang.words.delete|title()}} {{lang.words.channel}} {{pd.chanel_name}}" style="cursor: pointer;"></a>
+            <a class="delete" onclick="confirmDeleteReceiver({{pd.id}}, 'pd')" title="{{lang.words.delete|title()}} {{lang.words.channel}} {{pd.channel_name}}" style="cursor: pointer;"></a>
         </td>
     </tr>
     {% endfor %}
@@ -178,7 +178,7 @@
         </td>
         <td>
             {% set id = 'mm-chanel-' + mm.id|string() %}
-            {{ input(id, value=mm.chanel_name.replace("'", ""), size='30') }}
+            {{ input(id, value=mm.channel_name.replace("'", ""), size='30') }}
         </td>
         {% if user_params['role']|int() == 1 %}
         <td>
@@ -198,10 +198,10 @@
             <button title="{{lang.phrases.send_test_mes}}" onclick="checkReceiver({{mm.id}}, 'mm')">{{lang.words.test|title()}}</button>
         </td>
         <td>
-            <a class="add" onclick="cloneReceiver({{mm.id}}, 'mm')" id="clone-{{mm.id}}" title="{{lang.words.w_copy|title()}} {{lang.words.the}} {{lang.words.settings}} {{mm.chanel_name}}" style="cursor: pointer;"></a>
+            <a class="add" onclick="cloneReceiver({{mm.id}}, 'mm')" id="clone-{{mm.id}}" title="{{lang.words.w_copy|title()}} {{lang.words.the}} {{lang.words.settings}} {{mm.channel_name}}" style="cursor: pointer;"></a>
         </td>
         <td>
-            <a class="delete" onclick="confirmDeleteReceiver({{mm.id}}, 'mm')" title="{{lang.words.delete|title()}} {{lang.words.channel}} {{mm.chanel_name}}" style="cursor: pointer;"></a>
+            <a class="delete" onclick="confirmDeleteReceiver({{mm.id}}, 'mm')" title="{{lang.words.delete|title()}} {{lang.words.channel}} {{mm.channel_name}}" style="cursor: pointer;"></a>
         </td>
     </tr>
     {% endfor %}
@@ -230,7 +230,7 @@
         </td>
         <td>
             {% set id = 'email-chanel-' + email.id|string() %}
-            {{ input(id, value=email.chanel_name.replace("'", ""), size='30') }}
+            {{ input(id, value=email.channel_name.replace("'", ""), size='30') }}
         </td>
         {% if user_params['role']|int() == 1 %}
         <td>
@@ -250,10 +250,10 @@
             <button title="{{lang.phrases.send_test_mes}}" onclick="checkReceiver({{email.id}}, 'email')">{{lang.words.test|title()}}</button>
         </td>
         <td>
-            <a class="add" onclick="cloneReceiver({{email.id}}, 'email')" id="clone-{{email.id}}" title="{{lang.words.w_copy|title()}} {{lang.words.the}} {{lang.words.settings}} {{email.chanel_name}}" style="cursor: pointer;"></a>
+            <a class="add" onclick="cloneReceiver({{email.id}}, 'email')" id="clone-{{email.id}}" title="{{lang.words.w_copy|title()}} {{lang.words.the}} {{lang.words.settings}} {{email.channel_name}}" style="cursor: pointer;"></a>
         </td>
         <td>
-            <a class="delete" onclick="confirmDeleteReceiver({{email.id}}, 'email')" title="{{lang.words.delete|title()}} {{lang.words.channel}} {{email.chanel_name}}" style="cursor: pointer;"></a>
+            <a class="delete" onclick="confirmDeleteReceiver({{email.id}}, 'email')" title="{{lang.words.delete|title()}} {{lang.words.channel}} {{email.channel_name}}" style="cursor: pointer;"></a>
         </td>
     </tr>
     {% endfor %}

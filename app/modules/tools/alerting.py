@@ -112,7 +112,7 @@ def telegram_send_mess(mess, o_level, **kwargs):
 
 	for telegram in telegrams:
 		token_bot = telegram.token
-		channel_name = telegram.chanel_name
+		channel_name = telegram.channel_name
 
 	if token_bot == '' or channel_name == '':
 		mess = "Can't send message. Add Telegram channel before use alerting at this servers group"
@@ -156,7 +156,7 @@ def slack_send_mess(mess, level, **kwargs):
 
 	for slack in slacks:
 		slack_token = slack.token
-		channel_name = slack.chanel_name
+		channel_name = slack.channel_name
 
 	if proxy is not None and proxy != '' and proxy != 'None':
 		proxies = dict(https=proxy, http=proxy)
@@ -258,7 +258,7 @@ def mm_send_mess(mess, level, **kwargs):
 
 	for pd in mms:
 		token = pd.token
-		channel = pd.chanel_name.lower()
+		channel = pd.channel_name.lower()
 
 	if level != 'info':
 		try:

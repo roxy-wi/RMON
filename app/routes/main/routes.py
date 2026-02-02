@@ -18,6 +18,19 @@ import app.modules.roxywi.nettools as nettools_mod
 import app.modules.roxywi.common as roxywi_common
 import app.modules.server.server as server_mod
 from app.modules.roxywi.class_models import ErrorResponse, NettoolsRequest, DomainName, EscapedString
+from app.modules.db.db_model import conn
+
+
+@app.before_request
+def db_connect():
+    if conn.is_closed():
+        conn.connect(reuse_if_open=True)
+
+
+@app.teardown_request
+def db_close(exc):
+    if not conn.is_closed():
+        conn.close()
 
 
 @app.template_filter('strftime')

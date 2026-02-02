@@ -51,7 +51,7 @@ class ChannelView(MethodView):
             schema:
               type: object
               properties:
-                chanel_name:
+                channel_name:
                   type: string
                   description: The name of the channel.
                   example: "@tg-channel-id"
@@ -79,7 +79,7 @@ class ChannelView(MethodView):
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
 
         channel.token = channel.token.replace("'", "")
-        channel.chanel_name = channel.chanel_name.replace("'", "")
+        channel.channel_name = channel.channel_name.replace("'", "")
         return model_to_dict(channel)
 
     @validate(body=ChannelRequest)
@@ -127,7 +127,7 @@ class ChannelView(MethodView):
             schema:
               type: object
               properties:
-                chanel_name:
+                channel_name:
                   type: string
                   description: The name of the channel.
                   example: "@tg-channel-id"
@@ -308,7 +308,7 @@ class ChannelsView(MethodView):
               items:
                 type: object
                 properties:
-                  chanel_name:
+                  channel_name:
                     type: string
                     description: The name of the channel.
                     example: "@tg-channel-id"
@@ -333,7 +333,7 @@ class ChannelsView(MethodView):
 
         for channel in channel_sql.get_user_receiver_by_group(receiver, group_id):
             channel.token = channel.token.replace("'", "")
-            channel.chanel_name = channel.chanel_name.replace("'", "")
+            channel.channel_name = channel.channel_name.replace("'", "")
             channel_list.append(model_to_dict(channel))
         return jsonify(channel_list)
 

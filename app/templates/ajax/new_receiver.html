@@ -5,7 +5,7 @@
         <input type="hidden" id="{{receiver}}group-{{channel.id}}" name="{{receiver}}group-{{channel.id}}">
     </td>
     <td>
-        <input type="text" id="{{receiver}}-chanel-{{channel.id}}" class="form-control" value="{{channel.chanel_name}}" size="30">
+        <input type="text" id="{{receiver}}-chanel-{{channel.id}}" class="form-control" value="{{channel.channel_name}}" size="30">
     </td>
 {{ g.user_params['role'] }}
     {% if g.user_params['role'] == 1 %}
@@ -25,7 +25,7 @@
         <button title="{{lang.phrases.send_test_mes}}" onclick="checkReceiver({{channel.id}}, '{{receiver}}')">{{lang.words.test|title()}}</button>
     </td>
     <td>
-        <a class="add" onclick="cloneReceiver({{channel.id}}, '{{receiver}}')" id="clone-{{channel.id}}" title="{{lang.words.clone|title()}} {{channel.chanel_name}}" style="cursor: pointer;"></a>
+        <a class="add" onclick="cloneReceiver({{channel.id}}, '{{receiver}}')" id="clone-{{channel.id}}" title="{{lang.words.clone|title()}} {{channel.channel_name}}" style="cursor: pointer;"></a>
     </td>
     <td>
         <a class="delete" onclick="confirmDeleteReceiver({{channel.id}}, '{{receiver}}')" style="cursor: pointer;"></a>

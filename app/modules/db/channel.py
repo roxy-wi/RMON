@@ -48,7 +48,7 @@ def select_receiver(receiver: str, channel_id: str):
 def insert_new_receiver(receiver: str, token: str, channel: str, group: str):
 	model = models[receiver]
 	try:
-		return model.insert(token=token, chanel_name=channel, group_id=group).execute()
+		return model.insert(token=token, channel_name=channel, group_id=group).execute()
 	except Exception as e:
 		out_error(e)
 
@@ -56,7 +56,7 @@ def insert_new_receiver(receiver: str, token: str, channel: str, group: str):
 def update_receiver(receiver: str, token: str, channel: str, group: str, channel_id: int) -> None:
 	model = models[receiver]
 	try:
-		model.update(token=token, chanel_name=channel, group_id=group).where(model.id == channel_id).execute()
+		model.update(token=token, channel_name=channel, group_id=group).where(model.id == channel_id).execute()
 	except model.DoesNotExist:
 		raise RoxywiResourceNotFound
 	except Exception as e:

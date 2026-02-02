@@ -151,7 +151,7 @@ class Role(BaseModel):
 class Email(BaseModel):
     id = AutoField()
     token = CharField()
-    chanel_name = CharField()
+    channel_name = CharField()
     group_id = IntegerField()
 
     class Meta:
@@ -161,7 +161,7 @@ class Email(BaseModel):
 class Telegram(BaseModel):
     id = AutoField()
     token = CharField()
-    chanel_name = CharField()
+    channel_name = CharField()
     group_id = IntegerField()
 
     class Meta:
@@ -171,7 +171,7 @@ class Telegram(BaseModel):
 class Slack(BaseModel):
     id = AutoField()
     token = CharField()
-    chanel_name = CharField()
+    channel_name = CharField()
     group_id = IntegerField()
 
     class Meta:
@@ -181,7 +181,7 @@ class Slack(BaseModel):
 class MM(BaseModel):
     id = AutoField()
     token = CharField()
-    chanel_name = CharField()
+    channel_name = CharField()
     group_id = IntegerField()
 
     class Meta:
@@ -191,7 +191,7 @@ class MM(BaseModel):
 class PD(BaseModel):
     id = AutoField()
     token = CharField()
-    chanel_name = CharField()
+    channel_name = CharField()
     group_id = IntegerField()
 
     class Meta:

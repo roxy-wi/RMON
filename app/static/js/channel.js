@@ -278,7 +278,7 @@ function addRecevier(dialog_id, receiver_name) {
 	if (valid) {
 		let jsonData = {
 			"token": receiver_name_div.val(),
-			"channel": channel_div.val(),
+			"channel_name": channel_div.val(),
 			"group_id": group,
 		}
 		toastr.clear();
