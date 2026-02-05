@@ -128,7 +128,7 @@ class ChecksViewHttp(ChecksView):
                           type: 'string'
                         body_req:
                           type: 'string'
-                        headers:
+                        header_req:
                           type: 'string'
                         ignore_ssl_error:
                           type: 'integer'
@@ -201,7 +201,7 @@ class ChecksViewHttp(ChecksView):
                           type: 'integer'
                   group_id:
                       type: 'integer'
-                  headers:
+                  header_req:
                       type: 'string'
                   id:
                       type: 'integer'

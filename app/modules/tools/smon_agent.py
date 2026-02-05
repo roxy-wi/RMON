@@ -288,7 +288,7 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             'accepted_status_codes': check.accepted_status_codes,
             'ignore_ssl_error': check.ignore_ssl_error,
             'body_req': check.body_req,
-            'headers': check.headers,
+            'header_req': check.header_req,
             'redirects': check.redirects,
             'auth': check.auth,
             'proxy': check.proxy,

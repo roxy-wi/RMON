@@ -386,7 +386,7 @@ class CheckHttpView(CheckView):
                       body_req:
                         type: 'string'
                         description: 'Body Request'
-                      headers:
+                      header_req:
                         type: 'string'
                         description: 'Headers'
                       ignore_ssl_error:

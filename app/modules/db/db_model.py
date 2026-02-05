@@ -485,7 +485,7 @@ class SmonHttpCheck(BaseModel):
     accepted_status_codes = JSONField(null=True)
     body = CharField(null=True)
     interval = IntegerField(constraints=[SQL('DEFAULT 120')])
-    headers = JSONField(null=True)
+    header_req = JSONField(null=True)
     body_req = JSONField(null=True)
     ignore_ssl_error = IntegerField(constraints=[SQL('DEFAULT 0')])
     redirects = IntegerField(constraints=[SQL('DEFAULT 10')])

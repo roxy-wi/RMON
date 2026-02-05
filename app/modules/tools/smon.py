@@ -79,7 +79,7 @@ def create_http_check(data: HttpCheckRequest, check_id: int) -> Optional[tuple[d
         'method': data.method,
         'interval': data.interval,
         'body_req': data.body_req,
-        'headers': data.header_req,
+        'header_req': data.header_req,
         'accepted_status_codes': data.accepted_status_codes,
         'ignore_ssl_error': data.ignore_ssl_error,
         'redirects': data.redirects,
