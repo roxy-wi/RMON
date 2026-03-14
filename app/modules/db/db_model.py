@@ -493,6 +493,8 @@ class SmonHttpCheck(BaseModel):
     body_json = JSONField(null=True)
     proxy = JSONField(null=True)
     headers_response = JSONField(null=True)
+    accept_cookies = BooleanField(constraints=[SQL('DEFAULT 1')])
+    http_version = IntegerField(constraints=[SQL('DEFAULT 0')])
 
     class Meta:
         table_name = 'smon_http_check'

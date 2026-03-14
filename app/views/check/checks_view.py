@@ -46,9 +46,6 @@ def _return_checks(checks: SMON, check_type_id: int = None) -> list:
             check_json.update(model_to_dict(check, recurse=False))
             check_json['name'] = name
             check_json['description'] = description
-            if check_json['checks'][i]['smon_id']['check_type'] == 'http':
-                check_json['checks'][i]['accepted_status_codes'] = int(check_json['checks'][i]['accepted_status_codes'])
-                check_json['accepted_status_codes'] = int(check_json['accepted_status_codes'])
             i += 1
         check_list.append(check_json)
     return check_list
@@ -1106,6 +1103,8 @@ class AllChecksViewWithFilters(MethodView):
         if any((query.check_name, query.check_group, query.check_type)):
             if query.check_type:
                 len_checks = smon_sql.get_count_multi_check_check_type(group_id, query.check_type)
+            elif query.check_group:
+                len_checks = smon_sql.get_count_multi_checks_check_group(group_id, query.check_group)
             else:
                 len_checks = len(checks)
         elif isinstance(query.check_status, int):

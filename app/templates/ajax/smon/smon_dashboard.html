@@ -45,7 +45,7 @@
 		{% set dis = [] %}
 		{% for s in multi_checks %}
 			{% if s.enabled == 1 %}
-				{% if s.status == 1 and s.body_status == 1 %}
+				{% if s.status == 1 %}
 					{% if up.append('1') %} {% endif %}
 				{% else %}
 					{% if down.append('1') %} {% endif %}

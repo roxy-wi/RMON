@@ -86,6 +86,8 @@ def create_http_check(data: HttpCheckRequest, check_id: int) -> Optional[tuple[d
         'auth': data.auth,
         'proxy': data.proxy.model_dump(mode='json') if data.proxy else None,
         'headers_response': data.headers_response.model_dump(mode='json') if data.headers_response else None,
+        'accept_cookies': data.accept_cookies,
+        'http_version': data.http_version,
     }
     try:
         smon_sql.insert_smon_http(**kwargs)
@@ -366,7 +368,7 @@ def check_checks_limit():
 
 
 def get_check_id_by_name(name: str) -> int:
-    checking_types = {'tcp': '1', 'http': '2', 'smtp': '3', 'ping': '4', 'dns': '5', 'rabbitmq': '6'}
+    checking_types = {'tcp': 1, 'http': 2, 'smtp': 3, 'ping': 4, 'dns': 5, 'rabbitmq': 6}
     return checking_types[name]
 
 

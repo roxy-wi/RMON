@@ -111,6 +111,14 @@ class CheckView(MethodView):
                         check_json['body'] = check.body.replace("'", "")
                     else:
                         check_json['body'] = ''
+                    if check.body_req:
+                        check_json['body_req'] = check.body_req
+                    else:
+                        check_json['body_req'] = ''
+                    if check.header_req:
+                        check_json['header_req'] = check.header_req
+                    else:
+                        check_json['header_req'] = ''
                 i += 1
         if len(check_json['checks']) == 0:
             abort(404, f'{self.check_type} check not found')
@@ -589,6 +597,14 @@ class CheckHttpView(CheckView):
                       type: 'array'
                       description: Forbidden headers
                       example: '["X-Powered-By", "Server"]'
+                accept_cookies:
+                  type: 'bool'
+                  default: True
+                  description: 'Should HTTP check accepts cookies'
+                http_version:
+                  type: 'integer'
+                  default: 0
+                  description: 'If version missmatch alert will be risen. HTTP version. 0 - disabled, 1 - HTTP 1.0, 2 - HTTP 1.1, 3 - HTTP 2.0, 4 - HTTP 3.0'
 
         """
         return super().get(check_id, query)
@@ -769,6 +785,14 @@ class CheckHttpView(CheckView):
                     type: 'array'
                     description: Forbidden headers
                     example: '["X-Powered-By", "Server"]'
+              accept_cookies:
+                type: 'bool'
+                default: True
+                description: 'Should HTTP check accepts cookies'
+              http_version:
+                type: 'integer'
+                default: 0
+                description: 'If version missmatch alert will be risen. HTTP version. 0 - disabled, 1 - HTTP 1.0, 2 - HTTP 1.1, 3 - HTTP 2.0, 4 - HTTP 3.0'
         responses:
           '200':
             description: 'Successful Operation'
@@ -959,6 +983,14 @@ class CheckHttpView(CheckView):
                     type: 'array'
                     description: Forbidden headers
                     example: '["X-Powered-By", "Server"]'
+              accept_cookies:
+                type: 'bool'
+                default: True
+                description: 'Should HTTP check accepts cookies'
+              http_version:
+                type: 'integer'
+                default: 0
+                description: 'If version missmatch alert will be risen. HTTP version. 0 - disabled, 1 - HTTP 1.0, 2 - HTTP 1.1, 3 - HTTP 2.0, 4 - HTTP 3.0'
         responses:
           '201':
             description: 'Successful Operation, HTTP Check updated'

@@ -158,7 +158,7 @@ function updateCurrentStatus(check_id, data) {
 	} else if (data.status === 4) {
 		add_class = 'serverNone';
 		cur_status = translate_div.attr('data-disabled');
-	} else if (data.status === 5 || data.status === 6) {
+	} else if (data.status === 5 || data.status === 6 || data.status === 9) {
 		add_class = 'serverWarn';
 		cur_status = translate_div.attr('data-warning');
 	}

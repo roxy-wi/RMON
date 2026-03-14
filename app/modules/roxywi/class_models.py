@@ -219,6 +219,8 @@ class HttpCheckRequest(BaseCheckRequest):
     auth: Optional[dict] = None
     proxy: Optional[HttpProxy] = None
     headers_response: Optional[HttpHeadersResponse] = None
+    accept_cookies: Optional[bool] = True
+    http_version: Literal[0, 1, 2, 3, 4] = 0
 
     @field_validator('method', mode='before')
     @classmethod

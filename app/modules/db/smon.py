@@ -467,6 +467,19 @@ def get_count_multi_checks(group_id: int) -> int:
 		raise out_error(e, SMON)
 
 
+def get_count_multi_checks_check_group(group_id: int, check_group: str) -> int:
+	check_group_id = get_smon_group_by_name(group_id, check_group)
+	if check_group_id is None:
+		raise RoxywiResourceNotFound('Check group not found')
+	try:
+		if pgsql_enable == '1':
+			return SMON.select().join(MultiCheck).where((SMON.group_id == group_id) & (MultiCheck.check_group_id == check_group_id)).distinct(SMON.multi_check_id).count()
+		else:
+			return SMON.select().join(MultiCheck).where((SMON.group_id == group_id) & (MultiCheck.check_group_id == check_group_id)).order_by(MultiCheck.check_group_id).group_by(SMON.multi_check_id).count()
+	except Exception as e:
+		raise out_error(e, SMON)
+
+
 def select_one_multi_check_join(multi_check_id: int, check_type_id: int) -> SMON:
 	correct_model = tool_common.get_model_for_check(check_type_id=check_type_id)
 	try:

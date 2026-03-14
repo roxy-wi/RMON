@@ -37,20 +37,20 @@
     </table>
     <table class="overview"  style="float: left;">
 		<tr>
-			<td class="padding20">
+			<td colspan="2" class="padding20">
 				{{lang.words.name|title()}}
 				<span class="need-field">*</span>
 			</td>
-			<td>
+			<td colspan="2">
 				{{ input('new-smon-name', style="width: 240px;") }}
 			</td>
 		</tr>
 		<tr>
-			<td class="padding20">
+			<td colspan="2" class="padding20">
 				Place
 				<span class="need-field">*</span>
 			</td>
-			<td>
+			<td colspan="2">
                 <select name="new-smon-place" id="new-smon-place">
                     <option value="all">{{ lang.words.all|title() }} {{ lang.words.regions }}</option>
                     <option value="country">{{ lang.words.countries|title() }}</option>
@@ -60,7 +60,7 @@
 			</td>
 		</tr>
         <tr style="display: none;" id="agent_tr">
-            <td colspan="2">
+            <td colspan="2" colspan="2">
             <div class="country">
                 <div id="checked-entities" class="enabled-check" style="height: auto"></div>
                 <div id="all-entities" style="height: auto"></div>
@@ -68,126 +68,126 @@
             </td>
         </tr>
 		<tr>
-			<td class="padding20">
+			<td colspan="2" class="padding20">
 				{{lang.words.checking|title()}}
 				<span class="need-field">*</span>
 			</td>
-			<td>
+			<td colspan="2">
 				{% set check_types = {'dns': 'DNS', 'ping': 'Ping', 'smtp': 'SMTP', 'rabbitmq': 'RabbitMQ', 'tcp': 'TCP', 'http': 'HTTP(s)'} %}
 				{{ select('check_type', values=check_types, selected='http') }}
 			</td>
 		</tr>
 		<tr>
-			<td class="padding20" title="{{ lang.phrases.check_interval_title }}">
+			<td colspan="2" class="padding20" title="{{ lang.phrases.check_interval_title }}">
 				{{lang.phrases.check_interval}}
 				<span class="need-field">*</span>
 			</td>
-			<td>
+			<td colspan="2">
 				{{ input('new-smon-interval', value='120', type='number', placeholder='120', title=lang.phrases.check_interval_title, style="width: 240px;") }}
 			</td>
 		</tr>
 		<tr class="new_smon_hostname">
-			<td class="padding20">
+			<td colspan="2" class="padding20">
 				{{lang.words.Hostname}}
 				<span class="need-field">*</span>
 			</td>
-			<td>
+			<td colspan="2">
 				{{ input('new-smon-ip', style="width: 240px;") }}
 			</td>
 		</tr>
 		<tr class="smon_ping_check">
-			<td class="padding20">
+			<td colspan="2" class="padding20">
 				{{lang.smon_page.desc.packet_size}}
 				<span class="need-field">*</span>
 			</td>
-			<td>
+			<td colspan="2">
 				{{ input('new-smon-packet_size', value='56', type='number', placeholder='56', style="width: 240px;") }}
 			</td>
 		</tr>
 		<tr class="smon_ping_check">
-			<td class="padding20">
+			<td colspan="2" class="padding20">
 				{{lang.smon_page.desc.count_packets}}
 				<span class="need-field">*</span>
 			</td>
-			<td>
+			<td colspan="2">
 				{{ input('new-smon-count_packets', value='5', type='number', placeholder='5', style="width: 240px;") }}
 			</td>
 		</tr>
 		<tr class="smon_dns_check">
-			<td class="padding20">
+			<td colspan="2" class="padding20">
 				Resolver {{lang.words.server}}
 				<span class="need-field">*</span>
 			</td>
-			<td>
+			<td colspan="2">
 				{{ input('new-smon-resolver-server', value='8.8.8.8', style="width: 240px;") }}
 			</td>
 		</tr>
 		<tr class="smon_tcp_check smon_dns_check smon_smtp_check smon_rabbit_check">
-			<td class="padding20">
+			<td colspan="2" class="padding20">
 				{{lang.words.port|title()}}
 				<span class="need-field">*</span>
 			</td>
-			<td>
+			<td colspan="2">
 				{{ input('new-smon-port', type='number', style="width: 240px;") }}
 			</td>
 		</tr>
 		<tr class="smon_smtp_check smon_rabbit_check">
-			<td class="padding20">
+			<td colspan="2" class="padding20">
 				{{lang.words.username|title()}}
 				<span class="need-field">*</span>
 			</td>
-			<td>
+			<td colspan="2">
 				{{ input('new-smon-username', placeholder='example@example.com', style="width: 240px;") }}
 			</td>
 		</tr>
 		<tr class="smon_smtp_check smon_rabbit_check">
-			<td class="padding20">
+			<td colspan="2" class="padding20">
 				{{lang.words.password|title()}}
 				<span class="need-field">*</span>
 			</td>
-			<td>
+			<td colspan="2">
 				{{ input('new-smon-password', type='password', style="width: 240px;") }}
 			</td>
 		</tr>
 		<tr class="smon_rabbit_check">
-			<td class="padding20">
+			<td colspan="2" class="padding20">
 				VHost
 				<span class="need-field">*</span>
 			</td>
-			<td>
+			<td colspan="2">
 				{{ input('new-smon-vhost', type='vhost', value='/', style="width: 240px;") }}
 			</td>
 		</tr>
 		<tr>
-			<td class="padding20">
+			<td colspan="2" class="padding20">
 				{{lang.words.timeout|title()}}
 				<span class="need-field">*</span>
 			</td>
-			<td>
+			<td colspan="2">
 				{{ input('new-smon-timeout', type='number', style="width: 240px;", value=10) }}
 			</td>
 		</tr>
-			<td class="padding20">
+			<td colspan="2" class="padding20">
 				{{lang.words.Retries}}
 				<span class="need-field">*</span>
 			</td>
-			<td>
+			<td colspan="2">
 				{{ input('new-smon-retries', type='number', style="width: 240px;", value=3) }}
                 <div class="tooltip" style="padding: 0">{{ lang.smon_page.desc.retries_desc }}</div>
 			</td>
 		</tr>
 		<tr class="smon_http_check">
-			<td class="padding20">
+			<td colspan="2" class="padding20">
 				URL
 				<span class="need-field">*</span>
 			</td>
-			<td>{{ input('new-smon-url', value='https://', title='proto://url[:port]/', placeholder='proto://url[:port]/', style="width: 240px;") }}</td>
+			<td colspan="2">{{ input('new-smon-url', value='https://', title='proto://url[:port]/', placeholder='proto://url[:port]/', style="width: 240px;") }}</td>
 		</tr>
         <tr class="smon_http_check">
-            <td class="padding20">
+            <td colspan="2" class="padding20">
                 {{lang.words.headers|title()}} {{lang.words.response}}
             </td>
-            <td id="smon_http_check_headers_response">
+            <td colspan="2" id="smon_http_check_headers_response">
                 <select id="smon_http_check_headers_response_type">
                     <option value="0">None</option>
                     <option value="check">{{lang.words.check|title()}}</option>
@@ -205,10 +205,10 @@
             </td>
         </tr>
 		<tr class="smon_http_check">
-			<td class="padding20">
+			<td colspan="2" class="padding20">
                 {{lang.words.body|title()}} {{lang.words.response}}
             </td>
-			<td>
+			<td colspan="2">
                 <select id="smon_http_check_body_type">
                     <option value="0">None</option>
                     <option value="keyword">Keyword</option>
@@ -231,15 +231,22 @@
             </td>
 		</tr>
 		<tr class="smon_http_check">
-			<td class="padding20">HTTP {{lang.words.method}}</td>
-			<td>
+			<td colspan="2" class="padding20">HTTP {{lang.words.method}}</td>
+			<td colspan="2">
 				{% set http_methods = {'get': 'GET', 'post': 'POST', 'put': 'PUT', 'head': 'HEAD', 'patch': 'PATCH', 'delete': 'DELETE', 'options': 'OPTIONS'} %}
 				{{ select('new-smon-method', values=http_methods, selected='get') }}
 			</td>
 		</tr>
 		<tr class="smon_http_check">
-			<td class="padding20">{{lang.words.body|title()}} {{lang.words.request}}</td>
-			<td>
+			<td colspan="2" class="padding20">{{ lang.words.check|title() }} HTTP {{ lang.words.version }}</td>
+			<td colspan="2">
+				{% set http_versions = {'0': 'None', 1: '1.1', 2: '1.1', 3: '2', 4: '3'} %}
+				{{ select('new-smon-http_version', values=http_versions, selected='0') }}
+			</td>
+		</tr>
+		<tr class="smon_http_check">
+			<td colspan="2" class="padding20">{{lang.words.body|title()}} {{lang.words.request}}</td>
+			<td colspan="2">
 				<textarea id="new-smon-body-req" cols="50" rows="5" class="form-control" title="JSON only" placeholder="Example:
 {
     &quot;key&quot;: &quot;value&quot;
@@ -247,8 +254,8 @@
 			</td>
 		</tr>
 		<tr class="smon_http_check">
-			<td class="padding20">{{lang.words.headers|title()}} {{lang.words.request}}</td>
-			<td>
+			<td colspan="2" class="padding20">{{lang.words.headers|title()}} {{lang.words.request}}</td>
+			<td colspan="2">
 				<textarea id="new-smon-header-req" cols="50" rows="5" class="form-control" title="JSON only" placeholder="Example:
 {
     &quot;Header&quot;: &quot;Value&quot;
@@ -256,19 +263,19 @@
 			</td>
 		</tr>
 		<tr class="smon_http_check">
-			<td class="padding20">
+			<td colspan="2" class="padding20">
 				{{lang.phrases.accepted_status_code}}
 				<span class="need-field">*</span>
 			</td>
-			<td>
+			<td colspan="2">
 				{{ input('new-smon-status-code') }}
 			</td>
 		</tr>
 		<tr class="smon_http_check">
-			<td class="padding20">
+			<td colspan="2" class="padding20">
 				{{lang.smon_page.desc.redirects}}
 			</td>
-			<td>
+			<td colspan="2">
 				{{ input('new-smon-redirects', type='number', style="width: 240px;", value=10) }}
                 <div class="tooltip" style="padding: 0">{{ lang.smon_page.desc.redirects_desc }}</div>
 			</td>
@@ -278,13 +285,17 @@
 			<td>
 				{{ checkbox('new-smon-ignore_ssl_error') }}
 			</td>
+			<td class="padding20" style="padding-left: 150px;">{{ lang.words.accept|title() }} cookies</td>
+			<td>
+				{{ checkbox('new-smon-accept_cookies', checked='checked') }}
+			</td>
 		</tr>
 		<tr class="smon_dns_check">
-			<td class="padding20">
+			<td colspan="2" class="padding20">
 				{{lang.phrases.resource_record_type}}
 				<span class="need-field">*</span>
 			</td>
-			<td>
+			<td colspan="2">
 				{% set check_types = {'a': 'A', 'aaa': 'AAA', 'caa': 'CAA', 'cname': 'CNAME', 'mx': 'MX', 'ns': 'NS',
 				'ptr': 'PTR', 'sao': 'SAO', 'srv': 'SRV', 'txt': 'TXT'} %}
 				{{ select('new-smon-dns_record_type', values=check_types, selected='a') }}

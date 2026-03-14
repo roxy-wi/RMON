@@ -135,6 +135,10 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 	if ($('#new-smon-ignore_ssl_error').is(':checked')) {
 		ignore_ssl_error = '1';
 	}
+	let accept_cookies = 0;
+	if ($('#new-smon-accept_cookies').is(':checked')) {
+		accept_cookies = '1';
+	}
 	let entities = [];
 	$("#checked-entities > div").each((index, elem) => {
 		let entity_id = elem.id.split('-')[1]
@@ -219,6 +223,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'accepted_status_codes': statusList,
 		'check_timeout': $('#new-smon-timeout').val(),
 		'ignore_ssl_error': ignore_ssl_error,
+		'accept_cookies': accept_cookies,
 		'retries': $('#new-smon-retries').val(),
 		'redirects': $('#new-smon-redirects').val(),
 		'runbook': $('#new-smon-runbook').val(),
@@ -227,7 +232,8 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'threshold_timeout': $('#new-smon-threshold_timeout').val(),
 		'auth': auth,
 		'proxy': proxy,
-		'headers_response': headers_response
+		'headers_response': headers_response,
+		'http_version': parseInt($('#new-smon-http_version').val()),
 	}
 	let method = "post";
 	let api_url = api_v_prefix + '/rmon/check/' + check_type;
@@ -469,6 +475,10 @@ function getCheckSettings(smon_id, check_type) {
 				$('#new-smon-method').val(data['checks'][0]['method']).change();
 				$('#new-smon-method').selectmenu("refresh");
 			}
+			if (data['checks'][0]['http_version']) {
+				$('#new-smon-http_version').val(data['checks'][0]['http_version']).change();
+				$('#new-smon-http_version').selectmenu("refresh");
+			}
 			$('select').selectmenu("refresh");
 			if (data['checks'][0]['smon_id']['enabled']) {
 				$('#new-smon-enable').prop('checked', true)
@@ -479,6 +489,11 @@ function getCheckSettings(smon_id, check_type) {
 				$('#new-smon-ignore_ssl_error').prop('checked', true)
 			} else {
 				$('#new-smon-ignore_ssl_error').prop('checked', false)
+			}
+			if (data['checks'][0]['accept_cookies']) {
+				$('#new-smon-accept_cookies').prop('checked', true)
+			} else {
+				$('#new-smon-accept_cookies').prop('checked', false)
 			}
 			if (data['checks'][0]['auth']) {
 				if (data['checks'][0]['auth'].hasOwnProperty('basic')) {
@@ -497,6 +512,7 @@ function getCheckSettings(smon_id, check_type) {
 			}
 			$('#new-smon-enable').checkboxradio("refresh");
 			$('#new-smon-ignore_ssl_error').checkboxradio("refresh");
+			$('#new-smon-accept_cookies').checkboxradio("refresh");
 			if (data['checks'][0]['proxy']) {
 				$('#smon_http_check_proxy_method').val(data['checks'][0]['proxy']['type']);
 				$('.smon_http_check_proxy').show();
@@ -668,7 +684,7 @@ function show_smon_history_statuses(check_id, id_for_history_replace) {
 				let add_class = 'serverUp';
 				if (status.status === 0 || status.status === 7 || status.status === 8) {
 					add_class = 'serverDown';
-				} else if (status.status === 5 || status.status === 6) {
+				} else if (status.status === 5 || status.status === 6|| status.status === 9) {
 					add_class = 'serverWarn';
 				}
 				statuses += '<div class="smon_server_statuses ' + add_class + '" title="" data-help="' + status.date + ' ' + status.error + '"></div>';
