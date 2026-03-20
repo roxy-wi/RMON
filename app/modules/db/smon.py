@@ -355,11 +355,13 @@ def select_multi_checks_with_type(check_type: int, group_id: int) -> SMON:
 			return SMON.select().join(MultiCheck).where(
 				(SMON.group_id == group_id) &
 				(SMON.check_type == check_type)
+			).order_by(
+				SMON.multi_check_id.desc()
 			).distinct(SMON.multi_check_id)
 		return SMON.select().join(MultiCheck).where(
 			(SMON.group_id == group_id) &
 			(SMON.check_type == check_type)
-		).order_by(MultiCheck.check_group_id).group_by(SMON.multi_check_id)
+		).order_by(MultiCheck.check_group_id.desc()).group_by(SMON.multi_check_id)
 	except Exception as e:
 		raise out_error(e, SMON)
 
@@ -417,7 +419,7 @@ def select_multi_check_with_filters(group_id: int, query: CheckFiltersQuery) -> 
 					.join(MC, on=(SMON.multi_check_id == MC.id))
 					.where(where_expr)
 					.distinct(SMON.multi_check_id)
-					.order_by(SMON.multi_check_id)
+					.order_by(SMON.multi_check_id.desc())
 					.paginate(query.offset, query.limit))
 		else:
 			base = (SMON
