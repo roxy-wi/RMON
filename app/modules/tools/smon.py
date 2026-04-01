@@ -68,7 +68,7 @@ def send_new_check(
 def create_http_check(data: HttpCheckRequest, check_id: int) -> Optional[tuple[dict, int]]:
     body_keyword: str = None
     body_json: dict = data.body_json
-    if data.body is not None:
+    if data.body is not None and data.body != '':
         body_keyword = data.body
         body_json = None
     kwargs = {
