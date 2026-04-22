@@ -221,6 +221,7 @@ class HttpCheckRequest(BaseCheckRequest):
     headers_response: Optional[HttpHeadersResponse] = None
     accept_cookies: Optional[bool] = True
     http_version: Literal[0, 1, 2, 3, 4] = 0
+    resole_to_ip: Optional[IPvAnyAddress] = None
 
     @field_validator('method', mode='before')
     @classmethod
@@ -307,6 +308,7 @@ class PingCheckRequest(BaseCheckRequest):
     ip: Union[IPvAnyAddress, DomainName]
     packet_size: Annotated[int, Gt(16)]
     count_packets: int
+    use_kernel_timestamp: bool = False
 
     @model_validator(mode="after")
     def validate_total_timeout(self) -> "PingCheckRequest":

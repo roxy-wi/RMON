@@ -53,13 +53,6 @@ def update_user_current_groups(group_id: int, user_id: int) -> None:
 		out_error(e)
 
 
-def update_user_current_groups_by_id(groups, user_id):
-	try:
-		User.update(group_id=groups).where(User.user_id == user_id).execute()
-	except Exception as e:
-		out_error(e)
-
-
 def update_user_password(password, user_id):
 	try:
 		hashed_pass = roxy_wi_tools.Tools.get_hash(password)

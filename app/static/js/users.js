@@ -585,10 +585,8 @@ function saveGroupsAndRoles(user_id) {
 	}
 	$.ajax({
 		url: "/user/groups/save",
-		data: {
-			changeUserGroupsUser: $('#login-' + user_id).val(),
-			jsonDatas: JSON.stringify(jsonData)
-		},
+		data: JSON.stringify(jsonData),
+		contentType: "application/json; charset=utf-8",
 		type: "POST",
 		success: function (data) {
 			if (data.indexOf('error: ') != '-1') {

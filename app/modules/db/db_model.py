@@ -495,6 +495,7 @@ class SmonHttpCheck(BaseModel):
     headers_response = JSONField(null=True)
     accept_cookies = BooleanField(constraints=[SQL('DEFAULT 1')])
     http_version = IntegerField(constraints=[SQL('DEFAULT 0')])
+    resole_to_ip = CharField(null=True)
 
     class Meta:
         table_name = 'smon_http_check'
@@ -507,6 +508,7 @@ class SmonPingCheck(BaseModel):
     packet_size = IntegerField(constraints=[SQL('DEFAULT 56')])
     interval = IntegerField(constraints=[SQL('DEFAULT 120')])
     count_packets = IntegerField(default=4)
+    use_kernel_timestamp = BooleanField(default=False)
 
     class Meta:
         table_name = 'smon_ping_check'

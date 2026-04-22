@@ -53,23 +53,23 @@ def update_user_password(password, user_id):
     roxywi_common.logger(f'Has changed password for {user} user', service='user', keep_history=1)
 
 
-def save_user_group_and_role(user: str, groups_and_roles: dict):
+def save_user_group_and_role(groups_and_roles: dict, user_params: dict):
     resp = make_response('ok')
     for k, v in groups_and_roles.items():
         user_id = int(k)
+        if user_params['role'] != 1:
+            raise PermissionError("Insufficient permissions to update another user's password")
         if not user_sql.delete_user_groups(user_id):
             return 'error: Cannot delete old groups'
         for k2, v2 in v.items():
             group_id = int(k2)
             role_id = int(v2['role_id'])
-            if len(v) == 1:
-                user_sql.update_user_current_groups_by_id(group_id, user_id)
             try:
                 user_sql.update_user_role(user_id, group_id, role_id)
             except Exception as e:
                 raise Exception(f'error: Cannot update groups: {e}')
         else:
-            roxywi_common.logger(f'Groups and roles have been updated for user: {user}', service='user', keep_history=1)
+            roxywi_common.logger(f'Groups and roles have been updated for user: {user_params["user"]}', service='user', keep_history=1)
             return resp
 
 

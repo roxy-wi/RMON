@@ -88,6 +88,7 @@ def create_http_check(data: HttpCheckRequest, check_id: int) -> Optional[tuple[d
         'headers_response': data.headers_response.model_dump(mode='json') if data.headers_response else None,
         'accept_cookies': data.accept_cookies,
         'http_version': data.http_version,
+        'resole_to_ip': data.resole_to_ip,
     }
     try:
         smon_sql.insert_smon_http(**kwargs)
@@ -109,7 +110,8 @@ def create_ping_check(data: PingCheckRequest, last_id: int) -> Optional[tuple[di
             'ip': str(data.ip),
             'packet_size': data.packet_size,
             'interval': data.interval,
-            'count_packets': data.count_packets
+            'count_packets': data.count_packets,
+            'use_kernel_timestamp': data.use_kernel_timestamp
         }
         smon_sql.insert_smon_ping(**kwargs)
     except Exception as e:

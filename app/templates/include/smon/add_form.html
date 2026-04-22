@@ -113,6 +113,15 @@
 				{{ input('new-smon-count_packets', value='5', type='number', placeholder='5', style="width: 240px;") }}
 			</td>
 		</tr>
+		<tr class="smon_ping_check">
+			<td colspan="2" class="padding20">
+				{{lang.smon_page.desc.use_kernel_timestamp}}
+			</td>
+			<td colspan="2">
+				{{ checkbox('new-smon-use_kernel_timestamp') }}
+                <div class="tooltip" style="padding: 0">{{ lang.smon_page.desc.use_kernel_timestamp_desc }}</div>
+			</td>
+		</tr>
 		<tr class="smon_dns_check">
 			<td colspan="2" class="padding20">
 				Resolver {{lang.words.server}}
@@ -182,6 +191,12 @@
 				<span class="need-field">*</span>
 			</td>
 			<td colspan="2">{{ input('new-smon-url', value='https://', title='proto://url[:port]/', placeholder='proto://url[:port]/', style="width: 240px;") }}</td>
+		</tr>
+		<tr class="smon_http_check">
+			<td colspan="2" class="padding20">
+				{{ lang.smon_page.desc.resolve_to_ip }}
+			</td>
+			<td colspan="2">{{ input('new-smon-resole_to_ip', title='IPv4 or IPv6', placeholder='1.1.1.1', style="width: 240px;") }}</td>
 		</tr>
         <tr class="smon_http_check">
             <td colspan="2" class="padding20">

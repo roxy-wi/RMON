@@ -121,18 +121,10 @@ def show_roxywi_version():
     return jsonify(roxy.versions())
 
 
-@bp.route('/portscanner/scan/<int:server_id>', defaults={'server_ip': None})
-@bp.route('/portscanner/scan/<server_ip>', defaults={'server_id': None})
-def scan_port(server_id, server_ip):
-    if server_ip:
-        ip = server_ip
-    else:
-        server = server_sql.select_servers(id=server_id)
-        ip = ''
-
-        for s in server:
-            ip = s[2]
-
+@bp.route('/portscanner/scan/<server_ip>')
+@validate()
+def scan_port(server_ip: Union[IPvAnyAddress, DomainName]):
+    ip = str(server_ip)
     cmd = f"sudo nmap -sS {ip} |grep -E '^[[:digit:]]'|sed 's/  */ /g'"
     cmd1 = f"sudo nmap -sS {ip} |head -5|tail -2"
 

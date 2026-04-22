@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Union, Literal
 
-from peewee import fn, IntegrityError, Case
+from peewee import fn, IntegrityError, Case, Select
 
 from app.modules.db.db_model import (
 	SmonAgent, Server, SMON, SmonTcpCheck, SmonHttpCheck, SmonDnsCheck, SmonPingCheck, SmonHistory, SmonStatusPageCheck,
@@ -390,37 +390,74 @@ def select_multi_check_with_filters(group_id: int, query: CheckFiltersQuery) -> 
 	if query.sort_by:
 		is_desc = query.sort_by.startswith('-')
 		sort_key = query.sort_by[1:] if is_desc else query.sort_by
-		sorts = {
-			'name': MC.name,
-			'status': SMON.status,
-			'check_type': SMON.check_type,
-			'check_group': MC.check_group_id,
-			'created_at': SMON.created_at,
-			'updated_at': SMON.updated_at,
-		}
-		if sort_key in sorts:
-			sort_expr = sorts[sort_key].desc() if is_desc else sorts[sort_key].asc()
+		if pgsql_enable == '1':
+			sort_map = {
+				'name': '_sort_name',
+				'status': '_sort_status',
+				'check_type': '_sort_check_type',
+				'check_group': '_sort_check_group',
+				'created_at': '_sort_created_at',
+				'updated_at': '_sort_updated_at',
+			}
+
+			sort_alias = sort_map.get(sort_key)
+			if sort_alias:
+				sort_expr = (sort_alias, is_desc)
+		else:
+			sorts = {
+				'name': MC.name,
+				'status': SMON.status,
+				'check_type': SMON.check_type,
+				'check_group': MC.check_group_id,
+				'created_at': SMON.created_at,
+				'updated_at': SMON.updated_at,
+			}
+			if sort_key in sorts:
+				sort_expr = sorts[sort_key].desc() if is_desc else sorts[sort_key].asc()
 
 	try:
 		if pgsql_enable == '1':
+			rn = fn.ROW_NUMBER().over(
+				partition_by=[SMON.multi_check_id],
+				order_by=[SMON.check_type.asc()],
+			).alias('rn')
+
+			ranked = (
+				SMON
+				.select(
+					SMON.id.alias('smon_id'),
+					SMON.multi_check_id.alias('multi_check_id'),
+					MC.name.alias('_sort_name'),
+					SMON.status.alias('_sort_status'),
+					SMON.check_type.alias('_sort_check_type'),
+					MC.check_group_id.alias('_sort_check_group'),
+					SMON.created_at.alias('_sort_created_at'),
+					SMON.updated_at.alias('_sort_updated_at'),
+					rn,
+				)
+				.join(MC, on=(SMON.multi_check_id == MC.id))
+				.where(where_expr)
+				.cte('ranked')
+			)
+
+			q = (
+				SMON
+				.select(SMON, MC)
+				.join(MC, on=(SMON.multi_check_id == MC.id))
+				.switch(SMON)
+				.join(ranked, on=(ranked.c.smon_id == SMON.id))
+				.with_cte(ranked)
+				.where(ranked.c.rn == 1)
+			)
+
 			if sort_expr is not None:
-				q = (
-					SMON
-					.select(SMON, MC)
-					.join(MC, on=(SMON.multi_check_id == MC.id))
-					.where(where_expr)
-					.distinct(SMON.multi_check_id)
-					.order_by(SMON.multi_check_id, sort_expr)
-					.paginate(query.offset, query.limit))
+				sort_col, is_desc = sort_expr
+				col = getattr(ranked.c, sort_col)
+				q = q.order_by(col.desc() if is_desc else col.asc())
 			else:
-				q = (
-					SMON
-					.select(SMON, MC)
-					.join(MC, on=(SMON.multi_check_id == MC.id))
-					.where(where_expr)
-					.distinct(SMON.multi_check_id)
-					.order_by(SMON.multi_check_id.desc())
-					.paginate(query.offset, query.limit))
+				q = q.order_by(ranked.c.multi_check_id.desc())
+
+			q = q.paginate(query.offset, query.limit)
 		else:
 			base = (SMON
 					.select(SMON, MC)

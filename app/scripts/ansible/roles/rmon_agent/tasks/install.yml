@@ -25,6 +25,7 @@
   - "modules/common/rmon_agent_common.py"
   - "rmon_checks.py"
   - "modules/checks/http_check.py"
+  - "modules/checks/http_sub_checks.py"
   - "modules/checks/smtp_check.py"
   - "modules/checks/rabbitmq_check.py"
   - "modules/checks/tcp_check.py"

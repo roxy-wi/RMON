@@ -598,13 +598,17 @@ class CheckHttpView(CheckView):
                       description: Forbidden headers
                       example: '["X-Powered-By", "Server"]'
                 accept_cookies:
-                  type: 'bool'
+                  type: 'boolean'
                   default: True
                   description: 'Should HTTP check accepts cookies'
                 http_version:
                   type: 'integer'
                   default: 0
                   description: 'If version missmatch alert will be risen. HTTP version. 0 - disabled, 1 - HTTP 1.0, 2 - HTTP 1.1, 3 - HTTP 2.0, 4 - HTTP 3.0'
+                resole_to_ip:
+                  type: 'string'
+                  default: ''
+                  description: 'Do not use DNS serverside. Use the IP address of the server. Can be empty.'
 
         """
         return super().get(check_id, query)
@@ -786,13 +790,17 @@ class CheckHttpView(CheckView):
                     description: Forbidden headers
                     example: '["X-Powered-By", "Server"]'
               accept_cookies:
-                type: 'bool'
+                type: 'boolean'
                 default: True
                 description: 'Should HTTP check accepts cookies'
               http_version:
                 type: 'integer'
                 default: 0
                 description: 'If version missmatch alert will be risen. HTTP version. 0 - disabled, 1 - HTTP 1.0, 2 - HTTP 1.1, 3 - HTTP 2.0, 4 - HTTP 3.0'
+              resole_to_ip:
+                type: 'string'
+                default: ''
+                description: 'Do not use DNS serverside. Use the IP address of the server. Can be empty.'
         responses:
           '200':
             description: 'Successful Operation'
@@ -984,13 +992,17 @@ class CheckHttpView(CheckView):
                     description: Forbidden headers
                     example: '["X-Powered-By", "Server"]'
               accept_cookies:
-                type: 'bool'
+                type: 'boolean'
                 default: True
                 description: 'Should HTTP check accepts cookies'
               http_version:
                 type: 'integer'
                 default: 0
                 description: 'If version missmatch alert will be risen. HTTP version. 0 - disabled, 1 - HTTP 1.0, 2 - HTTP 1.1, 3 - HTTP 2.0, 4 - HTTP 3.0'
+              resole_to_ip:
+                type: 'string'
+                default: ''
+                description: 'Do not use DNS serverside. Use the IP address of the server. Can be empty.'
         responses:
           '201':
             description: 'Successful Operation, HTTP Check updated'
@@ -1990,6 +2002,10 @@ class CheckPingView(CheckView):
                 threshold_timeout:
                   type: 'integer'
                   description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
+                use_kernel_timestamp:
+                  type: 'boolean'
+                  default: false
+                  description: 'Use kernel timestamps for more accurate RTT measurements. More expensive.'
         """
         return super().get(check_id, query)
 
@@ -2086,6 +2102,10 @@ class CheckPingView(CheckView):
               threshold_timeout:
                 type: 'integer'
                 description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
+              use_kernel_timestamp:
+                type: 'boolean'
+                default: false
+                description: 'Use kernel timestamps for more accurate RTT measurements. More expensive.'
         responses:
           '200':
             description: 'Successful Operation'
@@ -2197,6 +2217,10 @@ class CheckPingView(CheckView):
               threshold_timeout:
                 type: 'integer'
                 description: 'A warning message will be sent if the response is slower than this value. In ms. 0 disabled.'
+              use_kernel_timestamp:
+                type: 'boolean'
+                default: false
+                description: 'Use kernel timestamps for more accurate RTT measurements. More expensive.'
         responses:
           '201':
             description: 'Successful Operation, Ping Check updated'

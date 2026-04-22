@@ -228,7 +228,8 @@ def send_ping_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             'packet_size': check.packet_size,
             'interval': check.interval,
             'timeout': check.smon_id.check_timeout,
-            'count_packets': check.count_packets
+            'count_packets': check.count_packets,
+            'use_kernel_timestamp': check.use_kernel_timestamp
         }
         try:
             send_check_to_agent(agent_id, server_ip, check.smon_id, check.smon_id.multi_check_id, json_data)
@@ -295,6 +296,7 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             'headers_response': check.headers_response,
             'http_version': check.http_version,
             'accept_cookies': check.accept_cookies,
+            'resole_to_ip': check.resole_to_ip,
         }
         try:
             send_check_to_agent(agent_id, server_ip, check.smon_id, check.smon_id.multi_check_id, json_data)
