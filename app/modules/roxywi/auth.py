@@ -47,6 +47,7 @@ def page_for_admin(level=1) -> None:
 
 def check_in_ldap(user, password):
     import ldap
+    import ldap.filter
 
     server = sql.get_setting('ldap_server')
     port = sql.get_setting('ldap_port')
@@ -71,7 +72,7 @@ def check_in_ldap(user, password):
         return False
 
     try:
-        criteria = "(&(objectClass=" + ldap_class_search + ")(" + ldap_user_attribute + "=" + user + "))"
+        criteria = ldap.filter.filter_format("(&(objectClass=%s)(%s=%s))", [ldap_class_search, ldap_user_attribute, user])
         attributes = [ldap_search_field]
         result = ldap_bind.search_s(ldap_base, ldap.SCOPE_SUBTREE, criteria, attributes)
 

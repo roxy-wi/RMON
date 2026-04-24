@@ -75,6 +75,7 @@ def save_user_group_and_role(groups_and_roles: dict, user_params: dict):
 
 def get_ldap_email(username) -> str:
     import ldap
+    import ldap.filter
 
     server = sql.get_setting('ldap_server')
     port = sql.get_setting('ldap_port')
@@ -98,7 +99,7 @@ def get_ldap_email(username) -> str:
         ldap_bind.set_option(ldap.OPT_REFERRALS, 0)
         ldap_bind.simple_bind_s(user, password)
 
-        criteria = f"(&(objectClass={ldap_class_search})({ldap_user_attribute}={username}))"
+        criteria = ldap.filter.filter_format("(&(objectClass=%s)(%s=%s))", [ldap_class_search, ldap_user_attribute, username])
         attributes = [ldap_search_field]
         result = ldap_bind.search_s(ldap_base, ldap.SCOPE_SUBTREE, criteria, attributes)
 

@@ -18,7 +18,7 @@ from app.modules.roxywi.class_models import DomainName
 @jwt_required()
 def before_request():
     """ Protect all the admin endpoints. """
-    pass
+    roxywi_auth.page_for_admin(level=2)
 
 
 bp.add_url_rule('', view_func=ServerView.as_view('server'), methods=['POST'])
@@ -28,8 +28,6 @@ bp.add_url_rule('/cred', view_func=CredView.as_view('cred'), methods=['POST'])
 @bp.route('/check/ssh/<server_ip>')
 @validate()
 def check_ssh(server_ip: Union[IPvAnyAddress, DomainName]):
-    roxywi_auth.page_for_admin(level=2)
-
     try:
         return server_mod.ssh_command(str(server_ip), "ls -1t")
     except Exception as e:
