@@ -26,8 +26,8 @@
     });
 </script>
 <!-- Tagify -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" />
-<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tagify.css') }}" />
+<script src="{{ url_for('static', filename='js/tagify.js') }}"></script>
 
 
 <div id="smon-add-table" style="display: none;">
@@ -456,6 +456,17 @@
 				<select id="new-smon-mm">
 					<option value="0">{{lang.words.disabled|title()}}</option>
 				{% for t in mms %}
+					<option value="{{t.id}}">{{t.channel_name.replace("'", "")}}</option>
+				{% endfor %}
+				</select>
+			</td>
+		</tr>
+        <tr>
+			<td class="padding20">IncidentRelay</td>
+			<td>
+				<select id="new-smon-incidentrelay">
+					<option value="0">{{lang.words.disabled|title()}}</option>
+				{% for t in incidentrelay %}
 					<option value="{{t.id}}">{{t.channel_name.replace("'", "")}}</option>
 				{% endfor %}
 				</select>

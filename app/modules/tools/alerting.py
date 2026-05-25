@@ -309,6 +309,57 @@ def mm_send_mess(mess, level, **kwargs):
 		raise Exception(f'{e}')
 
 
+def incidentrelay_send_mess(mess, level, **kwargs):
+	token = ''
+	runbook = ''
+	rmon_name = sql.get_setting('rmon_name')
+	proxy_dict = common.return_proxy_dict()
+	dedup_key = f'{kwargs.get("multi_check_id")} {kwargs.get("state_id")}'
+	status = 'firing'
+	if level == 'info':
+		status = 'resolved'
+
+	if kwargs.get('channel_id'):
+		incidentrelay = channel_sql.get_receiver_by_id('incidentrelay', kwargs.get('channel_id'))
+	else:
+		incidentrelay = channel_sql.get_receiver_by_ip('incidentrelay', kwargs.get('ip'))
+
+	for ir in incidentrelay:
+		token = ir.token
+		ir_url = ir.channel_name
+
+	try:
+		headers = {
+			"Authorization": f"Bearer {token}",
+			"Content-Type": "application/json",
+		}
+		payload = {
+			"fingerprint": dedup_key,
+			"labels": {
+				"alertname": f'[{rmon_name}] {level}: {mess}',
+			},
+			"token": sql.get_setting("incidentrelay_token"),
+			"message": f'{level}: {mess}',
+			"runbook": runbook,
+			"severity": level,
+			"status": status,
+			"title": f'[{rmon_name}] {level}: {mess}',
+		}
+		response = requests.post(
+			f'{ir_url}/api/integrations/webhook',
+			headers=headers,
+			json=payload,
+			timeout=15,
+			proxies=proxy_dict,
+		)
+		if response.status_code != 200:
+			roxywi_common.logger(f'Incident Relay alert failed: {response.text}')
+			raise Exception(f'Incident Relay alert failed: {response.text}')
+	except Exception as e:
+		roxywi_common.logger(f'Incident Relay alert failed: {e}')
+		raise Exception(f'Incident Relay alert failed: {e}')
+
+
 def check_rabbit_alert() -> Union[str, dict]:
 	claims = roxywi_common.get_jwt_token_claims()
 	try:
@@ -408,7 +459,8 @@ def check_receiver(channel_id: int, receiver_name: str, multi_check_id: int = No
 		"slack": slack_send_mess,
 		"pd": pd_send_mess,
 		"mm": mm_send_mess,
-		"email": email_send_mess
+		"email": email_send_mess,
+		"incidentrelay": incidentrelay_send_mess,
 	}
 	rmon_name = sql.get_setting('rmon_name')
 	mess = f'Test message from {rmon_name}'
@@ -452,6 +504,7 @@ def load_channels():
 		kwargs.setdefault('telegrams', channel_sql.get_user_receiver_by_group('telegram', user_group))
 		kwargs.setdefault('pds', channel_sql.get_user_receiver_by_group('pd', user_group))
 		kwargs.setdefault('mms', channel_sql.get_user_receiver_by_group('mm', user_group))
+		kwargs.setdefault('incidentrelay', channel_sql.get_user_receiver_by_group('incidentrelay', user_group))
 		kwargs.setdefault('groups', group_sql.select_groups())
 		kwargs.setdefault('slacks', channel_sql.get_user_receiver_by_group('slack', user_group))
 		kwargs.setdefault('emails', channel_sql.get_user_receiver_by_group('email', user_group))

@@ -1,4 +1,4 @@
-from app.modules.db.db_model import Telegram, Slack, PD, Server, MM, Email
+from app.modules.db.db_model import Telegram, Slack, PD, Server, MM, Email, IncidentRelay
 from app.modules.db.common import out_error
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 
@@ -7,7 +7,8 @@ models = {
 	'slack': Slack,
 	'pd': PD,
 	'mm': MM,
-	'email': Email
+	'email': Email,
+	'incidentrelay': IncidentRelay
 	}
 
 

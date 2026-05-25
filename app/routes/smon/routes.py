@@ -37,6 +37,7 @@ def smon_main_dashboard():
         'smon_groups': smon_sql.select_smon_groups(group_id),
         'smon_status': tools_common.is_tool_active('rmon-server'),
         'telegrams': channel_sql.get_user_receiver_by_group('telegram', group_id),
+        'incidentrelay': channel_sql.get_user_receiver_by_group('incidentrelay', group_id),
         'slacks': channel_sql.get_user_receiver_by_group('slack', group_id),
         'pds': channel_sql.get_user_receiver_by_group('pd', group_id),
         'mms': channel_sql.get_user_receiver_by_group('mm', group_id),
@@ -114,6 +115,7 @@ def smon_dashboard(smon_id, check_id):
         'telegrams': channel_sql.get_user_receiver_by_group('telegram', group_id),
         'slacks': channel_sql.get_user_receiver_by_group('slack', group_id),
         'pds': channel_sql.get_user_receiver_by_group('pd', group_id),
+        'incidentrelay': channel_sql.get_user_receiver_by_group('incidentrelay', group_id),
         'mms': channel_sql.get_user_receiver_by_group('mm', group_id),
         'emails': channel_sql.get_user_receiver_by_group('email', group_id),
     }

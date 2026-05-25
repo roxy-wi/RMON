@@ -198,6 +198,16 @@ class PD(BaseModel):
         table_name = 'pd'
 
 
+class IncidentRelay(BaseModel):
+    id = AutoField()
+    token = CharField()
+    channel_name = CharField()
+    group_id = IntegerField()
+
+    class Meta:
+        table_name = 'incidentrelay'
+
+
 class Setting(BaseModel):
     param = CharField()
     value = CharField(null=True)
@@ -335,6 +345,7 @@ class SMON(BaseModel):
     ssl_expire_date = CharField(null=True)
     pd_channel_id = IntegerField(null=True)
     mm_channel_id = IntegerField(null=True)
+    incidentrelay_channel_id = IntegerField(null=True)
     email_channel_id = IntegerField(null=True)
     check_type = CharField(constraints=[SQL("DEFAULT 'tcp'")])
     created_at = DateTimeField(default=datetime.now)
@@ -620,5 +631,5 @@ def create_tables():
             [Groups, User, Server, Role, Telegram, Slack, UserGroups, Setting, Cred, Version, ActionHistory, Region,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
              SmonStatusPage, SmonStatusPageCheck, SMON, SmonGroup, MM, RMONAlertsHistory, SmonSMTPCheck, SmonRabbitCheck,
-             Country, MultiCheck, Email, InstallationTasks, Migration, AlertEvent, AlertState, AggregatorLock]
+             Country, MultiCheck, Email, InstallationTasks, Migration, AlertEvent, AlertState, AggregatorLock, IncidentRelay]
         )

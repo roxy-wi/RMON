@@ -8,6 +8,9 @@ $( function() {
 	$('#add-pd-button').click(function () {
 		addPDDialog.dialog('open');
 	});
+	$('#add-incidentrelay-button').click(function () {
+		addIncidentRelayDialog.dialog('open');
+	});
 	$('#add-mm-button').click(function () {
 		addMMDialog.dialog('open');
 	});
@@ -130,6 +133,35 @@ $( function() {
 			}
 		}]
 	});
+	let incidentrelay_tabel_title = $("#incidentrelay-add-table-overview").attr('title');
+	let addIncidentRelayDialog = $("#incidentrelay-add-table").dialog({
+		autoOpen: false,
+		resizable: false,
+		height: "auto",
+		width: 600,
+		modal: true,
+		title: incidentrelay_tabel_title,
+		show: {
+			effect: "fade",
+			duration: 200
+		},
+		hide: {
+			effect: "fade",
+			duration: 200
+		},
+		buttons: [{
+			text: add_word,
+			click: function () {
+				addRecevier(this, 'incidentrelay');
+			}
+		}, {
+			text: cancel_word,
+			click: function () {
+				$(this).dialog("close");
+				clearTips();
+			}
+		}]
+	});
 	let email_tabel_title = $("#email-add-table-overview").attr('title');
 	let addEmailDialog = $("#email-add-table").dialog({
 		autoOpen: false,
@@ -190,6 +222,14 @@ $( function() {
 	$("#checker_mm_table select").on('selectmenuchange', function () {
 		let id = $(this).attr('id').split('-');
 		updateReceiver(id[1], 'mm')
+	});
+	$("#checker_incidentrelay_table input").change(function () {
+		let id = $(this).attr('id').split('-');
+		updateReceiver(id[2], 'incidentrelay')
+	});
+	$("#checker_incidentrelay_table select").on('selectmenuchange', function () {
+		let id = $(this).attr('id').split('-');
+		updateReceiver(id[1], 'incidentrelay')
 	});
 	$("#checker_email_table input").change(function () {
 		let id = $(this).attr('id').split('-');

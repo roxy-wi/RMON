@@ -23,7 +23,7 @@ class ChannelView(MethodView):
         self.is_api = is_api
 
     @validate(query=GroupQuery)
-    def get(self, receiver: Literal['telegram', 'slack', 'pd', 'mm', 'email'], channel_id: int, query: GroupQuery):
+    def get(self, receiver: Literal['telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay'], channel_id: int, query: GroupQuery):
         """
         Channel View
         ---
@@ -34,10 +34,10 @@ class ChannelView(MethodView):
         parameters:
         - name: receiver
           in: path
-          description: The type of the receiver. Only 'telegram', 'slack', 'pd', 'mm', 'email' are allowed.
+          description: The type of the receiver. Only 'telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay' are allowed.
           required: true
           type: string
-          enum: ['telegram', 'slack', 'pd', 'mm', 'email']
+          enum: ['telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay']
         - name: channel_id
           in: path
           description: The ID of the channel for which information should be retrieved.
@@ -83,7 +83,7 @@ class ChannelView(MethodView):
         return model_to_dict(channel)
 
     @validate(body=ChannelRequest)
-    def post(self, receiver: Literal['telegram', 'slack', 'pd', 'mm', 'email'], body: ChannelRequest):
+    def post(self, receiver: Literal['telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay'], body: ChannelRequest):
         """
         Channel View
         ---
@@ -94,10 +94,10 @@ class ChannelView(MethodView):
         parameters:
         - name: receiver
           in: path
-          description: The type of the receiver. Only 'telegram', 'slack', 'pd', 'mm', 'email' are allowed.
+          description: The type of the receiver. Only 'telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay' are allowed.
           required: true
           type: string
-          enum: ['telegram', 'slack', 'pd', 'mm', 'email']
+          enum: ['telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay']
         - in: 'body'
           name: 'body'
           description: 'Channel information to be added'
@@ -161,7 +161,7 @@ class ChannelView(MethodView):
             return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot create {body.channel_name.encode("utf-8")} {receiver.title()} channel')
 
     @validate(body=ChannelRequest)
-    def put(self, receiver: Literal['telegram', 'slack', 'pd', 'mm', 'email'], channel_id: int, body: ChannelRequest):
+    def put(self, receiver: Literal['telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay'], channel_id: int, body: ChannelRequest):
         """
         Channel View
         ---
@@ -172,10 +172,10 @@ class ChannelView(MethodView):
         parameters:
         - name: receiver
           in: path
-          description: The type of the receiver. Only 'telegram', 'slack', 'pd', 'mm', 'email' are allowed.
+          description: The type of the receiver. Only 'telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay' are allowed.
           required: true
           type: string
-          enum: ['telegram', 'slack', 'pd', 'mm', 'email']
+          enum: ['telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay']
         - name: channel_id
           in: path
           description: The ID of the channel for which information should be updated.
@@ -223,7 +223,7 @@ class ChannelView(MethodView):
             return roxywi_common.handler_exceptions_for_json_data(e, f'Cannot update {body.channel_name.encode("utf-8")} {receiver} channel')
 
     @validate(query=GroupQuery)
-    def delete(self, receiver: Literal['telegram', 'slack', 'pd', 'mm', 'email'], channel_id: int, query: GroupQuery):
+    def delete(self, receiver: Literal['telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay'], channel_id: int, query: GroupQuery):
         """
         Channel View
         ---
@@ -234,10 +234,10 @@ class ChannelView(MethodView):
         parameters:
         - name: receiver
           in: path
-          description: The type of the receiver. Only 'telegram', 'slack', 'pd', 'mm', 'email' are allowed.
+          description: The type of the receiver. Only 'telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay' are allowed.
           required: true
           type: string
-          enum: ['telegram', 'slack', 'pd', 'mm', 'email']
+          enum: ['telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay']
         - name: channel_id
           in: path
           description: The ID of the channel that needs to be deleted.
@@ -278,7 +278,7 @@ class ChannelsView(MethodView):
     decorators = [jwt_required(), get_user_params(), check_group()]
 
     @validate()
-    def get(self, receiver: Literal['telegram', 'slack', 'pd', 'mm', 'email'], query: GroupQuery):
+    def get(self, receiver: Literal['telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay'], query: GroupQuery):
         """
         Channels View
         ---
@@ -289,10 +289,10 @@ class ChannelsView(MethodView):
         parameters:
         - name: receiver
           in: path
-          description: The type of the receiver. Only 'telegram', 'slack', 'pd', 'mm', 'email' are allowed.
+          description: The type of the receiver. Only 'telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay' are allowed.
           required: true
           type: string
-          enum: ['telegram', 'slack', 'pd', 'mm', 'email']
+          enum: ['telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay']
         - in: 'query'
           name: 'group_id'
           description: 'ID of the group to list channels. For superAdmin only'
@@ -343,7 +343,7 @@ class ChannelCheckView(MethodView):
     decorators = [jwt_required(), get_user_params(), check_group()]
 
     @validate(query=GroupQuery)
-    def post(self, receiver: Literal['telegram', 'slack', 'pd', 'mm', 'email'], channel_id: int, query: GroupQuery):
+    def post(self, receiver: Literal['telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay'], channel_id: int, query: GroupQuery):
         """
         Check a channel
         ---
@@ -354,10 +354,10 @@ class ChannelCheckView(MethodView):
         parameters:
         - name: receiver
           in: path
-          description: The type of the receiver. Only 'telegram', 'slack', 'pd', 'mm', 'email' are allowed.
+          description: The type of the receiver. Only 'telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay' are allowed.
           required: true
           type: string
-          enum: ['telegram', 'slack', 'pd', 'mm', 'email']
+          enum: ['telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay']
         - name: channel_id
           in: path
           description: The ID of the channel that needs to be deleted.

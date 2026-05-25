@@ -79,6 +79,7 @@ class BaseCheckRequest(BaseModel):
     telegram_channel_id: Optional[int] = 0
     pd_channel_id: Optional[int] = 0
     mm_channel_id: Optional[int] = 0
+    incidentrelay_channel_id: Optional[int] = 0
     slack_channel_id: Optional[int] = 0
     email_channel_id: Optional[int] = 0
     interval: Optional[int] = 120
