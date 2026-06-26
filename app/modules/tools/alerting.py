@@ -310,54 +310,194 @@ def mm_send_mess(mess, level, **kwargs):
 
 
 def incidentrelay_send_mess(mess, level, **kwargs):
-	token = ''
-	runbook = ''
 	rmon_name = sql.get_setting('rmon_name')
 	proxy_dict = common.return_proxy_dict()
-	dedup_key = f'{kwargs.get("multi_check_id")} {kwargs.get("state_id")}'
-	status = 'firing'
-	if level == 'info':
-		status = 'resolved'
+
+	multi_check_id = kwargs.get('multi_check_id')
+	state_id = kwargs.get('state_id')
+	check_type = kwargs.get('check_type')
+	target = kwargs.get('target') or kwargs.get('ip')
+	agent = kwargs.get('agent')
+	region = kwargs.get('region')
+	country = kwargs.get('country')
+
+	status = 'resolved' if level == 'info' else 'firing'
+
+	check_name = None
+	runbook = None
+	priority = None
+	description = None
+	entity_type = None
+
+	if multi_check_id is not None:
+		try:
+			check = smon_sql.get_one_multi_check(
+				multi_check_id
+			)
+
+			check_name = getattr(check, 'name', None)
+			runbook = getattr(check, 'runbook', None)
+			priority = getattr(check, 'priority', None)
+			description = getattr(check, 'description', None)
+			entity_type = getattr(check, 'entity_type', None)
+		except Exception as e:
+			roxywi_common.logger(
+				f'Cannot load RMON check {multi_check_id} '
+				f'for IncidentRelay: {e}'
+			)
+
+	fingerprint_parts = []
+
+	for value in (multi_check_id, state_id):
+		if value is None:
+			continue
+
+		cleaned_value = str(value).strip()
+
+		if (
+			cleaned_value
+			and cleaned_value.lower() not in {'none', 'null'}
+		):
+			fingerprint_parts.append(cleaned_value)
+
+	fingerprint = ' '.join(fingerprint_parts) or None
+
+	if check_name:
+		alert_name = check_name
+	elif multi_check_id is not None:
+		alert_name = f'RMON check {multi_check_id}'
+	else:
+		alert_name = 'RMON alert'
+
+	labels = {
+		'alertname': str(alert_name),
+		'severity': str(level),
+	}
+
+	optional_labels = {
+		'rmon_name': rmon_name,
+		'rmon_check_id': multi_check_id,
+		'rmon_state_id': state_id,
+		'rmon_priority': priority,
+		'rmon_entity_type': entity_type,
+		'instance': target,
+	}
+
+	for key, value in optional_labels.items():
+		if value is None:
+			continue
+
+		cleaned_value = str(value).strip()
+
+		if cleaned_value:
+			labels[key] = cleaned_value
+
+	runbook_url = None
+
+	if runbook is not None:
+		runbook = str(runbook).strip() or None
+
+		if runbook and runbook.startswith(
+			('http://', 'https://')
+		):
+			runbook_url = runbook
+
+	payload = {
+		'title': f'[{rmon_name}] {level}: {mess}',
+		'message': f'{level}: {mess}',
+		'severity': level,
+		'status': status,
+		'rmon_name': rmon_name,
+		'external_id': multi_check_id,
+		'multi_check_id': multi_check_id,
+		'state_id': state_id,
+		'check_name': check_name,
+		'check_type': check_type,
+		'target': target,
+		'agent': agent,
+		'region': region,
+		'country': country,
+		'runbook': runbook,
+		'runbook_url': runbook_url,
+		'description': description,
+		'labels': labels,
+	}
+
+	if fingerprint:
+		payload['fingerprint'] = fingerprint
+
+	payload = {
+		key: value
+		for key, value in payload.items()
+		if value is not None
+	}
 
 	if kwargs.get('channel_id'):
-		incidentrelay = channel_sql.get_receiver_by_id('incidentrelay', kwargs.get('channel_id'))
-	else:
-		incidentrelay = channel_sql.get_receiver_by_ip('incidentrelay', kwargs.get('ip'))
-
-	for ir in incidentrelay:
-		token = ir.token
-		ir_url = ir.channel_name
-
-	try:
-		headers = {
-			"Authorization": f"Bearer {token}",
-			"Content-Type": "application/json",
-		}
-		payload = {
-			"fingerprint": dedup_key,
-			"labels": {
-				"alertname": f'[{rmon_name}] {level}: {mess}',
-			},
-			"token": sql.get_setting("incidentrelay_token"),
-			"message": f'{level}: {mess}',
-			"runbook": runbook,
-			"severity": level,
-			"status": status,
-			"title": f'[{rmon_name}] {level}: {mess}',
-		}
-		response = requests.post(
-			f'{ir_url}/api/integrations/webhook',
-			headers=headers,
-			json=payload,
-			timeout=15,
-			proxies=proxy_dict,
+		incidentrelay_receivers = (
+			channel_sql.get_receiver_by_id(
+				'incidentrelay',
+				kwargs.get('channel_id'),
+			)
 		)
-		if response.status_code != 200:
-			roxywi_common.logger(f'Incident Relay alert failed: {response.text}')
-			raise Exception(f'Incident Relay alert failed: {response.text}')
-	except Exception as e:
-		roxywi_common.logger(f'Incident Relay alert failed: {e}')
-		raise Exception(f'Incident Relay alert failed: {e}')
+	else:
+		incidentrelay_receivers = (
+			channel_sql.get_receiver_by_ip(
+				'incidentrelay',
+				kwargs.get('ip'),
+			)
+		)
+
+	for receiver in incidentrelay_receivers:
+		token = str(receiver.token or '').strip()
+		base_url = (
+			str(receiver.channel_name or '')
+			.strip()
+			.rstrip('/')
+		)
+
+		if not token:
+			error = (
+				'Incident Relay route intake token '
+				'is required'
+			)
+			roxywi_common.logger(error, 'error')
+			raise Exception(error)
+
+		if not base_url:
+			error = 'Incident Relay URL is required'
+			roxywi_common.logger(error, 'error')
+			raise Exception(error)
+
+		headers = {
+			'Authorization': f'Bearer {token}',
+			'Content-Type': 'application/json',
+		}
+
+		try:
+			response = requests.post(
+				f'{base_url}/api/integrations/rmon',
+				headers=headers,
+				json=payload,
+				timeout=15,
+				proxies=proxy_dict,
+			)
+		except requests.RequestException as e:
+			error = (
+				f'Incident Relay request failed: {e}'
+			)
+			roxywi_common.logger(error, 'error')
+			raise Exception(error) from e
+
+		if not 200 <= response.status_code < 300:
+			error = (
+				'Incident Relay alert failed: '
+				f'HTTP {response.status_code}: '
+				f'{response.text}'
+			)
+			roxywi_common.logger(error, 'error')
+			raise Exception(error)
+
+	return 'ok'
 
 
 def check_rabbit_alert() -> Union[str, dict]:

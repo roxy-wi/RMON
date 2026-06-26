@@ -11,6 +11,7 @@ import app.modules.db.roxy as roxy_sql
 import app.modules.common.common as common
 import app.modules.roxywi.common as roxywi_common
 import app.modules.server.server as server_mod
+from app.version import get_service_version
 
 
 def is_docker() -> bool:
@@ -27,17 +28,13 @@ def is_docker() -> bool:
 	return False
 
 
-def check_ver():
-	return roxy_sql.get_ver()
-
-
 def versions():
 	json_data = {
 		'need_update': 0
 	}
 	try:
-		current_ver = roxy_sql.get_ver()
-		json_data['current_ver'] = roxy_sql.get_ver()
+		current_ver = get_service_version()
+		json_data['current_ver'] = current_ver
 	except Exception as e:
 		raise Exception(f'Cannot get current version: {e}')
 
@@ -54,7 +51,7 @@ def versions():
 
 
 def check_new_version(service):
-	current_ver = check_ver()
+	current_ver = get_service_version()
 	res = ''
 	proxy_dict = common.return_proxy_dict()
 

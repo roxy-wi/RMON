@@ -1,0 +1,9 @@
+SERVICE_VERSION = "1.2.27"
+
+
+def get_service_version():
+    """
+    Return the running service version.
+    """
+
+    return SERVICE_VERSION
