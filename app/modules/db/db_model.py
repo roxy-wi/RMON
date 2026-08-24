@@ -2,6 +2,7 @@ from peewee import DateTimeField, AutoField, CharField, ForeignKeyField, Integer
     BooleanField, FloatField, MySQLDatabase, ModelSelect
 from playhouse.migrate import *
 from datetime import datetime
+import os
 from playhouse.shortcuts import ReconnectMixin
 from playhouse.sqlite_ext import SqliteExtDatabase
 from playhouse.pool import PooledPostgresqlExtDatabase
@@ -62,7 +63,7 @@ def connect(get_migrator=None):
         conn = ReconnectMySQLDatabase(mysql_db, **kwargs)
         migration = MySQLMigrator(conn)
     else:
-        db = "/var/lib/rmon/rmon.db"
+        db = os.getenv('RMON_DB_PATH', '/var/lib/rmon/rmon.db')
         conn = SqliteExtDatabase(db, pragmas=(
                 ('cache_size', -1024 * 64),  # 64MB page-cache.
                 ('journal_mode', 'wal'),  # Use WAL-mode (you should always use this!).

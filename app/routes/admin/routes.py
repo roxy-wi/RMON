@@ -45,7 +45,7 @@ def admin():
     kwargs = {
         'lang': g.user_params['lang'],
         'users': users,
-        'groups': group_sql.select_groups(),
+        'groups': roxywi_common.get_visible_groups(),
         'group': roxywi_common.get_user_group(id=1),
         'sshs': sshs,
         'servers': servers,

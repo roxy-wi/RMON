@@ -1,5 +1,6 @@
 import os
 import base64
+from pathlib import Path
 from cryptography.fernet import Fernet
 
 from flask import render_template
@@ -15,6 +16,18 @@ import app.modules.roxy_wi_tools as roxy_wi_tools
 from app.modules.roxywi.class_models import IdResponse, IdDataResponse, CredRequest
 
 get_config = roxy_wi_tools.GetConfigVar()
+
+
+def _get_fernet_key() -> bytes:
+	salt = os.getenv('RMON_SECRET_PHRASE') or get_config.get_config_var('main', 'secret_phrase')
+	if not salt or salt == 'CHANGE_ME':
+		raise RuntimeError('Set RMON_SECRET_PHRASE to a valid Fernet key')
+	try:
+		key = salt.encode('ascii')
+		Fernet(key)
+	except (ValueError, UnicodeEncodeError) as e:
+		raise RuntimeError('RMON_SECRET_PHRASE is not a valid Fernet key') from e
+	return key
 
 
 def return_ssh_keys_path(server_ip: str) -> dict:
@@ -83,7 +96,7 @@ def create_ssh_cred(name: str, password: str, group: int, username: str, enable:
 		return IdResponse(id=last_id).model_dump(mode='json')
 	else:
 		kwargs = {
-			'groups': group_sql.select_groups(),
+			'groups': roxywi_common.get_visible_groups(),
 			'sshs': cred_sql.select_ssh(name=name),
 			'lang': lang,
 			'adding': 1
@@ -153,8 +166,7 @@ def crypt_password(password: str) -> bytes:
 	:param password: plain password
 	:return: crypted text
 	"""
-	salt = get_config.get_config_var('main', 'secret_phrase')
-	fernet = Fernet(salt.encode())
+	fernet = Fernet(_get_fernet_key())
 	try:
 		crypted_pass = fernet.encrypt(password.encode())
 	except Exception as e:
@@ -168,8 +180,7 @@ def decrypt_password(password: str) -> str:
 	:param password: crypted password
 	:return: plain text
 	"""
-	salt = get_config.get_config_var('main', 'secret_phrase')
-	fernet = Fernet(salt.encode())
+	fernet = Fernet(_get_fernet_key())
 	try:
 		decrypted_pass = fernet.decrypt(password.encode()).decode()
 		decrypted_pass = decrypted_pass.replace("'", "")
@@ -213,10 +224,14 @@ def get_creds(group_id: int = None, cred_id: int = None, not_shared: bool = Fals
 def _return_correct_ssh_file(cred: CredRequest, ssh_id: int = None) -> str:
 	lib_path = get_config.get_config_var('main', 'lib_path')
 	group_name = group_sql.get_group(cred.group_id).name
+	keys_path = (Path(lib_path) / 'keys').resolve()
 	if group_name not in cred.name:
-		key_file = f'{lib_path}/keys/{cred.name}_{group_name}.pem'
+		key_file = keys_path / f'{cred.name}_{group_name}.pem'
 	else:
-		key_file = f'{lib_path}/keys/{cred.name}.pem'
+		key_file = keys_path / f'{cred.name}.pem'
+	key_file = key_file.resolve()
+	if key_file.parent != keys_path:
+		raise ValueError('Invalid SSH credential filename')
 
 	if not ssh_id:
 		ssh_id = cred.id
@@ -229,12 +244,15 @@ def _return_correct_ssh_file(cred: CredRequest, ssh_id: int = None) -> str:
 	except Exception as e:
 		raise e
 
-	with open(key_file, 'wb') as key:
-		key.write(private_key.encode())
-
 	try:
+		flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+		if hasattr(os, 'O_NOFOLLOW'):
+			flags |= os.O_NOFOLLOW
+		key_fd = os.open(key_file, flags, 0o600)
+		with os.fdopen(key_fd, 'wb') as key:
+			key.write(private_key.encode())
 		os.chmod(key_file, 0o600)
-	except IOError as e:
+	except OSError as e:
 		raise Exception(e)
 
-	return key_file
+	return str(key_file)

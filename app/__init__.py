@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask
 from flask_caching import Cache
 from flask_apscheduler import APScheduler
@@ -18,10 +20,11 @@ cache.init_app(app)
 
 scheduler = APScheduler()
 scheduler.init_app(app)
-scheduler.start()
+if app.config.get('SCHEDULER_ENABLED') and not app.config.get('TESTING'):
+    scheduler.start()
 
 registry = CollectorRegistry()
-multiprocess.MultiProcessCollector(registry, path='/tmp')
+multiprocess.MultiProcessCollector(registry, path=os.getenv('RMON_PROMETHEUS_MULTIPROC_DIR', '/tmp'))
 
 metrics = PrometheusMetrics(app, registry=registry)
 metrics.info('rmon', 'RMON app', version='1.2.12')

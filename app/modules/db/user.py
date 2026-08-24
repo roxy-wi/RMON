@@ -225,6 +225,10 @@ def get_role_id(user_id: int, group_id: int) -> int:
 		out_error(e)
 
 
+def get_user_role_in_group(user_id: int, group_id: int) -> int:
+	return int(get_role_id(user_id, group_id))
+
+
 def get_user_id(user_id: int) -> User:
 	try:
 		return User.get(User.user_id == user_id)

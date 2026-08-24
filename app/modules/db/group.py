@@ -14,6 +14,15 @@ def select_groups() -> Groups:
 		out_error(e)
 
 
+def select_groups_for_user(user_id: int) -> Groups:
+	try:
+		return Groups.select().join(
+			UserGroups, on=(Groups.group_id == UserGroups.user_group_id)
+		).where(UserGroups.user_id == user_id).distinct().order_by(Groups.group_id).execute()
+	except Exception as e:
+		out_error(e)
+
+
 def add_group(name: str, description: str) -> int:
 	try:
 		last_insert_id = Groups.insert(name=name, description=description).execute()

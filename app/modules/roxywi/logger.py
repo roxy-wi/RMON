@@ -17,6 +17,7 @@ def set_logger():
         logs_in_json = 1
     log_path = get_config_var.get_config_var('main', 'log_path')
     log_file = f"{log_path}/rmon.log"
+    os.makedirs(log_path, exist_ok=True)
 
     if logs_in_json:
         log_data = {}
@@ -34,9 +35,6 @@ def set_logger():
         logger_s = logging.getLogger('rmon')
         logger_s.addHandler(log_handler)
         logger_s.setLevel(logging.INFO)
-
-        if not os.path.exists(log_path):
-            os.makedirs(log_path)
 
         return logger_s
     else:

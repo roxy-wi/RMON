@@ -15,7 +15,7 @@ def get_user_params(virt=0, disable=0):
                 g.user_params = user_params
             except Exception as e:
                 print(f'123 {e}')
-                if 'api' in request.url:
+                if request.path.startswith('/api/'):
                     return jsonify({'error': str(e)}), 401
                 else:
                     return redirect(url_for('login_page'))

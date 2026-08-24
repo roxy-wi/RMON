@@ -11,6 +11,21 @@ import app.modules.roxywi.common as roxywi_common
 from app.middleware import get_user_params, check_group
 from app.modules.roxywi.class_models import BaseResponse, IdResponse, GroupQuery, CountryRequest
 from app.modules.common.common_classes import SupportClass
+from app.modules.roxywi.exception import RoxywiGroupMismatch
+
+
+def _require_owned_country(country_id: int, group_id: int):
+    country = country_sql.get_country_with_group(country_id, group_id)
+    if int(country.group_id) != int(group_id):
+        raise RoxywiGroupMismatch
+    return country
+
+
+def _require_owned_region(region_id: int, group_id: int):
+    region = region_sql.get_region_with_group(region_id, group_id)
+    if int(region.group_id) != int(group_id):
+        raise RoxywiGroupMismatch
+    return region
 
 
 class CountryView(MethodView):
@@ -116,6 +131,8 @@ class CountryView(MethodView):
         group_id = SupportClass.return_group_id(body)
         body.group_id = group_id
         try:
+            for region_id in body.regions or []:
+                _require_owned_region(region_id, group_id)
             last_id = country_sql.create_country(body)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create the country')
@@ -180,12 +197,17 @@ class CountryView(MethodView):
         group_id = SupportClass.return_group_id(body)
         body.group_id = group_id
         try:
+            _require_owned_country(country_id, group_id)
+            regions = list(region_sql.get_regions_by_country(country_id))
+            for region in regions:
+                _require_owned_region(region.id, group_id)
+            for region_id in body.regions or []:
+                _require_owned_region(region_id, group_id)
             country_sql.update_country(body, country_id)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create the country')
 
         try:
-            regions = region_sql.get_regions_by_country(country_id)
             for region in regions:
                 region_sql.add_region_to_country(region.id, None)
         except Exception as e:
@@ -228,7 +250,7 @@ class CountryView(MethodView):
         roxywi_auth.page_for_admin(level=2)
         group_id = SupportClass.return_group_id(query)
         try:
-            country_sql.get_country_with_group(country_id, group_id)
+            _require_owned_country(country_id, group_id)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot find the country')
 

@@ -63,6 +63,29 @@ def get_agent_with_group(agent_id: int, group_id: int):
 		out_error(e)
 
 
+def get_agent_server_for_group(agent_id: int, group_id: int):
+	"""Return one agent only when its server belongs to the requested group."""
+	try:
+		return SmonAgent.select(SmonAgent, Server).join(Server).where(
+			(SmonAgent.id == agent_id) & (Server.group_id == group_id)
+		).objects().get()
+	except SmonAgent.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		out_error(e)
+
+
+def get_agent_server(agent_id: int):
+	try:
+		return SmonAgent.select(SmonAgent, Server).join(Server).where(
+			SmonAgent.id == agent_id
+		).objects().get()
+	except SmonAgent.DoesNotExist:
+		raise RoxywiResourceNotFound
+	except Exception as e:
+		out_error(e)
+
+
 def get_agent_data(agent_id: int) -> SmonAgent:
 	try:
 		return SmonAgent.get(SmonAgent.id == agent_id)

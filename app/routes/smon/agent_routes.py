@@ -1,12 +1,12 @@
 import json
 
-from flask import render_template, request, jsonify, g
+from flask import render_template, request, jsonify, g, abort
 from flask_jwt_extended import jwt_required
 from playhouse.shortcuts import model_to_dict
 
 from app.modules.db.db_model import InstallationTasks
 from app.routes.smon import bp
-from app.middleware import get_user_params
+from app.middleware import get_user_params, page_for_admin
 import app.modules.db.smon as smon_sql
 import app.modules.db.region as region_sql
 import app.modules.db.country as country_sql
@@ -15,6 +15,19 @@ import app.modules.tools.smon_agent as smon_agent
 import app.modules.tools.common as tools_common
 import app.modules.roxywi.common as roxywi_common
 import app.modules.server.server as server_mod
+
+
+def _require_agent_access(agent_id: int, server_ip: str = None):
+    try:
+        if int(g.user_params['role']) == 1:
+            agent = smon_sql.get_agent_server(agent_id)
+        else:
+            agent = smon_sql.get_agent_server_for_group(agent_id, g.user_params['group_id'])
+        if server_ip is not None and str(agent.ip) != str(server_ip):
+            raise PermissionError('Agent and server do not match')
+        return agent
+    except Exception:
+        abort(403, 'Agent does not belong to the active group')
 
 
 @bp.route('/agent')
@@ -37,6 +50,7 @@ def agent():
 @jwt_required()
 @get_user_params()
 def get_agent(agent_id):
+    _require_agent_access(agent_id)
     kwargs = {
         'agents': smon_sql.get_agent(agent_id),
         'lang': roxywi_common.get_user_lang_for_flask(),
@@ -69,8 +83,13 @@ def get_region(region_id):
 
 @bp.get('/<region_type>/<int:region_id>/count_checks')
 @jwt_required()
+@get_user_params()
 def get_region_checks_count(region_type, region_id):
     checks = 0
+    if region_type == 'country':
+        country_sql.get_country_with_group(region_id, g.user_params['group_id'])
+    else:
+        region_sql.get_region_with_group(region_id, g.user_params['group_id'])
     for check_type in ('http', 'tcp', 'dns', 'ping', 'smtp', 'rabbitmq'):
         if region_type == 'country':
             checks += len(smon_sql.select_checks_for_country_by_check_type(region_id, check_type))
@@ -137,6 +156,7 @@ def get_agent_count():
 @get_user_params()
 def get_agent_info(agent_id):
     try:
+        _require_agent_access(agent_id)
         agent_data = smon_sql.get_agent(agent_id)
     except Exception as e:
         return f'{e}'
@@ -172,12 +192,14 @@ def get_country_info(country_id):
 
 @bp.get('/agent/version/<server_ip>')
 @jwt_required()
+@get_user_params()
 def get_agent_version(server_ip):
     agent_id = int(request.args.get('agent_id'))
+    agent = _require_agent_access(agent_id, server_ip)
     last_agent_version = '0.2'
 
     try:
-        req = smon_agent.send_get_request_to_agent(agent_id, server_ip, 'version')
+        req = smon_agent.send_get_request_to_agent(agent_id, agent.ip, 'version')
         j_resp = json.loads(req)
         if float(j_resp['version']) < float(last_agent_version):
             j_resp['update'] = "1"
@@ -188,11 +210,13 @@ def get_agent_version(server_ip):
 
 @bp.get('/agent/uptime/<server_ip>')
 @jwt_required()
+@get_user_params()
 def get_agent_uptime(server_ip):
     agent_id = int(request.args.get('agent_id'))
+    agent = _require_agent_access(agent_id, server_ip)
 
     try:
-        req = smon_agent.send_get_request_to_agent(agent_id, server_ip, 'uptime')
+        req = smon_agent.send_get_request_to_agent(agent_id, agent.ip, 'uptime')
         return req
     except Exception as e:
         return f'{e}'
@@ -200,11 +224,13 @@ def get_agent_uptime(server_ip):
 
 @bp.get('/agent/status/<server_ip>')
 @jwt_required()
+@get_user_params()
 def get_agent_status(server_ip):
     agent_id = int(request.args.get('agent_id'))
+    agent = _require_agent_access(agent_id, server_ip)
 
     try:
-        req = smon_agent.send_get_request_to_agent(agent_id, server_ip, 'scheduler')
+        req = smon_agent.send_get_request_to_agent(agent_id, agent.ip, 'scheduler')
         return req
     except Exception as e:
         return f'{e}'
@@ -212,11 +238,13 @@ def get_agent_status(server_ip):
 
 @bp.get('/agent/checks/<server_ip>')
 @jwt_required()
+@get_user_params()
 def get_agent_checks(server_ip):
     agent_id = int(request.args.get('agent_id'))
+    agent = _require_agent_access(agent_id, server_ip)
 
     try:
-        req = smon_agent.send_get_request_to_agent(agent_id, server_ip, 'checks')
+        req = smon_agent.send_get_request_to_agent(agent_id, agent.ip, 'checks')
         return req
     except Exception as e:
         return f'{e}'
@@ -225,12 +253,10 @@ def get_agent_checks(server_ip):
 @bp.post('/agent/action/<any(start, stop, restart):action>')
 @jwt_required()
 @get_user_params()
+@page_for_admin(level=2)
 def agent_action(action):
-    server_ip = smon_sql.get_agent_ip_by_id(int(request.form.get('agent_id')))
-    server_group_id = server_sql.get_server_by_ip(server_ip).group_id
-
-    if g.user_params['group_id'] != server_group_id and g.user_params['role'] > 1:
-        return 'error: Not authorized'
+    agent = _require_agent_access(int(request.form.get('agent_id')))
+    server_ip = agent.ip
 
     try:
         command = f'sudo systemctl {action} rmon-agent'

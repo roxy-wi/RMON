@@ -1,5 +1,6 @@
 import os
 import json
+import shlex
 import subprocess
 
 from flask import render_template
@@ -393,13 +394,12 @@ def delete_server(server_id: int) -> None:
 		history_sql.delete_action_history(server_id)
 		server_sql.delete_system_info(server_id)
 		roxywi_common.logger(f'The server {server.hostname} has been deleted')
-		os.system(f'ssh-keygen -R {server.ip}')
+		subprocess.run(['ssh-keygen', '-R', server.ip], check=False, capture_output=True, text=True)
 
 
 def server_is_up(server_ip: str) -> str:
-	cmd = f'if ping -c 1 -W 1 {server_ip} >> /dev/null; then echo up; else echo down; fi'
-	server_status, stderr = subprocess_execute(cmd)
-	return server_status[0]
+	result = subprocess.run(['ping', '-c', '1', '-W', '1', server_ip], check=False, capture_output=True, text=True)
+	return 'up' if result.returncode == 0 else 'down'
 
 
 def start_ssh_agent() -> dict:
@@ -408,14 +408,15 @@ def start_ssh_agent() -> dict:
 	:return: Dict of SSH agent socket and pid
 	"""
 	agent_settings = {}
-	cmd = "ssh-agent -s"
-	output, stderr = subprocess_execute(cmd)
+	result = subprocess.run(['ssh-agent', '-s'], check=False, capture_output=True, text=True)
+	output = result.stdout.splitlines()
+	stderr = result.stderr
 	for out in output:
 		if 'SSH_AUTH_SOCK=' in out:
 			agent_settings.setdefault('socket', out.split('=')[1].split(';')[0])
 		if 'SSH_AGENT_PID=' in out:
 			agent_settings.setdefault('pid', out.split('=')[1].split(';')[0])
-	if stderr:
+	if result.returncode != 0:
 		raise Exception(f'error: Cannot start SSH agent: {stderr}')
 	return agent_settings
 
@@ -425,14 +426,26 @@ def add_key_to_agent(ssh_settings: dict, agent_pid: dict) -> None:
 	Add key to SSH agent
 	:return: None
 	"""
-	cmd = f'export SSH_AGENT_PID={agent_pid["pid"]} && export SSH_AUTH_SOCK={agent_pid["socket"]} && '
+	environment = os.environ.copy()
+	environment['SSH_AGENT_PID'] = str(agent_pid['pid'])
+	environment['SSH_AUTH_SOCK'] = str(agent_pid['socket'])
+	key_path = str(ssh_settings['key'])
 
 	if ssh_settings['passphrase']:
-		cmd += f"{{ sleep .1; echo {ssh_settings['passphrase']}; }} | script -q /dev/null -c 'ssh-add {ssh_settings['key']}'"
+		ssh_add_command = f'ssh-add -- {shlex.quote(key_path)}'
+		cmd = f'read -r passphrase; printf "%s\\n" "$passphrase" | script -q /dev/null -c {shlex.quote(ssh_add_command)}'
+		process = subprocess.Popen(
+			cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+			shell=True, text=True, env=environment
+		)
+		_, stderr = process.communicate(f'{ssh_settings["passphrase"]}\n')
 	else:
-		cmd += f'ssh-add {ssh_settings["key"]}'
-	output, stderr = subprocess_execute(cmd)
-	if 'error' in stderr:
+		process = subprocess.run(
+			['ssh-add', '--', key_path], check=False, capture_output=True, text=True, env=environment
+		)
+		stderr = process.stderr
+
+	if process.returncode != 0:
 		raise Exception(f'error: Cannot add the key {ssh_settings["key"]} to SSH agent: {stderr}')
 
 
@@ -442,8 +455,12 @@ def stop_ssh_agent(agent_pid: dict) -> None:
 	:return: None
 	"""
 
-	cmd = f'export SSH_AGENT_PID={agent_pid["pid"]} && ssh-agent -k'
-	output, stderr = subprocess_execute(cmd)
+	environment = os.environ.copy()
+	environment['SSH_AGENT_PID'] = str(agent_pid['pid'])
+	if agent_pid.get('socket'):
+		environment['SSH_AUTH_SOCK'] = str(agent_pid['socket'])
+	process = subprocess.run(['ssh-agent', '-k'], check=False, capture_output=True, text=True, env=environment)
 
-	if 'error' in stderr:
+	if process.returncode != 0:
+		stderr = process.stderr
 		raise Exception(f'error: Cannot stop SSH agent: {stderr}')

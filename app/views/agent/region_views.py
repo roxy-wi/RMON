@@ -1,6 +1,6 @@
 from flask.views import MethodView
 from flask_jwt_extended import jwt_required
-from flask import jsonify
+from flask import jsonify, g
 from playhouse.shortcuts import model_to_dict
 from flask_pydantic import validate
 
@@ -11,6 +11,20 @@ import app.modules.roxywi.common as roxywi_common
 from app.middleware import get_user_params, check_group
 from app.modules.roxywi.class_models import BaseResponse, IdResponse, GroupQuery, RegionRequest
 from app.modules.common.common_classes import SupportClass
+from app.modules.roxywi.exception import RoxywiGroupMismatch
+
+
+def _require_owned_region(region_id: int, group_id: int):
+    region = region_sql.get_region_with_group(region_id, group_id)
+    if int(region.group_id) != int(group_id):
+        raise RoxywiGroupMismatch
+    return region
+
+
+def _require_owned_agent(agent_id: int, group_id: int):
+    if int(g.user_params['role']) == 1:
+        return smon_sql.get_agent_server(agent_id)
+    return smon_sql.get_agent_server_for_group(agent_id, group_id)
 
 
 class RegionView(MethodView):
@@ -116,6 +130,8 @@ class RegionView(MethodView):
         group_id = SupportClass.return_group_id(body)
         body.group_id = group_id
         try:
+            for agent_id in body.agents or []:
+                _require_owned_agent(agent_id, group_id)
             last_id = region_sql.create_region(body)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create the region')
@@ -180,14 +196,19 @@ class RegionView(MethodView):
         group_id = SupportClass.return_group_id(body)
         body.group_id = group_id
         try:
+            _require_owned_region(region_id, group_id)
+            agents = list(smon_sql.get_agents_by_region(region_id))
+            for agent in agents:
+                _require_owned_agent(agent.id, group_id)
+            for agent_id in body.agents or []:
+                _require_owned_agent(agent_id, group_id)
             region_sql.update_region(body, region_id)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create the region')
 
         try:
-            agents = smon_sql.get_agents_by_region(region_id)
             for agent in agents:
-                smon_sql.update_agent(agent, region_id=None)
+                smon_sql.update_agent(agent.id, region_id=None)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot update agents')
 
@@ -223,7 +244,7 @@ class RegionView(MethodView):
         roxywi_auth.page_for_admin(level=2)
         group_id = SupportClass.return_group_id(query)
         try:
-            region_sql.get_region_with_group(region_id, group_id)
+            _require_owned_region(region_id, group_id)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot find the region')
 

@@ -77,8 +77,10 @@ def select_one_system_info(server_id: int):
 def is_system_info(server_id):
 	try:
 		query_res = SystemInfo.get(SystemInfo.server_id == server_id).server_id
-	except Exception:
-		return True
+	except SystemInfo.DoesNotExist:
+		return False
+	except Exception as e:
+		out_error(e)
 	else:
 		if query_res:
 			return True
@@ -144,15 +146,9 @@ def get_dick_permit(group_id, **kwargs):
 
 	try:
 		if mysql_enable == '1':
-			if group_id == 1 and not only_group:
-				sql = f" select * from `servers` where {disable} order by `pos` asc"
-			else:
-				sql = f" select * from `servers` where `group_id` = {group_id} and ({disable}) order by `pos` asc"
+			sql = f" select * from `servers` where `group_id` = {int(group_id)} and ({disable}) order by `pos` asc"
 		else:
-			if group_id == 1 and not only_group:
-				sql = f" select * from servers where {disable} order by pos"
-			else:
-				sql = f" select * from servers where group_id = '{group_id}' and ({disable}) order by pos"
+			sql = f" select * from servers where group_id = '{int(group_id)}' and ({disable}) order by pos"
 
 	except Exception as e:
 		raise Exception(f'error: {e}')

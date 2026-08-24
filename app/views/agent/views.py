@@ -14,9 +14,15 @@ from app.modules.roxywi.class_models import BaseResponse, RmonAgent, GroupQuery,
 from app.modules.common.common_classes import SupportClass
 
 
+def _get_agent_for_management(agent_id: int, group_id: int):
+    if int(g.user_params['role']) == 1:
+        return smon_sql.get_agent_server(agent_id)
+    return smon_sql.get_agent_server_for_group(agent_id, group_id)
+
+
 class AgentView(MethodView):
     method_decorators = ["GET", "POST", "PUT", "PATCH", "DELETE"]
-    decorators = [jwt_required(), get_user_params(), check_group()]
+    decorators = [jwt_required(), get_user_params(), check_group(), page_for_admin(level=2)]
 
     def __init__(self):
         """
@@ -91,18 +97,11 @@ class AgentView(MethodView):
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get group id')
         try:
-            agents = smon_sql.get_agent_with_group(agent_id, group)
+            agent = _get_agent_for_management(agent_id, group)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get agent')
-        agent_list = []
-        for agent in agents:
-            agent_dict = model_to_dict(agent, recurse=False)
-            agent_list.append(agent_dict)
-        try:
-            if len(agent_list) == 0:
-                raise RoxywiResourceNotFound
-        except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, '')
+        agent_dict = model_to_dict(agent, recurse=False)
+        agent_dict.pop('uuid', None)
         return jsonify(agent_dict)
 
     @validate(body=RmonAgent)
@@ -174,6 +173,7 @@ class AgentView(MethodView):
             description: Invalid payload received
         """
         try:
+            SupportClass().return_server_ip_or_id(body.server_id)
             last_id, task_id = smon_agent.add_agent(body)
             return TaskAcceptedPostResponse(id=last_id, tasks_ids=[task_id]).model_dump(mode='json'), 202
         except Exception as e:
@@ -258,6 +258,8 @@ class AgentView(MethodView):
             description: Invalid payload received
         """
         try:
+            _get_agent_for_management(agent_id, g.user_params['group_id'])
+            SupportClass().return_server_ip_or_id(body.server_id)
             task_id = smon_agent.update_agent(agent_id, body)
             if body.reconfigure:
                 return TaskAcceptedOtherResponse(tasks_ids=[task_id]).model_dump(mode='json'), 202
@@ -307,7 +309,7 @@ class AgentView(MethodView):
         """
         group_id = SupportClass.return_group_id(query)
         try:
-            smon_sql.get_agent_with_group(agent_id, group_id)
+            _get_agent_for_management(agent_id, group_id)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get agent')
         try:
@@ -352,9 +354,9 @@ class AgentView(MethodView):
             description: Agent not found
         """
         try:
-            _ = smon_sql.get_agent_uuid(agent_id)
+            _get_agent_for_management(agent_id, g.user_params['group_id'])
         except Exception as e:
-            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get agent uuid')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get agent')
 
         try:
             task_id = smon_agent.delete_agent(agent_id)
@@ -454,7 +456,11 @@ class AgentsView(MethodView):
         """
         group_id = SupportClass.return_group_id(query)
         agents = smon_sql.get_agents(group_id)
-        agent_list = [model_to_dict(agent, recurse=False) for agent in agents]
+        agent_list = []
+        for agent in agents:
+            agent_dict = model_to_dict(agent, recurse=False)
+            agent_dict.pop('uuid', None)
+            agent_list.append(agent_dict)
         return jsonify(agent_list)
 
 
@@ -490,7 +496,7 @@ class ReconfigureAgentView(MethodView):
         """
         group_id = SupportClass.return_group_id(query)
         try:
-            smon_sql.get_agent_with_group(agent_id, group_id)
+            _get_agent_for_management(agent_id, group_id)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get agent')
         try:
@@ -549,6 +555,12 @@ class AgentTaskStatusView(MethodView):
             task = InstallationTasks.get(id=task_id)
         except InstallationTasks.DoesNotExist:
             return RoxywiResourceNotFound
+        except Exception as e:
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get agent task')
+        try:
+            if task.group_id is None:
+                raise RoxywiResourceNotFound
+            roxywi_common.require_active_group_access(task.group_id.group_id)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get agent task')
         return jsonify(

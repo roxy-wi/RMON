@@ -2,3 +2,9 @@
 app/static/.DS_Store
 app/static/.DS_Store
 /app/__pycache__
+__pycache__/
+*.py[cod]
+/tests/.runtime/
+/.pytest_cache/
+/.coverage
+/.idea/

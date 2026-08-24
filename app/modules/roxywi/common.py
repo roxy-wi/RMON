@@ -3,7 +3,7 @@ import glob
 from typing import Any
 import socket
 
-from flask import request, g, has_request_context
+from flask import request, g, has_request_context, abort
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import verify_jwt_in_request
 
@@ -67,13 +67,11 @@ def check_user_group_for_socket(user_id: int, group_id: int) -> bool:
 
 def check_is_server_in_group(server_ip: str) -> bool:
 	group_id = get_user_group(id=1)
-	servers = server_sql.select_servers(server=server_ip)
-	for s in servers:
-		if (s[2] == server_ip and int(s[3]) == int(group_id)) or group_id == 1:
-			return True
-		else:
-			logger('Has tried to actions in not his group server ', 'warning')
-	return False
+	server = server_sql.get_server_by_ip(server_ip)
+	if server.ip == server_ip and int(server.group_id) == int(group_id):
+		return True
+	logger('Has tried to actions in not his group server ', 'warning')
+	abort(403, 'You have no access to this server')
 
 
 def get_files(folder, file_format, server_ip=None) -> list:
@@ -271,6 +269,52 @@ def is_user_has_access_to_its_group(user_id: int) -> None:
 def is_user_has_access_to_group(user_id: int, group_id: int) -> None:
 	if not user_sql.check_user_group(user_id, group_id) and g.user_params['role'] != 1:
 		raise RoxywiGroupMismatch
+
+
+def require_active_group_access(group_id: int) -> None:
+	"""Require a resource to belong to the group selected in the current token."""
+	if str(g.user_params.get('role', '')) == '1':
+		return
+	if int(group_id) != int(g.user_params['group_id']):
+		raise RoxywiGroupMismatch
+
+
+def get_visible_groups():
+	"""Return every group for role 1 and memberships only for other roles."""
+	if int(g.user_params['role']) == 1:
+		return group_sql.select_groups()
+	return group_sql.select_groups_for_user(g.user_params['user_id'])
+
+
+def require_request_server_access() -> None:
+	"""Authorize every managed-server reference used by a legacy endpoint."""
+	view_args = request.view_args or {}
+	references = [(key, view_args[key]) for key in ('server_id', 'server_ip') if view_args.get(key) is not None]
+	request_data = request.get_json(silent=True) or request.form
+	if not hasattr(request_data, 'get'):
+		request_data = {}
+	for key in ('server_id', 'server_ip', 'serv'):
+		if request_data.get(key) is not None:
+			references.append((key, request_data.get(key)))
+
+	if not references:
+		return
+
+	try:
+		resolved_server_ids = set()
+		for key, server_reference in references:
+			if server_reference in ('', None, 'all'):
+				continue
+			if key == 'server_id' and (isinstance(server_reference, int) or str(server_reference).isdigit()):
+				server = server_sql.get_server(int(server_reference))
+			else:
+				server = server_sql.get_server_by_ip(str(server_reference))
+			require_active_group_access(server.group_id)
+			resolved_server_ids.add(server.server_id)
+		if len(resolved_server_ids) > 1:
+			raise PermissionError('Server ID and IP refer to different servers')
+	except Exception:
+		abort(403, 'Server does not belong to the active group')
 
 
 def handle_json_exceptions(ex: Exception, message: str) -> dict:

@@ -3,7 +3,6 @@ import json
 from annotated_types import Gt, Le
 from typing import Optional, Annotated, Union, Literal, Any, List
 
-from shlex import quote
 from datetime import datetime, timedelta
 
 from pydantic_core import CoreSchema, core_schema
@@ -14,19 +13,20 @@ DomainName = Annotated[str, StringConstraints(pattern=r"^(?:[a-z0-9](?:[a-z0-9-]
 
 
 class EscapedString(str):
-    pattern = re.compile('[&;|$`]')
+    pattern = re.compile(r'[&;|$`\r\n]')
 
     @classmethod
     def validate(cls, field_value, info) -> str:
         if isinstance(field_value, str):
             if cls.pattern.search(field_value):
-                return re.sub(cls.pattern, '', field_value)
+                raise ValueError('shell metacharacters are not allowed')
+            elif '..' in field_value:
+                raise ValueError('path traversal is not allowed')
             elif field_value == '':
                 return field_value
             else:
-                return quote(field_value.rstrip())
-        else:
-            return ''
+                return field_value.rstrip()
+        raise TypeError('string required')
 
     @classmethod
     def __get_pydantic_core_schema__(

@@ -282,6 +282,7 @@ function showServerInfo(id, ip) {
 }
 function updateServerInfo(ip, id) {
 	$.ajax({
+		type: "POST",
 		url: "/server/system_info/update/" + ip + "/" + id,
 		success: function (data) {
 			data = data.replace(/\s+/g, ' ');

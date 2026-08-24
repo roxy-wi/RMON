@@ -2,11 +2,17 @@ from datetime import datetime, timedelta
 
 from pytz import timezone
 import configparser
+import hashlib
+import hmac
+import os
+import re
+
+from werkzeug.security import check_password_hash, generate_password_hash
 
 
 class GetConfigVar:
     def __init__(self):
-        self.path_config = "/etc/rmon/rmon.cfg"
+        self.path_config = os.getenv('RMON_CONFIG_FILE', '/etc/rmon/rmon.cfg')
         self.config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
         self.config.read(self.path_config)
 
@@ -60,7 +66,14 @@ class Tools:
     def get_hash(need_hashed):
         if need_hashed is None:
             return need_hashed
-        import hashlib
-        h = hashlib.md5(need_hashed.encode('utf-8'))
-        p = h.hexdigest()
-        return p
+        return generate_password_hash(need_hashed)
+
+    @staticmethod
+    def check_password(password, password_hash):
+        if re.fullmatch(r'[0-9a-fA-F]{32}', password_hash or ''):
+            legacy_hash = hashlib.md5(password.encode('utf-8')).hexdigest()
+            return hmac.compare_digest(password_hash.lower(), legacy_hash), True
+        try:
+            return check_password_hash(password_hash, password), False
+        except (TypeError, ValueError):
+            return False, False

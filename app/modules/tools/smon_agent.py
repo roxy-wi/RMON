@@ -125,6 +125,7 @@ def get_agent_headers(agent_id: int) -> dict:
 def send_get_request_to_agent(agent_id: int, server_ip: str, api_path: str) -> bytes:
     headers = get_agent_headers(agent_id)
     agent = smon_sql.get_agent_data(agent_id)
+    server_ip = smon_sql.get_agent_ip_by_id(agent_id)
     try:
         req = requests.get(f'http://{server_ip}:{agent.port}/{api_path}', headers=headers, timeout=5)
         return req.content
@@ -136,6 +137,7 @@ def send_get_request_to_agent(agent_id: int, server_ip: str, api_path: str) -> b
 def send_post_request_to_agent(agent_id: int, server_ip: str, api_path: str, json_data: object) -> Response:
     headers = get_agent_headers(agent_id)
     agent = smon_sql.get_agent_data(agent_id)
+    server_ip = smon_sql.get_agent_ip_by_id(agent_id)
     try:
         req = requests.post(f'http://{server_ip}:{agent.port}/{api_path}', headers=headers, json=json_data, timeout=15)
         return req
@@ -146,6 +148,7 @@ def send_post_request_to_agent(agent_id: int, server_ip: str, api_path: str, jso
 def delete_check(agent_id: int, server_ip: str, check_id: int) -> None:
     headers = get_agent_headers(agent_id)
     agent = smon_sql.get_agent_data(agent_id)
+    server_ip = smon_sql.get_agent_ip_by_id(agent_id)
     try:
         requests.delete(f'http://{server_ip}:{agent.port}/check/{check_id}', headers=headers, timeout=5)
     except requests.exceptions.HTTPError as e:
@@ -159,6 +162,7 @@ def delete_check(agent_id: int, server_ip: str, check_id: int) -> None:
 
 
 def send_check_to_agent(agent_id: int, server_ip: str, check_id: int, multi_check_id: int, request_data: dict) -> None:
+    server_ip = smon_sql.get_agent_ip_by_id(agent_id)
     status_created = 201  # Introduced constant for clarity
     endpoint = f'check/{check_id}'  # Renamed variable for better clarity
     retries = 2  # Allowed attempts to send the request

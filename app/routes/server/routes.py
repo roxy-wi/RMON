@@ -12,13 +12,17 @@ import app.modules.server.server as server_mod
 from app.views.server.views import ServerView
 from app.views.server.cred_views import CredView
 from app.modules.roxywi.class_models import DomainName
+from app.middleware import get_user_params
+import app.modules.roxywi.common as roxywi_common
 
 
 @bp.before_request
 @jwt_required()
+@get_user_params()
 def before_request():
     """ Protect all the admin endpoints. """
     roxywi_auth.page_for_admin(level=2)
+    roxywi_common.require_request_server_access()
 
 
 bp.add_url_rule('', view_func=ServerView.as_view('server'), methods=['POST'])
@@ -66,7 +70,7 @@ def get_system_info(server_ip: Union[IPvAnyAddress, DomainName], server_id: int)
     return server_mod.show_system_info(str(server_ip), server_id)
 
 
-@bp.route('/system_info/update/<server_ip>/<int:server_id>')
+@bp.post('/system_info/update/<server_ip>/<int:server_id>')
 @validate()
 def update_system_info(server_ip: Union[IPvAnyAddress, DomainName], server_id: int):
     return server_mod.update_system_info(str(server_ip), server_id)

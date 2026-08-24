@@ -1,0 +1,59 @@
+"""Atomically rotate the Fernet key used for stored RMON credentials."""
+
+import os
+
+from cryptography.fernet import Fernet, InvalidToken
+
+from app.modules.db.db_model import Cred, conn
+
+
+SECRET_FIELDS = ('password', 'passphrase', 'private_key')
+
+
+def _fernet_from_environment(variable_name: str) -> Fernet:
+    value = os.environ.get(variable_name)
+    if not value:
+        raise RuntimeError(f'{variable_name} is required')
+    if value == 'CHANGE_ME':
+        raise RuntimeError(f'{variable_name} must not be CHANGE_ME')
+    try:
+        return Fernet(value.encode('ascii'))
+    except (ValueError, UnicodeEncodeError) as exc:
+        raise RuntimeError(f'{variable_name} is not a valid Fernet key') from exc
+
+
+def rotate_credentials() -> int:
+    old_fernet = _fernet_from_environment('RMON_OLD_SECRET_PHRASE')
+    new_fernet = _fernet_from_environment('RMON_SECRET_PHRASE')
+    rotated_credentials = 0
+
+    with conn.atomic():
+        for credential in Cred.select():
+            updates = {}
+            for field_name in SECRET_FIELDS:
+                encrypted_value = getattr(credential, field_name)
+                if encrypted_value in (None, '', 'None'):
+                    continue
+                token = encrypted_value.encode('utf-8') if isinstance(encrypted_value, str) else encrypted_value
+                try:
+                    plaintext = old_fernet.decrypt(token)
+                except InvalidToken as exc:
+                    try:
+                        new_fernet.decrypt(token)
+                    except InvalidToken:
+                        raise RuntimeError(
+                            f'Credential {credential.id} contains an invalid {field_name} token'
+                        ) from exc
+                    continue
+                updates[field_name] = new_fernet.encrypt(plaintext).decode('ascii')
+
+            if updates:
+                Cred.update(**updates).where(Cred.id == credential.id).execute()
+                rotated_credentials += 1
+
+    return rotated_credentials
+
+
+if __name__ == '__main__':
+    count = rotate_credentials()
+    print(f'Rotated stored secrets: {count}')

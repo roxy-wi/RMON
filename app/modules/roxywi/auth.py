@@ -1,4 +1,5 @@
 from flask import request, abort, url_for, jsonify
+from urllib.parse import urlparse
 from flask_jwt_extended import create_access_token, set_access_cookies
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import verify_jwt_in_request
@@ -95,18 +96,25 @@ def check_in_ldap(user, password):
 
 
 def do_login(user_params: dict, next_url: str):
-    if next_url:
-        if 'https://' in next_url or 'http://' in next_url:
-            next_url = '/'
-        redirect_to = f'https://{request.host}{next_url}'
-    else:
-        redirect_to = f"https://{request.host}{url_for('overview.index')}"
+    next_url = _safe_next(next_url)
+    redirect_to = f'https://{request.host}{next_url}'
 
     response = jsonify({"status": "done", "next_url": redirect_to})
     access_token = create_jwt_token(user_params)
     set_access_cookies(response, access_token)
 
     return response
+
+
+def _safe_next(next_url: str) -> str:
+    if not next_url:
+        return url_for('overview.index')
+    parsed = urlparse(next_url)
+    if parsed.scheme or parsed.netloc:
+        return url_for('overview.index')
+    if not next_url.startswith('/') or next_url.startswith('//') or next_url.startswith('/\\'):
+        return url_for('overview.index')
+    return next_url
 
 
 def create_jwt_token(user_params: dict) -> str:
@@ -126,13 +134,15 @@ def check_user_password(login: str, password: str) -> dict:
     if user.enabled == 0:
         raise Exception('Your login is disabled')
     if user.ldap_user == 1:
-        if login in user.username and check_in_ldap(login, password):
+        if login == user.username and check_in_ldap(login, password):
             return {'group': str(user.group_id.group_id), 'user': user.user_id, 'name': user.username}
         else:
             raise Exception('ban')
     else:
-        hashed_password = roxy_wi_tools.Tools.get_hash(password)
-        if login in user.username and hashed_password == user.password:
+        password_matches, needs_rehash = roxy_wi_tools.Tools.check_password(password, user.password)
+        if login == user.username and password_matches:
+            if needs_rehash:
+                user_sql.update_user_password(password, user.user_id)
             return {'group': str(user.group_id.group_id), 'user': user.user_id, 'name': user.username}
         else:
             raise Exception('ban')

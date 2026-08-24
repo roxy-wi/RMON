@@ -14,6 +14,13 @@ from app.middleware import get_user_params, page_for_admin, check_group
 from app.modules.roxywi.class_models import BaseResponse, IdResponse, IdDataResponse, ServerRequest, GroupQuery, \
     GroupRequest, UserSearchRequest
 from app.modules.common.common_classes import SupportClass
+from app.modules.roxywi.exception import RoxywiGroupMismatch
+
+
+def _require_credential_access(cred_id: int, group_id: int) -> None:
+    credential = cred_sql.get_ssh(cred_id)
+    if not credential.shared and int(credential.group_id) != int(group_id):
+        raise RoxywiGroupMismatch
 
 
 class ServerView(MethodView):
@@ -130,6 +137,7 @@ class ServerView(MethodView):
         group_id = SupportClass.return_group_id(body)
 
         try:
+            _require_credential_access(body.cred_id, group_id)
             last_id = server_mod.create_server(body.hostname, body.ip, group_id, body.enabled, body.cred_id, body.port, body.description)
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot create a server')
@@ -144,7 +152,7 @@ class ServerView(MethodView):
             return IdResponse(id=last_id).model_dump(mode='json'), 201
         else:
             lang = roxywi_common.get_user_lang_for_flask()
-            data = render_template('ajax/new_server.html', groups=group_sql.select_groups(),
+            data = render_template('ajax/new_server.html', groups=roxywi_common.get_visible_groups(),
                 servers=server_sql.select_servers(server=body.ip), lang=lang, sshs=cred_sql.select_ssh(group=group_id), adding=1)
             return IdDataResponse(data=data, id=last_id), 201
 
@@ -190,9 +198,10 @@ class ServerView(MethodView):
           201:
             description: Server update successful
        """
-        group_id = SupportClass.return_group_id(body)
-
         try:
+            SupportClass().return_server_ip_or_id(server_id)
+            group_id = SupportClass.return_group_id(body)
+            _require_credential_access(body.cred_id, group_id)
             server_sql.update_server(body.hostname, group_id, body.enabled, server_id, body.cred_id, body.port, body.description)
             roxywi_common.logger(f'The server {body.hostname} has been update', keep_history=1, service='server')
         except Exception as e:
@@ -218,6 +227,7 @@ class ServerView(MethodView):
             description: Server deletion successful
         """
         try:
+            SupportClass().return_server_ip_or_id(server_id)
             server_mod.delete_server(server_id)
             roxywi_common.logger(f'The server {server_id} has been deleted')
             return BaseResponse().model_dump(mode='json'), 204

@@ -147,14 +147,14 @@ def register_error_handlers(app):
     @app.errorhandler(401)
     def unauthorized(e):
         """Handle 401 Unauthorized errors."""
-        if 'api' in request.url:
+        if request.path.startswith('/api/'):
             return jsonify(ErrorResponse(error=str(e)).model_dump(mode='json')), 401
         return redirect(url_for('login_page', next=request.full_path))
 
     @app.errorhandler(403)
     def forbidden(e):
         """Handle 403 Forbidden errors."""
-        if 'api' in request.url:
+        if request.path.startswith('/api/'):
             return jsonify(ErrorResponse(error=str(e)).model_dump(mode='json')), 403
 
         # Get user parameters for rendering the template
@@ -169,7 +169,7 @@ def register_error_handlers(app):
     @app.errorhandler(404)
     def not_found(e):
         """Handle 404 Not Found errors."""
-        if 'api' in request.url:
+        if request.path.startswith('/api/'):
             return jsonify(ErrorResponse(error=str(e)).model_dump(mode='json')), 404
 
         # Get user parameters for rendering the template
@@ -199,7 +199,7 @@ def register_error_handlers(app):
     @app.errorhandler(500)
     def internal_server_error(e):
         """Handle 500 Internal Server Error errors."""
-        if 'api' in request.url:
+        if request.path.startswith('/api/'):
             return jsonify(ErrorResponse(error=str(e)).model_dump(mode='json')), 500
 
         # Get user parameters for rendering the template

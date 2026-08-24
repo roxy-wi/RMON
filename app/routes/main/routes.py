@@ -11,7 +11,7 @@ from app.routes.main import bp
 import app.modules.db.user as user_sql
 import app.modules.db.server as server_sql
 import app.modules.db.history as history_sql
-from app.middleware import get_user_params
+from app.middleware import get_user_params, page_for_admin
 import app.modules.common.common as common
 import app.modules.roxywi.roxy as roxy
 import app.modules.roxywi.nettools as nettools_mod
@@ -93,6 +93,7 @@ def nettools_check(check, body: NettoolsRequest):
 @bp.route('/history/<service>/<server_ip>')
 @jwt_required()
 @get_user_params()
+@page_for_admin(level=2)
 @validate()
 def service_history(service: Literal['server', 'user'], server_ip: Union[IPvAnyAddress, DomainName, EscapedString]):
     history = ''
@@ -102,11 +103,12 @@ def service_history(service: Literal['server', 'user'], server_ip: Union[IPvAnyA
             server_id = server_sql.select_server_id_by_ip(server_ip)
             history = history_sql.select_action_history_by_server_id(server_id)
     elif service == 'user':
+        roxywi_common.is_user_has_access_to_its_group(int(server_ip))
         history = history_sql.select_action_history_by_user_id(server_ip)
 
     kwargs = {
         'user_subscription': roxywi_common.return_user_subscription(),
-        'users': user_sql.select_users(),
+        'users': user_sql.select_users(group=g.user_params['group_id']),
         'serv': server_ip,
         'service': service,
         'history': history

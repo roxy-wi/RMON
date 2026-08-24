@@ -4,9 +4,6 @@ import threading
 from datetime import datetime
 from packaging import version
 
-import ansible
-import ansible_runner
-
 import app.modules.db.sql as sql
 import app.modules.db.server as server_sql
 import app.modules.server.server as server_mod
@@ -16,6 +13,8 @@ from app.modules.db.db_model import InstallationTasks
 
 
 def run_ansible(inv: dict, server_ips: list, ansible_role: str) -> dict:
+	import ansible_runner
+
 	inventory_path = '/var/www/rmon/app/scripts/ansible/inventory'
 	inventory = f'{inventory_path}/{ansible_role}-{random.randint(0, 135)}.json'
 	proxy = sql.get_setting('proxy')
@@ -111,6 +110,8 @@ def run_ansible(inv: dict, server_ips: list, ansible_role: str) -> dict:
 
 
 def _install_ansible_collections():
+	import ansible
+
 	old_ansible_server = ''
 	collections = ('community.general', 'ansible.posix', 'community.docker')
 	trouble_link = 'Read <a href="https://rmon.op/troubleshooting#ansible_collection" target="_blank" class="link">troubleshooting</a>'

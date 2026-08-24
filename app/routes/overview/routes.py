@@ -13,6 +13,8 @@ import app.modules.db.group as group_sql
 import app.modules.roxywi.logs as roxy_logs
 import app.modules.roxywi.metrics as metric
 import app.modules.roxywi.overview as roxy_overview
+import app.modules.roxywi.common as roxywi_common
+import app.modules.db.server as server_sql
 from app.modules.roxywi.class_models import IpRequest
 
 
@@ -29,7 +31,7 @@ def before_request():
 def index():
     kwargs = {
         'roles': sql.select_roles(),
-        'groups': group_sql.select_groups(),
+        'groups': roxywi_common.get_visible_groups(),
         'lang': g.user_params['lang']
     }
     return render_template('ovw.html', **kwargs)
@@ -41,9 +43,12 @@ def show_services_overview():
 
 
 @bp.route('/overview/server/<server_ip>')
+@get_user_params()
 @validate()
 def overview_server(server_ip: Union[IPvAnyAddress, DomainName]):
     server_ip = str(server_ip)
+    server = server_sql.get_server_by_ip(server_ip)
+    roxywi_common.require_active_group_access(server.group_id)
     return roxy_overview.show_overview(server_ip)
 
 

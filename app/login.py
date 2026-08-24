@@ -13,9 +13,9 @@ def check_login():
     allowed_endpoints = (
         'login_page', 'static', 'main.show_roxywi_version', 'smon.show_smon_status_page', 'smon.smon_history_statuses_avg',
         'smon.smon_history_statuses', 'smon.agent_get_checks', 'smon.get_check_status', 'smon.smon_history_metric', 'api', 'favicon',
-        'prometheus_metrics'
+        'prometheus_metrics', 'api_v1_0_main.spec', 'api_v1_0_main.swagger_ui', 'api_v1_0_main.do_login'
     )
-    if 'api' not in request.url and request.endpoint not in allowed_endpoints:
+    if request.endpoint not in allowed_endpoints:
         try:
             user_params = roxywi_common.get_users_params()
         except Exception as e:
