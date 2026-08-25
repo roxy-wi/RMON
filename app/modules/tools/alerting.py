@@ -17,9 +17,11 @@ import app.modules.db.group as group_sql
 import app.modules.db.channel as channel_sql
 import app.modules.common.common as common
 import app.modules.roxywi.common as roxywi_common
+from app.modules.subscription.access import ALERTING_CHANNELS, is_feature_available, require_feature
 
 
 def send_message_to_rabbit(message: str, **kwargs) -> None:
+	require_feature(ALERTING_CHANNELS)
 	rabbit_user = sql.get_setting('rabbitmq_user')
 	rabbit_password = sql.get_setting('rabbitmq_password')
 	rabbit_host = sql.get_setting('rabbitmq_host')
@@ -47,6 +49,7 @@ def send_message_to_rabbit(message: str, **kwargs) -> None:
 
 
 def send_email_to_server_group(subject: str, mes: str, level: str, group_id: int) -> None:
+	require_feature(ALERTING_CHANNELS)
 	if not sql.get_setting('mail_enabled'):
 		return
 	try:
@@ -90,6 +93,7 @@ def send_email(email_to: str, subject: str, message: str) -> None:
 
 
 def telegram_send_mess(mess, o_level, **kwargs):
+	require_feature(ALERTING_CHANNELS)
 	token_bot = ''
 	channel_name = ''
 	runbook = ''
@@ -139,6 +143,7 @@ def telegram_send_mess(mess, o_level, **kwargs):
 
 
 def slack_send_mess(mess, level, **kwargs):
+	require_feature(ALERTING_CHANNELS)
 	slack_token = ''
 	channel_name = ''
 	runbook = ''
@@ -181,6 +186,7 @@ def slack_send_mess(mess, level, **kwargs):
 
 
 def pd_send_mess(mess, level, **kwargs):
+	require_feature(ALERTING_CHANNELS)
 	token = ''
 	runbook = ''
 	rmon_name = sql.get_setting('rmon_name')
@@ -238,6 +244,7 @@ def pd_send_mess(mess, level, **kwargs):
 
 
 def mm_send_mess(mess, level, **kwargs):
+	require_feature(ALERTING_CHANNELS)
 	token = ''
 	runbook = ''
 	rmon_name = sql.get_setting('rmon_name')
@@ -310,6 +317,7 @@ def mm_send_mess(mess, level, **kwargs):
 
 
 def incidentrelay_send_mess(mess, level, **kwargs):
+	require_feature(ALERTING_CHANNELS)
 	rmon_name = sql.get_setting('rmon_name')
 	proxy_dict = common.return_proxy_dict()
 
@@ -501,6 +509,7 @@ def incidentrelay_send_mess(mess, level, **kwargs):
 
 
 def check_rabbit_alert() -> Union[str, dict]:
+	require_feature(ALERTING_CHANNELS)
 	claims = roxywi_common.get_jwt_token_claims()
 	try:
 		user_group_id = claims['group']
@@ -517,6 +526,7 @@ def check_rabbit_alert() -> Union[str, dict]:
 
 
 def email_send_mess(mess, o_level, **kwargs):
+	require_feature(ALERTING_CHANNELS)
 	runbook = ''
 	rmon_name = sql.get_setting('rmon_name')
 
@@ -550,6 +560,7 @@ def email_send_mess(mess, o_level, **kwargs):
 
 
 def check_email_alert() -> str:
+	require_feature(ALERTING_CHANNELS)
 	rmon_name = sql.get_setting('rmon_name')
 	subject = 'test message'
 	message = f'Test message from {rmon_name}'
@@ -568,6 +579,7 @@ def check_email_alert() -> str:
 
 
 def add_receiver(receiver: str, token: str, channel: str, group: str, is_api=False) -> Union[str, int]:
+	require_feature(ALERTING_CHANNELS)
 	last_id = channel_sql.insert_new_receiver(receiver, token, channel, group)
 
 	if is_api:
@@ -580,6 +592,7 @@ def add_receiver(receiver: str, token: str, channel: str, group: str, is_api=Fal
 
 
 def delete_receiver_channel(channel_id: int, receiver_name: str) -> None:
+	require_feature(ALERTING_CHANNELS)
 	try:
 		channel_sql.delete_receiver(receiver_name, channel_id)
 	except Exception as e:
@@ -587,6 +600,7 @@ def delete_receiver_channel(channel_id: int, receiver_name: str) -> None:
 
 
 def update_receiver_channel(receiver_name: str, token: str, channel: str, group: id, channel_id: int) -> None:
+	require_feature(ALERTING_CHANNELS)
 	try:
 		channel_sql.update_receiver(receiver_name, token, channel, group, channel_id)
 	except Exception as e:
@@ -594,6 +608,7 @@ def update_receiver_channel(receiver_name: str, token: str, channel: str, group:
 
 
 def check_receiver(channel_id: int, receiver_name: str, multi_check_id: int = None) -> str:
+	require_feature(ALERTING_CHANNELS)
 	functions = {
 		"telegram": telegram_send_mess,
 		"slack": slack_send_mess,
@@ -639,7 +654,7 @@ def load_channels():
 		'lang': user_params['lang']
 	}
 
-	if user_subscription['user_status']:
+	if is_feature_available(ALERTING_CHANNELS, user_subscription):
 		user_group = roxywi_common.get_user_group(id=1)
 		kwargs.setdefault('telegrams', channel_sql.get_user_receiver_by_group('telegram', user_group))
 		kwargs.setdefault('pds', channel_sql.get_user_receiver_by_group('pd', user_group))

@@ -250,6 +250,37 @@
         }
     }
 %}
+{% set oidc_page = {
+    "help": "Configure OpenID Connect providers for browser login. Register the callback URL shown below in the identity provider. Client secrets are encrypted with the RMON credential key and are never returned by the API.",
+    "provider": "Provider", "status": "Status", "client_id": "Client ID", "add": "Add",
+    "new_provider": "New OIDC provider", "slug": "Slug", "login_button_label": "Login button label",
+    "callback_url": "Callback URL", "saved_callback_url": "Saved provider callback URL",
+    "client_secret": "Client secret", "keep_current_secret": "Leave empty to keep current secret",
+    "configured_keep": "Configured — leave empty to keep", "discovery_url": "Discovery URL",
+    "issuer": "Issuer", "loaded_from_discovery": "Usually loaded from discovery", "scopes": "Scopes",
+    "advanced": "Advanced endpoints and claims", "authorization_endpoint": "Authorization endpoint",
+    "token_endpoint": "Token endpoint", "userinfo_endpoint": "UserInfo endpoint", "jwks_uri": "JWKS URI",
+    "subject_claim": "Subject claim", "email_claim": "Email claim", "username_claim": "Username claim",
+    "groups_claim": "Groups claim", "allowed_domains": "Allowed email domains",
+    "default_group": "Default group", "default_role": "Default role", "enabled": "Enabled",
+    "disabled": "Disabled", "active": "Active", "auto_create": "Auto-create users",
+    "auto_link": "Link existing users by email", "require_verified": "Require verified email",
+    "sync_groups": "Sync mapped groups", "remove_missing_groups": "Remove missing mapped groups",
+    "mappings_title": "External group mappings", "mappings_for": "Group mappings: {provider}",
+    "mappings_action": "Manage group mappings", "new_mapping": "New mapping",
+    "new_mapping_for": "New group mapping: {provider}", "edit_mapping": "Edit mapping: {group}",
+    "reload": "Reload", "mapping_help": "Mappings are optional. If no mapping exists, newly created users receive the provider's default group and role.",
+    "external_group": "External group", "roxy_group": "RMON group", "role": "Role", "priority": "Priority",
+    "provider_prefix": "Provider: {provider}", "edit_provider": "Edit {provider}", "edit_action": "Edit",
+    "delete_action": "Delete", "save_provider": "Save provider", "save_mapping": "Save mapping",
+    "cancel": "Cancel", "close": "Close", "request_failed": "OIDC request failed",
+    "no_providers": "No OIDC providers configured", "loading_mappings": "Loading mappings...",
+    "no_mappings": "No group mappings configured", "select_provider": "Select an OIDC provider first",
+    "provider_saved": "OIDC provider saved", "mapping_saved": "OIDC group mapping saved",
+    "mapping_deleted": "OIDC group mapping deleted", "or": "or", "sign_in_with": "Sign in with",
+    "delete_mapping_confirm": "Delete the mapping for external group '{group}'?"
+}
+%}
 {% set smon_page = {
     "desc": {
         "before_use": "before use",

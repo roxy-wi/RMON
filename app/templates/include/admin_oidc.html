@@ -1,0 +1,119 @@
+<script id="oidc-translations" type="application/json">{{ lang.oidc_page|tojson }}</script>
+<script defer src="{{ url_for('static', filename='js/admin/oidc.js') }}"></script>
+<div class="oidc-admin">
+    <table class="overview" id="oidc-provider-table">
+        <thead>
+            <tr class="overviewHead">
+                <th class="padding10 first-collumn">{{ lang.oidc_page.provider }}</th>
+                <th style="width: 15%;">{{ lang.oidc_page.status }}</th>
+                <th style="width: 100%;">{{ lang.oidc_page.client_id }}</th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="oidc-provider-list"></tbody>
+    </table>
+    <br><span class="add-button" id="oidc-new-provider" title="{{ lang.oidc_page.new_provider }}">+ {{ lang.oidc_page.add }}</span>
+    <br><br>
+
+    <div class="add-note alert addName alert-info" style="width: inherit; margin-right: 15px;">
+        {{ lang.oidc_page.help }}
+    </div>
+
+    <div id="oidc-provider-dialog" title="{{ lang.oidc_page.new_provider }}" style="display: none;">
+        <form id="oidc-provider-form">
+            <input type="hidden" id="oidc-provider-id">
+            <div class="oidc-form-grid">
+                <label>{{ lang.oidc_page.slug }}<input id="oidc-slug" required maxlength="64" placeholder="keycloak"></label>
+                <label>{{ lang.oidc_page.login_button_label }}<input id="oidc-label" required maxlength="128" placeholder="Company SSO"></label>
+                <label class="oidc-wide">{{ lang.oidc_page.callback_url }}<input id="oidc-callback-url" readonly placeholder="{{ lang.oidc_page.saved_callback_url }}"></label>
+                <label>{{ lang.oidc_page.client_id }}<input id="oidc-client-id" required maxlength="512"></label>
+                <label>{{ lang.oidc_page.client_secret }}<input id="oidc-client-secret" type="password" maxlength="4096" autocomplete="new-password" placeholder="{{ lang.oidc_page.keep_current_secret }}"></label>
+                <label class="oidc-wide">{{ lang.oidc_page.discovery_url }}<input id="oidc-metadata-url" type="url" maxlength="2048" placeholder="https://idp.example.com/.well-known/openid-configuration"></label>
+                <label class="oidc-wide">{{ lang.oidc_page.issuer }}<input id="oidc-issuer" type="url" maxlength="2048" placeholder="{{ lang.oidc_page.loaded_from_discovery }}"></label>
+                <label class="oidc-wide">{{ lang.oidc_page.scopes }}<input id="oidc-scope" value="openid email profile" maxlength="512"></label>
+            </div>
+
+            <details class="oidc-details">
+                <summary>{{ lang.oidc_page.advanced }}</summary>
+                <div class="oidc-form-grid">
+                    <label class="oidc-wide">{{ lang.oidc_page.authorization_endpoint }}<input id="oidc-authorization-endpoint" type="url" maxlength="2048"></label>
+                    <label class="oidc-wide">{{ lang.oidc_page.token_endpoint }}<input id="oidc-token-endpoint" type="url" maxlength="2048"></label>
+                    <label class="oidc-wide">{{ lang.oidc_page.userinfo_endpoint }}<input id="oidc-userinfo-endpoint" type="url" maxlength="2048"></label>
+                    <label class="oidc-wide">{{ lang.oidc_page.jwks_uri }}<input id="oidc-jwks-uri" type="url" maxlength="2048"></label>
+                    <label>{{ lang.oidc_page.subject_claim }}<input id="oidc-subject-claim" value="sub" maxlength="128"></label>
+                    <label>{{ lang.oidc_page.email_claim }}<input id="oidc-email-claim" value="email" maxlength="128"></label>
+                    <label>{{ lang.oidc_page.username_claim }}<input id="oidc-username-claim" value="preferred_username" maxlength="128"></label>
+                    <label>{{ lang.oidc_page.groups_claim }}<input id="oidc-groups-claim" value="groups" maxlength="128"></label>
+                    <label class="oidc-wide">{{ lang.oidc_page.allowed_domains }}<input id="oidc-allowed-domains" placeholder="example.com, example.org"></label>
+                </div>
+            </details>
+
+            <div class="oidc-form-grid oidc-default-access">
+                <label>{{ lang.oidc_page.default_group }}
+                    <select id="oidc-default-group">
+                        {% for group in groups %}<option value="{{ group.group_id }}">{{ group.name }}</option>{% endfor %}
+                    </select>
+                </label>
+                <label>{{ lang.oidc_page.default_role }}
+                    <select id="oidc-default-role">
+                        {% for role in roles %}<option value="{{ role.role_id }}" {% if role.role_id == 4 %}selected{% endif %}>{{ role.name }}</option>{% endfor %}
+                    </select>
+                </label>
+            </div>
+
+            <div class="oidc-options">
+                <label><input type="checkbox" id="oidc-enabled" checked> {{ lang.oidc_page.enabled }}</label>
+                <label><input type="checkbox" id="oidc-auto-create"> {{ lang.oidc_page.auto_create }}</label>
+                <label><input type="checkbox" id="oidc-auto-link" checked> {{ lang.oidc_page.auto_link }}</label>
+                <label><input type="checkbox" id="oidc-require-verified" checked> {{ lang.oidc_page.require_verified }}</label>
+                <label><input type="checkbox" id="oidc-sync-groups" checked> {{ lang.oidc_page.sync_groups }}</label>
+                <label><input type="checkbox" id="oidc-remove-groups"> {{ lang.oidc_page.remove_missing_groups }}</label>
+            </div>
+        </form>
+    </div>
+
+    <div id="oidc-mappings-dialog" title="{{ lang.oidc_page.mappings_title }}" style="display: none;">
+        <div class="oidc-mappings-toolbar">
+            <span id="oidc-mappings-context" class="oidc-muted"></span>
+            <div class="oidc-mappings-actions">
+                <button type="button" id="oidc-new-mapping" class="add-button">+ {{ lang.oidc_page.new_mapping }}</button>
+                <button type="button" id="oidc-reload-mappings">{{ lang.oidc_page.reload }}</button>
+            </div>
+        </div>
+        <p>{{ lang.oidc_page.mapping_help }}</p>
+        <table class="overview oidc-table">
+            <thead>
+                <tr class="overviewHead">
+                    <th class="padding10 first-collumn">{{ lang.oidc_page.external_group }}</th>
+                    <th>{{ lang.oidc_page.roxy_group }}</th>
+                    <th>{{ lang.oidc_page.role }}</th>
+                    <th>{{ lang.oidc_page.status }}</th>
+                    <th>{{ lang.oidc_page.priority }}</th>
+                    <th></th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="oidc-mapping-list"></tbody>
+        </table>
+    </div>
+
+    <div id="oidc-mapping-dialog" title="{{ lang.oidc_page.new_mapping }}" style="display: none;">
+        <form id="oidc-mapping-form" class="oidc-mapping-form">
+            <input type="hidden" id="oidc-mapping-id">
+            <label>{{ lang.oidc_page.external_group }}<input id="oidc-external-group" required maxlength="255" placeholder="rmon-admins"></label>
+            <label>{{ lang.oidc_page.roxy_group }}
+                <select id="oidc-mapping-group" required>
+                    {% for group in groups %}<option value="{{ group.group_id }}">{{ group.name }}</option>{% endfor %}
+                </select>
+            </label>
+            <label>{{ lang.oidc_page.role }}
+                <select id="oidc-mapping-role" required>
+                    {% for role in roles %}<option value="{{ role.role_id }}">{{ role.name }}</option>{% endfor %}
+                </select>
+            </label>
+            <label>{{ lang.oidc_page.priority }}<input id="oidc-mapping-priority" type="number" min="0" max="10000" value="100"></label>
+            <label class="oidc-inline-check"><input type="checkbox" id="oidc-mapping-active" checked> {{ lang.oidc_page.active }}</label>
+        </form>
+    </div>
+</div>

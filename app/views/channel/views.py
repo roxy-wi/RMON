@@ -13,11 +13,12 @@ import app.modules.tools.alerting as alerting
 from app.middleware import get_user_params, check_group
 from app.modules.roxywi.class_models import BaseResponse, IdResponse, IdDataResponse, GroupQuery, ChannelRequest
 from app.modules.common.common_classes import SupportClass
+from app.modules.subscription.access import ALERTING_CHANNELS, feature_required
 
 
 class ChannelView(MethodView):
     method_decorators = ["GET", "POST", "PUT", "DELETE"]
-    decorators = [jwt_required(), get_user_params(), check_group()]
+    decorators = [jwt_required(), get_user_params(), check_group(), feature_required(ALERTING_CHANNELS)]
 
     def __init__(self, is_api: bool = False):
         self.is_api = is_api
@@ -275,7 +276,7 @@ class ChannelView(MethodView):
 
 class ChannelsView(MethodView):
     method_decorators = ["GET"]
-    decorators = [jwt_required(), get_user_params(), check_group()]
+    decorators = [jwt_required(), get_user_params(), check_group(), feature_required(ALERTING_CHANNELS)]
 
     @validate()
     def get(self, receiver: Literal['telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay'], query: GroupQuery):
@@ -340,7 +341,7 @@ class ChannelsView(MethodView):
 
 class ChannelCheckView(MethodView):
     method_decorators = ["POST"]
-    decorators = [jwt_required(), get_user_params(), check_group()]
+    decorators = [jwt_required(), get_user_params(), check_group(), feature_required(ALERTING_CHANNELS)]
 
     @validate(query=GroupQuery)
     def post(self, receiver: Literal['telegram', 'slack', 'pd', 'mm', 'email', 'incidentrelay'], channel_id: int, query: GroupQuery):

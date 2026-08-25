@@ -76,4 +76,5 @@ class Configuration(object):
     FLASK_PYDANTIC_VALIDATION_ERROR_RAISE = True
     MAX_CONTENT_LENGTH = int(os.getenv('RMON_MAX_CONTENT_LENGTH', str(16 * 1024 * 1024)))
     MAX_FORM_MEMORY_SIZE = int(os.getenv('RMON_MAX_FORM_MEMORY_SIZE', str(2 * 1024 * 1024)))
+    PUBLIC_URL = os.getenv('RMON_PUBLIC_URL', '').rstrip('/')
     JSONIFY_PRETTYPRINT_REGULAR = False

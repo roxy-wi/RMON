@@ -2,7 +2,7 @@
 {% block title %}{{ lang.menu_links.monitoring.smon.history }}{% endblock %}
 {% block h2 %}{{ lang.menu_links.monitoring.smon.history }}{% endblock %}
 {% block content %}
-{% if user_subscription['user_status'] == 0 or user_subscription['user_plan'] == 'user' %}
+{% if not subscription_features['alert_history'] %}
 	{% include 'include/no_sub.html' %}
 {% elif smon_status in ('failed', 'inactive', 'ERROR') %}
 <div style="text-align: center;">

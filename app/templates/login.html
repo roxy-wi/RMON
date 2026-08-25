@@ -61,7 +61,7 @@ body, .container {
 }
 </style>
 <div id="main_div">
-	<div id="login-form" style="padding-top: 40px; padding-bottom: 50px; height: 250px; color: #000;">
+	<div id="login-form" style="padding-top: 40px; padding-bottom: 50px; min-height: 250px; color: #000;">
 		<div id="logo_span">
             <div id="logo_img"><img src="{{ url_for('static', filename='images/logo/white_320.png')}}"></div>
             <div id="logo_sign" style="">remote monitoring</div>
@@ -82,6 +82,19 @@ body, .container {
 			</div>
 			<button type="submit" name="Login" value="Enter" id="enter">{{lang.words.login2|title()}}</button>
 		</form>
+		{% if oidc_providers %}
+		<div class="oidc-login-options">
+			<div class="oidc-login-separator"><span>{{ lang.oidc_page.or }}</span></div>
+			<div class="oidc-login-providers">
+				{% for provider in oidc_providers %}
+				<a class="oidc-login-button" href="{{ url_for('oidc.oidc_login', slug=provider.slug, next=request.args.get('next', '')) }}">
+					<i class="fa fa-sign-in-alt"></i>
+					{{ lang.oidc_page.sign_in_with }} {{ provider.label }}
+				</a>
+				{% endfor %}
+			</div>
+		</div>
+		{% endif %}
 		{% if error_log or error %}
 		<div class="alert alert-danger wrong-login alert-one-row" style="display: block">
 			{{error_log}}

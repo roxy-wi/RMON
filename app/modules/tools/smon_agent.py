@@ -8,6 +8,7 @@ import app.modules.db.sql as sql
 import app.modules.db.smon as smon_sql
 import app.modules.db.server as server_sql
 import app.modules.roxywi.common as roxywi_common
+from app.modules.subscription.access import MONITORING_AGENTS, enforce_resource_limit
 from app.modules.service.installation import run_ansible_thread
 from app.modules.roxywi.class_models import RmonAgent
 from app.modules.roxywi.exception import RoxywiResourceNotFound
@@ -33,14 +34,8 @@ def generate_agent_inv(server_ip: str, action: str, agent_uuid: uuid, agent_port
 
 
 def check_agent_limit():
-    user_subscription = roxywi_common.return_user_subscription()
     count_agents = smon_sql.count_agents()
-    if user_subscription['user_plan'] == 'free' and count_agents >= 1:
-        raise Exception(' You have reached limit for Free plan')
-    elif user_subscription['user_plan'] == 'home' and count_agents >= 3:
-        raise Exception(' You have reached limit for Home plan')
-    elif user_subscription['user_plan'] == 'enterprise' and count_agents >= 10:
-        raise Exception(' You have reached limit for Enterprise plan')
+    enforce_resource_limit(MONITORING_AGENTS, count_agents)
 
 
 def add_agent(data: RmonAgent) -> Union[tuple[int, int], tuple[dict, int], None]:

@@ -16,6 +16,7 @@ import app.modules.common.common as common
 import app.modules.roxywi.roxy as roxy
 import app.modules.roxywi.nettools as nettools_mod
 import app.modules.roxywi.common as roxywi_common
+from app.modules.subscription.access import ACTION_HISTORY, feature_required
 import app.modules.server.server as server_mod
 from app.modules.roxywi.class_models import ErrorResponse, NettoolsRequest, DomainName, EscapedString
 from app.modules.db.db_model import conn
@@ -94,6 +95,7 @@ def nettools_check(check, body: NettoolsRequest):
 @jwt_required()
 @get_user_params()
 @page_for_admin(level=2)
+@feature_required(ACTION_HISTORY)
 @validate()
 def service_history(service: Literal['server', 'user'], server_ip: Union[IPvAnyAddress, DomainName, EscapedString]):
     history = ''

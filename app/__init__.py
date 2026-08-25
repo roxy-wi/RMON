@@ -47,6 +47,7 @@ from app.routes.server import bp as server_bp
 from app.routes.admin import bp as admin_bp
 from app.routes.overview import bp as overview_bp
 from app.routes.logs import bp as logs_bp
+from app.routes.oidc import bp as oidc_bp
 
 app.register_blueprint(main_bp)
 app.register_blueprint(overview_bp)
@@ -54,6 +55,7 @@ app.register_blueprint(smon_bp, url_prefix='/rmon')
 app.register_blueprint(channel_bp, url_prefix='/channel')
 app.register_blueprint(user_bp, url_prefix='/user')
 app.register_blueprint(logs_bp, url_prefix='/logs')
+app.register_blueprint(oidc_bp, url_prefix='/oidc')
 app.register_blueprint(server_bp, url_prefix='/server')
 app.register_blueprint(admin_bp, url_prefix='/admin')
 

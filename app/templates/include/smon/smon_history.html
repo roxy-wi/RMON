@@ -4,7 +4,7 @@
 {% block h2 %}{{ lang.menu_links.history.title }} {{ smon_name|replace("'","") }}{% endblock %}
 {% block content %}
 {% set checking_types = {'1': 'TCP', '2': 'HTTP', '3': 'SMTP', '4': 'Ping', '5': 'DNS', '6': 'RabbitMQ'} %}
-{% if user_subscription['user_status'] == 0 or user_subscription['user_plan'] == 'home' %}
+{% if not subscription_features['monitoring_history'] %}
 	{% include 'include/no_sub.html' %}
 {% else %}
 <link href="{{ url_for('static', filename='css/chart.min.css') }}" rel="stylesheet">

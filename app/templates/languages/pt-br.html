@@ -250,6 +250,37 @@
         }
     }
 %}
+{% set oidc_page = {
+    "help": "Configure provedores OpenID Connect para login pelo navegador. Registre no provedor de identidade a URL de retorno exibida abaixo. Os segredos do cliente são criptografados com a chave de credenciais do RMON e nunca são retornados pela API.",
+    "provider": "Provedor", "status": "Status", "client_id": "ID do cliente", "add": "Adicionar",
+    "new_provider": "Novo provedor OIDC", "slug": "Identificador (slug)", "login_button_label": "Texto do botão de login",
+    "callback_url": "URL de retorno", "saved_callback_url": "URL de retorno do provedor salvo",
+    "client_secret": "Segredo do cliente", "keep_current_secret": "Deixe vazio para manter o segredo atual",
+    "configured_keep": "Configurado — deixe vazio para manter", "discovery_url": "URL de descoberta",
+    "issuer": "Emissor", "loaded_from_discovery": "Normalmente carregado pela descoberta", "scopes": "Escopos",
+    "advanced": "Endpoints e atributos avançados", "authorization_endpoint": "Endpoint de autorização",
+    "token_endpoint": "Endpoint de token", "userinfo_endpoint": "Endpoint de UserInfo", "jwks_uri": "URI JWKS",
+    "subject_claim": "Atributo de assunto", "email_claim": "Atributo de e-mail", "username_claim": "Atributo de nome de usuário",
+    "groups_claim": "Atributo de grupos", "allowed_domains": "Domínios de e-mail permitidos",
+    "default_group": "Grupo padrão", "default_role": "Função padrão", "enabled": "Ativado", "disabled": "Desativado",
+    "active": "Ativo", "auto_create": "Criar usuários automaticamente", "auto_link": "Vincular usuários existentes por e-mail",
+    "require_verified": "Exigir e-mail verificado", "sync_groups": "Sincronizar grupos mapeados",
+    "remove_missing_groups": "Remover grupos mapeados ausentes", "mappings_title": "Mapeamentos de grupos externos",
+    "mappings_for": "Mapeamentos de grupos: {provider}", "mappings_action": "Gerenciar mapeamentos de grupos",
+    "new_mapping": "Novo mapeamento", "new_mapping_for": "Novo mapeamento de grupo: {provider}",
+    "edit_mapping": "Editar mapeamento: {group}", "reload": "Recarregar",
+    "mapping_help": "Os mapeamentos são opcionais. Se não existirem, os novos usuários recebem o grupo e a função padrão do provedor.",
+    "external_group": "Grupo externo", "roxy_group": "Grupo do RMON", "role": "Função", "priority": "Prioridade",
+    "provider_prefix": "Provedor: {provider}", "edit_provider": "Editar {provider}", "edit_action": "Editar",
+    "delete_action": "Excluir", "save_provider": "Salvar provedor", "save_mapping": "Salvar mapeamento",
+    "cancel": "Cancelar", "close": "Fechar", "request_failed": "Falha na solicitação OIDC",
+    "no_providers": "Nenhum provedor OIDC configurado", "loading_mappings": "Carregando mapeamentos...",
+    "no_mappings": "Nenhum mapeamento de grupo configurado", "select_provider": "Selecione primeiro um provedor OIDC",
+    "provider_saved": "Provedor OIDC salvo", "mapping_saved": "Mapeamento de grupo OIDC salvo",
+    "mapping_deleted": "Mapeamento de grupo OIDC excluído", "or": "ou", "sign_in_with": "Entrar com",
+    "delete_mapping_confirm": "Excluir o mapeamento do grupo externo “{group}”?"
+}
+%}
 {% set smon_page = {
     "desc": {
         "before_use": "antes de usar",

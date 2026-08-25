@@ -1,11 +1,19 @@
 from flask import render_template, request, redirect, make_response, abort
 from flask_jwt_extended import unset_jwt_cookies, jwt_required
+from peewee import OperationalError
 
 from app import app
 import app.modules.db.user as user_sql
+import app.modules.db.oidc as oidc_sql
 import app.modules.roxywi.roxy as roxy
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.common as roxywi_common
+from app.modules.subscription.access import OIDC, feature_availability, is_feature_available
+
+
+@app.context_processor
+def inject_subscription_features():
+    return {'subscription_features': feature_availability()}
 
 
 @app.before_request
@@ -13,7 +21,8 @@ def check_login():
     allowed_endpoints = (
         'login_page', 'static', 'main.show_roxywi_version', 'smon.show_smon_status_page', 'smon.smon_history_statuses_avg',
         'smon.smon_history_statuses', 'smon.agent_get_checks', 'smon.get_check_status', 'smon.smon_history_metric', 'api', 'favicon',
-        'prometheus_metrics', 'api_v1_0_main.spec', 'api_v1_0_main.swagger_ui', 'api_v1_0_main.do_login'
+        'prometheus_metrics', 'api_v1_0_main.spec', 'api_v1_0_main.swagger_ui', 'api_v1_0_main.do_login',
+        'oidc.public_providers', 'oidc.oidc_login', 'oidc.oidc_callback'
     )
     if request.endpoint not in allowed_endpoints:
         try:
@@ -42,8 +51,16 @@ def redirect_to_login(response):
 def login_page():
     if request.method == 'GET':
         lang = roxywi_common.get_user_lang_for_flask()
+        oidc_providers = []
+        if is_feature_available(OIDC):
+            try:
+                oidc_providers = oidc_sql.list_providers(enabled_only=True)
+            except OperationalError:
+                # Keep the local login available while a new installation is
+                # waiting for the OIDC migration to create its tables.
+                pass
 
-        return render_template('login.html', lang=lang)
+        return render_template('login.html', lang=lang, oidc_providers=oidc_providers)
     elif request.method == 'POST':
         next_url = request.json.get('next')
         login = request.json.get('login')

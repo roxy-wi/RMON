@@ -9,6 +9,7 @@ import app.modules.tools.smon as smon_mod
 import app.modules.roxywi.common as roxywi_common
 from app.middleware import get_user_params, check_group
 from app.modules.common.common_classes import SupportClass
+from app.modules.subscription.access import STATUS_PAGES, feature_required
 from app.modules.db.db_model import SmonStatusPageCheck, SmonStatusPage
 from app.modules.roxywi.class_models import GroupQuery, BaseResponse, StatusPageRequest, ErrorResponse, IdResponse, \
     EscapedString
@@ -16,7 +17,7 @@ from app.modules.roxywi.class_models import GroupQuery, BaseResponse, StatusPage
 
 class StatusPageView(MethodView):
     methods = ['GET', 'POST', 'PUT', 'DELETE']
-    decorators = [jwt_required(), get_user_params(), check_group()]
+    decorators = [jwt_required(), get_user_params(), check_group(), feature_required(STATUS_PAGES)]
 
     @validate(query=GroupQuery)
     def get(self, page_id: int, query: GroupQuery):
@@ -274,7 +275,7 @@ class StatusPageView(MethodView):
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot find Status page')
 
         try:
-            smon_sql.delete_status_page(page_id)
+            smon_mod.delete_status_page(page_id)
             return BaseResponse().model_dump(mode='json'), 204
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot delete Status page')
@@ -282,7 +283,7 @@ class StatusPageView(MethodView):
 
 class StatusPages(MethodView):
     methods = ['GET', 'POST', 'PUT', 'DELETE']
-    decorators = [jwt_required(), get_user_params(), check_group()]
+    decorators = [jwt_required(), get_user_params(), check_group(), feature_required(STATUS_PAGES)]
 
     @validate(query=GroupQuery)
     def get(self, query: GroupQuery):

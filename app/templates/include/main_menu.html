@@ -30,6 +30,7 @@
                         <li><a href="{{ url_for('admin.admin') }}#groups" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} {{lang.words.groups3}}" class="group groups head-submenu" id="admin-area-groups">{{lang.words.groups|title()}}</a></li>
 						<li><a href="{{ url_for('admin.admin') }}#tools" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} RMON {{lang.words.tools}}" class="tools head-submenu" id="admin-area-services">{{lang.words.tools|title()}}</a></li>
 						<li><a href="{{ url_for('admin.admin') }}#updatehapwi" title="{{lang.words.admin_area|title()}}: {{lang.words.w_update|title()}} RMON" class="upload updatehapwi head-submenu" id="admin-area-update">{{lang.words.w_update|title()}}</a></li>
+						{% if subscription_features['oidc'] %}<li><a href="{{ url_for('admin.admin') }}#oidc" title="{{lang.words.admin_area|title()}}: OIDC" class="oidc head-submenu" id="admin-area-oidc">OIDC</a></li>{% endif %}
                         {% endif %}
 					</ul>
 				</li>

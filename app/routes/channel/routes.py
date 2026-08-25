@@ -5,6 +5,7 @@ from app.routes.channel import bp
 from app.middleware import get_user_params
 import app.modules.tools.alerting as alerting
 import app.modules.roxywi.common as roxywi_common
+from app.modules.subscription.access import ALERTING_CHANNELS, feature_required
 from app.views.channel.views import ChannelView
 
 bp.add_url_rule('/<any(telegram, slack, pd, mm, email, incidentrelay):receiver>', view_func=ChannelView.as_view('channel', False), methods=['POST'])
@@ -19,6 +20,7 @@ def before_request():
 
 @bp.route('')
 @get_user_params()
+@feature_required(ALERTING_CHANNELS)
 def channels():
     roxywi_common.check_user_group_for_flask()
     lang = g.user_params['lang']
@@ -28,6 +30,7 @@ def channels():
 
 @bp.route('/load')
 @get_user_params()
+@feature_required(ALERTING_CHANNELS)
 def load_channels():
     try:
         return alerting.load_channels()
@@ -37,6 +40,7 @@ def load_channels():
 
 @bp.post('/check')
 @get_user_params()
+@feature_required(ALERTING_CHANNELS)
 def check_sender():
     json_data = request.get_json()
     sender = json_data.get('sender')

@@ -13,6 +13,12 @@ import app.modules.db.smon as smon_sql
 import app.modules.db.channel as channel_sql
 import app.modules.common.common as common
 import app.modules.roxywi.common as roxywi_common
+from app.modules.subscription.access import (
+    ALERT_HISTORY,
+    MONITORING_HISTORY,
+    STATUS_PAGES,
+    feature_required,
+)
 import app.modules.tools.smon as smon_mod
 import app.modules.tools.common as tools_common
 
@@ -51,6 +57,7 @@ def smon_main_dashboard():
 @bp.route('/dashboard/<int:smon_id>/<int:check_id>')
 @jwt_required()
 @get_user_params()
+@feature_required(MONITORING_HISTORY)
 def smon_dashboard(smon_id, check_id):
     """
     :param smon_id: The ID of the RMON (Server Monitoring) service.
@@ -126,6 +133,7 @@ def smon_dashboard(smon_id, check_id):
 @bp.route('/status-page', methods=['GET'])
 @jwt_required()
 @get_user_params()
+@feature_required(STATUS_PAGES)
 def status_page():
     kwargs = {
         'lang': g.user_params['lang'],
@@ -152,6 +160,7 @@ def smon_history_statuses_avg(page_id):
 @bp.route('/history')
 @jwt_required()
 @get_user_params()
+@feature_required(ALERT_HISTORY)
 def smon_history():
     roxywi_common.check_user_group_for_flask()
 
@@ -168,6 +177,7 @@ def smon_history():
 @bp.route('/history/host/<int:check_id>')
 @jwt_required()
 @get_user_params()
+@feature_required(ALERT_HISTORY)
 def smon_host_history(check_id):
     roxywi_common.check_user_group_for_flask()
     smon_status = tools_common.is_tool_active('rmon-server')
@@ -187,6 +197,7 @@ def smon_host_history(check_id):
 @bp.route('/history/check/<int:multi_check_id>')
 @jwt_required()
 @get_user_params()
+@feature_required(ALERT_HISTORY)
 def smon_multi_check_history(multi_check_id):
     roxywi_common.check_user_group_for_flask()
     smon_status = tools_common.is_tool_active('rmon-server')
@@ -204,6 +215,7 @@ def smon_multi_check_history(multi_check_id):
 
 @bp.route('/history/metrics/stream/<int:check_id>/<int:check_type_id>')
 @get_user_params()
+@feature_required(MONITORING_HISTORY)
 def smon_history_metric_chart(check_id, check_type_id):
     """
     This method generates a streaming event chart for the history of a metric associated with a given check ID and check type ID.

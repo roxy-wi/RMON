@@ -1489,3 +1489,162 @@ label {
 	background-color: #f5f5f5;
 	border: 1px solid #ccc;
 }
+
+.oidc-login-options {
+	clear: both;
+	width: 220px;
+	margin-left: 93px;
+	padding-top: 14px;
+}
+.oidc-login-separator {
+	display: flex;
+	align-items: center;
+	width: 220px;
+	margin: 12px 0;
+	color: #666;
+}
+.oidc-login-separator::before,
+.oidc-login-separator::after {
+	content: '';
+	flex: 1;
+	border-top: 1px solid #c8c8c8;
+}
+.oidc-login-separator span {
+	padding: 0 10px;
+}
+.oidc-login-providers {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 220px;
+}
+.oidc-login-button {
+	box-sizing: border-box;
+	display: block;
+	width: 220px;
+	padding: 10px;
+	border: 1px solid #036bb0;
+	border-radius: 3px;
+	background: #ededee;
+	color: #036bb0;
+	font-weight: bold;
+	text-align: center;
+	text-decoration: none;
+}
+.oidc-login-button:hover {
+	filter: brightness(0.96);
+}
+.oidc-table {
+	width: 100%;
+}
+.oidc-admin .map,
+.oidc-admin .edit,
+.oidc-admin .delete {
+	cursor: pointer;
+}
+.oidc-muted {
+	margin-top: 3px;
+	color: #888;
+	font-size: 0.85em;
+}
+.oidc-provider-name {
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
+	font: inherit;
+	font-weight: bold;
+}
+.oidc-provider-name:hover {
+	text-decoration: underline;
+}
+.oidc-form-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 10px 14px;
+}
+.oidc-form-grid label,
+.oidc-mapping-form label {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-weight: 600;
+}
+.oidc-form-grid input,
+.oidc-form-grid select,
+.oidc-mapping-form input,
+.oidc-mapping-form select {
+	box-sizing: border-box;
+	width: 100%;
+}
+.oidc-wide {
+	grid-column: 1 / -1;
+}
+.oidc-details {
+	margin: 14px 0;
+}
+.oidc-details summary {
+	margin-bottom: 12px;
+	cursor: pointer;
+	font-weight: bold;
+}
+.oidc-default-access {
+	margin-top: 12px;
+}
+.oidc-options {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 8px;
+	margin: 14px 0;
+}
+.oidc-provider-modal,
+.oidc-mappings-modal,
+.oidc-mapping-modal {
+	max-width: calc(100vw - 30px);
+}
+.oidc-provider-modal .ui-dialog-content,
+.oidc-mappings-modal .ui-dialog-content,
+.oidc-mapping-modal .ui-dialog-content {
+	overflow-y: auto;
+}
+.oidc-mappings-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 12px;
+}
+.oidc-mappings-actions {
+	display: flex;
+	gap: 8px;
+}
+.oidc-mapping-form {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 10px;
+	align-items: end;
+}
+.oidc-inline-check {
+	flex-direction: row !important;
+	align-items: center;
+}
+.oidc-inline-check input {
+	width: auto;
+}
+@media (max-width: 1100px) {
+	.oidc-form-grid,
+	.oidc-mapping-form {
+		grid-template-columns: 1fr;
+	}
+	.oidc-wide {
+		grid-column: auto;
+	}
+	.oidc-mappings-toolbar {
+		align-items: stretch;
+		flex-direction: column;
+	}
+	.oidc-mappings-actions {
+		flex-wrap: wrap;
+	}
+}

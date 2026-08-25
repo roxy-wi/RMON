@@ -250,6 +250,37 @@
         }
     }
 %}
+{% set oidc_page = {
+    "help": "Configurez les fournisseurs OpenID Connect pour la connexion depuis le navigateur. Enregistrez l'URL de rappel affichée ci-dessous auprès du fournisseur d'identité. Les secrets clients sont chiffrés avec la clé d'identifiants RMON et ne sont jamais renvoyés par l'API.",
+    "provider": "Fournisseur", "status": "Statut", "client_id": "ID client", "add": "Ajouter",
+    "new_provider": "Nouveau fournisseur OIDC", "slug": "Identifiant (slug)", "login_button_label": "Libellé du bouton de connexion",
+    "callback_url": "URL de rappel", "saved_callback_url": "URL de rappel du fournisseur enregistré",
+    "client_secret": "Secret client", "keep_current_secret": "Laisser vide pour conserver le secret actuel",
+    "configured_keep": "Configuré — laisser vide pour conserver", "discovery_url": "URL de découverte",
+    "issuer": "Émetteur", "loaded_from_discovery": "Généralement chargé depuis la découverte", "scopes": "Portées",
+    "advanced": "Points de terminaison et attributs avancés", "authorization_endpoint": "Point de terminaison d'autorisation",
+    "token_endpoint": "Point de terminaison du jeton", "userinfo_endpoint": "Point de terminaison UserInfo", "jwks_uri": "URI JWKS",
+    "subject_claim": "Attribut du sujet", "email_claim": "Attribut de l'adresse e-mail", "username_claim": "Attribut du nom d'utilisateur",
+    "groups_claim": "Attribut des groupes", "allowed_domains": "Domaines de messagerie autorisés",
+    "default_group": "Groupe par défaut", "default_role": "Rôle par défaut", "enabled": "Activé", "disabled": "Désactivé",
+    "active": "Actif", "auto_create": "Créer automatiquement les utilisateurs", "auto_link": "Associer les utilisateurs existants par e-mail",
+    "require_verified": "Exiger une adresse e-mail vérifiée", "sync_groups": "Synchroniser les groupes associés",
+    "remove_missing_groups": "Retirer les groupes associés absents", "mappings_title": "Associations de groupes externes",
+    "mappings_for": "Associations de groupes : {provider}", "mappings_action": "Gérer les associations de groupes",
+    "new_mapping": "Nouvelle association", "new_mapping_for": "Nouvelle association de groupe : {provider}",
+    "edit_mapping": "Modifier l'association : {group}", "reload": "Recharger",
+    "mapping_help": "Les associations sont facultatives. En leur absence, les nouveaux utilisateurs reçoivent le groupe et le rôle par défaut du fournisseur.",
+    "external_group": "Groupe externe", "roxy_group": "Groupe RMON", "role": "Rôle", "priority": "Priorité",
+    "provider_prefix": "Fournisseur : {provider}", "edit_provider": "Modifier {provider}", "edit_action": "Modifier",
+    "delete_action": "Supprimer", "save_provider": "Enregistrer le fournisseur", "save_mapping": "Enregistrer l'association",
+    "cancel": "Annuler", "close": "Fermer", "request_failed": "Échec de la requête OIDC",
+    "no_providers": "Aucun fournisseur OIDC configuré", "loading_mappings": "Chargement des associations...",
+    "no_mappings": "Aucune association de groupe configurée", "select_provider": "Sélectionnez d'abord un fournisseur OIDC",
+    "provider_saved": "Fournisseur OIDC enregistré", "mapping_saved": "Association de groupe OIDC enregistrée",
+    "mapping_deleted": "Association de groupe OIDC supprimée", "or": "ou", "sign_in_with": "Se connecter avec",
+    "delete_mapping_confirm": "Supprimer l'association du groupe externe « {group} » ?"
+}
+%}
 {% set smon_page = {
     "desc": {
         "before_use": "avant l\'utilisation",

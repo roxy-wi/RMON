@@ -233,6 +233,78 @@ class UserGroups(BaseModel):
         constraints = [SQL('UNIQUE (user_id, user_group_id)')]
 
 
+class OidcProvider(BaseModel):
+    """Configuration for an OpenID Connect identity provider."""
+
+    id = AutoField()
+    slug = CharField(constraints=[SQL('UNIQUE')])
+    label = CharField()
+    enabled = IntegerField(constraints=[SQL('DEFAULT 1')])
+    client_id = CharField()
+    client_secret_encrypted = TextField(null=True)
+    metadata_url = TextField(null=True)
+    issuer = TextField(null=True)
+    authorization_endpoint = TextField(null=True)
+    token_endpoint = TextField(null=True)
+    userinfo_endpoint = TextField(null=True)
+    jwks_uri = TextField(null=True)
+    scope = CharField(constraints=[SQL('DEFAULT "openid email profile"')])
+    subject_claim = CharField(constraints=[SQL('DEFAULT "sub"')])
+    email_claim = CharField(constraints=[SQL('DEFAULT "email"')])
+    username_claim = CharField(constraints=[SQL('DEFAULT "preferred_username"')])
+    groups_claim = CharField(constraints=[SQL('DEFAULT "groups"')])
+    allowed_domains = TextField(null=True)
+    auto_create_users = IntegerField(constraints=[SQL('DEFAULT 0')])
+    auto_link_by_email = IntegerField(constraints=[SQL('DEFAULT 1')])
+    require_verified_email = IntegerField(constraints=[SQL('DEFAULT 1')])
+    sync_group_memberships = IntegerField(constraints=[SQL('DEFAULT 1')])
+    remove_missing_group_memberships = IntegerField(constraints=[SQL('DEFAULT 0')])
+    default_group_id = IntegerField(constraints=[SQL('DEFAULT 1')])
+    default_role_id = IntegerField(constraints=[SQL('DEFAULT 4')])
+    created_at = DateTimeField(default=datetime.now)
+    updated_at = DateTimeField(default=datetime.now)
+
+    class Meta:
+        table_name = 'oidc_providers'
+
+
+class OidcIdentity(BaseModel):
+    """Stable OIDC subject linked to a local RMON user."""
+
+    id = AutoField()
+    provider_id = IntegerField(index=True)
+    user_id = IntegerField(index=True)
+    issuer = CharField()
+    subject = CharField()
+    email = CharField(null=True)
+    username = CharField(null=True)
+    raw_claims = TextField(null=True)
+    created_at = DateTimeField(default=datetime.now)
+    last_login_at = DateTimeField(null=True)
+
+    class Meta:
+        table_name = 'oidc_identities'
+        constraints = [SQL('UNIQUE (issuer, subject)')]
+
+
+class OidcGroupMapping(BaseModel):
+    """Map an external OIDC group to an RMON group and role."""
+
+    id = AutoField()
+    provider_id = IntegerField(index=True)
+    external_group = CharField()
+    group_id = IntegerField(index=True)
+    role_id = IntegerField()
+    active = IntegerField(constraints=[SQL('DEFAULT 1')])
+    priority = IntegerField(constraints=[SQL('DEFAULT 100')])
+    created_at = DateTimeField(default=datetime.now)
+    updated_at = DateTimeField(default=datetime.now)
+
+    class Meta:
+        table_name = 'oidc_group_mappings'
+        constraints = [SQL('UNIQUE (provider_id, external_group, group_id)')]
+
+
 class Cred(BaseModel):
     id = AutoField()
     name = CharField()
@@ -629,7 +701,8 @@ def create_tables():
     conn = connect()
     with conn:
         conn.create_tables(
-            [Groups, User, Server, Role, Telegram, Slack, UserGroups, Setting, Cred, Version, ActionHistory, Region,
+            [Groups, User, Server, Role, Telegram, Slack, UserGroups, OidcProvider, OidcIdentity, OidcGroupMapping,
+             Setting, Cred, Version, ActionHistory, Region,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
              SmonStatusPage, SmonStatusPageCheck, SMON, SmonGroup, MM, RMONAlertsHistory, SmonSMTPCheck, SmonRabbitCheck,
              Country, MultiCheck, Email, InstallationTasks, Migration, AlertEvent, AlertState, AggregatorLock, IncidentRelay]

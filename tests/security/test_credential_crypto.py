@@ -3,7 +3,7 @@ import uuid
 import pytest
 from cryptography.fernet import Fernet
 
-from app.modules.db.db_model import Cred
+from app.modules.db.db_model import Cred, OidcProvider
 from app.modules.server.ssh import _get_fernet_key
 from rotate_credential_secret import _fernet_from_environment, rotate_credentials
 
@@ -41,10 +41,36 @@ def test_credential_rotation_reencrypts_all_secret_fields(monkeypatch):
     monkeypatch.setenv('RMON_OLD_SECRET_PHRASE', old_key.decode('ascii'))
     monkeypatch.setenv('RMON_SECRET_PHRASE', new_key.decode('ascii'))
 
-    assert rotate_credentials() == 1
+    try:
+        assert rotate_credentials() == 1
 
-    credential = Cred.get_by_id(credential.id)
-    new_fernet = Fernet(new_key)
-    assert new_fernet.decrypt(credential.password.encode('ascii')) == b'password'
-    assert new_fernet.decrypt(credential.passphrase.encode('ascii')) == b'passphrase'
-    assert new_fernet.decrypt(credential.private_key.encode('ascii')) == b'private-key'
+        credential = Cred.get_by_id(credential.id)
+        new_fernet = Fernet(new_key)
+        assert new_fernet.decrypt(credential.password.encode('ascii')) == b'password'
+        assert new_fernet.decrypt(credential.passphrase.encode('ascii')) == b'passphrase'
+        assert new_fernet.decrypt(credential.private_key.encode('ascii')) == b'private-key'
+    finally:
+        Cred.delete().where(Cred.id == credential.id).execute()
+
+
+@pytest.mark.security
+def test_credential_rotation_reencrypts_oidc_client_secret(monkeypatch):
+    old_key = Fernet.generate_key()
+    new_key = Fernet.generate_key()
+    old_fernet = Fernet(old_key)
+    provider = OidcProvider.create(
+        slug=f'rotation-{uuid.uuid4().hex}', label='Rotation', client_id='client',
+        client_secret_encrypted=old_fernet.encrypt(b'oidc-secret').decode('ascii'),
+        issuer='https://idp.example.com', authorization_endpoint='https://idp.example.com/auth',
+        token_endpoint='https://idp.example.com/token', jwks_uri='https://idp.example.com/jwks',
+    )
+    monkeypatch.setenv('RMON_OLD_SECRET_PHRASE', old_key.decode('ascii'))
+    monkeypatch.setenv('RMON_SECRET_PHRASE', new_key.decode('ascii'))
+
+    try:
+        assert rotate_credentials() == 1
+
+        provider = OidcProvider.get_by_id(provider.id)
+        assert Fernet(new_key).decrypt(provider.client_secret_encrypted.encode('ascii')) == b'oidc-secret'
+    finally:
+        OidcProvider.delete().where(OidcProvider.id == provider.id).execute()

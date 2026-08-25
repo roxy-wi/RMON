@@ -13,7 +13,12 @@ import app.modules.common.common as common
 import app.modules.server.server as server_mod
 import app.modules.tools.smon_agent as smon_agent
 import app.modules.roxywi.common as roxywi_common
-from app.modules.roxywi.exception import RoxywiCheckLimits
+from app.modules.subscription.access import (
+    MONITORING_CHECKS,
+    STATUS_PAGES,
+    enforce_resource_limit,
+    require_feature,
+)
 from app.modules.roxywi.class_models import HttpCheckRequest, DnsCheckRequest, PingCheckRequest, TcpCheckRequest, \
     SmtpCheckRequest, RabbitCheckRequest, CheckMetricsQuery
 
@@ -298,6 +303,7 @@ def check_uptime(smon_id: int) -> float:
 
 
 def create_status_page(name: str, slug: str, desc: str, checks: list, styles: str, group_id: int) -> int:
+    require_feature(STATUS_PAGES)
     try:
         return smon_sql.add_status_page(name, slug, desc, group_id, checks, styles)
     except Exception as e:
@@ -305,6 +311,7 @@ def create_status_page(name: str, slug: str, desc: str, checks: list, styles: st
 
 
 def edit_status_page(page_id: int, name: str, slug: str, desc: str, checks: list, styles: str) -> None:
+    require_feature(STATUS_PAGES)
     smon_sql.delete_status_page_checks(page_id)
 
     try:
@@ -312,6 +319,11 @@ def edit_status_page(page_id: int, name: str, slug: str, desc: str, checks: list
         smon_sql.edit_status_page(page_id, name, slug, desc, styles)
     except Exception as e:
         raise e
+
+
+def delete_status_page(page_id: int) -> None:
+    require_feature(STATUS_PAGES)
+    smon_sql.delete_status_page(page_id)
 
 
 def show_status_page(slug: str) -> str:
@@ -361,14 +373,8 @@ def avg_status_page_status(page_id: int) -> str:
 
 
 def check_checks_limit():
-    user_subscription = roxywi_common.return_user_subscription()
     count_checks = smon_sql.count_checks()
-    if user_subscription['user_plan'] == 'free' and count_checks >= 10:
-        raise RoxywiCheckLimits('You have reached limit for Free plan')
-    elif user_subscription['user_plan'] == 'home' and count_checks >= 30:
-        raise RoxywiCheckLimits('You have reached limit for Home plan')
-    elif user_subscription['user_plan'] == 'enterprise' and count_checks >= 100:
-        raise RoxywiCheckLimits('You have reached limit for Enterprise plan')
+    enforce_resource_limit(MONITORING_CHECKS, count_checks)
 
 
 def get_check_id_by_name(name: str) -> int:

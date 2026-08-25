@@ -1,6 +1,6 @@
 from peewee import Case
 
-from app.modules.db.db_model import User, UserGroups, Groups, pgsql_enable
+from app.modules.db.db_model import User, UserGroups, Groups, OidcIdentity, pgsql_enable
 from app.modules.db.sql import get_setting
 from app.modules.db.common import out_error
 import app.modules.roxy_wi_tools as roxy_wi_tools
@@ -63,6 +63,7 @@ def update_user_password(password, user_id):
 
 def delete_user(user_id):
 	try:
+		OidcIdentity.delete().where(OidcIdentity.user_id == user_id).execute()
 		User.delete().where(User.user_id == user_id).execute()
 		delete_user_groups(user_id)
 	except User.DoesNotExist:

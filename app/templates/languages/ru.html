@@ -250,6 +250,37 @@
         }
     }
 %}
+{% set oidc_page = {
+    "help": "Настройте провайдеров OpenID Connect для входа через браузер. Зарегистрируйте указанный ниже URL обратного вызова у провайдера идентификации. Секреты клиентов зашифрованы ключом учетных данных RMON и никогда не возвращаются API.",
+    "provider": "Провайдер", "status": "Статус", "client_id": "ID клиента", "add": "Добавить",
+    "new_provider": "Новый OIDC-провайдер", "slug": "Идентификатор (slug)", "login_button_label": "Надпись на кнопке входа",
+    "callback_url": "URL обратного вызова", "saved_callback_url": "URL обратного вызова сохраненного провайдера",
+    "client_secret": "Секрет клиента", "keep_current_secret": "Оставьте пустым, чтобы сохранить текущий секрет",
+    "configured_keep": "Настроен — оставьте пустым, чтобы сохранить", "discovery_url": "URL конфигурации Discovery",
+    "issuer": "Издатель", "loaded_from_discovery": "Обычно загружается из Discovery", "scopes": "Области доступа",
+    "advanced": "Дополнительные конечные точки и атрибуты", "authorization_endpoint": "Конечная точка авторизации",
+    "token_endpoint": "Конечная точка токена", "userinfo_endpoint": "Конечная точка UserInfo", "jwks_uri": "URI JWKS",
+    "subject_claim": "Атрибут субъекта", "email_claim": "Атрибут электронной почты", "username_claim": "Атрибут имени пользователя",
+    "groups_claim": "Атрибут групп", "allowed_domains": "Разрешенные почтовые домены",
+    "default_group": "Группа по умолчанию", "default_role": "Роль по умолчанию", "enabled": "Включен",
+    "disabled": "Отключен", "active": "Активно", "auto_create": "Автоматически создавать пользователей",
+    "auto_link": "Связывать существующих пользователей по email", "require_verified": "Требовать подтвержденный email",
+    "sync_groups": "Синхронизировать сопоставленные группы", "remove_missing_groups": "Удалять отсутствующие сопоставленные группы",
+    "mappings_title": "Сопоставления внешних групп", "mappings_for": "Сопоставления групп: {provider}",
+    "mappings_action": "Управление сопоставлениями групп", "new_mapping": "Новое сопоставление",
+    "new_mapping_for": "Новое сопоставление групп: {provider}", "edit_mapping": "Изменить сопоставление: {group}",
+    "reload": "Обновить", "mapping_help": "Сопоставления необязательны. Если сопоставлений нет, новые пользователи получают группу и роль провайдера по умолчанию.",
+    "external_group": "Внешняя группа", "roxy_group": "Группа RMON", "role": "Роль", "priority": "Приоритет",
+    "provider_prefix": "Провайдер: {provider}", "edit_provider": "Изменить {provider}", "edit_action": "Изменить",
+    "delete_action": "Удалить", "save_provider": "Сохранить провайдера", "save_mapping": "Сохранить сопоставление",
+    "cancel": "Отмена", "close": "Закрыть", "request_failed": "Ошибка OIDC-запроса",
+    "no_providers": "OIDC-провайдеры не настроены", "loading_mappings": "Загрузка сопоставлений...",
+    "no_mappings": "Сопоставления групп не настроены", "select_provider": "Сначала выберите OIDC-провайдера",
+    "provider_saved": "OIDC-провайдер сохранен", "mapping_saved": "Сопоставление OIDC-группы сохранено",
+    "mapping_deleted": "Сопоставление OIDC-группы удалено", "or": "или", "sign_in_with": "Войти через",
+    "delete_mapping_confirm": "Удалить сопоставление для внешней группы «{group}»?"
+}
+%}
 {% set smon_page = {
     "desc": {
         "before_use": "перед использование",

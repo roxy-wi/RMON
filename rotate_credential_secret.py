@@ -4,7 +4,7 @@ import os
 
 from cryptography.fernet import Fernet, InvalidToken
 
-from app.modules.db.db_model import Cred, conn
+from app.modules.db.db_model import Cred, OidcProvider, conn
 
 
 SECRET_FIELDS = ('password', 'passphrase', 'private_key')
@@ -50,6 +50,26 @@ def rotate_credentials() -> int:
             if updates:
                 Cred.update(**updates).where(Cred.id == credential.id).execute()
                 rotated_credentials += 1
+
+        for provider in OidcProvider.select().where(OidcProvider.client_secret_encrypted.is_null(False)):
+            encrypted_value = provider.client_secret_encrypted
+            if encrypted_value in (None, '', 'None'):
+                continue
+            token = encrypted_value.encode('utf-8') if isinstance(encrypted_value, str) else encrypted_value
+            try:
+                plaintext = old_fernet.decrypt(token)
+            except InvalidToken as exc:
+                try:
+                    new_fernet.decrypt(token)
+                except InvalidToken:
+                    raise RuntimeError(
+                        f'OIDC provider {provider.id} contains an invalid client secret token'
+                    ) from exc
+                continue
+            OidcProvider.update(
+                client_secret_encrypted=new_fernet.encrypt(plaintext).decode('ascii')
+            ).where(OidcProvider.id == provider.id).execute()
+            rotated_credentials += 1
 
     return rotated_credentials
 

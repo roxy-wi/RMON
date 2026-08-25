@@ -10,6 +10,7 @@ import app.modules.db.sql as sql
 import app.modules.db.roxy as roxy_sql
 import app.modules.common.common as common
 import app.modules.roxywi.common as roxywi_common
+from app.modules.subscription.access import SERVICE_CONTROL, require_feature
 import app.modules.server.server as server_mod
 from app.version import get_service_version
 
@@ -87,6 +88,7 @@ def update_user_status() -> None:
 
 
 def action_service(action: str, service: str) -> str:
+	require_feature(SERVICE_CONTROL)
 	is_in_docker = is_docker()
 	cmd = f"sudo systemctl disable {service} --now"
 	if action in ("start", "restart"):

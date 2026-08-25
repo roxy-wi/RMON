@@ -29,6 +29,7 @@
         <li><a href="#groups" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} {{lang.words.groups}} - RMON">{{lang.words.groups|title()}}</a></li>
 		<li><a href="#tools" title="{{lang.words.admin_area|title()}}: {{lang.words.manage|title()}} RMON {{lang.words.tools}} - RMON">{{lang.words.tools|title()}}</a></li>
 		<li><a href="#updatehapwi" title="{{lang.words.admin_area|title()}}: {{lang.words.w_update|title()}} RMON - RMON">{{lang.words.w_update|title()}}</a></li>
+		{% if subscription_features['oidc'] %}<li><a href="#oidc" title="Manage OpenID Connect login providers">OIDC</a></li>{% endif %}
         {% endif %}
 	</ul>
 	<div id="users">
@@ -142,6 +143,12 @@
 		</div>
 		<div id="ajax-update"></div>
 	</div>
+
+	{% if subscription_features['oidc'] %}
+	<div id="oidc">
+		{% include 'include/admin_oidc.html' %}
+	</div>
+	{% endif %}
     {% endif %}
 
 </div>

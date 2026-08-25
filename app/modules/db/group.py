@@ -1,6 +1,6 @@
 from peewee import IntegrityError
 
-from app.modules.db.db_model import Groups, Setting, UserGroups
+from app.modules.db.db_model import Groups, OidcGroupMapping, Setting, UserGroups
 from app.modules.db.common import out_error, resource_not_empty
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 
@@ -65,6 +65,7 @@ def add_setting_for_new_group(group_id):
 
 def delete_group(group_id):
 	try:
+		OidcGroupMapping.delete().where(OidcGroupMapping.group_id == group_id).execute()
 		Groups.delete().where(Groups.group_id == group_id).execute()
 		UserGroups.delete().where(UserGroups.user_group_id == group_id).execute()
 		delete_group_settings(group_id)

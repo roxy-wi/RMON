@@ -42,4 +42,16 @@ The Flask secret may instead be stored in `RMON_SECRET_KEY_FILE`; when neither s
 
 To rotate an existing credential key, back up the database and run `rotate_credential_secret.py` with both `RMON_OLD_SECRET_PHRASE` and the new `RMON_SECRET_PHRASE` in the environment. The update is transactional and can safely skip values that were already rotated.
 
+## OpenID Connect
+
+Super administrators can configure one or more OIDC providers under **Admin area → OIDC**. RMON supports discovery metadata, signed ID-token validation through JWKS, optional UserInfo claims, verified-email and domain policies, automatic user creation or email linking, and external-group mappings to RMON groups and roles. Local and LDAP login remain available.
+
+Set `RMON_PUBLIC_URL=https://rmon.example.com` when RMON is behind a reverse proxy so the generated callback URL uses the public origin. Register the displayed `/oidc/<provider>/callback` URL in the identity provider and include at least the `openid` scope. OIDC client secrets are encrypted with `RMON_SECRET_PHRASE` and are included in `rotate_credential_secret.py` rotations.
+
+## Subscription feature catalog
+
+Subscription checks are centralized in `app/modules/subscription/access.py`, following the Roxy-WI entitlement model. The catalog covers OIDC, action history, monitoring history, alert history, alerting channels, status pages, monitoring check and agent limits, and service control.
+
+All cataloged features are currently free. `SUBSCRIPTION_ENFORCEMENT_ENABLED` is intentionally set to `False` in the subscription module, so stored license status and plan values do not restrict access. When paid enforcement is ready, change that code constant to `True`; the existing feature policies, route guards, business-service checks, UI visibility rules, and plan limits will become active together.
+
 ![alt text](https://rmon.io/static//images/rmon_checks.png "RMON checks")
