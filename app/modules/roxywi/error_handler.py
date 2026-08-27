@@ -149,7 +149,7 @@ def register_error_handlers(app):
         """Handle 401 Unauthorized errors."""
         if request.path.startswith('/api/'):
             return jsonify(ErrorResponse(error=str(e)).model_dump(mode='json')), 401
-        return redirect(url_for('login_page', next=request.full_path))
+        return redirect(url_for('login_page', next=request.full_path.removesuffix('?')))
 
     @app.errorhandler(403)
     def forbidden(e):

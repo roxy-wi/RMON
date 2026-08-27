@@ -40,5 +40,8 @@ jobs:
       - name: Smoke test application startup
         run: python -m pytest tests/smoke -q
 
-      - name: Run unit and security tests
-        run: python -m pytest --ignore=tests/smoke --cov=app --cov-report=term-missing --cov-fail-under=25
+      - name: Run UI tests
+        run: python -m pytest tests/ui -q
+
+      - name: Run unit, functional, RBAC, and security tests
+        run: python -m pytest --ignore=tests/smoke --ignore=tests/ui --cov=app --cov-report=term-missing --cov-fail-under=25
