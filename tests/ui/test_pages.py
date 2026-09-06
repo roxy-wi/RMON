@@ -293,3 +293,65 @@ def test_ui_templates_and_language_catalogs_compile(app):
             assert app.jinja_env.get_template(template)
         for language in SUPPORTED_LANGUAGES:
             assert app.jinja_env.get_template(f'languages/{language}.html')
+
+
+@pytest.mark.ui
+@pytest.mark.parametrize('path', ('/login',) + PRIVATE_UI_PATHS)
+def test_pages_support_mobile_viewport_and_load_shared_interactions(client, auth_headers, monkeypatch, path):
+    monkeypatch.setattr('app.modules.tools.common.is_tool_active', lambda _name: 'active')
+    document = _document(client.get(path, headers=auth_headers(1, 1)))
+    viewport = [a for a in document.find_all(tag='meta') if a.get('name') == 'viewport']
+    assert len(viewport) == 1
+    assert 'width=device-width' in viewport[0]['content']
+    assert 'user-scalable=no' not in viewport[0]['content']
+    assert {'/static/css/ux.css', '/static/js/ux.js'} <= document.local_assets
+
+
+@pytest.mark.ui
+def test_login_controls_have_labels_password_manager_hints_and_live_errors(client):
+    document = _document(client.get('/login'))
+    assert {'login', 'pass'} <= {a.get('for') for a in document.find_all(tag='label')}
+    assert document.find(element_id='login')['autocomplete'] == 'username'
+    assert document.find(element_id='pass')['autocomplete'] == 'current-password'
+    toggle, = document.find_all(tag='button', class_name='password-toggle')
+    assert toggle['type'] == 'button'
+    assert toggle['aria-controls'] == 'pass'
+    assert toggle['aria-pressed'] == 'false'
+    assert toggle['aria-label']
+    assert document.find(element_id='wrong-login')['role'] == 'alert'
+
+
+@pytest.mark.ui
+def test_app_shell_exposes_keyboard_navigation_and_correct_overview_links(client, auth_headers):
+    document = _document(client.get('/overview', headers=auth_headers(1, 1)))
+    toggle = document.find(tag='button', element_id='menu-toggle')
+    assert document.find(tag='aside', element_id=toggle['aria-controls'])
+    assert document.find(tag='main', element_id='main-content')['tabindex'] == '-1'
+    assert document.find_all(tag='a', class_name='skip-link')[0]['href'] == '#main-content'
+    links = {a.get('href') for a in document.find_all(tag='a')}
+    assert {'/admin#servers', '/admin#users', '/admin#groups', '/admin#tools', '/logs/internal'} <= links
+    assert not any(link and link.startswith('/app/') for link in links)
+    assert document.find(tag='button', element_id='show-user-settings-button')
+    for button in document.find_all(tag='button', class_name='icon-button'):
+        assert button.get('aria-label') or button.get('id') == 'show-user-settings-button'
+
+
+@pytest.mark.ui
+def test_status_editor_preview_matches_public_route(client, auth_headers, monkeypatch):
+    monkeypatch.setattr('app.modules.tools.common.is_tool_active', lambda _name: 'active')
+    document = _document(client.get('/rmon/status-page', headers=auth_headers(1, 1)))
+    assert document.find(element_id='status-page-url-preview')['data-prefix'] == '/rmon/status/'
+    assert document.find(element_id='status-pages-empty') is not None
+    assert {'new-status-page-name', 'new-status-page-slug'} <= {
+        a.get('for') for a in document.find_all(tag='label')
+    }
+
+
+@pytest.mark.ui
+@pytest.mark.parametrize('language', SUPPORTED_LANGUAGES)
+def test_ux_messages_are_translated_consistently(app, language):
+    with app.app_context():
+        english = app.jinja_env.get_template('languages/en.html').module.ux
+        translated = app.jinja_env.get_template(f'languages/{language}.html').module.ux
+    assert translated.keys() == english.keys()
+    assert all(isinstance(message, str) and message.strip() for message in translated.values())

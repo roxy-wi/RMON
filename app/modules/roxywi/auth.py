@@ -97,7 +97,7 @@ def check_in_ldap(user, password):
 
 def do_login(user_params: dict, next_url: str):
     next_url = safe_next_url(next_url)
-    redirect_to = f'https://{request.host}{next_url}'
+    redirect_to = next_url
 
     response = jsonify({"status": "done", "next_url": redirect_to})
     access_token = create_jwt_token(user_params)

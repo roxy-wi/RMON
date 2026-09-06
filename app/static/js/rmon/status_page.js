@@ -1,11 +1,29 @@
-function createStatusPageStep1(edited=false, page_id=0) {
-	clearStatusPageDialog();
+function updateStatusPagePreview() {
+    const preview = $('#status-page-url-preview');
+    preview.text(window.location.origin + preview.attr('data-prefix') + $('#new-status-page-slug').val());
+}
+$(function () {
+    $('#new-status-page-slug').attr('aria-describedby', 'status-page-slug-help status-page-url-preview')
+        .on('input', function () { $(this).data('manually-edited', true); updateStatusPagePreview(); });
+    $('#new-status-page-name').on('input', function () {
+        if (!$('#new-status-page-slug').data('manually-edited')) {
+            $('#new-status-page-slug').val($(this).val().toLowerCase().trim()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9_]+/g, '-').replace(/^-|-$/g, ''));
+            updateStatusPagePreview();
+        }
+    });
+});
+function createStatusPageStep1(edited=false, page_id=0, preserveDraft=false) {
+	if (!preserveDraft) clearStatusPageDialog();
 	let next_word = $('#translate').attr('data-next');
 	let smon_add_tabel_title = $("#create-status-page-step-1-overview").attr('title');
 	if (edited) {
 		smon_add_tabel_title = $("#create-status-page-step-1-overview").attr('data-edit');
+	}
+	if (edited && !preserveDraft) {
 		$('#new-status-page-name').val($('#page_name-' + page_id).text());
 		$('#new-status-page-slug').val($('#page_slug-' + page_id).text().split('/').pop());
+		$('#new-status-page-slug').data('manually-edited', true);
 		$('#new-status-page-desc').val($('#page_desc-' + page_id).text().replace('(', '').replace(')', ''));
 		$.ajax({
 			url: api_v_prefix + '/rmon/status-page/' + page_id + '?recurse=true',
@@ -43,19 +61,21 @@ function createStatusPageStep1(edited=false, page_id=0) {
 			text: next_word,
 			click: function () {
 				if ($('#new-status-page-name').val() == '') {
-					toastr.error('error: Fill in the Name field');
+					toastr.error(RmonUI.text('name_required'));
+                    $('#new-status-page-name').trigger('focus');
 					return false;
 				}
 				if (!regx.test($('#new-status-page-slug').val())) {
-					toastr.error('error: Incorrect Slug');
+					toastr.error(RmonUI.text('slug_invalid'));
+                    $('#new-status-page-slug').trigger('focus');
 					return false;
 				}
 				if ($('#new-status-page-slug').val().indexOf('--') != '-1') {
-					toastr.error('error: "--" are prohibeted in Slug');
+					toastr.error(RmonUI.text('slug_invalid'));
 					return false;
 				}
 				if ($('#new-status-page-slug').val() == '') {
-					toastr.error('error: Fill in the Slug field');
+					toastr.error(RmonUI.text('slug_invalid'));
 					return false;
 				}
 				createStatusPageStep2(edited, page_id);
@@ -70,6 +90,7 @@ function createStatusPageStep1(edited=false, page_id=0) {
 			}
 		}]
 	});
+	updateStatusPagePreview();
 	addSmonStatus.dialog('open');
 }
 function createStatusPageStep2(edited, page_id) {
@@ -106,7 +127,7 @@ function createStatusPageStep2(edited, page_id) {
 			text: back_word,
 			click: function () {
 				$(this).dialog("close");
-				createStatusPageStep1(edited, page_id);
+				createStatusPageStep1(edited, page_id, true);
 			}
 		}, {
 			text: cancel_word,
@@ -121,7 +142,7 @@ function createStatusPageStep2(edited, page_id) {
 function clearStatusPageDialog() {
 	clearTips();
 	$('#new-status-page-name').val('');
-	$('#new-status-page-slug').val('');
+	$('#new-status-page-slug').val('').data('manually-edited', false);
 	$('#new-status-page-desc').val('');
 	$('#new-status-page-style').val('');
 	$("#enabled-check > div").each((index, elem) => {
@@ -150,10 +171,12 @@ function createStatusPage(dialog_id) {
 						]),
 						elem("div", {"class":"page_slug","id":"page_slug-"+id}, "/rmon/status/"+json_data['slug'])
 					]),
-					elem("div", {"class":"edit status_page-edit","onclick":"createStatusPageStep1('true', '"+id+"')"}),
-					elem("div", {"class":"delete","onclick":"confirmDeleteStatusPage('"+id+"')"})
+					elem("button", {"type":"button","aria-label":RmonUI.text("edit"),"class":"edit status_page-edit icon-button","onclick":"createStatusPageStep1('true', '"+id+"')"}),
+					elem("button", {"type":"button","aria-label":RmonUI.text("delete"),"class":"delete icon-button","onclick":"confirmDeleteStatusPage('"+id+"')"})
 				])
 				$("#pages").append(new_page);
+                $("#status-pages-empty").prop("hidden", true);
+                clearStatusPageDialog();
 				smon_manage_status_page_avg_status(id);
 				$(dialog_id).dialog('close');
 				$.getScript("/static/js/fontawesome.min.js");
@@ -246,9 +269,11 @@ function deleteStatusPage(page_id) {
 		statusCode: {
 			204: function (xhr) {
 				$("#page_" + page_id).remove();
+                $("#status-pages-empty").prop("hidden", $("#pages .page_div").length > 0);
 			},
 			404: function (xhr) {
 				$("#page_" + page_id).remove();
+                $("#status-pages-empty").prop("hidden", $("#pages .page_div").length > 0);
 			}
 		},
 		success: function (data) {

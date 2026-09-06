@@ -55,3 +55,19 @@ Subscription checks are centralized in `app/modules/subscription/access.py`, fol
 All cataloged features are currently free. `SUBSCRIPTION_ENFORCEMENT_ENABLED` is intentionally set to `False` in the subscription module, so stored license status and plan values do not restrict access. When paid enforcement is ready, change that code constant to `True`; the existing feature policies, route guards, business-service checks, UI visibility rules, and plan limits will become active together.
 
 ![alt text](https://rmon.io/static//images/rmon_checks.png "RMON checks")
+
+## License
+
+Starting with the 1.4.0 release line, RMON is source-available under the
+[Elastic License 2.0](LICENSE) (`Elastic-2.0`). Self-hosted and internal use is
+available subject to ELv2. Offering RMON, or a service exposing a substantial
+set of its functionality, to third parties as a hosted or managed service
+requires rights permitted by ELv2 or a separate commercial license.
+
+See [LICENSING.md](LICENSING.md) for usage examples and historical release
+terms, and [COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md) for commercial
+licensing. Contributions are subject to [CLA.md](CLA.md); see
+[CONTRIBUTING.md](CONTRIBUTING.md) for the signing process.
+
+Historical versions and copies retain the terms that accompanied them.
+Third-party dependencies and vendored components retain their own licenses.

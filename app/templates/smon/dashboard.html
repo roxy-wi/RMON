@@ -14,26 +14,26 @@
 <link href="{{ url_for('static', filename='css/smon.css') }}" rel="stylesheet"/>
 <link href="{{ url_for('static', filename='css/ha.css') }}" rel="stylesheet">
 {% if smon_status in ('failed', 'inactive', 'ERROR') %}
-<div style="text-align: center;">
+<div class="empty-state">
 	<br />
 	<h3>{{lang.smon_page.desc.smon_is_not_run}}</h3>
-	<img src="{{ url_for('static', filename='images/no_servers.png')}}" alt="There is no server">
-	<h4>{{lang.smon_page.desc.run_smon}} <a href="/admin/tools" title="RMON services" target="_blank">{{lang.words.here}}</a> {{lang.smon_page.desc.before_use}}</h4>
+	<img src="{{ url_for('static', filename='images/no_servers.png')}}" alt="">
+	<h4>{{lang.smon_page.desc.run_smon}} <a href="{{ url_for('admin.admin') }}#tools" title="RMON services" target="_blank">{{lang.words.here}}</a> {{lang.smon_page.desc.before_use}}</h4>
 </div>
 {% elif multi_checks|length == 0 %}
-<div style="text-align: center;">
+<div class="empty-state">
 	<br />
-	<h3>{{lang.smon_page.desc.not_added}}</h3>
-	<img src="{{ url_for('static', filename='images/no_servers.png')}}" alt="There is no server">
-		<h4>{{lang.smon_page.desc.create_server}} <a onclick="openSmonDialog('http')" style="cursor: pointer" title="RMON" target="_blank">{{lang.words.here}}</a> {{lang.smon_page.desc.before_use}}</h4>
+	<h3>{{ lang.ux.no_checks }}</h3>
+	<img src="{{ url_for('static', filename='images/no_servers.png')}}" alt="">
+		<p>{{ lang.ux.no_checks_description }}</p>
 	<br />
 </div>
     {% if g.user_params['role'] <= 3 %}
-        <div class="add-button add-button-big" title="{{lang.words.add|title()}} {{ lang.words.check2 }}" onclick="openSmonDialog('http')">+ {{lang.words.add|title()}} {{ lang.words.check2 }}</div>
+        <button type="button" class="add-button add-button-big" title="{{lang.words.add|title()}} {{ lang.words.check2 }}" onclick="openSmonDialog('http')">+ {{lang.words.add|title()}} {{ lang.words.check2 }}</button>
     {% endif %}
 {% else %}
     {% if g.user_params['role'] <= 3 %}
-        <div class="add-button add-button-big" title="{{lang.words.add|title()}} {{ lang.words.check2 }}" onclick="openSmonDialog('http')">+ {{lang.words.add|title()}} {{ lang.words.check2 }}</div>
+        <button type="button" class="add-button add-button-big" title="{{lang.words.add|title()}} {{ lang.words.check2 }}" onclick="openSmonDialog('http')">+ {{lang.words.add|title()}} {{ lang.words.check2 }}</button>
     {% endif %}
     <div class="main" id="smon_dashboard">
 		{% include 'ajax/smon/smon_dashboard.html' %}

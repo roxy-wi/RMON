@@ -2,9 +2,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
-{% if title == 'Login page' %}
-<meta name="viewport" content="width=device-width, user-scalable=1">
-{% endif %}
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap" rel="stylesheet">
@@ -40,3 +38,7 @@
 <script src="{{ url_for('static', filename='js/nprogress.js') }}"></script>
 <link href="{{ url_for('static', filename='css/toastr-6.3.9.css') }}" rel="stylesheet"/>
 <script src="{{ url_for('static', filename='js/toastr.js') }}"></script>
+
+<link href="{{ url_for('static', filename='css/ux.css') }}" rel="stylesheet">
+<script id="rmon-ui-strings" type="application/json">{{ lang.ux|tojson }}</script>
+<script src="{{ url_for('static', filename='js/ux.js') }}"></script>

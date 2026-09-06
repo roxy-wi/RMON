@@ -5,47 +5,16 @@ function showOverview(serv, hostnamea) {
 	showUsersOverview();
 	showSubOverview();
 	showServicesOverview();
-	updatingCpuRamCharts();
 	var i;
 	for (i = 0; i < serv.length; i++) {
 		showOverviewCallBack(serv[i], hostnamea[i])
 	}
 }
 function showOverviewCallBack(serv, hostnamea) {
-	$.ajax( {
-		url: "/overview/server/"+serv,
-		beforeSend: function() {
-			$("#"+hostnamea).html('<img class="loading_small" src="/static/images/loading.gif" />');
-		},
-		type: "GET",
-		success: function( data ) {
-			if (data.indexOf('error:') != '-1') {
-				toastr.error(data);
-				$("#"+hostnamea).html("");
-			} else {
-				$("#" + hostnamea).empty();
-				$("#" + hostnamea).html(data);
-			}
-		}
-	} );
+    return RmonUI.loadFragment("#" + hostnamea, "/overview/server/" + encodeURIComponent(serv));
 }
 function showServicesOverview() {
-	$.ajax( {
-		url: "/overview/services",
-		beforeSend: function() {
-			$("#services_ovw").html('<img class="loading_small_bin_bout" style="padding-left: 100%;padding-top: 40px;padding-bottom: 40px;" src="/static/images/loading.gif" />');
-
-		},
-		type: "GET",
-		success: function( data ) {
-			if (data.indexOf('error:') != '-1') {
-				toastr.error(data);
-			} else {
-				$("#services_ovw").empty();
-				$("#services_ovw").html(data);
-			}
-		}
-	} );
+    return RmonUI.loadFragment("#services_ovw", "/overview/services");
 }
 function showOverviewServer(ip) {
 	getChartDataHapWiRam(ip);
@@ -87,12 +56,12 @@ $( function() {
 		$("#show-all-groups").css("display", "block");
 	});
 
-	$( "#show-all-haproxy-wi-log" ).click( function() {
+	$(document).on('click', '#show-all-haproxy-wi-log', function() {
 		$(".show-haproxy-wi-log").show("fast");
 		$("#hide-all-haproxy-wi-log").css("display", "block");
 		$("#show-all-haproxy-wi-log").css("display", "none");
 	});
-	$( "#hide-all-haproxy-wi-log" ).click( function() {
+	$(document).on('click', '#hide-all-haproxy-wi-log', function() {
 		$(".show-haproxy-wi-log").hide("fast");
 		$("#hide-all-haproxy-wi-log").css("display", "none");
 		$("#show-all-haproxy-wi-log").css("display", "block");
@@ -103,52 +72,11 @@ $( function() {
 	}
 });
 function showUsersOverview() {
-	$.ajax( {
-		url: "overview/users",
-		type: "GET",
-		beforeSend: function() {
-			$("#users-table").html('<img class="loading_small_bin_bout" style="padding-left: 100%;padding-top: 40px;padding-bottom: 40px;" src="/static/images/loading.gif" />');
-		},
-		success: function( data ) {
-			data = data.replace(/\s+/g,' ');
-			if (data.indexOf('error:') != '-1') {
-				toastr.error(data);
-			} else {
-				$("#users-table").html(data);
-			}
-		}
-	} );
+    return RmonUI.loadFragment("#users-table", "/overview/users");
 }
 function showSubOverview() {
-	$.ajax( {
-		url: "/overview/sub",
-		type: "GET",
-		beforeSend: function() {
-			$("#sub-table").html('<img class="loading_small_bin_bout" style="padding-left: 40%;padding-top: 40px;padding-bottom: 40px;" src="/static/images/loading.gif" />');
-		},
-		success: function( data ) {
-			data = data.replace(/\s+/g,' ');
-			if (data.indexOf('error:') != '-1') {
-				toastr.error(data);
-			} else {
-				$("#sub-table").html(data);
-			}
-		}
-	} );
+    return RmonUI.loadFragment("#sub-table", "/overview/sub");
 }
-
 function ShowOverviewLogs() {
-	$.ajax( {
-		url: "/overview/logs",
-		type: "GET",
-		beforeSend: function() {
-			$("#overview-logs").html('<img class="loading_small_bin_bout" style="padding-left: 40%;padding-top: 40px;padding-bottom: 40px;" src="/static/images/loading.gif" />');
-		},
-		success: function( data ) {
-			data = data.replace(/\s+/g,' ');
-			$("#overview-logs").html(data);
-			$.getScript("/static/js/fontawesome.min.js")
-			$.getScript("/static/js/overview.js")
-		}
-	} );
+    return RmonUI.loadFragment("#overview-logs", "/overview/logs");
 }

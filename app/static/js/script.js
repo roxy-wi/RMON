@@ -46,9 +46,9 @@ $.ajaxSetup({
 	headers: {"X-CSRF-TOKEN": csrf_token},
 });
 $(document).ajaxError(function myErrorHandler(event, xhr, ajaxOptions, thrownError) {
-	if (xhr.status != 401 && xhr.status != 404) {
-		toastr.error(xhr.responseJSON.error);
-	}
+	if (xhr.statusText !== 'abort' && !ajaxOptions.error) {
+        RmonUI.notifyRequestError(xhr);
+    }
 
 });
 function showLog() {
@@ -171,9 +171,10 @@ $( function() {
 	});
 	toastr.options.closeButton = true;
 	toastr.options.progressBar = true;
-	toastr.options.positionClass = 'toast-bottom-full-width';
-	toastr.options.timeOut = 25000;
-	toastr.options.extendedTimeOut = 50000;
+	toastr.options.positionClass = 'toast-bottom-right';
+	toastr.options.timeOut = 8000;
+    toastr.options.preventDuplicates = true;
+	toastr.options.extendedTimeOut = 2000;
 	$('#errorMess').click(function () {
 		$('#error').remove();
 	});
@@ -198,45 +199,7 @@ $( function() {
 	$("input[type=checkbox]").checkboxradio();
 	$(".controlgroup").controlgroup();
 
-	$("#hide_menu").click(function () {
-		$(".top-menu").hide("drop", "fast");
-		$(".container").css("max-width", "100%");
-		$(".footer").css("max-width", "97%");
-		$(".container").css("margin-left", "1%");
-		$(".footer").css("margin-left", "1%");
-		$(".show_menu").show();
-		$("#hide_menu").hide();
-		sessionStorage.setItem('hide_menu', 'hide');
-	});
-	$("#show_menu").click(function () {
-		$(".top-menu").show("drop", "fast");
-		$(".container").css("max-width", "100%");
-		$(".footer").css("max-width", "100%");
-		$(".container").css("margin-left", "207px");
-		$(".footer").css("margin-left", "207px");
-		$(".show_menu").hide();
-		$("#hide_menu").show();
-		sessionStorage.setItem('hide_menu', 'show');
-	});
-	var hideMenu = sessionStorage.getItem('hide_menu');
-	if (hideMenu === "show") {
-		$(".top-menu").show("drop", "fast");
-		$(".container").css("max-width", "100%");
-		$(".container").css("margin-left", "207px");
-		$(".footer").css("margin-left", "207px");
-		$(".footer").css("max-width", "100%");
-		$("#hide_menu").show();
-		$(".show_menu").hide();
-	}
-	if (hideMenu === "hide") {
-		$(".top-menu").hide();
-		$(".container").css("max-width", "97%");
-		$(".container").css("margin-left", "1%");
-		$(".footer").css("margin-left", "1%");
-		$(".footer").css("max-width", "97%");
-		$(".show_menu").show();
-		$("#hide_menu").hide();
-	}
+    RmonUI.initNavigation();
 
 	var now = new Date(Date.now());
 	if ($('#time_range_out_hour').val() != '' && $('#time_range_out_hour').val() != 'None') {
@@ -319,29 +282,18 @@ $( function() {
 			data: JSON.stringify(json_data),
 			contentType: "application/json; charset=utf-8",
 			type: "POST",
-			statusCode: {
-				401: function (xhr) {
-					$('.alert').show();
-					if (xhr.responseText.indexOf('disabled') != '-1') {
-						$('.alert').html('Your login is disabled')
-					} else {
-						$('.alert').html('Login or password is incorrect');
-						ban();
-					}
-				}
-			},
-			success: function (data) {
+			error: function (xhr) {
+                $('#wrong-login').show();
+                $('#login-error-message').text(xhr.status === 401 ? RmonUI.text('login_failed') : RmonUI.requestError(xhr));
+                if (xhr.status === 401) { ban(); }
+            },
+            success: function (data) {
 				if (data.status === 'failed') {
-					if (data.error.indexOf('disabled') != '-1') {
-						$('.alert').show();
-						$('.alert').html(data.error);
-					} else {
-						$('.alert').show();
-						$('.alert').html(data.error);
-						ban();
-					}
-				} else {
-					sessionStorage.removeItem('check-service');
+                    $('#wrong-login').show();
+                    $('#login-error-message').text(RmonUI.text('login_failed'));
+                    ban();
+                } else {
+                    sessionStorage.removeItem('check-service');
 					window.location.replace(data.next_url);
 				}
 			}
@@ -486,7 +438,7 @@ checkTheme();
 async function ban() {
 	$( '#login').attr('disabled', 'disabled');
 	$( '#pass').attr('disabled', 'disabled');
-	$( "input[type=submit], button" ).button('disable');
+	$('#enter').button('disable');
 	$('#wrong-login').show();
 	$('#ban_10').show();
 	$( '#ban_timer').text(10);
@@ -500,7 +452,7 @@ async function ban() {
 
 	$( '#login').removeAttr('disabled');
 	$( '#pass').removeAttr('disabled');
-	$( "input[type=submit], button" ).button('enable');
+	$('#enter').button('enable');
 	$('#ban_10').hide();
 }
 function changeCurrentGroupF(user_id) {
@@ -664,6 +616,8 @@ function show_version() {
 	NProgress.configure({showSpinner: false});
 	$.ajax( {
 		url: "/internal/show_version",
+        global: false,
+        error: function () { $("#version").text("RMON"); },
 		contentType: "application/json; charset=utf-8",
 		success: function( data ) {
 			if (data.need_update) {
@@ -690,12 +644,16 @@ function show_version() {
 	} );
 	NProgress.configure({showSpinner: true});
 }
-function showPassword(input) {
+function showPassword(input, button) {
   let x = document.getElementById(input);
   if (x.type === "password") {
     x.type = "text";
   } else {
     x.type = "password";
+  }
+  if (button) {
+    button.setAttribute('aria-pressed', String(x.type === 'text'));
+    button.setAttribute('aria-label', RmonUI.text(x.type === 'text' ? 'hide_password' : 'show_password'));
   }
 }
 function removeData() {

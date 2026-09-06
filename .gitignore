@@ -8,3 +8,4 @@ __pycache__/
 /.pytest_cache/
 /.coverage
 /.idea/
+/tests/frontend/node_modules/

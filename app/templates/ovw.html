@@ -21,25 +21,26 @@
 <style>
 	.fa-sync-alt { margin-bottom: -1px; }
 </style>
+<div class="overview-grid">
 <table class="overview-wi overview-small-table" id="overview-roxy-wi">
     <thead class="overviewHead">
     <tr>
 		<th class="padding10 first-collumn-wi">
 			{% if g.user_params['role'] <= 2 %}
-				<a href="servers#servers" title="{{lang.words.manage|title()}} {{lang.words.servers}}">{{lang.words.servers|title()}}</a>
+				<a href="{{ url_for('admin.admin') }}#servers" title="{{lang.words.manage|title()}} {{lang.words.servers}}">{{lang.words.servers|title()}}</a>
 			{% else %}
 				{{lang.words.servers|title()}}
 			{% endif %}
 		</th>
 		<th class="padding10">
-			<a href="/rmon/agent" title="{{lang.words.agent|title()}} {{lang.words.servers}} {{lang.words.overview}}">
+			<a href="{{ url_for('smon.agent') }}" title="{{lang.words.agent|title()}} {{lang.words.servers}} {{lang.words.overview}}">
 				{{ lang.words.status|title() }}
 			</a>
 		</th>
 		<th  class="padding10">
-			<a onclick="showOverview(ip, hostnamea)" title="{{lang.words.refresh|title()}}" style="float: right;">
+			<button type="button" class="icon-button" onclick="showOverview(ip, hostnamea)" title="{{lang.words.refresh|title()}}" aria-label="{{lang.words.refresh|title()}}" style="float: right;">
 				<span class="refresh"></span>
-			</a>
+			</button>
 		</th>
     </tr>
     </thead>
@@ -52,7 +53,7 @@
 		<tr class="overviewHead">
 			<td class="padding10 first-collumn-wi">
 				{% if g.user_params['role'] <= 1 %}
-					<a href="admin#tools" title="{{lang.words.view|title()}} {{lang.words.services}} {{lang.words.status}}">
+					<a href="{{ url_for('admin.admin') }}#tools" title="{{lang.words.view|title()}} {{lang.words.services}} {{lang.words.status}}">
 						RMON {{lang.words.services_status}}
 					</a>
 				{% else %}
@@ -60,9 +61,9 @@
 				{% endif %}
 			</td>
 			<td>
-				<a onclick="showServicesOverview()" title="{{lang.words.refresh|title()}}" style="float: right; margin-right: 15px;">
+				<button type="button" class="icon-button" onclick="showServicesOverview()" title="{{lang.words.refresh|title()}}" aria-label="{{lang.words.refresh|title()}}" style="float: right; margin-right: 15px;">
 					<span class="refresh"></span>
-				</a>
+				</button>
 			</td>
 		</tr>
 	</thead>
@@ -72,7 +73,7 @@
 	<tr class="overviewHead" style="height: 30px;">
 		<td class="padding10 first-collumn-wi" colspan="2">
 			{% if g.user_params['role'] <= 1 %}
-				<a href="/app/logs/internal" title="{{lang.words.view|title()}} RMON {{lang.words.logs}}">
+				<a href="{{ url_for('logs.logs_internal') }}" title="{{lang.words.view|title()}} RMON {{lang.words.logs}}">
 					RMON {{lang.words.monitoring}}
 				</a>
 			{% else %}
@@ -80,9 +81,9 @@
 			{% endif %}
 		</td>
 		<td>
-			<a onclick="showOverviewHapWI()" title="{{lang.words.refresh|title()}}" style="float: right; margin-right: 15px;">
+			<button type="button" class="icon-button" onclick="showOverviewHapWI()" title="{{lang.words.refresh|title()}}" aria-label="{{lang.words.refresh|title()}}" style="float: right; margin-right: 15px;">
 				<span class="refresh"></span>
-			</a>
+			</button>
 		</td>
 	</tr>
 	<tr>
@@ -106,7 +107,7 @@
 		<thead>
 			<tr class="overviewHead" style="height: 30px;">
 				<td class="padding10 first-collumn-wi">
-					<a href="{{admin_uri}}#users" title="{{lang.words.manage|title()}} {{lang.words.users2}}">{{lang.words.login|title()}}</a>
+					<a href="{{ url_for('admin.admin') }}#users" title="{{lang.words.manage|title()}} {{lang.words.users2}}">{{lang.words.login|title()}}</a>
 				</td>
 				<td class="second-collumn">{{lang.words.groups|title()}}</td>
 				<td>{{lang.words.role|title()}}</td>
@@ -121,9 +122,9 @@
 					</span>
 				</td>
 				<td style="padding-right: 10px;">
-					<a onclick="showUsersOverview()" title="{{lang.words.refresh|title()}}" style="float: right;">
+					<button type="button" class="icon-button" onclick="showUsersOverview()" title="{{lang.words.refresh|title()}}" aria-label="{{lang.words.refresh|title()}}" style="float: right;">
 						<span class="refresh"></span>
-					</a>
+					</button>
 				</td>
 			</tr>
 		</thead>
@@ -134,7 +135,7 @@
 	<table class="overview-wi" id="overview-groups">
 		<tr class="overviewHead">
 			<td class="padding10 first-collumn-wi">
-				<a href="/app/users#groups" title="{{lang.words.manage|title()}} {{lang.words.groups3}}">{{lang.words.groups|title()}}</a>
+				<a href="{{ url_for('admin.admin') }}#groups" title="{{lang.words.manage|title()}} {{lang.words.groups3}}">{{lang.words.groups|title()}}</a>
 			</td>
 			<td class="second-collumn" style="width: 40%">{{lang.words.desc|title()}}</td>
 			<td>
@@ -187,7 +188,7 @@
 	</table>
 {% endif %}
 {% if g.user_params['role'] <= 2 %}
-	<script>ShowOverviewLogs();</script>
+	<script>$(ShowOverviewLogs);</script>
 	<table class="overview-wi" id="overview-logs"></table>
 {% endif %}
 {% if g.user_params['role'] <= 1 %}
@@ -197,14 +198,15 @@
 				<a href="https://rmon.io/cabinet" title="{{lang.words.personal|title()}} {{lang.words.cabinet}}" target="_blank">{{lang.words.subs|title()}}</a>
 			</td>
 			<td style="padding-right: 10px;">
-				<a onclick="showSubOverview()" title="{{lang.words.refresh|title()}}" style="float: right;">
+				<button type="button" class="icon-button" onclick="showSubOverview()" title="{{lang.words.refresh|title()}}" aria-label="{{lang.words.refresh|title()}}" style="float: right;">
 					<span class="refresh"></span>
-				</a>
+				</button>
 			</td>
 		</tr>
 		<tbody id="sub-table"></tbody>
 	</table>
 {% endif %}
+</div>
 <div id="dialog-confirm" style="display: none;">
   <p><span class="ui-icon ui-icon-alert" style="float:left; margin:3px 12px 20px 0;"></span>Are you sure?</p>
 </div>

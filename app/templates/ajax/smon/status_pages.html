@@ -1,6 +1,6 @@
 {% for page in pages %}
 <div id="page_{{page}}" class="page_div">
-    <a href="/rmon/status/{{page.slug}}" id="page_link-{{ page }}" class="page_link" target="_blank" title="Open status page">
+    <a href="{{ url_for('smon.show_smon_status_page', slug=page.slug) }}" id="page_link-{{ page }}" class="page_link" target="_blank" title="Open status page">
         <span id="page_status-{{page}}"><i class="far fa-check-circle status-page-icon"></i></span>
         <div>
             <span class="page_name" id="page_name-{{page}}">{{page.name|replace("'", "")}}</span>
@@ -10,8 +10,8 @@
         </div>
         <div class="page_slug" id="page_slug-{{page}}">/rmon/status/{{page.slug}}</div>
     </a>
-    <div class="edit status_page-edit" onclick="createStatusPageStep1('true', '{{page}}')"></div>
-    <div class="delete" onclick="confirmDeleteStatusPage('{{page}}')"></div>
+    <button type="button" class="edit status_page-edit icon-button" aria-label="{{ lang.words.edit|title() }} {{ page.name }}" onclick="createStatusPageStep1('true', '{{page}}')"></button>
+    <button type="button" class="delete icon-button" aria-label="{{ lang.words.delete|title() }} {{ page.name }}" onclick="confirmDeleteStatusPage('{{page}}')"></button>
 </div>
 <script>smon_manage_status_page_avg_status('{{page}}')</script>
 {% endfor %}

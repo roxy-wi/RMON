@@ -1,0 +1,121 @@
+/* Layout and accessibility shared by existing RMON screens. */
+body { font-size: 14px; }
+button, input, select, textarea { font: inherit; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 3px solid #147eb3 !important; outline-offset: 3px; }
+.skip-link { position: fixed; top: -100px; left: 16px; z-index: 2000; padding: 12px; background: white; color: #00243e; }
+.skip-link:focus { top: 8px; }
+.app-shell { --sidebar-width: 207px; min-height: 100vh; }
+.app-shell .top-menu { position: fixed; width: var(--sidebar-width); height: 100dvh; min-height: 0; margin: 0; overflow-y: auto; overflow-x: hidden; }
+.app-shell .top-menu .v_menu { display: none; position: static; width: auto; opacity: 1; border: 0; transition: none; }
+.app-shell .top-menu .p_menu:hover .v_menu, .app-shell .top-menu .p_menu:focus-within .v_menu { display: block; }
+.app-shell .top-menu .v_menu a { padding-left: 24px; }
+.app-shell .container { box-sizing: border-box; min-width: 0; width: auto; max-width: none; margin-left: var(--sidebar-width); min-height: calc(100vh - 90px); }
+.page-header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; flex-wrap: wrap; }
+.page-header h2 { padding: 0; margin: 0; height: auto; flex: 1; min-width: 0; }
+.account-actions { display: flex; gap: 8px; align-items: center; margin-left: auto; }
+.page-header .login { float: none; margin: 0; font-size: 14px; }
+body .icon-button { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; min-height: 36px; box-sizing: border-box; margin: 0; padding: 6px !important; border: 1px solid transparent; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; text-decoration: none; }
+body .icon-button:hover { background: rgba(49, 175, 225, .15); }
+#menu-toggle { font-size: 22px; color: var(--color-blue); }
+body.nav-collapsed { --sidebar-width: 0px; }
+.nav-collapsed .top-menu { display: none; }
+.menu-backdrop { position: fixed; inset: 0; z-index: 98; background: #001b30a6; border: 0; }
+.app-shell .footer { box-sizing: border-box; display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin: 0 16px 0 calc(var(--sidebar-width) + 16px); padding: 12px 0; width: auto; min-width: 0; max-width: none; }
+.footer #logo_footer, .footer .footer-div, .footer #version { float: none; margin: 0; padding: 0; width: auto; }
+.footer .footer-div { flex: 1; }
+.footer #useful-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 14px; }
+.footer .footer-link { padding: 4px 0; font-size: 13px; }
+.footer #logo_footer_img { margin: 0; }
+.footer #hide_menu, .footer .show_menu { display: none !important; }
+.table-scroll { width: auto; max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; }
+.table-scroll > table { float: none !important; margin: 0 !important; width: 100% !important; max-width: none !important; }
+.overview-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; padding: 16px; }
+.overview-grid .overview-wi { width: 100%; min-width: 0; max-width: none; float: none; margin: 0; }
+.overview-grid > .table-scroll { border: 1px solid #b8c3cc; border-radius: 8px; align-self: start; }
+.overview-grid .overviewHead { height: auto; }
+.overview-grid .overview-small-table { height: auto; min-height: 0; }
+.overview-grid #cpu_div:has(.widget-state), .overview-grid #ram_div:has(.widget-state) { height: auto !important; min-height: 122px; }
+.widget-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 100px; padding: 12px; text-align: center; box-sizing: border-box; }
+.retry-button { color: inherit; border: 1px solid #8295a5; padding: 7px 12px; border-radius: 5px; background: transparent; cursor: pointer; }
+.empty-state { text-align: center; margin: 20px auto; padding: 24px; max-width: 650px; }
+.empty-state h3 { background: transparent; border: 0; padding: 0; }
+.empty-state p { font-size: 16px; line-height: 1.6; }
+.empty-state img { max-width: min(240px, 70vw); height: auto; }
+body button.add-button { background: #087fab; color: #fff; border: 1px solid transparent; font-weight: 600; min-height: 40px; }
+body button.add-button:hover { background: #00668f; }
+body .ui-dialog { box-sizing: border-box; max-width: calc(100vw - 24px); }
+body .ui-dialog .ui-dialog-titlebar { flex: 0 0 auto; }
+body .ui-dialog .ui-dialog-title { white-space: normal; }
+body .ui-dialog .ui-dialog-buttonpane { flex: 0 0 auto; margin: 0; background: var(--color-white); border-top: 1px solid #b8c3cc; }
+body .ui-dialog .ui-dialog-content { min-width: 0; }
+body .ui-dialog .overview { max-width: 100%; }
+body .ui-dialog .validateTips { width: auto; max-width: 100%; }
+body .ui-dialog textarea { box-sizing: border-box; max-width: 100%; }
+body .ui-selectmenu-menu .ui-menu { max-width: calc(100vw - 32px); }
+body .field-help { font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; margin: 8px 0; }
+body #create-status-page-step-1-overview, body #create-status-page-step-2-overview { width: 100%; table-layout: fixed; }
+body #create-status-page-step-1 .form-control, body #create-status-page-step-2 .form-control { width: 100%; box-sizing: border-box; }
+#status-page-url-preview { color: var(--color-blue); }
+#pages .page_div { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+#pages .page_link { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+#pages .page_slug { font-size: 13px; }
+body #admin-tabs { display: flex; overflow-x: auto; overflow-y: hidden; flex-wrap: nowrap; gap: 4px; }
+body #admin-tabs li { flex: 0 0 auto; float: none; }
+.ui-tabs-panel { min-width: 0; }
+body #toast-container { max-width: calc(100vw - 24px); }
+
+/* Login keeps its existing form IDs, login flow and SSO buttons. */
+body.login-page { min-height: 100dvh; display: grid; place-items: center; background: #eef4f8; color: #172b3b; padding: 24px; box-sizing: border-box; }
+.login-page #main_div { margin: 0; padding: 0; width: 100%; min-width: 0; max-width: 440px; background: white; border-radius: 14px; box-shadow: 0 8px 36px #00243e1a; }
+.login-page #login-form { padding: 28px; min-height: 0; }
+.login-page #logo_span { float: none; border: 0; margin: -28px -28px 28px; padding: 24px; width: auto; height: auto; background: #00243e; border-radius: 14px 14px 0 0; text-align: center; }
+.login-page #logo_img { margin: 0; float: none; width: auto; }
+.login-page #logo_span img { width: 170px; margin: 0; padding: 0; }
+.login-page #logo_sign { float: none; color: white; margin: 6px 0 0; font-size: 14px; }
+.login-page #auth { margin: 0; float: none; position: static; width: 100%; }
+.login-page #auth > label { display: block; margin: 12px 0 6px; font-weight: 600; }
+.login-page .fontuser, .login-page .fontpassword { position: relative; }
+.login-page .fontuser > i, .login-page .fontpassword > i { position: absolute; top: 16px; left: 12px; color: #436078; }
+.login-page .form-login { box-sizing: border-box; width: 100%; min-height: 46px; padding: 10px 44px 10px 34px; border: 1px solid #91a4b4 !important; border-radius: 6px; font-size: 16px; color: #172b3b; background: white; }
+.login-page .password-toggle { position: absolute; top: 4px; right: 4px; color: #172b3b; }
+.login-page #enter { width: 100%; margin: 20px 0 0; min-height: 46px; color: white; background: #007cab; border: 0; font-weight: 600; }
+.login-page .wrong-login { box-sizing: border-box; width: 100%; margin: 16px 0 0; text-align: left; }
+.login-page .oidc-login-options { width: 100%; margin: 20px 0 0; padding: 0; clear: both; }
+.login-page .oidc-login-button { box-sizing: border-box; width: 100%; min-height: 44px; color: #172b3b; white-space: normal; }
+
+@media (max-width: 1100px) {
+    .overview-grid { grid-template-columns: minmax(0, 1fr); }
+    body .ui-dialog #smon-add-table > table { width: 100% !important; float: none !important; }
+}
+@media (max-width: 800px) {
+    .app-shell { --sidebar-width: 0px; }
+    .app-shell .top-menu { width: 260px; display: none; top: 62px; height: calc(100dvh - 62px); z-index: 99; }
+    .app-shell.nav-open .top-menu { display: block; }
+    .nav-open { overflow: hidden; }
+    .page-header { min-height: 62px; padding: 8px 12px; box-sizing: border-box; position: relative; z-index: 100; background: var(--color-white); }
+    .page-header h2 { font-size: 18px; }
+    .account-actions { gap: 2px; }
+    .account-actions #show-user-settings-button { max-width: 140px; overflow-wrap: anywhere; }
+    .app-shell .top-menu .menu a { min-height: 44px; box-sizing: border-box; }
+    .app-shell .top-menu .v_menu { display: block; position: static; width: auto; }
+    .app-shell .top-menu .v_menu a { padding-left: 30px; }
+    .app-shell .container { width: 100%; margin-left: 0; }
+    .app-shell .footer { margin-left: 12px; margin-right: 12px; }
+    .footer #useful-links { justify-content: flex-start; }
+    body .icon-button, body [role=button], body .ui-button { min-height: 44px; min-width: 44px; }
+    body .table-scroll { margin: 0; }
+    body .table-scroll table { min-width: 560px; }
+    .overview-grid { padding: 12px; gap: 12px; }
+    .overview-grid .table-scroll table { min-width: 0; }
+    body .ui-dialog table.overview { width: 100% !important; table-layout: fixed; }
+    body .ui-dialog table.overview td { display: block; box-sizing: border-box; width: 100% !important; padding: 6px 2px !important; }
+    body .ui-dialog input:not([type=checkbox]):not([type=radio]):not([type=hidden]), body .ui-dialog textarea,
+    body .ui-dialog .ui-selectmenu-button, body .ui-dialog .tagify { box-sizing: border-box; width: 100% !important; max-width: 100%; font-size: 16px; }
+    body .ui-dialog .checks { display: flex; gap: 12px; height: auto; max-height: 300px; }
+    body .ui-dialog .checks > div { width: 50%; min-width: 0; float: none; }
+    body .ui-dialog .all-checks { width: 100%; height: auto; min-height: 52px; display: flex; }
+    body .ui-dialog .check-name { width: auto; min-width: 0; overflow-wrap: anywhere; float: none; margin: 4px; flex: 1; }
+    body .ui-tabs-panel { padding: 10px !important; }
+    .empty-state { padding: 16px; margin: 12px; }
+}

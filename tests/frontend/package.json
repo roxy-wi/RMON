@@ -1,0 +1,6 @@
+{
+  "name": "rmon-frontend-tests",
+  "private": true,
+  "scripts": {"test": "node --test *.test.cjs"},
+  "devDependencies": {"jsdom": "26.1.0"}
+}
