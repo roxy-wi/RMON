@@ -1,4 +1,5 @@
 {% import 'languages/'+lang|default('en')+'.html' as lang %}
+{% from 'include/service_version.html' import service_version %}
 {% set services_name = {
 	'rmon-server': { 'name': 'RMON Server', 'desc': lang.admin_page.desc.smon_desc },
 	'rmon-socket': { 'name': 'Socket', 'desc': lang.admin_page.desc.socket_desc },
@@ -7,6 +8,7 @@
     }
 %}
 {% for s in services %}
+{% set installed = s.2.get('installed', s.2['current_version'] not in ('0', '', '* is not installed')) %}
 {% set is_service_started_class = '' %}
 {% set is_service_stopped_class = '' %}
 {% set onclick_start_action = "confirmAjaxServiceAction('start', '"+s.0+"')" %}
@@ -32,32 +34,22 @@
         {% endif %}
         {{services_name[s.0]['name']}}
     </td>
-    <td class="padding10 first-collumn">
-        {% if 'is not installed' in s.2['current_version'] or not s.2['current_version'] or s.2['current_version'] == '0' %}
+    <td>
+        {{service_version(s.2, lang)}}
+    </td>
+    <td>{{ services_name[s.0]['desc'] | safe }}</td>
+    <td class="actions-column">
+        {% if installed is sameas false %}
             {% if s.0 in ('rabbitmq-server', 'fail2ban') %}
-                <a class="ui-button ui-widget ui-corner-all" href="https://rmon.io/tools/{{s.0.split('-')[0]}}" title="{{lang.words.install|title()}} {{services_name[s.0]['name']}}" target="_blank">{{lang.words.install|title()}}</a>
+                <a href="https://rmon.io/tools/{{s.0.split('-')[0]}}" target="_blank" rel="noopener noreferrer">{{lang.words.install|title()}}</a>
             {% else %}
-                <a class="ui-button ui-widget ui-corner-all" onclick="updateService('{{s.0}}', 'install')" title="{{lang.words.install|title()}} {{service_name}}">{{lang.words.install|title()}}</a>
+                <button type="button" onclick="updateService('{{s.0}}', 'install')">{{lang.words.install|title()}}</button>
             {% endif %}
         {% else %}
-        <a id="start-{{ s.0 }}" class="start" title="{{is_service_started_title}}">
-            <span class="service-start {{is_service_started_class}}" onclick="{{onclick_start_action}}"></span>
-        </a>
-        <a id="restart-{{ s.2 }}" class="restart" title="{{lang.words.restart|title()}} {{services_name[s.0]['name']}} {{lang.words.service}}">
-            <span class="service-reload service-restart" onclick="confirmAjaxServiceAction('restart', '{{s.0}}')"></span>
-        </a>
-        <a id="stop-{{ s.0 }}" class="stop" title="{{is_service_stopped_title}}">
-            <span class="service-stop {{is_service_stopped_class}}" onclick="{{onclick_stop_action}}"></span>
-        </a>
+        <button type="button" id="start-{{ s.0 }}" title="{{is_service_started_title}}" {% if is_service_started_class %}disabled{% endif %} onclick="{{onclick_start_action}}">{{lang.words.start|title()}}</button>
+        <button type="button" id="restart-{{ s.0 }}" onclick="confirmAjaxServiceAction('restart', '{{s.0}}')">{{lang.words.restart|title()}}</button>
+        <button type="button" id="stop-{{ s.0 }}" title="{{is_service_stopped_title}}" {% if is_service_stopped_class %}disabled{% endif %} onclick="{{onclick_stop_action}}">{{lang.words.stop|title()}}</button>
         {% endif %}
-    </td>
-    <td>
-        {% if 'is not installed' not in s.2['current_version'] %}
-        {{s.2['current_version']}}
-        {% endif %}
-    </td>
-    <td colspan="2">
-        {{ services_name[s.0]['desc'] | safe }}
     </td>
 </tr>
 {% endfor %}

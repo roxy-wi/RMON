@@ -1,5 +1,5 @@
 $( function() {
-	$( "#ajax-group input" ).change(function() {
+	$("#ajax-group").on('change', 'input', function() {
 		var id = $(this).attr('id').split('-');
 		updateGroup(id[1])
 	});
@@ -65,8 +65,8 @@ function addGroup(dialog_id) {
                         elem("td", null, [
                             elem("input", {"type":"text","name":"descript-"+id,"value":desc,"id":"descript-"+id,"size":"60","class":"form-control","autocomplete":"off"})
                         ]),
-                        elem("td", null, [
-                            elem("a", {"class":"delete","onclick":"confirmDeleteGroup("+id+")","title":"Delete group "+name,"style":"cursor: pointer;"})
+                        elem("td", {"class": "actions-column"}, [
+                            elem("button", {"type":"button","onclick":"confirmDeleteGroup("+id+")"}, "Delete group "+name)
                         ])
                     ])
                     common_ajax_action_after_success(dialog_id, 'newgroup', 'ajax-group', new_group);
@@ -120,12 +120,12 @@ function removeGroup(id) {
         contentType: "application/json; charset=utf-8",
 		statusCode: {
 			204: function (xhr) {
-				$("#group-" + id).remove();
+				RmonUI.removeTableRow("#group-" + id);
                 $('select:regex(id, group) option[value=' + id + ']').remove();
                 $('select:regex(id, group)').selectmenu("refresh");
 			},
 			404: function (xhr) {
-				$("#group-" + id).remove();
+				RmonUI.removeTableRow("#group-" + id);
                 $('select:regex(id, group) option[value=' + id + ']').remove();
                 $('select:regex(id, group)').selectmenu("refresh");
 			}

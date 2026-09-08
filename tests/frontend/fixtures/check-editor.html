@@ -1,0 +1,656 @@
+
+<script id="check-editor-strings" type="application/json">{"authentication": "Authentication", "available": "Available", "back": "Back", "copy": "copy", "create": "Create check", "disabled": "Disabled", "edit": "Edit check", "entities": "Select at least one location.", "extra": "Additional settings", "intro": "Start with the target. Defaults are ready to use; tune advanced settings only when needed.", "invalid_url": "Enter an HTTP or HTTPS URL with a hostname.", "json": "Enter a valid JSON object.", "json_path": "JSON path", "json_value": "Expected JSON value", "load_error": "Unable to load the check. Close this window and try again.", "loading": "Loading check settings\u2026", "locations": "Run checks from", "next": "Next", "no_channels": "Notifications are disabled", "notifications": "Notifications", "notifications_hint": "Choose notification channels or leave them disabled. You can change these settings later.", "number": "Enter a number in the allowed range.", "ping_timeout": "Packet count \u00d7 timeout must be shorter than the interval.", "port": "Enter a port from 2 to 65535.", "proxy": "Proxy", "proxy_host": "Proxy hostname", "proxy_password": "Proxy password", "proxy_port": "Proxy port", "proxy_username": "Proxy username", "request": "Request and connection", "required": "Fill in this field.", "response": "Response validation", "save": "Save changes", "save_error": "The check was not saved. Your input is still here; review the fields and try again.", "saving": "Saving\u2026", "seconds": "s", "sections": "Check setup", "selected": "Selected", "settings": "Settings", "settings_hint": "Intervals and timeouts are in seconds. Expand the blocks below for advanced settings.", "status_codes": "Add at least one accepted HTTP status code.", "summary": "Review", "summary_empty": "Choose a target", "target": "Check", "target_hint": "Choose what to monitor and where to run the check.", "timeout": "The timeout must be shorter than the interval."}</script>
+<script src="/static/js/rmon/check.js"></script>
+<script src="/static/js/rmon/check_editor.js"></script>
+<link href="/static/css/datetimepicker.min.css" rel="stylesheet">
+<script src="/static/js/datetimepicker.full.min.js"></script>
+<link rel="stylesheet" href="/static/css/tagify.css">
+<script src="/static/js/tagify.js"></script>
+<link rel="stylesheet" href="/static/css/check_editor.css">
+<script>
+$(function () {
+    $.datetimepicker.setLocale('en');
+    $('#new-smon-expiration').datetimepicker({format: 'Y-m-d H:i', minDate: 0, step: 1});
+});
+</script>
+<div id="smon-add-table" class="check-editor" style="display: none;">
+    <div id="smon-add-table-overview" data-create="Create check" data-edit="Edit check">
+        <p class="check-editor-intro">Start with the target. Defaults are ready to use; tune advanced settings only when needed.</p>
+    </div>
+    <div class="check-editor-tabs" role="tablist" aria-label="Check setup">
+        
+        <button type="button" role="tab" id="check-editor-tab-0" aria-controls="check-editor-step-0" aria-selected="true" tabindex="0" data-step="0"><span>1</span>Check</button>
+        
+        <button type="button" role="tab" id="check-editor-tab-1" aria-controls="check-editor-step-1" aria-selected="false" tabindex="-1" data-step="1"><span>2</span>Settings</button>
+        
+        <button type="button" role="tab" id="check-editor-tab-2" aria-controls="check-editor-step-2" aria-selected="false" tabindex="-1" data-step="2"><span>3</span>Notifications</button>
+        
+    </div>
+    <div id="check-editor-error" class="check-editor-error" role="alert" tabindex="-1" hidden></div>
+    <form id="check-editor-form" novalidate>
+        <section role="tabpanel" id="check-editor-step-0" aria-labelledby="check-editor-tab-0" data-step="0">
+            <h3>Check</h3><p class="field-help">Choose what to monitor and where to run the check.</p>
+            <div class="check-fields">
+<div class="check-field ">
+<label class="check-field-label" for="check_type">Checking
+				<span class="need-field">*</span></label>
+<div class="check-field-control">
+				
+		
+	
+	
+		
+	
+	<select  name="check_type" id="check_type" title="" data-help="" class="">
+		
+			<option disabled selected>------</option>
+		
+		
+			
+				
+					<option value="dns">DNS</option>
+				
+			
+				
+					<option value="ping">Ping</option>
+				
+			
+				
+					<option value="smtp">SMTP</option>
+				
+			
+				
+					<option value="rabbitmq">RabbitMQ</option>
+				
+			
+				
+					<option value="tcp">TCP</option>
+				
+			
+				
+					<option value="http" selected>HTTP(s)</option>
+				
+			
+		
+	</select></div>
+</div>
+<div class="check-field ">
+<label class="check-field-label" for="new-smon-name">Name
+				<span class="need-field">*</span></label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="text" name="new-smon-name" value="" id="new-smon-name" data-help="" size="" style=""     placeholder="" title="" class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field smon_http_check">
+<label class="check-field-label" for="new-smon-url">URL
+				<span class="need-field">*</span></label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="text" name="new-smon-url" value="" id="new-smon-url" data-help="https://example.com/health" size="" style=""     placeholder="https://example.com/health" title="https://example.com/health" class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field new_smon_hostname">
+<label class="check-field-label" for="new-smon-ip">Hostname
+				<span class="need-field">*</span></label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="text" name="new-smon-ip" value="" id="new-smon-ip" data-help="" size="" style=""     placeholder="" title="" class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field smon_tcp_check smon_dns_check smon_smtp_check smon_rabbit_check">
+<label class="check-field-label" for="new-smon-port">Port
+				<span class="need-field">*</span></label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="number" name="new-smon-port" value="" id="new-smon-port" data-help="" size="" style=""     placeholder="" title="" class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field smon_dns_check">
+<label class="check-field-label" for="new-smon-resolver-server">Resolver server
+				<span class="need-field">*</span></label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="text" name="new-smon-resolver-server" value="8.8.8.8" id="new-smon-resolver-server" data-help="" size="" style=""     placeholder="" title="" class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field smon_dns_check">
+<label class="check-field-label" for="new-smon-dns_record_type">Resource Record Type
+				<span class="need-field">*</span></label>
+<div class="check-field-control">
+				
+		
+	
+	
+		
+	
+	<select  name="new-smon-dns_record_type" id="new-smon-dns_record_type" title="" data-help="" class="">
+		
+			<option disabled selected>------</option>
+		
+		
+			
+				
+					<option value="a" selected>A</option>
+				
+			
+				
+					<option value="aaa">AAA</option>
+				
+			
+				
+					<option value="caa">CAA</option>
+				
+			
+				
+					<option value="cname">CNAME</option>
+				
+			
+				
+					<option value="mx">MX</option>
+				
+			
+				
+					<option value="ns">NS</option>
+				
+			
+				
+					<option value="ptr">PTR</option>
+				
+			
+				
+					<option value="sao">SAO</option>
+				
+			
+				
+					<option value="srv">SRV</option>
+				
+			
+				
+					<option value="txt">TXT</option>
+				
+			
+		
+	</select></div>
+</div>
+<div class="check-field smon_smtp_check smon_rabbit_check">
+<label class="check-field-label" for="new-smon-username">Username
+				<span class="need-field">*</span></label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="text" name="new-smon-username" value="" id="new-smon-username" data-help="" size="" style=""     placeholder="example@example.com" title="" class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field smon_smtp_check smon_rabbit_check">
+<label class="check-field-label" for="new-smon-password">Password
+				<span class="need-field">*</span></label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="password" name="new-smon-password" value="" id="new-smon-password" data-help="" size="" style=""     placeholder="" title="" class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field smon_rabbit_check">
+<label class="check-field-label" for="new-smon-vhost">VHost
+				<span class="need-field">*</span></label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="text" name="new-smon-vhost" value="/" id="new-smon-vhost" data-help="" size="" style=""     placeholder="" title="" class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field ">
+<label class="check-field-label" for="new-smon-place">Run checks from
+				<span class="need-field">*</span></label>
+<div class="check-field-control"><select name="new-smon-place" id="new-smon-place">
+                    <option value="all">All regions</option>
+                    <option value="country">Countries</option>
+                    <option value="region">Regions</option>
+                    <option value="agent">Agents</option>
+                </select></div>
+</div>
+<div id="agent_tr" class="check-field check-field-wide" style="display: none;"><div class="check-entity-headings"><span>Available</span><span>Selected</span></div><div class="country">
+                <div id="checked-entities" class="enabled-check" style="height: auto"></div>
+                <div id="all-entities" style="height: auto"></div>
+            </div></div>
+            </div>
+        </section>
+        <section role="tabpanel" id="check-editor-step-1" aria-labelledby="check-editor-tab-1" data-step="1" hidden>
+            <h3>Settings</h3><p class="field-help">Intervals and timeouts are in seconds. Expand the blocks below for advanced settings.</p>
+            <div class="check-fields">
+<div class="check-field ">
+<label class="check-field-label" for="new-smon-interval">Check interval
+				<span class="need-field">*</span></label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="number" name="new-smon-interval" value="120" id="new-smon-interval" data-help="Check interval. In seconds." size="" style=""     placeholder="120" title="Check interval. In seconds." class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field ">
+<label class="check-field-label" for="new-smon-timeout">Timeout
+				<span class="need-field">*</span></label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="number" name="new-smon-timeout" value="10" id="new-smon-timeout" data-help="" size="" style=""     placeholder="" title="" class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field ">
+<label class="check-field-label" for="new-smon-retries">Retries
+				<span class="need-field">*</span></label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="number" name="new-smon-retries" value="3" id="new-smon-retries" data-help="" size="" style=""     placeholder="" title="" class="form-control" autocomplete="off" />
+                <div class="tooltip" style="padding: 0">Maximum retries before the service is marked as down and a notification is sent</div></div>
+</div>
+<div class="check-field ">
+<label class="check-field-label" for="new-smon-threshold_timeout">Threshold timeout</label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="text" name="new-smon-threshold_timeout" value="0" id="new-smon-threshold_timeout" data-help="" size="" style=""     placeholder="" title="" class="form-control" autocomplete="off" />
+                <div class="tooltip" style="padding: 0">A warning message will be sent if the response is slower than this value. In ms. 0 disabled</div></div>
+</div>
+<div class="check-field smon_ping_check">
+<label class="check-field-label" for="new-smon-packet_size">Packet size
+				<span class="need-field">*</span></label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="number" name="new-smon-packet_size" value="56" id="new-smon-packet_size" data-help="" size="" style=""     placeholder="56" title="" class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field smon_ping_check">
+<label class="check-field-label" for="new-smon-count_packets">Count packets
+				<span class="need-field">*</span></label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="number" name="new-smon-count_packets" value="5" id="new-smon-count_packets" data-help="" size="" style=""     placeholder="5" title="" class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field smon_http_check">
+<label class="check-field-label" for="new-smon-status-code">Accepted Status Codes
+				<span class="need-field">*</span></label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="text" name="new-smon-status-code" value="" id="new-smon-status-code" data-help="" size="" style=""     placeholder="" title="" class="form-control" autocomplete="off" /></div>
+</div>
+            </div>
+<details class="check-advanced smon_http_check smon_smtp_check"><summary>Request and connection</summary><div class="check-fields"><div class="check-field smon_http_check">
+<label class="check-field-label" for="new-smon-method">HTTP method</label>
+<div class="check-field-control">
+				
+		
+	
+	
+		
+	
+	<select  name="new-smon-method" id="new-smon-method" title="" data-help="" class="">
+		
+			<option disabled selected>------</option>
+		
+		
+			
+				
+					<option value="get" selected>GET</option>
+				
+			
+				
+					<option value="post">POST</option>
+				
+			
+				
+					<option value="put">PUT</option>
+				
+			
+				
+					<option value="head">HEAD</option>
+				
+			
+				
+					<option value="patch">PATCH</option>
+				
+			
+				
+					<option value="delete">DELETE</option>
+				
+			
+				
+					<option value="options">OPTIONS</option>
+				
+			
+		
+	</select></div>
+</div>
+<div class="check-field smon_http_check">
+<label class="check-field-label" for="new-smon-http_version">Check HTTP version</label>
+<div class="check-field-control">
+				
+		
+	
+	
+		
+	
+	<select  name="new-smon-http_version" id="new-smon-http_version" title="" data-help="" class="">
+		
+			<option disabled selected>------</option>
+		
+		
+			
+				
+					<option value="0" selected>None</option>
+				
+			
+				
+					<option value="1">1.1</option>
+				
+			
+				
+					<option value="2">1.1</option>
+				
+			
+				
+					<option value="3">2</option>
+				
+			
+				
+					<option value="4">3</option>
+				
+			
+		
+	</select></div>
+</div>
+<div class="check-field smon_http_check check-field-wide">
+<label class="check-field-label" for="new-smon-body-req">Body request</label>
+<div class="check-field-control"><textarea id="new-smon-body-req" cols="50" rows="5" class="form-control" title="JSON only" placeholder="Example:
+{
+    &quot;key&quot;: &quot;value&quot;
+}"></textarea></div>
+</div>
+<div class="check-field smon_http_check check-field-wide">
+<label class="check-field-label" for="new-smon-header-req">Headers request</label>
+<div class="check-field-control"><textarea id="new-smon-header-req" cols="50" rows="5" class="form-control" title="JSON only" placeholder="Example:
+{
+    &quot;Header&quot;: &quot;Value&quot;
+}"></textarea></div>
+</div>
+<div class="check-field smon_http_check">
+<label class="check-field-label" for="new-smon-resole_to_ip">Resole name to a specific IP address</label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="text" name="new-smon-resole_to_ip" value="" id="new-smon-resole_to_ip" data-help="IPv4 or IPv6" size="" style=""     placeholder="1.1.1.1" title="IPv4 or IPv6" class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field smon_http_check">
+<label class="check-field-label" for="new-smon-redirects">Maximum redirects</label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="number" name="new-smon-redirects" value="10" id="new-smon-redirects" data-help="" size="" style=""     placeholder="" title="" class="form-control" autocomplete="off" />
+                <div class="tooltip" style="padding: 0">Maximum number of redirects to follow. Set to 0 to disable redirects.</div></div>
+</div>
+<div class="check-field smon_http_check smon_smtp_check"><div class="check-field-label">Ignore TLS/SSL error</div><div class="check-field-control">
+		
+	
+	
+	<label for="new-smon-ignore_ssl_error" title="" class="new-smon-ignore_ssl_error" style="" data-help=""></label><input name="new-smon-ignore_ssl_error" type="checkbox" id="new-smon-ignore_ssl_error" value=""   /></div></div>
+<div class="check-field smon_http_check"><div class="check-field-label">Accept cookies</div><div class="check-field-control">
+		
+	
+	
+	<label for="new-smon-accept_cookies" title="" class="new-smon-accept_cookies" style="" data-help=""></label><input name="new-smon-accept_cookies" type="checkbox" id="new-smon-accept_cookies" value="" checked  /></div></div></div></details>
+<details class="check-advanced smon_http_check"><summary>Response validation</summary><div class="check-fields"><div class="check-field smon_http_check check-field-wide">
+<label class="check-field-label" for="smon_http_check_headers_response_type">Headers response</label>
+<div class="check-field-control" id="smon_http_check_headers_response"><select id="smon_http_check_headers_response_type">
+                    <option value="0">None</option>
+                    <option value="check">Check</option>
+                </select>
+                <div id="new-smon-headers-response" style="display: none;margin-bottom: 10px;margin-top: 10px;">
+                    <textarea id="new-smon-header-response-required" cols="50" rows="5" class="form-control" title="Required headers. JSON only." placeholder="Required headers example:
+{
+    &quot;Header&quot;: &quot;Value&quot;,
+    &quot;Header2&quot;: &quot;Value2&quot;
+}"></textarea>
+                    <textarea id="new-smon-header-response-forbidden" cols="50" rows="5" class="form-control" title="Forbidden headers" placeholder="Forbidden headers example:
+    &quot;Header&quot;, &quot;Header2&quot;
+"></textarea>
+                </div></div>
+</div>
+<div class="check-field smon_http_check check-field-wide">
+<label class="check-field-label" for="smon_http_check_body_type">Body response</label>
+<div class="check-field-control"><select id="smon_http_check_body_type">
+                    <option value="0">None</option>
+                    <option value="keyword">Keyword</option>
+                    <option value="json">JSON Path</option>
+                </select>
+                <div class="smon_http_check_body_type_keyword" style="display: none;margin-bottom: 10px;margin-top: 10px;">
+                    
+		
+	
+	
+    <input type="text" name="new-smon-body-keyword" value="" id="new-smon-body-keyword" data-help="" size="" style=""     placeholder="" title="" class="form-control" autocomplete="off" />
+				    <span class="need-field">*</span>
+                </div>
+                <div class="smon_http_check_body_type_json" style="display: none; margin-bottom: 10px;margin-top: 10px;">
+                    
+		
+	
+	
+    <input type="text" name="new-smon-body-json-path" value="" id="new-smon-body-json-path" data-help="" size="" style=""     placeholder="Example: $.foo" title="" class="form-control" autocomplete="off" />
+				    <span class="need-field">*</span>
+                    <div class="tooltip" style="padding: 0">
+                        Check out <a href="https://jsonata.org/" target="_blank">jsonata.org</a>
+                        for the documentation about the query language. A playground can be found <a href="https://try.jsonata.org/" target="_blank">here</a>.
+                    </div>
+                    
+		
+	
+	
+    <input type="text" name="new-smon-body-json-value" value="" id="new-smon-body-json-value" data-help="" size="" style=""     placeholder="Example: &#34;bar&#34;" title="" class="form-control" autocomplete="off" />
+                    <div class="tooltip" style="padding: 0">Leave value empty, if want to check only path</div>
+                </div></div>
+</div></div></details>
+<details class="check-advanced smon_http_check"><summary>Authentication</summary><div class="check-fields"><div class="check-field smon_http_check">
+<label class="check-field-label" for="smon_http_check_auth_method">Authentication method</label>
+<div class="check-field-control"><select id="smon_http_check_auth_method">
+                    <option value="0">None</option>
+                    <option value="basic">Basic</option>
+                    <option value="mtls">MTLS</option>
+                </select></div>
+</div>
+<div class="check-field smon_http_check_basic" style="display: none;">
+<label class="check-field-label" for="new-smon-basic_username">Username</label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="text" name="new-smon-basic_username" value="" id="new-smon-basic_username" data-help="" size="" style=""     placeholder="" title="" class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field smon_http_check_basic" style="display: none;">
+<label class="check-field-label" for="new-smon-basic_password">Password</label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="password" name="new-smon-basic_password" value="" id="new-smon-basic_password" data-help="" size="" style=""     placeholder="" title="" class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field smon_http_check_mtls check-field-wide" style="display: none;">
+<label class="check-field-label" for="new-smon-mtls_key">Key
+				<span class="need-field">*</span></label>
+<div class="check-field-control"><textarea id="new-smon-mtls_key" cols="50" rows="5" class="form-control" placeholder="Key body"></textarea></div>
+</div>
+<div class="check-field smon_http_check_mtls check-field-wide" style="display: none;">
+<label class="check-field-label" for="new-smon-mtls_cert">Cert
+				<span class="need-field">*</span></label>
+<div class="check-field-control"><textarea id="new-smon-mtls_cert" cols="50" rows="5" class="form-control" placeholder="Cert body"></textarea></div>
+</div>
+<div class="check-field smon_http_check_mtls check-field-wide" style="display: none;">
+<label class="check-field-label" for="new-smon-mtls_ca">CA</label>
+<div class="check-field-control"><textarea id="new-smon-mtls_ca" cols="50" rows="5" class="form-control" placeholder="CA body"></textarea></div>
+</div></div></details>
+<details class="check-advanced smon_http_check"><summary>Proxy</summary><div class="check-fields"><div class="check-field smon_http_check">
+<label class="check-field-label" for="smon_http_check_proxy_method">Proxy</label>
+<div class="check-field-control"><select id="smon_http_check_proxy_method">
+                    <option value="0">None</option>
+                    <option value="http">http</option>
+                    <option value="https">https</option>
+                    <option value="socks4">socks4</option>
+                    <option value="socks4a">socks4a</option>
+                    <option value="socks5">socks5</option>
+                    <option value="socks5h">socks5h</option>
+                </select></div>
+</div>
+<div class="check-field smon_http_check_proxy" style="display: none;">
+<label class="check-field-label" for="new-smon-http_proxy_host">Host and port
+                <span class="need-field">*</span></label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="text" name="new-smon-http_proxy_host" value="" id="new-smon-http_proxy_host" data-help="" size="" style=""     placeholder="proxy-server.com" title="" class="form-control" autocomplete="off" /> 
+		
+	
+	
+    <input type="text" name="new-smon-http_proxy_port" value="" id="new-smon-http_proxy_port" data-help="" size="" style=""     placeholder="3128" title="" class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field smon_http_check_proxy" style="display: none;">
+<label class="check-field-label" for="new-smon-http_proxy_username">Authentication</label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="text" name="new-smon-http_proxy_username" value="" id="new-smon-http_proxy_username" data-help="" size="" style=""     placeholder="username" title="" class="form-control" autocomplete="off" />
+                
+		
+	
+	
+    <input type="password" name="new-smon-http_proxy_password" value="" id="new-smon-http_proxy_password" data-help="" size="" style=""     placeholder="password" title="" class="form-control" autocomplete="off" /></div>
+</div></div></details>
+<details class="check-advanced "><summary>Additional settings</summary><div class="check-fields"><div class="check-field smon_ping_check">
+<label class="check-field-label" for="new-smon-use_kernel_timestamp">Use kernel timestamp</label>
+<div class="check-field-control">
+		
+	
+	
+	<label for="new-smon-use_kernel_timestamp" title="" class="new-smon-use_kernel_timestamp" style="" data-help=""></label><input name="new-smon-use_kernel_timestamp" type="checkbox" id="new-smon-use_kernel_timestamp" value=""   />
+                <div class="tooltip" style="padding: 0">Use kernel timestamps for more accurate RTT measurements. More expensive.</div></div>
+</div>
+<div class="check-field ">
+<label class="check-field-label" for="new-smon-expiration">Expiration date</label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="text" name="new-smon-expiration" value="" id="new-smon-expiration" data-help="" size="" style=""     placeholder="YYYY-MM-DD HH:MM" title="" class="form-control" autocomplete="off" />
+                <div class="tooltip" style="padding: 0">Time UTC</div></div>
+</div></div></details>
+        </section>
+        <section role="tabpanel" id="check-editor-step-2" aria-labelledby="check-editor-tab-2" data-step="2" hidden>
+            <h3>Notifications</h3><p class="field-help">Choose notification channels or leave them disabled. You can change these settings later.</p>
+            <div id="check-editor-summary" class="check-editor-summary" aria-live="polite"></div>
+            <div class="check-fields">
+<div class="check-field ">
+<label class="check-field-label" for="new-smon-telegram">Telegram</label>
+<div class="check-field-control"><select id="new-smon-telegram">
+					<option value="0">Disabled</option>
+				
+				</select></div>
+</div>
+<div class="check-field ">
+<label class="check-field-label" for="new-smon-slack">Slack</label>
+<div class="check-field-control"><select id="new-smon-slack">
+					<option value="0">Disabled</option>
+				
+				</select></div>
+</div>
+<div class="check-field ">
+<label class="check-field-label" for="new-smon-pd">PagerDuty</label>
+<div class="check-field-control"><select id="new-smon-pd">
+					<option value="0">Disabled</option>
+				
+				</select></div>
+</div>
+<div class="check-field ">
+<label class="check-field-label" for="new-smon-mm">Mattermost</label>
+<div class="check-field-control"><select id="new-smon-mm">
+					<option value="0">Disabled</option>
+				
+				</select></div>
+</div>
+<div class="check-field ">
+<label class="check-field-label" for="new-smon-incidentrelay">IncidentRelay</label>
+<div class="check-field-control"><select id="new-smon-incidentrelay">
+					<option value="0">Disabled</option>
+				
+				</select></div>
+</div>
+<div class="check-field ">
+<label class="check-field-label" for="new-smon-email">Email</label>
+<div class="check-field-control"><select id="new-smon-email">
+					<option value="0">Disabled</option>
+				
+				</select></div>
+</div>
+<div class="check-field ">
+<label class="check-field-label" for="new-smon-priority">Priority</label>
+<div class="check-field-control"><select id="new-smon-priority">
+					<option value="info">Info</option>
+					<option value="warning">Warning</option>
+					<option value="error">Error</option>
+					<option value="critical" selected>Critical</option>
+				</select></div>
+</div>
+<div class="check-field ">
+<label class="check-field-label" for="new-smon-runbook">Runbook</label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="text" name="new-smon-runbook" value="" id="new-smon-runbook" data-help="" size="" style=""     placeholder="https://wiki.example.com/runbook/help" title="" class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field ">
+<label class="check-field-label" for="new-smon-group">Group</label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="text" name="new-smon-group" value="" id="new-smon-group" data-help="" size="" style=""     placeholder="" title="" class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field  check-field-wide">
+<label class="check-field-label" for="new-smon-description">Description</label>
+<div class="check-field-control">
+		
+	
+	
+    <input type="text" name="new-smon-description" value="" id="new-smon-description" data-help="" size="" style=""     placeholder="" title="" class="form-control" autocomplete="off" /></div>
+</div>
+<div class="check-field ">
+<label class="check-field-label" for="new-smon-enable">Enable</label>
+<div class="check-field-control">
+		
+	
+	
+	<label for="new-smon-enable" title="" class="new-smon-enable" style="" data-help=""></label><input name="new-smon-enable" type="checkbox" id="new-smon-enable" value="" checked  /></div>
+</div>
+            </div>
+        </section>
+    </form>
+</div>
+<div id="dialog-confirm" title="Are you sure you want to delete?" style="display: none;">
+  <p><span class="ui-icon ui-icon-alert" style="float:left; margin:3px 12px 20px 0;"></span>Deletion is irretrievable, all data will be lost</p>
+</div>

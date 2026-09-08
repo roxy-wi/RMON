@@ -31,12 +31,12 @@ $( function() {
 			}
 		}]
 	});
-	$("#ssh_enable_table input").change(function () {
+	$("#ssh_enable_table").on('change', 'input', function () {
 		let id = $(this).attr('id').split('-');
 		updateSSH(id[1])
 		sshKeyEnableShow(id[1])
 	});
-	$("#ssh_enable_table select").on('selectmenuchange', function () {
+	$("#ssh_enable_table").on('selectmenuchange', 'select', function () {
 		let id = $(this).attr('id').split('-');
 		updateSSH(id[1])
 		sshKeyEnableShow(id[1])

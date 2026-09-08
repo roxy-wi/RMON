@@ -1,5 +1,6 @@
 from collections import Counter
 from html.parser import HTMLParser
+from pathlib import Path
 from types import SimpleNamespace
 from urllib.parse import parse_qs, urlsplit
 
@@ -353,5 +354,41 @@ def test_ux_messages_are_translated_consistently(app, language):
     with app.app_context():
         english = app.jinja_env.get_template('languages/en.html').module.ux
         translated = app.jinja_env.get_template(f'languages/{language}.html').module.ux
+    assert translated.keys() == english.keys()
+    assert all(isinstance(message, str) and message.strip() for message in translated.values())
+
+
+@pytest.mark.ui
+def test_check_editor_fixture_matches_the_real_rendered_template(app):
+    """Keep the DOM used by JavaScript workflow tests aligned with the actual form."""
+    with app.test_request_context():
+        env = app.jinja_env
+        macros = env.get_template('include/input_macros.html').module
+        rendered = env.get_template('include/smon/add_form.html').render(
+            lang=env.get_template('languages/en.html').module, chosen_lang='en',
+            input=macros.input, select=macros.select, checkbox=macros.checkbox,
+            telegrams=[], slacks=[], pds=[], mms=[], emails=[], incidentrelay=[],
+        )
+    fixture = Path(__file__).resolve().parents[1] / 'frontend/fixtures/check-editor.html'
+    assert rendered.strip() == fixture.read_text(encoding='utf-8').strip()
+    document = HtmlDocument()
+    document.feed(rendered)
+    _assert_unique_ids(document, set(document.ids))
+    assert len([a for a in document.find_all(tag='section') if a.get('role') == 'tabpanel']) == 3
+    labels = {label.get('for') for label in document.find_all(tag='label')}
+    assert {'new-smon-name', 'new-smon-url', 'new-smon-place', 'check_type',
+            'new-smon-port', 'new-smon-interval', 'new-smon-timeout'} <= labels
+    for tab in document.find_all(tag='button'):
+        if tab.get('role') == 'tab':
+            panel = document.find(element_id=tab['aria-controls'])
+            assert panel['aria-labelledby'] == tab['id']
+
+
+@pytest.mark.ui
+@pytest.mark.parametrize('language', SUPPORTED_LANGUAGES)
+def test_check_editor_messages_are_translated_consistently(app, language):
+    with app.app_context():
+        english = app.jinja_env.get_template('languages/en.html').module.check_editor
+        translated = app.jinja_env.get_template(f'languages/{language}.html').module.check_editor
     assert translated.keys() == english.keys()
     assert all(isinstance(message, str) and message.strip() for message in translated.values())

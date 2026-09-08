@@ -86,45 +86,36 @@ function getCountriesForCheck() {
 	});
 }
 function addEntityToStatus(server_id, hostname) {
-	let service_word = translate_div.attr('data-service');
-	let html_tag = '<div id="remove_check-' + server_id + '" data-name="' + hostname + '">' +
-		'<div class="check-name">' + hostname + '</div>' +
-		'<div class="add_user_group check-button" onclick="removeEntityFromStatus(' + server_id + ', \'' + hostname + '\')" title="' + delete_word + ' ' + service_word + '">-</div>' +
-		'</div>';
-	$('#add_check-' + server_id).remove();
-	$('#checked-entities').append(html_tag);
+    renderCheckEntity(server_id, hostname, true);
 }
 function removeEntityFromStatus(server_id, hostname) {
-	let add_word = translate_div.attr('data-add');
-	let service_word = translate_div.attr('data-service');
-
-	let html_tag = '<div class="all-checks" id="add_check-' + server_id + '" data-name="' + hostname + '">' +
-		'<div class="check-name">' + hostname + '</div>' +
-		'<div class="add_user_group check-button" onclick="addEntityToStatus(' + server_id + ',  \'' + hostname + '\')" title="' + add_word + ' ' + service_word + '">+</div></div>';
-    $('#all-entities').append(html_tag);
-	$('#remove_check-' + server_id).remove();
+    renderCheckEntity(server_id, hostname, false);
+}
+function renderCheckEntity(server_id, hostname, selected) {
+    if (!Number.isInteger(Number(server_id)) || Number(server_id) <= 0) return;
+    const action = selected ? delete_word : translate_div.attr('data-add');
+    const label = action + ' ' + hostname;
+    $('#add_check-' + server_id + ', #remove_check-' + server_id).remove();
+    const row = $('<div>', {id: (selected ? 'remove_check-' : 'add_check-') + server_id,
+        class: selected ? '' : 'all-checks', 'data-name': hostname});
+    $('<div>', {class: 'check-name'}).text(hostname).appendTo(row);
+    $('<button>', {type: 'button', class: 'add_user_group check-button', 'aria-label': label, title: label})
+        .text(selected ? '−' : '+').on('click', () => renderCheckEntity(server_id, hostname, !selected)).appendTo(row);
+    $(selected ? '#checked-entities' : '#all-entities').append(row);
 }
 function getEntityJson(entity_id, entity_type) {
-	let isGetEntity = true;
-	let dataId = '';
-	let dataName = '';
+	let loaded = false;
 	$.ajax({
 		url: api_v_prefix + "/rmon/" + entity_type + "/" + entity_id,
 		async: false,
 		contentType: "application/json; charset=utf-8",
 		success: function (data) {
-			$("#checked-entities > div").each((index, elem) => {
-				if (data.id === Number(elem.id.split('-')[1])) {
-					isGetEntity = false;
-				}
-			});
-			dataId = data.id;
-			dataName = data.name;
+			if (!data || Number(data.id) !== Number(entity_id) || !data.name) return;
+			addEntityToStatus(data.id, data.name);
+			loaded = true;
 		}
 	});
-	if (isGetEntity) {
-		addEntityToStatus(dataId, dataName);
-	}
+	return loaded;
 }
 function updateCurrentStatusRequest(check_id) {
 	$.ajax({

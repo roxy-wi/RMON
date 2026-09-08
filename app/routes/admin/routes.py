@@ -141,7 +141,7 @@ def update_roxywi():
     """
     roxywi_auth.page_for_admin()
     versions = roxy.versions()
-    services = tools_common.get_services_status()
+    services = tools_common.get_services_status(update_cur_ver=1)
     lang = roxywi_common.get_user_lang_for_flask()
 
     return render_template(

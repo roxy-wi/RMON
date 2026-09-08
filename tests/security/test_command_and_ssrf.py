@@ -42,7 +42,7 @@ def test_agent_http_request_ignores_caller_supplied_host(monkeypatch):
     def get(url, **kwargs):
         captured['url'] = url
         captured['kwargs'] = kwargs
-        return SimpleNamespace(content=b'ok')
+        return SimpleNamespace(content=b'ok', raise_for_status=lambda: None, close=lambda: None)
 
     monkeypatch.setattr(smon_agent, 'get_agent_headers', lambda _agent_id: {'Agent-UUID': 'uuid'})
     monkeypatch.setattr(smon_agent.smon_sql, 'get_agent_data', lambda _agent_id: SimpleNamespace(port=5101))

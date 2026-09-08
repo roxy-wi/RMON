@@ -102,11 +102,92 @@ window.RmonUI = (function () {
         content.css({minHeight: 0, maxHeight: 'none', overflow: 'auto', flex: '1 1 auto'});
         content.dialog('option', 'position', {my: 'center', at: 'center', of: window});
     }
+    let menuSequence = 0;
+    let openMenu = null;
+    function closeActions(restoreFocus = false) {
+        if (!openMenu) return;
+        const {toggle, menu} = openMenu;
+        menu.hidden = true;
+        toggle.setAttribute('aria-expanded', 'false');
+        openMenu = null;
+        if (restoreFocus && toggle.isConnected) toggle.focus();
+    }
+    function showActions(toggle, last = false) {
+        closeActions();
+        const menu = toggle.nextElementSibling;
+        menu.hidden = false;
+        toggle.setAttribute('aria-expanded', 'true');
+        openMenu = {toggle, menu};
+        const anchor = toggle.getBoundingClientRect();
+        const box = menu.getBoundingClientRect();
+        const top = anchor.bottom + 4 + box.height <= window.innerHeight - 12 ? anchor.bottom + 4 : anchor.top - box.height - 4;
+        menu.style.left = Math.max(12, Math.min(anchor.right - box.width, window.innerWidth - box.width - 12)) + 'px';
+        menu.style.top = Math.max(12, top) + 'px';
+        const items = menu.querySelectorAll('[role=menuitem]:not(:disabled)');
+        items[last ? items.length - 1 : 0]?.focus();
+    }
+    function enhanceActions(root) {
+        $(root).find('td.actions-column').each(function () {
+            if (this.querySelector('.row-actions') || !this.querySelector('button, a')) return;
+            const id = 'row-actions-' + (++menuSequence);
+            const label = (this.closest('tr').querySelector('input')?.value || this.closest('tr').cells[0]?.textContent || '').trim();
+            const menu = $('<div>', {id, class: 'row-actions-menu', role: 'menu', hidden: true})
+                .append($(this).contents().detach());
+            menu.children('button, a').attr({role: 'menuitem', tabindex: -1});
+            const toggle = $('<button>', {type: 'button', class: 'icon-button row-actions-toggle',
+                'aria-label': 'Actions: ' + label, 'aria-haspopup': 'menu', 'aria-expanded': 'false', 'aria-controls': id}).text('⋮');
+            $(this).append($('<div>', {class: 'row-actions'}).append(toggle, menu));
+        });
+    }
+    function initAdminTable(selector) {
+        const table = $(selector);
+        if (!table.length || $.fn.dataTable.isDataTable(table[0])) return;
+        // An early enhancement must not leave the toolbar inside another scroll box.
+        if (table.parent().hasClass('table-scroll')) table.unwrap();
+        return table.DataTable({
+            dom: '<"admin-table-toolbar"lf><"table-scroll"t><"admin-table-bottom"ip>',
+            autoWidth: false, pageLength: 25, stateSave: true,
+            lengthMenu: [[10, 25, 50, -1], [10, 25, 50, 'All']],
+            columnDefs: [{targets: 'actions-column', orderable: false, searchable: false}],
+            stateLoadParams: function (settings, data) {
+                data.order = (data.order || []).filter(order => settings.aoColumns[order[0]]?.bSortable);
+                if (!data.order.length) data.order = [[0, 'asc']];
+            },
+            drawCallback: function () { closeActions(); enhance(document); }
+        });
+    }
+    function addTableRows(selector, data) {
+        const table = $(selector);
+        const nodes = $(data);
+        (table.children('tbody').first().length ? table.children('tbody').first() : table).append(nodes);
+        if ($.fn.checkboxradio) nodes.find('input[type=checkbox]').checkboxradio();
+        if ($.fn.selectmenu) nodes.find('select').selectmenu();
+        if ($.fn.dataTable?.isDataTable(table[0])) {
+            // Register DOM rows with the plugin so later draws cannot drop them.
+            table.DataTable().rows.add(nodes.filter('tr').detach()).draw(false);
+        }
+        enhance(document);
+    }
+    function removeTableRow(selector) {
+        const row = $(selector);
+        const table = row.closest('table');
+        closeActions();
+        if (table.length && $.fn.dataTable?.isDataTable(table[0])) table.DataTable().row(row).remove().draw(false);
+        else row.remove();
+    }
+    function adjustTables() {
+        if ($.fn.dataTable) $.fn.dataTable.tables({visible: true, api: true}).columns.adjust();
+        enhance(document);
+    }
     function enhance(root) {
+        enhanceActions(root);
         $(root).find('.container table.overview, .container table.overview-wi').each(function () {
             if (this.closest('.table-scroll, .ui-dialog-content') ||
                 !this.getClientRects().length || this.closest('[style*="display: none"], [style*="display:none"]')) return;
             $(this).wrap($('<div>', {class: 'table-scroll', tabindex: 0, role: 'region', 'aria-label': text('table_label')}));
+        });
+        $(root).find('.dataTables_wrapper > .table-scroll').attr({
+            tabindex: 0, role: 'region', 'aria-label': text('table_label')
         });
         $(root).find('[onclick], .add-button, .add-button-wi, .check-button, .span-link').each(function () {
             if (this.matches('button, input, select, textarea, a[href]')) return;
@@ -135,6 +216,36 @@ window.RmonUI = (function () {
     }
     $(function () {
         enhance(document);
+        $(document).on('click', '.row-actions-toggle', function () {
+            if (openMenu?.toggle === this) closeActions(true);
+            else showActions(this);
+        });
+        $(document).on('click', function (event) {
+            if (!openMenu || event.target.closest('.row-actions-toggle')) return;
+            if (!openMenu.menu.contains(event.target) || event.target.closest('[role=menuitem]:not(:disabled)')) closeActions();
+        });
+        $(document).on('keydown', '.row-actions', function (event) {
+            const toggle = this.querySelector('.row-actions-toggle');
+            if (!openMenu || openMenu.toggle !== toggle) {
+                if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                    event.preventDefault(); showActions(toggle, event.key === 'ArrowUp');
+                }
+                return;
+            }
+            const items = Array.from(openMenu.menu.querySelectorAll('[role=menuitem]:not(:disabled)'));
+            const index = items.indexOf(document.activeElement);
+            if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeActions(true); }
+            else if (event.key === 'Tab') closeActions(true);
+            else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+                event.preventDefault();
+                const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 :
+                    (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+                items[next]?.focus();
+            }
+        });
+        document.addEventListener('scroll', event => {
+            if (openMenu && !openMenu.menu.contains(event.target)) closeActions();
+        }, true);
         $(document).on('keydown', '[role=button]:not(button)', function (event) {
             if (event.target === this && (event.key === 'Enter' || event.key === ' ')) {
                 event.preventDefault(); this.click();
@@ -143,9 +254,11 @@ window.RmonUI = (function () {
         // jQuery UI's fade effect restores inline styles before emitting dialogfocus.
         $(document).on('dialogopen dialogfocus', '.ui-dialog-content', function () { fitDialog(this); enhance(this); });
         $(window).on('resize', function () {
+            closeActions();
+            adjustTables();
             $('.ui-dialog-content').each(function () { if ($(this).dialog('isOpen')) fitDialog(this); });
         });
-        $('#tabs').on('tabsactivate', () => enhance(document));
+        $('#tabs').on('tabsactivate', adjustTables);
         let pending = false;
         new MutationObserver(records => {
             if (pending || !records.some(r => r.addedNodes.length)) return;
@@ -153,5 +266,6 @@ window.RmonUI = (function () {
             requestAnimationFrame(() => { pending = false; enhance(document); });
         }).observe(document.body, {childList: true, subtree: true});
     });
-    return {text, requestError, notifyRequestError, widgetState, loadFragment, initNavigation, enhance};
+    return {text, requestError, notifyRequestError, widgetState, loadFragment, initNavigation, enhance, fitDialog,
+        initAdminTable, addTableRows, removeTableRow};
 })();

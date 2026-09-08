@@ -44,11 +44,11 @@
 			{% endif %}
 			<br>
 		</td>
-		<td>
+		<td class="actions-column">
             {% if ssh.shared and g.user_params['group_id']|string() != ssh.group_id|string() %}
                 <!-- continue -->
             {% else %}
-			<a class="delete" onclick="confirmDeleteSsh({{ssh.id}})" title="{{lang.words.delete|title()}} {{ssh.name}}" style="cursor: pointer;"></a>
+			<button type="button" onclick="confirmDeleteSsh({{ssh.id}})">{{lang.words.delete|title()}} {{ssh.name}}</button>
             {% endif %}
 		</td>
 	</tr>

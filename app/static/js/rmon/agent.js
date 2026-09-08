@@ -213,6 +213,7 @@ function getAgentVersion(server_ip, agent_id){
 	$.ajax({
 		url: '/rmon/agent/version/' + server_ip,
 		type: 'get',
+		dataType: 'json',
 		data: {agent_id: agent_id},
 		success: function (data){
 			try {
@@ -230,68 +231,53 @@ function getAgentUptime(server_ip, agent_id){
 	$.ajax({
 		url: '/rmon/agent/uptime/' + server_ip,
 		type: 'get',
+		dataType: 'json',
 		data: {agent_id: agent_id},
 		success: function (data){
 			try {
-				data = JSON.parse(data);
+				if (!data || typeof data.uptime !== 'string') throw new Error('Invalid agent uptime');
 				$('#agent-uptime-' + agent_id).text(data['uptime']);
 				$('#agent-uptime-' + agent_id).attr('datetime', data['uptime']);
 				$("#agent-uptime-"+agent_id).timeago();
 			} catch (e) {
 				console.log(e)
 			}
-		}
+		},
+		error: function () { $('#agent-uptime-' + agent_id).text('—').removeAttr('datetime'); }
 	});
+}
+function setAgentStatus(agent_id, running) {
+	$('#agent-' + agent_id).removeClass('div-server-head-up div-server-head-down div-server-head-pause')
+		.addClass(running === null ? 'div-server-head-down' : (running ? 'div-server-head-up' : 'div-server-head-pause'));
+	for (const [action, prefix, enabled] of [['start', 'start', running !== true], ['restart', 'reload', true], ['stop', 'stop', running !== null]]) {
+		$('#' + prefix + '-' + agent_id).children().toggleClass('disabled-button', !enabled)
+			.attr('aria-disabled', String(!enabled)).removeAttr('onclick').off('click.rmonAgent')
+			.on('click.rmonAgent', function () { if (enabled) confirmAjaxAction(action, agent_id); });
+	}
 }
 function getAgentStatus(server_ip, agent_id){
 	$.ajax({
 		url: '/rmon/agent/status/' + server_ip,
 		type: 'get',
+		dataType: 'json',
 		data: {agent_id: agent_id},
 		success: function (data){
-			try {
-				data = JSON.parse(data);
-				if (data['running']) {
-					$('#agent-'+agent_id).addClass('div-server-head-up');
-					$('#start-'+agent_id).children().addClass('disabled-button');
-					$('#start-'+agent_id).children().removeAttr('onclick');
-					$('#agent-'+agent_id).removeClass('div-server-head-down');
-				} else {
-					$('#agent-'+agent_id).removeClass('div-server-head-up');
-					$('#agent-'+agent_id).addClass('div-server-head-pause');
-					$('#pause-'+agent_id).children().addClass('disabled-button');
-					$('#pause-'+agent_id).children().removeAttr('onclick');
-				}
-			} catch (e) {
-				console.log(e);
-				$('#agent-'+agent_id).addClass('div-server-head-down');
-				$('#stop-'+agent_id).children().addClass('disabled-button');
-				$('#pause-'+agent_id).children().addClass('disabled-button');
-				$('#pause-'+agent_id).children().removeAttr('onclick');
-				$('#stop-'+agent_id).children().removeAttr('onclick');
-			}
-		}
+			setAgentStatus(agent_id, data && typeof data.running === 'boolean' ? data.running : null);
+		},
+		error: function () { setAgentStatus(agent_id, null); }
 	});
 }
 function getAgentTotalChecks(server_ip, agent_id){
 	$.ajax({
 		url: '/rmon/agent/checks/' + server_ip,
 		type: 'get',
+		dataType: 'json',
 		data: {agent_id: agent_id},
 		contentType: "application/json; charset=utf-8",
 		success: function (data){
-			try {
-				data = JSON.parse(data);
-				if (data.error) {
-					$('#agent-total-checks-'+agent_id).text(data.error);
-				} else {
-					$('#agent-total-checks-'+agent_id).text(data);
-				}
-			} catch (e) {
-				console.log(e);
-				$('#agent-'+agent_id).addClass('div-server-head-down')
-			}
-		}
+			$('#agent-total-checks-' + agent_id).text(Number.isInteger(data) && data >= 0 ? data : '—');
+		},
+		error: function () { $('#agent-total-checks-' + agent_id).text('—'); }
 	});
 }
 function confirmDeleteAgent(id) {
@@ -372,16 +358,22 @@ function agentAction(action, id, dialog_id) {
 	$.ajax({
 		url: "/rmon/agent/action/"+ action,
 		type: "post",
+		dataType: 'json',
 		data: {agent_id: id},
 		success: function (data) {
-			data = data.replace(/\s+/g, ' ');
-			if (data.indexOf('error:') != '-1' || data.indexOf('unique') != '-1') {
-				toastr.error(data);
+			if (!data || data.status !== 'ok') {
+				toastr.error(window.RmonUI ? RmonUI.text('request_error') : 'Unexpected server response');
 			} else {
 				toastr.clear();
 				$(dialog_id).dialog("close");
 				getAgent(id, false);
 			}
+		},
+		error: function (xhr) {
+			const message = xhr.responseJSON && xhr.responseJSON.error;
+			if (typeof message === 'string') toastr.error(message, '', {escapeHtml: true});
+			else if (window.RmonUI) RmonUI.notifyRequestError(xhr);
+			else toastr.error('Cannot manage agent over SSH');
 		}
 	});
 }

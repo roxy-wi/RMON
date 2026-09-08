@@ -5,6 +5,8 @@ import paramiko
 
 class SshConnection:
     def __init__(self, server_ip: str, ssh_settings: dict):
+        if not ssh_settings.get('user'):
+            raise ValueError('SSH credentials are not configured for this server')
         self.ssh = paramiko.SSHClient()
         self.ssh.load_system_host_keys()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())

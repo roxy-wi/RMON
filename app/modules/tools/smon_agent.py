@@ -1,3 +1,4 @@
+import json
 import uuid
 from typing import Union
 
@@ -123,10 +124,30 @@ def send_get_request_to_agent(agent_id: int, server_ip: str, api_path: str) -> b
     server_ip = smon_sql.get_agent_ip_by_id(agent_id)
     try:
         req = requests.get(f'http://{server_ip}:{agent.port}/{api_path}', headers=headers, timeout=5)
-        return req.content
+        try:
+            req.raise_for_status()
+            return req.content
+        finally:
+            req.close()
+    except requests.HTTPError:
+        raise
     except Exception as e:
         roxywi_common.logger(f'Cannot get agent status: {e}', 'error')
         raise Exception(' Cannot get agent status')
+
+
+def get_agent_health(agent_id: int, server_ip: str) -> dict:
+    try:
+        result = send_get_request_to_agent(agent_id, server_ip, 'health')
+    except requests.HTTPError as error:
+        if error.response is None or error.response.status_code != 404:
+            raise
+        # Older agents expose status only through Flask-APScheduler.
+        result = send_get_request_to_agent(agent_id, server_ip, 'scheduler')
+    data = json.loads(result)
+    if not isinstance(data, dict) or not isinstance(data.get('running'), bool):
+        raise ValueError('Invalid agent health response')
+    return data
 
 
 def send_post_request_to_agent(agent_id: int, server_ip: str, api_path: str, json_data: object) -> Response:
