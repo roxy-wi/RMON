@@ -61,7 +61,9 @@
     </td>
     <td>{{services_name[s.0]['desc']|safe}}</td>
     <td class="actions-column">
-        {% if known_version and is_need_update %}
+        {% if s.2.get('managed_by') == 'docker' %}
+            <a href="https://rmon.io/installation#standalone-server" target="_blank" rel="noopener noreferrer">Docker</a>
+        {% elif known_version and is_need_update %}
             <button type="button" onclick="updateService('{{s.0}}')">{{lang.words.w_update|title()}}</button>
         {% endif %}
         {% if installed is sameas false %}

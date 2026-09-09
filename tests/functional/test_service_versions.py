@@ -1,5 +1,6 @@
 import copy
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -8,11 +9,89 @@ from app.modules.tools import common
 
 @pytest.fixture
 def version_probes(monkeypatch):
+    monkeypatch.delenv('RMON_SERVER_INTERNAL_URL', raising=False)
     monkeypatch.setattr(common.distro, 'id', lambda: 'ubuntu')
     monkeypatch.setattr(common.distro, 'like', lambda: '')
     writes = []
     monkeypatch.setattr(common.roxy_sql, 'update_tool_cur_version', lambda *args: writes.append(args))
     return writes
+
+
+@pytest.mark.parametrize('status,payload,expected', [
+    (200, {'service': 'rmon-server', 'version': '6.33'}, '6.33'),
+    (401, {}, '0'), (302, {}, '0'), (200, {'service': 'other', 'version': '6.33'}, '0'),
+    (200, {'service': 'rmon-server', 'version': '<html>'}, '0'), (200, [], '0'),
+])
+def test_container_version_uses_authenticated_mtls(monkeypatch, tmp_path, version_probes, status, payload, expected):
+    token = tmp_path / 'token'
+    token.write_text('test-only-token\n')
+    for key, value in {'URL': 'https://127.0.0.1:5100', 'TOKEN_FILE': str(token)}.items():
+        monkeypatch.setenv('RMON_SERVER_INTERNAL_' + key, value)
+    for key, value in {'CA_FILE': '/tls/ca.crt', 'CLIENT_CERT_FILE': '/tls/ui.crt', 'CLIENT_KEY_FILE': '/tls/ui.key'}.items():
+        monkeypatch.setenv('RMON_SERVER_' + key, value)
+    response = MagicMock(status_code=status)
+    response.json.return_value = payload
+    response.__enter__.return_value = response
+    session = MagicMock()
+    session.__enter__.return_value = session
+    session.get.return_value = response
+    monkeypatch.setattr(common.requests, 'Session', lambda: session)
+    monkeypatch.setattr(common, '_version_command', lambda _: pytest.fail('No package or source fallback'))
+    assert common.update_cur_tool_version('rmon-server')['current_version'] == expected
+    assert session.trust_env is False
+    kwargs = session.get.call_args.kwargs
+    assert kwargs['cert'] == ('/tls/ui.crt', '/tls/ui.key')
+    assert kwargs['verify'] == '/tls/ca.crt'
+    assert kwargs['headers']['Authorization'] == 'Bearer test-only-token'
+    assert kwargs['allow_redirects'] is False
+
+
+@pytest.mark.parametrize('url', ['ftp://localhost:5100', 'https://user:secret@localhost', 'https://localhost?token=secret'])
+def test_container_version_rejects_unsafe_url(monkeypatch, url):
+    monkeypatch.setenv('RMON_SERVER_INTERNAL_URL', url)
+    monkeypatch.setattr(common.requests, 'Session', lambda: pytest.fail('Request must not run'))
+    assert common._server_runtime_version() is None
+
+
+@pytest.mark.parametrize('scheme,ca', [('http', ''), ('https', ''), ('https', '/tls/self-signed-server.crt')])
+def test_container_version_supports_http_and_https_without_client_certificate(monkeypatch, tmp_path, scheme, ca):
+    token = tmp_path / 'token'
+    token.write_text('test-only-token')
+    monkeypatch.setenv('RMON_SERVER_INTERNAL_URL', f'{scheme}://localhost:5100')
+    monkeypatch.setenv('RMON_SERVER_INTERNAL_TOKEN_FILE', str(token))
+    monkeypatch.setenv('RMON_SERVER_CA_FILE', ca)
+    monkeypatch.delenv('RMON_SERVER_CLIENT_CERT_FILE', raising=False)
+    monkeypatch.delenv('RMON_SERVER_CLIENT_KEY_FILE', raising=False)
+    session = MagicMock()
+    session.__enter__.return_value = session
+    response = session.get.return_value.__enter__.return_value
+    response.status_code = 200
+    response.json.return_value = {'service': 'rmon-server', 'version': '7.0'}
+    monkeypatch.setattr(common.requests, 'Session', lambda: session)
+    assert common._server_runtime_version() == '7.0'
+    assert session.get.call_args.kwargs['cert'] is None
+    assert session.get.call_args.kwargs['verify'] == (ca or True)
+    assert session.get.call_args.kwargs['allow_redirects'] is False
+
+
+@pytest.mark.parametrize('scheme,cert,key', [('http', 'client.crt', 'client.key'),
+                                          ('https', 'client.crt', ''), ('https', '', 'client.key')])
+def test_container_version_rejects_incomplete_or_plaintext_client_identity(monkeypatch, tmp_path, scheme, cert, key):
+    token = tmp_path / 'token'
+    token.write_text('test-only-token')
+    monkeypatch.setenv('RMON_SERVER_INTERNAL_URL', f'{scheme}://localhost:5100')
+    monkeypatch.setenv('RMON_SERVER_INTERNAL_TOKEN_FILE', str(token))
+    monkeypatch.setenv('RMON_SERVER_CLIENT_CERT_FILE', cert)
+    monkeypatch.setenv('RMON_SERVER_CLIENT_KEY_FILE', key)
+    monkeypatch.setattr(common.requests, 'Session', lambda: pytest.fail('Invalid client identity'))
+    assert common._server_runtime_version() is None
+
+
+def test_container_cannot_be_overwritten_by_package_update(monkeypatch):
+    monkeypatch.setenv('RMON_SERVER_INTERNAL_URL', 'https://localhost:5100')
+    monkeypatch.setattr(common.server_mod, 'subprocess_execute', lambda _: pytest.fail('No package installation'))
+    with pytest.raises(ValueError, match='managed by Docker'):
+        common.update_roxy_wi('rmon-server')
 
 
 @pytest.mark.parametrize('distro_name,package,expected', [

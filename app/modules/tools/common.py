@@ -1,10 +1,13 @@
 from typing import Union, Type
 import ast
+import os
 from pathlib import Path
 import re
 import subprocess
+from urllib.parse import urlparse
 
 import distro
+import requests
 from packaging.version import InvalidVersion, Version
 
 import app.modules.db.roxy as roxy_sql
@@ -43,6 +46,8 @@ def get_services_status(update_cur_ver=0):
 
 
 def update_roxy_wi(service: str) -> str:
+    if service == 'rmon-server' and os.getenv('RMON_SERVER_INTERNAL_URL'):
+        raise ValueError('error: This RMON Server is managed by Docker. Update its container image instead of installing an OS package.')
     restart_service = ''
     services = roxy_sql.get_roxy_tools()
 
@@ -120,9 +125,43 @@ def _source_version(directory: str) -> str | None:
     return None
 
 
+def _server_runtime_version() -> str | None:
+    """Read the explicitly configured receiver over HTTP, HTTPS or mTLS."""
+    url = os.getenv('RMON_SERVER_INTERNAL_URL', '').rstrip('/')
+    parsed = urlparse(url)
+    if parsed.scheme not in ('http', 'https') or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment:
+        return None
+    try:
+        token = Path(os.environ['RMON_SERVER_INTERNAL_TOKEN_FILE']).read_text().strip()
+        if not token:
+            return None
+        certfile = os.getenv('RMON_SERVER_CLIENT_CERT_FILE')
+        keyfile = os.getenv('RMON_SERVER_CLIENT_KEY_FILE')
+        if bool(certfile) != bool(keyfile) or (certfile and parsed.scheme != 'https'):
+            return None
+        cert = (certfile, keyfile) if certfile else None
+        with requests.Session() as session:
+            session.trust_env = False
+            with session.get(url + '/internal/version', headers={'Authorization': 'Bearer ' + token},
+                             verify=os.getenv('RMON_SERVER_CA_FILE') or True, cert=cert,
+                             timeout=(3, 3), allow_redirects=False) as response:
+                if response.status_code != 200:
+                    return None
+                data = response.json()
+                if isinstance(data, dict) and data.get('service') == 'rmon-server' and isinstance(data.get('version'), str):
+                    return _valid_version(data['version'])
+    except (OSError, KeyError, ValueError, requests.RequestException):
+        pass
+    return None
+
+
 def update_cur_tool_version(tool_name: str) -> dict:
     if not re.fullmatch(r'[a-z0-9][a-z0-9.-]*', tool_name):
         raise ValueError('Invalid service name')
+    if tool_name == 'rmon-server' and os.getenv('RMON_SERVER_INTERNAL_URL'):
+        current = _server_runtime_version()
+        roxy_sql.update_tool_cur_version(tool_name, current or '0')
+        return {'current_version': current or '0', 'version_known': bool(current), 'installed': True, 'managed_by': 'docker'}
     if distro.id() in ('ubuntu', 'debian') or 'debian' in distro.like().split():
         package = _version_command(['dpkg-query', '-W', '-f=${Status}\t${Version}', tool_name])
         version = package.split('\t', 1)[1] if package and package.startswith('install ok installed\t') else None

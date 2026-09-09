@@ -166,3 +166,13 @@ def test_service_versions_distinguish_source_install_missing_and_unknown(app, la
 def test_admin_page_buttons_have_their_own_inset_toolbar(client, auth_headers):
     html = client.get('/admin', headers=auth_headers(1, 1)).get_data(as_text=True)
     assert html.count('class="admin-page-actions"') == 2
+
+
+@pytest.mark.ui
+def test_container_update_links_to_docker_instead_of_installing_packages(app):
+    html = render(app, 'ajax/load_updateroxywi.html',
+                  versions={'need_update': False, 'current_ver': '1.4.0', 'new_ver': '1.4.0'},
+                  services=[('rmon-server', 'active', {'current_version': '6.33', 'new_version': '6.34',
+                            'update_available': True, 'managed_by': 'docker', 'installed': True})])
+    assert 'https://rmon.io/installation#standalone-server' in html
+    assert "updateService('rmon-server'" not in html
