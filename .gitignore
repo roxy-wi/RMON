@@ -9,3 +9,10 @@ __pycache__/
 /.coverage
 /.idea/
 /tests/frontend/node_modules/
+/.env
+/.env.*
+!/.env.example
+/secrets/
+/backups/
+/compose.override.yaml
+/compose.rollback.yaml

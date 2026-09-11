@@ -7,9 +7,12 @@ from flask_jwt_extended import JWTManager
 from prometheus_client import multiprocess
 from prometheus_client.core import CollectorRegistry
 from prometheus_flask_exporter import PrometheusMetrics
+from app.version import get_service_version
 
 app = Flask(__name__)
 app.config.from_object('app.config.Configuration')
+from app.modules.common.proxy import configure_trusted_proxy
+configure_trusted_proxy(app)
 app.jinja_env.add_extension('jinja2.ext.do')
 app.jinja_env.add_extension('jinja2.ext.loopcontrols')
 
@@ -27,7 +30,7 @@ registry = CollectorRegistry()
 multiprocess.MultiProcessCollector(registry, path=os.getenv('RMON_PROMETHEUS_MULTIPROC_DIR', '/tmp'))
 
 metrics = PrometheusMetrics(app, registry=registry)
-metrics.info('rmon', 'RMON app', version='1.2.12')
+metrics.info('rmon', 'RMON app', version=get_service_version())
 
 from app.api.v1.routes.main import bp as main_api_v1_0_bp
 from app.api.v1.routes.user import bp as user_api_v1_0_bp

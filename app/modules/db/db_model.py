@@ -248,11 +248,11 @@ class OidcProvider(BaseModel):
     token_endpoint = TextField(null=True)
     userinfo_endpoint = TextField(null=True)
     jwks_uri = TextField(null=True)
-    scope = CharField(constraints=[SQL('DEFAULT "openid email profile"')])
-    subject_claim = CharField(constraints=[SQL('DEFAULT "sub"')])
-    email_claim = CharField(constraints=[SQL('DEFAULT "email"')])
-    username_claim = CharField(constraints=[SQL('DEFAULT "preferred_username"')])
-    groups_claim = CharField(constraints=[SQL('DEFAULT "groups"')])
+    scope = CharField(constraints=[SQL("DEFAULT 'openid email profile'")])
+    subject_claim = CharField(constraints=[SQL("DEFAULT 'sub'")])
+    email_claim = CharField(constraints=[SQL("DEFAULT 'email'")])
+    username_claim = CharField(constraints=[SQL("DEFAULT 'preferred_username'")])
+    groups_claim = CharField(constraints=[SQL("DEFAULT 'groups'")])
     allowed_domains = TextField(null=True)
     auto_create_users = IntegerField(constraints=[SQL('DEFAULT 0')])
     auto_link_by_email = IntegerField(constraints=[SQL('DEFAULT 1')])
@@ -383,6 +383,10 @@ class SmonAgent(BaseModel):
     shared = IntegerField(constraints=[SQL('DEFAULT 0')], index=True)
     port = IntegerField(constraints=[SQL('DEFAULT 5701')])
     region_id = ForeignKeyField(Region, null=True, on_delete='SET NULL', index=True)
+    result_transport = CharField(null=True)
+    applied_result_transport = CharField(null=True)
+    transport_settings_hash = CharField(null=True)
+    transport_checked_at = DateTimeField(null=True)
 
     class Meta:
         table_name = 'smon_agents'
@@ -577,7 +581,7 @@ class SmonHttpCheck(BaseModel):
     body_json = JSONField(null=True)
     proxy = JSONField(null=True)
     headers_response = JSONField(null=True)
-    accept_cookies = BooleanField(constraints=[SQL('DEFAULT 1')])
+    accept_cookies = BooleanField(constraints=[SQL('DEFAULT TRUE')])
     http_version = IntegerField(constraints=[SQL('DEFAULT 0')])
     resole_to_ip = CharField(null=True)
 

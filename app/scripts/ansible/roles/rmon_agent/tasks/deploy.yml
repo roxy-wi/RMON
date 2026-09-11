@@ -1,0 +1,78 @@
+---
+- name: Read native service state before migration
+  ansible.builtin.service_facts:
+
+- name: Record the recovery state
+  ansible.builtin.set_fact:
+    agent_previous_name: '{{ agent_container_name }}-previous-{{ lookup("ansible.builtin.password", "/dev/null", length=12, chars=["ascii_lowercase", "digits"]) }}'
+    agent_native_running: "{{ ansible_facts.services.get('rmon-agent.service', {}).get('state') == 'running' }}"
+    agent_native_enabled: "{{ ansible_facts.services.get('rmon-agent.service', {}).get('status') == 'enabled' }}"
+    agent_runtime_started: true
+    agent_previous_renamed: false
+
+- name: Stop the native agent before using its existing data
+  ansible.builtin.systemd_service:
+    name: rmon-agent
+    state: stopped
+  when: agent_native_running | bool
+
+- name: Stop the previous container and disable its automatic restart
+  community.docker.docker_container:
+    docker_host: '{{ agent_docker_host }}'
+    name: '{{ agent_container_name }}'
+    state: stopped
+    stop_timeout: 30
+    restart_policy: 'no'
+  when: agent_previous.exists
+
+- name: Retain the previous container for recovery
+  ansible.builtin.command:
+    argv: [docker, --host, '{{ agent_docker_host }}', rename, '{{ agent_container_name }}', '{{ agent_previous_name }}']
+  when: agent_previous.exists
+  changed_when: true
+  register: agent_rename_result
+
+- name: Record the retained container
+  ansible.builtin.set_fact:
+    agent_previous_renamed: '{{ agent_previous.exists and agent_rename_result is changed }}'
+
+- name: Start the agent with its original paths and wait for health
+  community.docker.docker_container:
+    docker_host: '{{ agent_docker_host }}'
+    name: '{{ agent_container_name }}'
+    image: '{{ agent_image_selected.images[0].Id }}'
+    pull: never
+    state: healthy
+    healthy_wait_timeout: 120
+    restart_policy: unless-stopped
+    stop_timeout: 30
+    read_only: true
+    user: '0:0'
+    cap_drop: [ALL]
+    capabilities: [NET_RAW, DAC_OVERRIDE]
+    security_opts: ['no-new-privileges:true']
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=64m']
+    etc_hosts:
+      host.docker.internal: host-gateway
+    published_ports: ['{{ agent_bind_ip }}:{{ agent_port }}:{{ agent_port }}']
+    labels:
+      io.rmon.managed: 'true'
+      io.rmon.uuid: '{{ agent_uuid }}'
+      io.rmon.deployment: '{{ agent_deployment_hash }}'
+      io.rmon.operation: '{{ agent_previous_name }}'
+    env:
+      RMON_AGENT_SCHEDULER_API_ENABLED: '0'
+      RMON_AGENT_CONFIG_FILE: '{{ agent_config_path }}'
+      RMON_AGENT_DB_PATH: '{{ agent_data_path }}/check_results.db'
+      RMON_AGENT_LOG_PATH: '{{ agent_log_path }}/rmon-agent.log'
+    mounts: >-
+      {{ agent_read_only_mounts + [
+         {'type': 'bind', 'source': agent_data_path, 'target': agent_data_path},
+         {'type': 'bind', 'source': agent_log_path, 'target': agent_log_path}] }}
+  no_log: true
+
+- name: Disable the native service after a successful migration
+  ansible.builtin.systemd_service:
+    name: rmon-agent
+    enabled: false
+  when: agent_native_enabled | bool

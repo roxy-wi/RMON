@@ -284,7 +284,7 @@ class HttpCheckRequest(BaseCheckRequest):
 class DnsCheckRequest(BaseCheckRequest):
     resolver: Union[IPvAnyAddress, DomainName]
     port: Annotated[int, Gt(1), Le(65535)] = 53
-    record_type: Literal['a', 'aaa', 'caa', 'cname', 'mx', 'ns', 'ptr', 'sao', 'src', 'txt']
+    record_type: Literal['a', 'aaaa', 'caa', 'cname', 'mx', 'ns', 'ptr', 'soa', 'srv', 'txt']
     ip: Union[IPvAnyAddress, DomainName]
 
 
@@ -348,7 +348,7 @@ class AddUserToGroup(BaseModel):
 
 class RmonAgent(BaseModel):
     name: EscapedString
-    description: Optional[EscapedString] = None
+    description: Optional[EscapedString] = ''
     enabled: Optional[bool] = 1
     shared: Optional[bool] = 0
     port: Annotated[int, Gt(1024), Le(65535)] = 5101
@@ -356,6 +356,12 @@ class RmonAgent(BaseModel):
     uuid: Optional[UUID4] = ''
     reconfigure: Optional[bool] = 0
     region_id: Optional[int] = None
+    result_transport: Optional[Literal['http', 'https', 'mtls']] = None
+
+    @field_validator('description', mode='before')
+    @classmethod
+    def normalize_description(cls, value):
+        return '' if value is None else value
 
 
 class GroupQuery(BaseModel):

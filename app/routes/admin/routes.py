@@ -14,6 +14,7 @@ import app.modules.roxywi.roxy as roxy
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.common as roxywi_common
 import app.modules.tools.common as tools_common
+from app.modules.common.agent_transport import certificate_root
 
 
 @bp.before_request
@@ -52,6 +53,7 @@ def admin():
         'roles': sql.select_roles(),
         'timezones': pytz.all_timezones,
         'settings': sql.get_setting('', all=1),
+        'agent_certificate_root': certificate_root(g.user_params['group_id']).as_posix(),
         'ldap_enable': sql.get_setting('ldap_enable'),
         'guide_me': 1,
         'user_subscription': roxywi_common.return_user_subscription(),

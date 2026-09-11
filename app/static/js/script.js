@@ -511,7 +511,7 @@ $(function () {
 		preload: true
 	});
 });
-let socket = new ReconnectingWebSocket("wss://" + window.location.host, null, {maxReconnectAttempts: 20, reconnectInterval: 3000});
+    let socket = new ReconnectingWebSocket((window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host, null, {maxReconnectAttempts: 20, reconnectInterval: 3000});
 
 socket.onopen = function(e) {
   console.log("[open] Connection is established with " + window.location.host);

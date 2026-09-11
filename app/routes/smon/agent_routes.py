@@ -14,7 +14,7 @@ import app.modules.db.server as server_sql
 import app.modules.tools.smon_agent as smon_agent
 import app.modules.tools.common as tools_common
 import app.modules.roxywi.common as roxywi_common
-import app.modules.server.server as server_mod
+from app.modules.common import agent_transport
 
 
 def _require_agent_access(agent_id: int, server_ip: str = None):
@@ -140,6 +140,15 @@ def get_free_agents():
     return jsonify(servers)
 
 
+@bp.get('/agent/transport-settings')
+@jwt_required()
+@get_user_params()
+@page_for_admin(level=2)
+def get_agent_transport_settings():
+    group_id = g.user_params['group_id']
+    return jsonify(result_transport=agent_transport.group_settings(group_id)['agent_result_transport'])
+
+
 @bp.get('/agent/count')
 @jwt_required()
 def get_agent_count():
@@ -157,7 +166,9 @@ def get_agent_count():
 def get_agent_info(agent_id):
     try:
         _require_agent_access(agent_id)
-        agent_data = smon_sql.get_agent(agent_id)
+        agent_data = list(smon_sql.get_agent(agent_id))
+        for item in agent_data:
+            item.transport_pending = agent_transport.pending(item)
     except Exception as e:
         return f'{e}'
 
@@ -260,12 +271,11 @@ def get_agent_checks(server_ip):
 @get_user_params()
 @page_for_admin(level=2)
 def agent_action(action):
-    agent = _require_agent_access(int(request.form.get('agent_id')))
-    server_ip = agent.ip
+    agent_id = int(request.form.get('agent_id'))
+    _require_agent_access(agent_id)
 
     try:
-        command = f'sudo systemctl {action} rmon-agent'
-        server_mod.ssh_command(server_ip, command, timeout=30, rc=True)
+        smon_agent.run_agent_action(agent_id, action)
     except Exception as e:
         return jsonify(error=str(e)), 502
     return jsonify(status='ok')

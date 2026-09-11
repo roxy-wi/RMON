@@ -38,6 +38,10 @@ def get_services_status(update_cur_ver=0):
             v.setdefault('version_known', current is not None)
             v.setdefault('installed', True if current else None)
             v['update_available'] = bool(current and latest and Version(current) < Version(latest))
+            if os.getenv('RMON_CONTAINER') == '1':
+                v['managed_by'] = 'external'
+                if not (s == 'rmon-server' and os.getenv('RMON_SERVER_INTERNAL_URL')):
+                    v.update(current_version='0', version_known=False, installed=None, update_available=False)
             services.append([s, status, v])
     except Exception as e:
         raise Exception(f'error: Cannot get tools status: {e}')
@@ -46,6 +50,8 @@ def get_services_status(update_cur_ver=0):
 
 
 def update_roxy_wi(service: str) -> str:
+    if os.getenv('RMON_CONTAINER') == '1':
+        raise ValueError('error: Update container images or external services outside the RMON web container.')
     if service == 'rmon-server' and os.getenv('RMON_SERVER_INTERNAL_URL'):
         raise ValueError('error: This RMON Server is managed by Docker. Update its container image instead of installing an OS package.')
     restart_service = ''
@@ -72,13 +78,15 @@ def update_roxy_wi(service: str) -> str:
 
 
 def is_tool_active(tool_name: str) -> str:
+    if os.getenv('RMON_CONTAINER') == '1':
+        return 'external'
     is_in_docker = roxywi_mod.is_docker()
     if is_in_docker:
         cmd = f"sudo supervisorctl status {tool_name}|awk '{{print $2}}'"
     else:
         cmd = f"systemctl is-active {tool_name}"
     status, stderr = server_mod.subprocess_execute(cmd)
-    return status[0]
+    return status[0] if status else 'unknown'
 
 
 def update_cur_tool_versions() -> dict:
@@ -162,6 +170,8 @@ def update_cur_tool_version(tool_name: str) -> dict:
         current = _server_runtime_version()
         roxy_sql.update_tool_cur_version(tool_name, current or '0')
         return {'current_version': current or '0', 'version_known': bool(current), 'installed': True, 'managed_by': 'docker'}
+    if os.getenv('RMON_CONTAINER') == '1':
+        return {'current_version': '0', 'version_known': False, 'installed': None, 'managed_by': 'external'}
     if distro.id() in ('ubuntu', 'debian') or 'debian' in distro.like().split():
         package = _version_command(['dpkg-query', '-W', '-f=${Status}\t${Version}', tool_name])
         version = package.split('\t', 1)[1] if package and package.startswith('install ok installed\t') else None

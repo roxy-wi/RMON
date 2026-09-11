@@ -13,6 +13,7 @@ PyMySQL>=1.1.1
 psycopg2-binary==2.9.10
 Werkzeug~=3.0.3
 Flask~=3.0.3
+gunicorn~=23.0.0
 Flask-APScheduler==1.12.4
 Flask-Caching==1.10.1
 Flask-JWT-Extended==4.6.0

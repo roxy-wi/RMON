@@ -47,6 +47,7 @@ function addAgentDialog(agent_id=0, edit=false) {
 			return false;
 		}
 		getFreeServers();
+		if (!getAgentTransportDefaults()) return false;
 		buttons = [
 			{
 				text: add_word,
@@ -100,6 +101,8 @@ function addAgent(dialog_id, agent_id=0, edit=false, reconfigure=false) {
         'enabled': agent_enabled,
         'shared': agent_shared
     };
+	const resultTransport = $('#new-agent-result-transport').val();
+	if (resultTransport) agent_data.result_transport = resultTransport;
 	let method = 'POST';
 	let req_url = api_v_prefix + "/rmon/agent";
 	if (edit) {
@@ -124,11 +127,11 @@ function addAgent(dialog_id, agent_id=0, edit=false, reconfigure=false) {
 					if (edit) {
 						getAgent(agent_id, false);
 						if (reconfigure) {
-							runInstallationTaskCheck(data.tasks_ids);
+							runInstallationTaskCheck(data.tasks_ids, agent_id);
 						}
 					} else {
 						getAgent(data.id, new_agent = true);
-						runInstallationTaskCheck(data.tasks_ids);
+						runInstallationTaskCheck(data.tasks_ids, data.id);
 					}
 				}
 			}
@@ -142,10 +145,12 @@ function getAgentSettings(agent_id) {
 		success: function (data) {
 			$('#new-agent-name').val(data['name'].replaceAll("'", ""));
 			$('#new-agent-port').val(data['port']);
+			$('#new-agent-result-transport option[value=""]').prop('disabled', Boolean(data.result_transport));
+			$('#new-agent-result-transport').val(data.result_transport || '').selectmenu('refresh');
 			$('#new-agent-select-tr').hide();
 			generateSelect('#new-agent-server-id', data['server_id'], data['server_id'], 'selected')
 			$('#new-agent-server-id').attr('disabled', 'disabled');
-			$('#new-agent-desc').val(data['description'].replaceAll("'", ""));
+			$('#new-agent-desc').val((data['description'] || '').replaceAll("'", ""));
 			$('#new-agent-enabled').checkboxradio("refresh");
 			if (data['enabled'] == '1') {
 				$('#new-agent-enabled').prop('checked', true)
@@ -177,10 +182,27 @@ function getFreeServers() {
 		}
 	});
 }
+function getAgentTransportDefaults() {
+	let loaded = false;
+	$.ajax({
+		url: '/rmon/agent/transport-settings',
+		async: false,
+		success: function (data) {
+			if (!['http', 'https', 'mtls'].includes(data.result_transport)) return;
+			$('#new-agent-result-transport option[value=""]').prop('disabled', true);
+			$('#new-agent-result-transport').val(data.result_transport).selectmenu('refresh');
+			loaded = true;
+		},
+		error: function (xhr) { toastr.error(xhr.responseJSON?.error || xhr.statusText); }
+	});
+	return loaded;
+}
 function cleanAgentAddForm() {
 	$('#new-agent-name').val('');
 	$('#new-agent-server-id').val('------').change();
 	$('#new-agent-desc').val('');
+	$('#new-agent-result-transport option[value=""]').prop('disabled', false);
+	$('#new-agent-result-transport').val('').selectmenu('refresh');
 	$('#new-agent-shared').prop('checked', false);
 	$('#new-agent-enabled').prop('checked', true);
 	$('#new-agent-shared').checkboxradio("refresh");
@@ -448,6 +470,7 @@ function moveChecks(agent_id, agent_ip, dialog_id) {
 	});
 }
 const INSTALLATION_TASKS_KEY = 'installationTasks';
+const installationTaskAgents = new Map();
 function getInstallationTasksFromSessionStorage() {
     const tasks = sessionStorage.getItem(INSTALLATION_TASKS_KEY);
     return tasks ? JSON.parse(tasks) : [];
@@ -481,9 +504,10 @@ function checkInstallationTask() {
 		clearInterval(checkInstallationTaskInterval);
 	}
 }
-function runInstallationTaskCheck(tasks_ids) {
+function runInstallationTaskCheck(tasks_ids, agent_id=null) {
 	toastr.info('Installation started. You can continue to use the system while it is installing');
 	tasks_ids.forEach(item => {
+		if (agent_id !== null) installationTaskAgents.set(String(item), agent_id);
 		addItemToSessionStorageInstallTask(item);
 		setTimeout(function () {
 			setInterval(checkInstallationTask, 3000);
@@ -501,6 +525,11 @@ function checkInstallationStatus(taskId) {
 			} else if (data.status === 'failed') {
 				toastr.error('Cannot install ' + data.service_name + '. Error: ' + data.error);
 				removeItemFromSessionStorage(taskId);
+			}
+			if (data.status === 'completed' || data.status === 'failed') {
+				const agentId = installationTaskAgents.get(String(taskId));
+				if (agentId !== undefined) getAgent(agentId);
+				installationTaskAgents.delete(String(taskId));
 			}
 		}
 	});

@@ -6,6 +6,7 @@
     'logs': 'Logs',
     'ldap': 'LDAP',
     'smon': 'RMON',
+    'agent': lang.agent_transport.section,
     }
 %}
 <script defer src="{{ url_for('static', filename='js/admin_settings.js') }}"></script>
@@ -22,6 +23,11 @@
                 {{sections_name[set.section]}}
             </h3>
         </th>
+        {% if set.section == 'agent' %}
+        <tr class="agent-section" style="display: none"><td colspan="3" class="padding10">
+            {{ lang.agent_transport.settings_help }} <code>{{ agent_certificate_root }}</code>
+        </td></tr>
+        {% endif %}
         <tr class="overviewHead {{set.section}}-section" style="display: none">
             <td class="padding10 first-collumn">Parameter</td>
             <td class="addOption">Value</td>
@@ -34,10 +40,18 @@
         {% else %}
         <tr class="{{ loop.cycle('odd', 'even') }} {{set.section}}-section" style="display: none">
             <td class="addName">
-                {{set.param}}
+                {% if set.section == 'agent' %}{{ lang.agent_transport.fields[set.param] }}{% else %}{{set.param}}{% endif %}
             </td>
             <td class="addOption">
-                {% if set.param in ('ldap_password', 'rabbitmq_password', 'mail_smtp_password') %}
+                {% if set.param == 'agent_result_transport' %}
+                    <select id="{{ set.param }}" name="{{ set.param }}" class="agent-setting-select">
+                        {% for value, label in [('http', 'HTTP'), ('https', 'HTTPS'), ('mtls', 'HTTPS + mTLS')] %}
+                        <option value="{{ value }}" {% if set.value == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                {% elif set.param == 'agent_tls_generate' %}
+                    {{ checkbox(set.param, checked='checked' if set.value == '1' else '', style='margin: 0') }}
+                {% elif set.param in ('ldap_password', 'rabbitmq_password', 'mail_smtp_password') %}
                     {% if set.value is none %}
                         {{ input(set.param, size='25', type='password', style='width: 210px;') }}
                     {% else %}
@@ -71,7 +85,7 @@
                 {% endif %}
             </td>
             <td class="addOption">
-                {{ lang.settings[set.section][set.param] }}
+                {% if set.section == 'agent' %}{{ lang.agent_transport.descriptions[set.param] }}{% else %}{{ lang.settings[set.section][set.param] }}{% endif %}
             </td>
         </tr>
         {% endif %}

@@ -33,6 +33,8 @@ def versions():
 	json_data = {
 		'need_update': 0
 	}
+	if os.getenv('RMON_CONTAINER') == '1':
+		json_data['managed_by'] = 'docker'
 	try:
 		current_ver = get_service_version()
 		json_data['current_ver'] = current_ver
@@ -89,6 +91,8 @@ def update_user_status() -> None:
 
 def action_service(action: str, service: str) -> str:
 	require_feature(SERVICE_CONTROL)
+	if os.getenv('RMON_CONTAINER') == '1':
+		return 'error: Manage external services outside the RMON web container.'
 	is_in_docker = is_docker()
 	cmd = f"sudo systemctl disable {service} --now"
 	if action in ("start", "restart"):

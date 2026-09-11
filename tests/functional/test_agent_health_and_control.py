@@ -10,7 +10,34 @@ import app.modules.tools.smon_agent as agents
 import app.routes.smon.agent_routes as routes
 import app.modules.roxywi.overview as overview
 from app.modules.server.ssh_connection import SshConnection
-from app.modules.db.db_model import Server, SmonAgent
+from app.modules.db.db_model import Server, SmonAgent, InstallationTasks
+from app.modules.service import installation
+from app.modules.roxywi.class_models import RmonAgent
+
+
+@pytest.mark.parametrize('description', [{}, {'description': None}, {'description': ''}])
+def test_agent_creation_accepts_empty_description(agent, description):
+    data = RmonAgent(name='Empty description', server_id=agent.server_id.server_id, **description)
+    row = SmonAgent.create(**data.model_dump(exclude={'reconfigure', 'uuid'}), uuid=str(uuid.uuid4()))
+    try:
+        assert row.description == ''
+    finally:
+        row.delete_instance()
+
+
+def test_failed_installation_is_recorded_without_a_request_context(agent, monkeypatch):
+    task = InstallationTasks.create(service_name='Agent', server_id=agent.server_id, user_id=1,
+                                    group_id=1, action='install')
+    monkeypatch.setattr(installation, 'run_ansible', Mock(side_effect=RuntimeError('Deployment failed')))
+    monkeypatch.setattr(installation.roxywi_common, 'logger', Mock(side_effect=AssertionError('Requires HTTP request')))
+    try:
+        installation.run_installations({}, [agent.server_id.ip], 'rmon_agent', task.id)
+        result = InstallationTasks.get_by_id(task.id)
+        assert result.status == 'failed'
+        assert result.error == 'Deployment failed'
+        assert result.finish_date is not None
+    finally:
+        task.delete_instance()
 
 
 @pytest.fixture
@@ -106,15 +133,17 @@ def test_service_actions_always_use_ssh(client, auth_headers, agent, monkeypatch
     if loopback:
         agent.server_id.ip = '127.0.0.1'
         agent.server_id.save()
-    ssh = Mock(return_value='')
-    monkeypatch.setattr(routes.server_mod, 'ssh_command', ssh)
+    run = Mock(return_value={})
+    monkeypatch.setattr(agents, 'run_ansible', run)
     response = client.post(f'/rmon/agent/action/{action}', data={'agent_id': agent.id}, headers=auth_headers(1, 1))
     assert response.status_code == 200 and response.get_json() == {'status': 'ok'}
-    ssh.assert_called_once_with(agent.server_id.ip, f'sudo systemctl {action} rmon-agent', timeout=30, rc=True)
+    run.assert_called_once_with(
+        {'server': {'hosts': {agent.server_id.ip: {'action': action, 'agent_uuid': str(agent.uuid)}}}},
+        [agent.server_id.ip], 'rmon_agent')
 
 
 def test_service_ssh_errors_have_json_failure_status(client, auth_headers, agent, monkeypatch):
-    monkeypatch.setattr(routes.server_mod, 'ssh_command', Mock(side_effect=ValueError('SSH credentials are not configured for this server')))
+    monkeypatch.setattr(agents, 'run_ansible', Mock(side_effect=ValueError('SSH credentials are not configured for this server')))
     response = client.post('/rmon/agent/action/start', data={'agent_id': agent.id}, headers=auth_headers(1, 1))
     assert response.status_code == 502
     assert 'SSH credentials' in response.get_json()['error']
@@ -129,7 +158,7 @@ def test_probes_and_actions_enforce_agent_access(client, auth_headers, agent, mo
     request = Mock()
     ssh = Mock()
     monkeypatch.setattr(agents, 'send_get_request_to_agent', request)
-    monkeypatch.setattr(routes.server_mod, 'ssh_command', ssh)
+    monkeypatch.setattr(agents, 'run_ansible', ssh)
     response = client.get(f'/rmon/agent/status/another.test?agent_id={agent.id}', headers=auth_headers(1, 1))
     assert response.status_code == 403
     response = client.post('/rmon/agent/action/start', data={'agent_id': agent.id}, headers=auth_headers(3, 1))

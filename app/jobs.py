@@ -67,6 +67,8 @@ def delete_old_logs():
 
 @scheduler.task('interval', id='update_owner_on_log', hours=12, misfire_grace_time=None)
 def update_owner_on_log():
+    if os.getenv('RMON_CONTAINER') == '1':
+        return
     log_path = get_config.get_config_var('main', 'log_path')
     try:
         if distro.id() == 'ubuntu':
@@ -85,7 +87,16 @@ def delete_ansible_artifacts():
     for folder in folders:
         if os.path.isdir(f'{ansible_path}/{folder}'):
             try:
-                shutil.rmtree(f'{ansible_path}/{folder}')
+                if os.getenv('RMON_CONTAINER') == '1':
+                    # Preserve the image-owned writable directory (or a mounted tmpfs).
+                    with os.scandir(f'{ansible_path}/{folder}') as entries:
+                        for entry in entries:
+                            if entry.is_dir(follow_symlinks=False):
+                                shutil.rmtree(entry.path)
+                            else:
+                                os.unlink(entry.path)
+                else:
+                    shutil.rmtree(f'{ansible_path}/{folder}')
             except Exception as e:
                 raise Exception(f'error: Cron cannot delete ansible folders: {e}')
 

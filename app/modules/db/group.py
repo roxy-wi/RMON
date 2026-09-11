@@ -1,4 +1,5 @@
 from peewee import IntegrityError
+from app.modules.common.agent_transport import setting_rows
 
 from app.modules.db.db_model import Groups, OidcGroupMapping, Setting, UserGroups
 from app.modules.db.common import out_error, resource_not_empty
@@ -58,7 +59,7 @@ def add_setting_for_new_group(group_id):
 	]
 
 	try:
-		Setting.insert_many(data_source).execute()
+		Setting.insert_many(data_source + setting_rows(group_id)).execute()
 	except Exception as e:
 		out_error(e)
 

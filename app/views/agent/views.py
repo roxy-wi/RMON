@@ -12,6 +12,7 @@ from app.modules.db.db_model import InstallationTasks
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 from app.modules.roxywi.class_models import BaseResponse, RmonAgent, GroupQuery, TaskAcceptedPostResponse, TaskAcceptedOtherResponse
 from app.modules.common.common_classes import SupportClass
+from app.modules.common import agent_transport
 
 
 def _get_agent_for_management(agent_id: int, group_id: int):
@@ -102,6 +103,8 @@ class AgentView(MethodView):
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get agent')
         agent_dict = model_to_dict(agent, recurse=False)
         agent_dict.pop('uuid', None)
+        agent_dict.pop('transport_settings_hash', None)
+        agent_dict['transport_pending'] = agent_transport.pending(agent)
         return jsonify(agent_dict)
 
     @validate(body=RmonAgent)

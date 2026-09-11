@@ -1,4 +1,30 @@
 {% set lang_short = 'pt-br' %}
+{% set agent_transport = {
+    "section": "Agent connections",
+    "label": "Result delivery",
+    "preserve": "Keep current configuration",
+    "unknown": "Not yet verified",
+    "pending": "Changes pending application",
+    "checked": "Connection verified",
+    "help": "Uses the agent owner's group settings. Apply connection changes with Reconfigure. Configure the result server for the selected mode. The agent management API remains HTTP.",
+    "settings_help": "Certificate paths refer to files accessible to RMON inside this group's directory:",
+    "fields": {
+        "agent_result_transport": "Default connection",
+        "agent_tls_ca_file": "Trusted CA",
+        "agent_tls_generate": "Generate client certificates",
+        "agent_tls_ca_key_file": "CA signing key",
+        "agent_tls_cert_file": "Client certificate",
+        "agent_tls_key_file": "Client private key"
+    },
+    "descriptions": {
+        "agent_result_transport": "Default for newly installed agents. Existing agents keep their selected mode.",
+        "agent_tls_ca_file": "Path to the trusted CA bundle. Leave empty for HTTPS with system trust. Required for mTLS.",
+        "agent_tls_generate": "Issue a separate client certificate for each agent when a pair is missing.",
+        "agent_tls_ca_key_file": "Path to the CA signing key for certificate generation. The key stays in RMON.",
+        "agent_tls_cert_file": "Path to an existing client certificate. Use {uuid} for an individual file for each agent.",
+        "agent_tls_key_file": "Path to the matching client private key. Supports {uuid}."
+    }
+} %}
 {% set menu_links = dict() %}
 {% set menu_links = {
     "overview": {

@@ -1,0 +1,24 @@
+name: Container tests
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  container-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build the web image (no registry publication)
+        run: docker build --tag rmon-web:test .
+      - name: Build the Nginx proxy image
+        run: docker build --tag rmon-proxy:test container/nginx
+      - name: Validate Compose
+        run: |
+          docker compose config --quiet
+          docker compose -f compose.yaml -f compose.server.yaml config --quiet
+      - name: Test HTTP, HTTPS, bootstrap, persistence and database readiness
+        run: python3 tests/container/image_smoke.py

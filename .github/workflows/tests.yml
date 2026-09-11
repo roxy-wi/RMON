@@ -51,7 +51,7 @@ jobs:
           python -m pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Compile Python sources
-        run: python -m compileall -q app tests scheduler_runner.py rotate_credential_secret.py
+        run: python -m compileall -q app tests container gunicorn.conf.py scheduler_runner.py rotate_credential_secret.py
 
       - name: Smoke test application startup
         run: python -m pytest tests/smoke -q

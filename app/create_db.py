@@ -70,7 +70,8 @@ def default_values():
 	]
 
 	try:
-		Setting.insert_many(data_source).on_conflict_ignore().execute()
+		from app.modules.common.agent_transport import setting_rows
+		Setting.insert_many(data_source + setting_rows(1)).on_conflict_ignore().execute()
 	except Exception as e:
 		print(str(e))
 
@@ -146,5 +147,20 @@ def default_values():
 
 
 if __name__ == "__main__":
+	# Models describe the current schema; historical rename/drop migrations must
+	# not be replayed against a freshly created database.
+	bootstrap_connection = connect()
+	try:
+		was_empty = not bootstrap_connection.get_tables()
+	finally:
+		bootstrap_connection.close()
 	create_tables()
 	default_values()
+	if was_empty:
+		from app.modules.db.migrations import get_migration_files
+		from app.version import get_service_version
+		if User.select().count() != 3 or Role.select().count() != 4 or not Setting.select().exists():
+			raise RuntimeError('New database initialization is incomplete; migrations were not baselined')
+		for filename in get_migration_files():
+			Migration.create(name=filename[:-3])
+		Version.insert(version=get_service_version()).execute()

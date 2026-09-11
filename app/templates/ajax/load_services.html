@@ -17,7 +17,9 @@
 {% set is_service_stopped_title = lang.words.stop|title()+" "+lang.words.and+" "+lang.words.disable+" "+services_name[s.0]['name']+" "+lang.words.service %}
 <tr class="{{ loop.cycle('odd', 'even') }}" id="{{s.0}}">
     <td class="padding10 first-collumn">
-        {% if s.1 == 'active' or s.1 == 'RUNNING' %}
+        {% if s.2.get('managed_by') == 'external' %}
+            <span title="Status is unavailable here. Manage this service on its host."><span class="serverNone server-status"></span></span>
+        {% elif s.1 == 'active' or s.1 == 'RUNNING' %}
             <span title="{{lang.words.service|title()}} {{services_name[s.0]['name']}} {{lang.words.started}}"><span class="serverUp server-status"></span></span>
             {% set is_service_started_class = 'disabled-button' %}
             {% set onclick_start_action = "" %}
@@ -39,7 +41,9 @@
     </td>
     <td>{{ services_name[s.0]['desc'] | safe }}</td>
     <td class="actions-column">
-        {% if installed is sameas false %}
+        {% if s.2.get('managed_by') == 'external' %}
+            <span>Managed externally</span>
+        {% elif installed is sameas false %}
             {% if s.0 in ('rabbitmq-server', 'fail2ban') %}
                 <a href="https://rmon.io/tools/{{s.0.split('-')[0]}}" target="_blank" rel="noopener noreferrer">{{lang.words.install|title()}}</a>
             {% else %}

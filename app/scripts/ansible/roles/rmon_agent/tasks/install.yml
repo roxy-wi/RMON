@@ -1,78 +1,290 @@
-- name: Create RMON Agent directory
-  file:
-    path: "{{ item }}"
-    owner: "{{ansible_user}}"
-    group: "{{ansible_user}}"
+---
+- name: Validate deployment settings
+  ansible.builtin.assert:
+    that:
+      - agent_image is match('^[A-Za-z0-9][A-Za-z0-9._:/@-]+$')
+      - "':' in agent_image.split('/')[-1]"
+      - not agent_image.endswith(':latest')
+      - agent_pull in ['missing', 'always', 'never']
+      - agent_uuid is match('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
+      - agent_port | int > 1024 and agent_port | int < 65536
+      - master_port | int > 0 and master_port | int < 65536
+      - master_ip is match('^[A-Za-z0-9.,: -]+$')
+      - agent_transport in ['preserve', 'http', 'https', 'mtls']
+    quiet: true
+  no_log: true
+
+- name: Install Docker before deploying the agent
+  ansible.builtin.include_tasks: docker.yml
+
+- name: Inspect the existing agent container
+  community.docker.docker_container_info:
+    docker_host: '{{ agent_docker_host }}'
+    name: '{{ agent_container_name }}'
+  register: agent_previous
+  no_log: true
+
+- name: Check ownership of the existing container
+  ansible.builtin.assert:
+    that:
+      - not agent_previous.exists or agent_previous.container.Config.Labels.get('io.rmon.managed') == 'true'
+      - not agent_previous.exists or agent_previous.container.Config.Labels.get('io.rmon.uuid') == agent_uuid
+    fail_msg: The existing container belongs to another installation.
+
+- name: Find the requested image
+  community.docker.docker_image_info:
+    docker_host: '{{ agent_docker_host }}'
+    name: '{{ agent_image }}'
+  register: agent_image_before
+
+- name: Require a local image when downloads are disabled
+  ansible.builtin.assert:
+    that: agent_pull != 'never' or agent_image_before.images | length > 0
+
+- name: Download the image before stopping the agent
+  community.docker.docker_image:
+    docker_host: '{{ agent_docker_host }}'
+    name: '{{ agent_image }}'
+    source: pull
+    force_source: "{{ agent_pull == 'always' }}"
+  when: agent_pull == 'always' or (agent_pull == 'missing' and agent_image_before.images | length == 0)
+
+- name: Inspect the selected image
+  community.docker.docker_image_info:
+    docker_host: '{{ agent_docker_host }}'
+    name: '{{ agent_image }}'
+  register: agent_image_selected
+
+- name: Inspect the original configuration
+  ansible.builtin.stat:
+    path: '{{ agent_config_path }}'
+  register: agent_config_stat
+
+- name: Save the original configuration for recovery
+  ansible.builtin.slurp:
+    src: '{{ agent_config_path }}'
+  register: agent_original_config
+  when: agent_config_stat.stat.exists
+  no_log: true
+
+- name: Create a private controller directory for reading configuration
+  ansible.builtin.tempfile:
     state: directory
-  with_items:
-  - "/etc/rmon"
-  - "/var/lib/rmon/rmon-agent/modules/db"
-  - "/var/lib/rmon/rmon-agent/modules/common"
-  - "/var/lib/rmon/rmon-agent/modules/checks"
-  - "/var/log/rmon"
-  - "/etc/pki/tls/certs"
-  ignore_errors: yes
+    prefix: rmon-agent-config-
+  delegate_to: localhost
+  become: false
+  register: agent_config_temporary
 
-- name: Copy RMON Agent files
-  ansible.builtin.copy:
-    src: "/var/www/rmon/app/tools/rmon-agent/{{ item }}"
-    dest: "/var/lib/rmon/rmon-agent/{{ item }}"
-    owner: "{{ansible_user}}"
-    group: "{{ansible_user}}"
-    mode: '0644'
-  with_items:
-  - "rmon_agent.py"
-  - "modules/common/rmon_agent_common.py"
-  - "rmon_checks.py"
-  - "modules/checks/http_check.py"
-  - "modules/checks/http_sub_checks.py"
-  - "modules/checks/smtp_check.py"
-  - "modules/checks/rabbitmq_check.py"
-  - "modules/checks/tcp_check.py"
-  - "modules/checks/dns_check.py"
-  - "modules/checks/ping_check.py"
-  - "wsgi.py"
-  - "requirements.txt"
-  - "modules/db/check_result.py"
-  - "modules/db/db_models.py"
+- name: Configure and deploy the agent
+  block:
+    - name: Initialize operation state
+      ansible.builtin.set_fact:
+        agent_existing_options: {}
+        agent_certificate_paths: []
+        agent_runtime_started: false
+        agent_tls_copies: {results: []}
 
-- name: Copy RMON Agent service file
-  template:
-    src: "{{ item.file }}"
-    dest: "{{ item.path }}"
-    mode: 0644
-  with_items:
-    - {file: "rmon-agent.service.j2", path: "/etc/systemd/system/rmon-agent.service"}
-    - {file: "logrotate.j2", path: "/etc/logrotate.d/rmon-agent"}
+    - name: Read the original settings without changing their format
+      ansible.builtin.copy:
+        content: "{{ agent_original_config.content | default('') | b64decode }}"
+        dest: '{{ agent_config_temporary.path }}/original.cfg'
+        mode: '0600'
+      delegate_to: localhost
+      become: false
+      no_log: true
 
-- name: Install requirements
-  ansible.builtin.include_tasks: "{{ role_path }}/tasks/install-{{ ansible_facts['os_family'] | lower }}.yml"
+    - name: Make absent sections readable in the temporary copy only
+      ansible.builtin.lineinfile:
+        path: '{{ agent_config_temporary.path }}/original.cfg'
+        regexp: '^\s*\[{{ item }}\]\s*(?:[#;].*)?$'
+        line: '[{{ item }}]'
+      loop: [agent, master, control]
+      delegate_to: localhost
+      become: false
+      no_log: true
 
-- name: Copy RMON Agent config file
-  template:
-    src: rmon-agent.cfg.j2
-    dest: /etc/rmon/rmon-agent.cfg
-    mode: 0644
+    - name: Preserve existing identity and connection settings
+      ansible.builtin.set_fact:
+        agent_existing_options: >-
+          {{ agent_existing_options | combine({item.section + '.' + item.option:
+             lookup('ansible.builtin.ini', item.option, section=item.section,
+                    file=agent_config_temporary.path + '/original.cfg', default='')}) }}
+      loop:
+        - {section: agent, option: uuid}
+        - {section: master, option: ca_file}
+        - {section: master, option: client_cert}
+        - {section: master, option: client_key}
+        - {section: control, option: url}
+      no_log: true
 
-- name: Try to upgrade pycurl
-  pip:
-    name: pycurl
-    executable: /usr/local/bin/pip3
-    state: latest
-    extra_args: --upgrade --ignore-installed
-  ignore_errors: yes
+    - name: Refuse to replace another agent's configuration
+      ansible.builtin.assert:
+        that: agent_existing_options['agent.uuid'] in ['', agent_uuid]
+        fail_msg: The existing configuration belongs to another agent.
 
-- name: Try to copy ca cert
-  ansible.builtin.copy:
-    src: /etc/ssl/certs/ca-certificates.crt
-    dest: /etc/pki/tls/certs/ca-bundle.crt
-    remote_src: yes
-  ignore_errors: yes
+    - name: Keep the standard configuration, data and log directories
+      ansible.builtin.file:
+        path: '{{ item }}'
+        state: directory
+      loop:
+        - '{{ agent_config_path | dirname }}'
+        - '{{ agent_data_path }}'
+        - '{{ agent_log_path }}'
 
-- name: Start and enable RMON Agent
-  ansible.builtin.systemd:
-    name: rmon-agent
-    enabled: true
-    masked: no
-    daemon_reload: true
-    state: restarted
+    - name: Update only the settings managed by RMON
+      community.general.ini_file:
+        path: '{{ agent_config_path }}'
+        section: '{{ item.section }}'
+        option: '{{ item.option }}'
+        value: '{{ item.value }}'
+        mode: "{{ agent_config_stat.stat.mode | default('0600') }}"
+      loop:
+        - {section: agent, option: uuid, value: '{{ agent_uuid }}'}
+        - {section: agent, option: agent_port, value: '{{ agent_port }}'}
+        - {section: master, option: host, value: '{{ master_ip }}'}
+        - {section: master, option: port, value: '{{ master_port }}'}
+      no_log: true
+
+    - name: Set the assignment address when it was not configured
+      community.general.ini_file:
+        path: '{{ agent_config_path }}'
+        section: control
+        option: url
+        value: '{{ agent_control_url }}'
+        mode: "{{ agent_config_stat.stat.mode | default('0600') }}"
+      when:
+        - agent_control_url | default('') | length > 0
+        - agent_existing_options['control.url'] | length == 0
+      no_log: true
+
+    - name: Configure the requested transport and certificates
+      ansible.builtin.include_tasks: tls.yml
+      when: agent_transport != 'preserve' or agent_mtls_enabled | bool
+
+    - name: Read the final configuration for certificate mounts
+      ansible.builtin.fetch:
+        src: '{{ agent_config_path }}'
+        dest: '{{ agent_config_temporary.path }}/final.cfg'
+        flat: true
+      no_log: true
+
+    - name: Make optional sections readable in the final temporary copy
+      ansible.builtin.lineinfile:
+        path: '{{ agent_config_temporary.path }}/final.cfg'
+        regexp: '^\s*\[{{ item }}\]\s*(?:[#;].*)?$'
+        line: '[{{ item }}]'
+      loop: [master, control]
+      delegate_to: localhost
+      become: false
+      no_log: true
+
+    - name: Collect the certificate paths already used by the agent
+      ansible.builtin.set_fact:
+        agent_certificate_paths: >-
+          {{ (agent_certificate_paths + [lookup('ansible.builtin.ini', item.option,
+              section=item.section, file=agent_config_temporary.path + '/final.cfg', default='')])
+             | reject('equalto', '') | unique | list }}
+      loop:
+        - {section: master, option: ca_file}
+        - {section: master, option: client_cert}
+        - {section: master, option: client_key}
+        - {section: control, option: ca_file}
+        - {section: control, option: client_cert}
+        - {section: control, option: client_key}
+      no_log: true
+
+    - name: Validate certificate paths
+      ansible.builtin.assert:
+        that:
+          - item.startswith('/')
+          - item != agent_config_path
+          - "item is not search('[,\\r\\n]')"
+      loop: '{{ agent_certificate_paths }}'
+
+    - name: Check certificates and record their content hashes
+      ansible.builtin.stat:
+        path: '{{ item }}'
+        checksum_algorithm: sha256
+      loop: '{{ agent_certificate_paths + [agent_config_path] }}'
+      register: agent_mounted_files
+      no_log: true
+
+    - name: Require existing regular files for all read-only mounts
+      ansible.builtin.assert:
+        that: item.stat.isreg | default(false)
+        fail_msg: A referenced agent configuration or certificate file is missing.
+      loop: '{{ agent_mounted_files.results }}'
+      no_log: true
+
+    - name: Describe this deployment without moving agent data
+      ansible.builtin.set_fact:
+        agent_deployment_hash: >-
+          {{ {'image': agent_image_selected.images[0].Id, 'port': agent_port, 'bind': agent_bind_ip,
+              'config': agent_config_path, 'data': agent_data_path, 'logs': agent_log_path,
+              'files': agent_mounted_files.results | map(attribute='stat.checksum') | list}
+             | to_json | hash('sha256') }}
+        agent_read_only_mounts: []
+      no_log: true
+
+    - name: Mount configuration and certificates at their original paths
+      ansible.builtin.set_fact:
+        agent_read_only_mounts: "{{ agent_read_only_mounts + [{'type': 'bind', 'source': item, 'target': item, 'read_only': true}] }}"
+      loop: '{{ agent_certificate_paths + [agent_config_path] }}'
+
+    - name: Apply the deployment with recovery on failure
+      ansible.builtin.include_tasks: deploy.yml
+      when: >-
+        not agent_previous.exists or
+        agent_previous.container.Config.Labels.get('io.rmon.deployment') != agent_deployment_hash or
+        agent_previous.container.State.get('Health', {}).get('Status') != 'healthy'
+  rescue:
+    - name: Restore certificate files changed by this operation
+      ansible.builtin.copy:
+        src: '{{ item.backup_file }}'
+        dest: '{{ item.item.target }}'
+        remote_src: true
+        mode: preserve
+      loop: '{{ agent_tls_copies.results | default([]) }}'
+      when: item.backup_file is defined
+      no_log: true
+
+    - name: Remove only newly copied credentials after failure
+      ansible.builtin.file:
+        path: '{{ item.item.target }}'
+        state: absent
+      loop: '{{ agent_tls_copies.results | default([]) }}'
+      when:
+        - item is changed
+        - item.backup_file is not defined
+      no_log: true
+
+    - name: Restore the original configuration after a failed deployment
+      ansible.builtin.copy:
+        content: '{{ agent_original_config.content | b64decode }}'
+        dest: '{{ agent_config_path }}'
+        mode: '{{ agent_config_stat.stat.mode }}'
+        owner: '{{ agent_config_stat.stat.uid }}'
+        group: '{{ agent_config_stat.stat.gid }}'
+      when: agent_config_stat.stat.exists
+      no_log: true
+
+    - name: Remove only the new configuration when initialization failed
+      ansible.builtin.file:
+        path: '{{ agent_config_path }}'
+        state: absent
+      when: not agent_config_stat.stat.exists
+
+    - name: Restore the previous runtime
+      ansible.builtin.include_tasks: recover.yml
+      when: agent_runtime_started | default(false)
+
+    - name: Report the failed agent operation
+      ansible.builtin.fail:
+        msg: Agent deployment failed. The previous configuration and runtime were restored; inspect the failed Ansible task.
+  always:
+    - name: Remove the temporary controller copy of the configuration
+      ansible.builtin.file:
+        path: '{{ agent_config_temporary.path }}'
+        state: absent
+      delegate_to: localhost
+      become: false

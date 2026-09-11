@@ -27,7 +27,9 @@
     </td>
     <td>{{lang.admin_page.desc.main_app}}</td>
     <td class="actions-column">
-        {% if versions.need_update %}
+        {% if versions.get('managed_by') == 'docker' %}
+        <span>Update container image</span>
+        {% elif versions.need_update %}
         <button type="button" onclick="updateService('rmon')">{{lang.words.w_update|title()}}</button>
         {% endif %}
     </td>
@@ -61,12 +63,14 @@
     </td>
     <td>{{services_name[s.0]['desc']|safe}}</td>
     <td class="actions-column">
-        {% if s.2.get('managed_by') == 'docker' %}
+        {% if s.2.get('managed_by') == 'external' %}
+            <span>Managed externally</span>
+        {% elif s.2.get('managed_by') == 'docker' %}
             <a href="https://rmon.io/installation#standalone-server" target="_blank" rel="noopener noreferrer">Docker</a>
         {% elif known_version and is_need_update %}
             <button type="button" onclick="updateService('{{s.0}}')">{{lang.words.w_update|title()}}</button>
         {% endif %}
-        {% if installed is sameas false %}
+        {% if installed is sameas false and s.2.get('managed_by') not in ('docker', 'external') %}
             <button type="button" onclick="updateService('{{s.0}}', 'install')">{{lang.words.install|title()}}</button>
         {% endif %}
     </td>

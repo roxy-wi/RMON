@@ -1,2 +1,22 @@
 ---
-- include_tasks: "{{ action }}.yml"
+- name: Validate the requested agent operation
+  ansible.builtin.assert:
+    that:
+      - action in ['install', 'uninstall', 'start', 'stop', 'restart']
+      - agent_container_name is match('^[a-zA-Z0-9][a-zA-Z0-9_.-]+$')
+
+- name: Create the deployment lock
+  ansible.builtin.command:
+    argv: [mkdir, '--', '{{ agent_lock_path }}']
+  changed_when: true
+
+- name: Manage the agent on its SSH host
+  block:
+    - name: Run the requested operation
+      ansible.builtin.include_tasks:
+        file: "{{ 'install.yml' if action == 'install' else 'control.yml' }}"
+  always:
+    - name: Release the deployment lock
+      ansible.builtin.file:
+        path: '{{ agent_lock_path }}'
+        state: absent

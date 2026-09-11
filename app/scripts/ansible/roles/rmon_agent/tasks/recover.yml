@@ -1,0 +1,39 @@
+---
+- name: Inspect the candidate container after failure
+  community.docker.docker_container_info:
+    docker_host: '{{ agent_docker_host }}'
+    name: '{{ agent_container_name }}'
+  register: agent_failed_candidate
+  no_log: true
+
+- name: Remove only the candidate created by this operation
+  community.docker.docker_container:
+    docker_host: '{{ agent_docker_host }}'
+    name: '{{ agent_container_name }}'
+    state: absent
+    force_kill: true
+    keep_volumes: true
+  when:
+    - agent_failed_candidate.exists
+    - agent_failed_candidate.container.Config.Labels.get('io.rmon.operation') == agent_previous_name
+
+- name: Restore the previous container name
+  ansible.builtin.command:
+    argv: [docker, --host, '{{ agent_docker_host }}', rename, '{{ agent_previous_name }}', '{{ agent_container_name }}']
+  when: agent_previous_renamed | bool
+  changed_when: true
+
+- name: Restore the previous container state and restart policy
+  community.docker.docker_container:
+    docker_host: '{{ agent_docker_host }}'
+    name: '{{ agent_container_name }}'
+    state: "{{ 'started' if agent_previous.container.State.Running else 'stopped' }}"
+    restart_policy: '{{ agent_previous.container.HostConfig.RestartPolicy.Name }}'
+  when: agent_previous.exists
+
+- name: Restore the native service state
+  ansible.builtin.systemd_service:
+    name: rmon-agent
+    state: "{{ 'started' if agent_native_running else 'stopped' }}"
+    enabled: '{{ agent_native_enabled }}'
+  when: agent_native_running | bool or agent_native_enabled | bool

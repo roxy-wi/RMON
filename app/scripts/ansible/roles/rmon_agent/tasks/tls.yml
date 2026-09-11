@@ -1,0 +1,204 @@
+---
+- name: Select the requested transport without changing existing certificate paths
+  ansible.builtin.set_fact:
+    agent_selected_transport: "{{ 'mtls' if agent_mtls_enabled | bool else agent_transport }}"
+    agent_ca_target: "{{ agent_existing_options['master.ca_file'] or agent_tls_directory + '/ca.crt' }}"
+    agent_cert_target: "{{ agent_existing_options['master.client_cert'] or agent_tls_directory + '/agent.crt' }}"
+    agent_key_target: "{{ agent_existing_options['master.client_key'] or agent_tls_directory + '/agent.key' }}"
+    agent_client_cert_source: '{{ agent_tls_cert_file }}'
+    agent_client_key_source: '{{ agent_tls_key_file }}'
+
+- name: Validate certificate destinations
+  ansible.builtin.assert:
+    that:
+      - item.startswith('/')
+      - item != agent_config_path
+      - "item is not search('[,\\r\\n]')"
+  loop: ['{{ agent_ca_target }}', '{{ agent_cert_target }}', '{{ agent_key_target }}']
+
+- name: Require separate paths for trust, certificate and private key
+  ansible.builtin.assert:
+    that: ([agent_ca_target, agent_cert_target, agent_key_target] | unique | length) == 3
+
+- name: Inspect the existing client certificate and key
+  ansible.builtin.stat:
+    path: '{{ item }}'
+  loop: ['{{ agent_ca_target }}', '{{ agent_cert_target }}', '{{ agent_key_target }}']
+  register: agent_tls_existing_files
+  when: agent_selected_transport in ['https', 'mtls']
+
+- name: Check the supplied certificate pair
+  ansible.builtin.assert:
+    that: (agent_tls_cert_file | length > 0) == (agent_tls_key_file | length > 0)
+    fail_msg: Supply both the agent client certificate and its private key.
+  when: agent_selected_transport == 'mtls'
+
+- name: Preserve an existing incomplete key pair for explicit recovery
+  ansible.builtin.assert:
+    that: agent_tls_existing_files.results[1].stat.exists == agent_tls_existing_files.results[2].stat.exists
+    fail_msg: The existing client certificate pair is incomplete. Restore the missing file or supply both replacement files.
+  when:
+    - agent_selected_transport == 'mtls'
+    - agent_tls_cert_file | length == 0
+
+- name: Issue missing client credentials on the controller
+  ansible.builtin.include_tasks: issue_certificate.yml
+  when:
+    - agent_selected_transport == 'mtls'
+    - agent_tls_cert_file | length == 0
+    - not (agent_tls_existing_files.results[1].stat.exists and agent_tls_existing_files.results[2].stat.exists)
+
+- name: Prepare certificate destination directories
+  ansible.builtin.file:
+    path: '{{ item | dirname }}'
+    state: directory
+  loop: ['{{ agent_ca_target }}', '{{ agent_cert_target }}', '{{ agent_key_target }}']
+  when: agent_selected_transport in ['https', 'mtls']
+
+- name: Copy only the trust certificate and client credentials to the agent
+  ansible.builtin.copy:
+    src: '{{ item.source }}'
+    dest: '{{ item.target }}'
+    mode: '{{ item.mode }}'
+    backup: true
+  loop:
+    - {source: '{{ agent_tls_ca_file }}', target: '{{ agent_ca_target }}', mode: '0644'}
+    - {source: '{{ agent_client_cert_source }}', target: '{{ agent_cert_target }}', mode: '0644'}
+    - {source: '{{ agent_client_key_source }}', target: '{{ agent_key_target }}', mode: '0600'}
+  when:
+    - agent_selected_transport in ['https', 'mtls']
+    - item.source | length > 0
+    - item.target == agent_ca_target or agent_selected_transport == 'mtls'
+  register: agent_tls_copies
+  no_log: true
+
+- name: Require all mTLS credentials before changing transport
+  ansible.builtin.stat:
+    path: '{{ item }}'
+  loop: ['{{ agent_ca_target }}', '{{ agent_cert_target }}', '{{ agent_key_target }}']
+  register: agent_tls_ready
+  when: agent_selected_transport == 'mtls'
+
+- name: Validate the installed mTLS files
+  ansible.builtin.assert:
+    that: item.stat.isreg | default(false)
+    fail_msg: mTLS requires a trusted CA, a client certificate and a private key.
+  loop: '{{ agent_tls_ready.results | default([]) }}'
+  when: agent_selected_transport == 'mtls'
+  no_log: true
+
+- name: Verify that the client certificate is trusted for client authentication
+  ansible.builtin.command:
+    argv: [openssl, verify, -purpose, sslclient, -CAfile, '{{ agent_ca_target }}', '{{ agent_cert_target }}']
+  changed_when: false
+  when: agent_selected_transport == 'mtls'
+
+- name: Read the client certificate public key
+  community.crypto.x509_certificate_info:
+    path: '{{ agent_cert_target }}'
+  register: agent_client_certificate_info
+  when: agent_selected_transport == 'mtls'
+  no_log: true
+
+- name: Reject expired client certificates
+  ansible.builtin.command:
+    argv: [openssl, x509, -checkend, '0', -noout, -in, '{{ agent_cert_target }}']
+  changed_when: false
+  when: agent_selected_transport == 'mtls'
+  no_log: true
+
+- name: Read the public part of the agent private key
+  community.crypto.openssl_privatekey_info:
+    path: '{{ agent_key_target }}'
+  register: agent_client_privatekey_info
+  when: agent_selected_transport == 'mtls'
+  no_log: true
+
+- name: Require matching client credentials
+  ansible.builtin.assert:
+    that: agent_client_certificate_info.public_key == agent_client_privatekey_info.public_key
+    fail_msg: The client certificate does not match the agent private key.
+  when: agent_selected_transport == 'mtls'
+
+- name: Configure verified HTTPS or explicit HTTP
+  community.general.ini_file:
+    path: '{{ agent_config_path }}'
+    section: master
+    option: '{{ item.option }}'
+    value: '{{ item.value }}'
+  loop:
+    - {option: scheme, value: "{{ 'http' if agent_selected_transport == 'http' else 'https' }}"}
+    - {option: tls_verify, value: "{{ 'false' if agent_selected_transport == 'http' else 'true' }}"}
+
+- name: Use the installed trust certificate
+  community.general.ini_file:
+    path: '{{ agent_config_path }}'
+    section: master
+    option: ca_file
+    value: '{{ agent_ca_target }}'
+  when: agent_selected_transport == 'mtls' or (agent_selected_transport == 'https' and agent_tls_ca_file | length > 0)
+
+- name: Enable the mTLS client certificate
+  community.general.ini_file:
+    path: '{{ agent_config_path }}'
+    section: master
+    option: '{{ item.option }}'
+    value: '{{ item.value }}'
+  loop:
+    - {option: client_cert, value: '{{ agent_cert_target }}'}
+    - {option: client_key, value: '{{ agent_key_target }}'}
+  when: agent_selected_transport == 'mtls'
+
+- name: Remove client authentication only when explicitly selecting HTTP or HTTPS
+  community.general.ini_file:
+    path: '{{ agent_config_path }}'
+    section: master
+    option: '{{ item }}'
+    state: absent
+  loop: "{{ ['client_cert', 'client_key'] + (['ca_file'] if agent_selected_transport == 'http' else []) }}"
+  when: agent_selected_transport in ['http', 'https']
+
+- name: Use system trust when HTTPS has no custom CA
+  community.general.ini_file:
+    path: '{{ agent_config_path }}'
+    section: master
+    option: ca_file
+    state: absent
+  when: agent_selected_transport == 'https' and agent_tls_ca_file | length == 0
+
+- name: Verify result server connections before replacing the agent
+  ansible.builtin.uri:
+    url: "{{ 'http' if agent_selected_transport == 'http' else 'https' }}://{{ item | trim }}:{{ master_port }}/"
+    method: GET
+    validate_certs: true
+    ca_path: "{{ agent_ca_target if agent_tls_ca_file | length > 0 else omit }}"
+    client_cert: "{{ agent_cert_target if agent_selected_transport == 'mtls' else omit }}"
+    client_key: "{{ agent_key_target if agent_selected_transport == 'mtls' else omit }}"
+    status_code: [200, 401, 403, 404, 405]
+    follow_redirects: none
+    use_proxy: false
+    timeout: 10
+  loop: "{{ master_ip.split(',') }}"
+  when: agent_verify_result_connection | bool
+  changed_when: false
+
+- name: Check that mTLS rejects connections without a client certificate
+  ansible.builtin.uri:
+    url: 'https://{{ item | trim }}:{{ master_port }}/'
+    validate_certs: true
+    ca_path: '{{ agent_ca_target }}'
+    follow_redirects: none
+    use_proxy: false
+    timeout: 10
+  loop: "{{ master_ip.split(',') }}"
+  register: agent_unauthenticated_result
+  failed_when: false
+  changed_when: false
+  when: agent_verify_result_connection | bool and agent_selected_transport == 'mtls'
+
+- name: Require client authentication on every result server
+  ansible.builtin.assert:
+    that: item.status == -1
+    fail_msg: The result server must require a trusted client certificate for mTLS.
+  loop: '{{ agent_unauthenticated_result.results | default([]) }}'
+  when: agent_verify_result_connection | bool and agent_selected_transport == 'mtls'
