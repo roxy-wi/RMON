@@ -149,7 +149,7 @@ def test_invalid_source_metadata_is_not_a_version(tmp_path, content):
 def test_missing_package_is_not_confused_with_missing_or_stopped_source_service(monkeypatch, version_probes, properties, installed):
     monkeypatch.setattr(common, '_version_command', lambda args:
                         'deinstall ok config-files\t6.33' if args[0] == 'dpkg-query' else properties)
-    assert common.update_cur_tool_version('rmon-socket') == {
+    assert common.update_cur_tool_version('rmon-server') == {
         'current_version': '0', 'version_known': False, 'installed': installed}
 
 

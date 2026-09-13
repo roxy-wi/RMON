@@ -169,6 +169,17 @@ $(function () {
 <div class="check-field-control">{{ input('new-smon-redirects', type='number', value=10) }}
                 <div class="tooltip" style="padding: 0">{{ lang.smon_page.desc.redirects_desc }}</div></div>
 </div>
+<div class="check-field smon_http_check check-field-wide">
+<label class="check-field-label" for="new-smon-ssl_policy">{{ c.ssl_policy }}</label>
+<div class="check-field-control">
+<select id="new-smon-ssl_policy" aria-describedby="ssl-policy-hint">
+    <option value="default" selected>{{ c.ssl_policy_default }}</option>
+    <option value="require_https">{{ c.ssl_policy_https }}</option>
+    <option value="require_http">{{ c.ssl_policy_http }}</option>
+</select>
+<div class="tooltip" id="ssl-policy-hint">{{ c.ssl_policy_hint }}</div>
+</div>
+</div>
 <div class="check-field smon_http_check smon_smtp_check"><div class="check-field-label">{{lang.phrases.ignore_ssl_error}}</div><div class="check-field-control">{{ checkbox('new-smon-ignore_ssl_error') }}</div></div>
 <div class="check-field smon_http_check"><div class="check-field-label">{{ lang.words.accept|title() }} cookies</div><div class="check-field-control">{{ checkbox('new-smon-accept_cookies', checked='checked') }}</div></div></div></details>
 <details class="check-advanced smon_http_check"><summary>{{ c.response }}</summary><div class="check-fields"><div class="check-field smon_http_check check-field-wide">

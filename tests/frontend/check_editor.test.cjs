@@ -37,7 +37,7 @@ async function editor(t) {
 }
 
 const cases = {
-    http: {url:'https://example.test/health'},
+    http: {url:'https://example.test/health',ssl_policy:'require_https'},
     tcp: {ip:'example.test',port:443},
     dns: {ip:'example.test',port:53,resolver:'1.1.1.1',record_type:'mx'},
     ping: {ip:'192.0.2.1',packet_size:56,count_packets:3,use_kernel_timestamp:true},
@@ -116,6 +116,7 @@ for (const type of Object.keys(cases)) {
         $('#check-editor-submit').trigger('click');
         assert.equal(requests[0].type,'post');
         assert.equal(requests[0].url,`/api/v1.0/rmon/check/${type}`);
+        if (type === 'http') assert.equal(JSON.parse(requests[0].data).ssl_policy, 'require_https');
     });
 }
 
@@ -211,11 +212,13 @@ test('new check clears credentials, advanced settings, channels and errors from 
     $('#new-smon-basic_password').val('secret'); $('#smon_http_check_auth_method').val('basic');
     $('#new-smon-mtls_key').val('secret-key'); $('#new-smon-http_proxy_password').val('proxy-secret');
     $('#new-smon-description').val('Previous'); $('#new-smon-enable').prop('checked',false);
+    $('#new-smon-ssl_policy').val('require_http');
     ui.validate();
     w.openSmonDialog('http');
     for (const id of ['basic_password','mtls_key','http_proxy_password','description']) assert.equal($('#new-smon-' + id).val(),'');
     assert.equal($('#smon_http_check_auth_method').val(),'0');
     assert.equal($('#new-smon-enable').prop('checked'),true);
+    assert.equal($('#new-smon-ssl_policy').val(),'default');
     assert.equal($('[aria-invalid=true]').length,0);
     assert.deepEqual(Array.from(w.tagify.value,tag => tag.value),['200']);
 });

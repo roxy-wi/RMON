@@ -71,15 +71,6 @@
     }
 %}
 {% set settings = {
-    "rabbitmq": {
-        "rabbitmq_enabled": "Включить оповещение на WEB-панели",
-        "rabbitmq_host": "Адрес сервера RabbitMQ",
-        "rabbitmq_port": "Порт сервера RabbitMQ",
-        "rabbitmq_vhost": "Виртуальный хост RabbitMQ",
-        "rabbitmq_queue": "Имя очереди RabbitMQ",
-        "rabbitmq_user": "Имя пользователя RabbitMQ",
-        "rabbitmq_password": "Пароль пользователя RabbitMQ",
-        },
     "monitoring": {
         "port_scan_interval": "Интервал проверки для Port scanner (в минутах)",
         "portscanner_keep_history_range": "Время хранения истории Port scanner",
@@ -192,7 +183,6 @@
     "alert_master_backup": "Уведомлять о смене статуса Master/Backup",
     "new_version": "Доступна новая версия RMON. Проверьте",
     "all_alerts_enabled": "Уведомления включены",
-    "disable_alerts": "Выключить уведомления",
     "work_with_prev": "Здесь вы можете работать с предыдущими версиями конфигов",
     "roll_back": "Откатиться к ним, просмотреть или удалить",
     "files_been_deleted": "Следующие файлы были удалены",
@@ -266,7 +256,6 @@
         "auto_start_desc": "Служба автозапуска позволяет перезапустить службы HAProxy, NGINX, Apache и Keepalived, если они не работают.",
         "metrics_desc": "Собирает количество подключений для сервисов HAProxy, NGINX, Apache и HAProxy WAF",
         "p_s_desc": "Проверяет сервер на наличие открытых портов и сохраняет историю",
-        "socket_desc": "Socket — сервис для отправки предупреждений и уведомлений",
         "a_new_version": "Доступна новая версия",
         "no_new_version": "Нет новой версии",
         "main_app": "Главное приложение",
@@ -628,7 +617,6 @@
     "test2": "тестовое",
     "disabled": "отключено",
     "via": "через",
-    "web_panel": "веб интерфейс",
     "message": "сообщение",
     "menu": "меню",
     "language": "язык",
@@ -836,6 +824,11 @@
 
 
 {% set check_editor = {
+    "ssl_policy": "Политика HTTPS",
+    "ssl_policy_default": "По умолчанию",
+    "ssl_policy_https": "Требовать HTTPS",
+    "ssl_policy_http": "Требовать HTTP",
+    "ssl_policy_hint": "Проверяется конечный адрес после разрешённых редиректов. Переход HTTPS → HTTP всегда считается ошибкой, в том числе в режиме «По умолчанию». Игнорирование ошибок сертификата не отключает эту политику.",
     "create": "Создать проверку",
     "edit": "Изменить проверку",
     "sections": "Настройка проверки",

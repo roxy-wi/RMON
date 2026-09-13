@@ -17,7 +17,7 @@ def get_setting(param, **kwargs):
 
 	if param in (
 			'proxy', 'agent_port', 'master_port', 'master_ip', 'rmon_name', 'use_victoria_metrics',
-			'victoria_metrics_select', 'rabbitmq_enabled', 'json_format'
+			'victoria_metrics_select', 'json_format'
 	):
 		user_group_id = 1
 
@@ -40,7 +40,7 @@ def get_setting(param, **kwargs):
 				if param in (
 					'session_ttl', 'token_ttl', 'ldap_type', 'ldap_port', 'ldap_enable', 'log_time_storage', 'syslog_server_enable',
 					'keep_history_range', 'ssl_expire_warning_alert', 'ssl_expire_critical_alert', 'action_keep_history_range',
-					'use_victoria_metrics', 'mail_enabled', 'mail_send_hello_message', 'rabbitmq_enabled', 'json_format'
+					'use_victoria_metrics', 'mail_enabled', 'mail_send_hello_message', 'json_format'
 				):
 					return int(setting.value)
 				else:

@@ -15,9 +15,6 @@ $( function() {
 	$('#logs-section-head').click(function () {
 		hideAndShowSettings('logs');
 	});
-	$('#rabbitmq-section-head').click(function () {
-		hideAndShowSettings('rabbitmq');
-	});
 	$('#mail-section-head').click(function () {
 		hideAndShowSettings('mail');
 	});

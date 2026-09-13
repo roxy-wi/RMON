@@ -93,6 +93,11 @@ class ChecksViewHttp(ChecksView):
               items:
                 type: 'object'
                 properties:
+                  ssl_policy:
+                    type: string
+                    enum: [default, require_https, require_http]
+                    default: default
+                    description: Expected protocol of the final URL after redirects. HTTPS to HTTP is always an error.
                   accepted_status_codes:
                     type: 'integer'
                     description: 'Expected HTTP status codes'
@@ -119,6 +124,11 @@ class ChecksViewHttp(ChecksView):
                     items:
                       type: 'object'
                       properties:
+                        ssl_policy:
+                          type: string
+                          enum: [default, require_https, require_http]
+                          default: default
+                          description: Expected protocol of the final URL after redirects. HTTPS to HTTP is always an error.
                         accepted_status_codes:
                           type: 'integer'
                         body:

@@ -216,6 +216,7 @@ class HttpCheckRequest(BaseCheckRequest):
     body_json: Optional[JSONPathRule] = None
     accepted_status_codes: List[Union[int, str]]
     ignore_ssl_error: Optional[bool] = 0
+    ssl_policy: Literal['default', 'require_https', 'require_http'] = 'default'
     redirects: Optional[int] = 10
     auth: Optional[dict] = None
     proxy: Optional[HttpProxy] = None

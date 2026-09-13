@@ -2,7 +2,6 @@
 {% from 'include/service_version.html' import service_version %}
 {% set services_name = {
     'rmon-server': { 'link': 'rmon-server', 'name': 'RMON Server', 'desc': lang.admin_page.desc.smon_desc },
-    'rmon-socket': { 'link': 'socket', 'name': 'Socket', 'desc': lang.admin_page.desc.socket_desc },
     }
 %}
 <tr class="odd">
@@ -35,7 +34,7 @@
     </td>
 </tr>
 {% for s in services %}
-    {% if s.0 in ('rmon-server', 'rmon-socket') %}
+    {% if s.0 == 'rmon-server' %}
         {% set is_need_update = s.2.get('update_available', false) %}
         {% set installed = s.2.get('installed') %}
         {% set known_version = s.2.get('version_known', s.2['current_version'] not in ('0', '', '* is not installed')) %}

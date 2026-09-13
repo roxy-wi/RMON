@@ -294,3 +294,95 @@ def test_invalid_check_configuration_is_rejected(
 
     assert response.status_code == 400
     assert not MultiCheck.select().where(MultiCheck.name == payload['name']).exists()
+
+
+@pytest.mark.functional
+@pytest.mark.parametrize('policy', ['default', 'require_https', 'require_http'])
+@pytest.mark.parametrize('version', ['1.20', '2.0'])
+def test_http_policy_survives_crud_and_agent_resynchronization(
+    client, auth_headers, check_agent, monkeypatch, policy, version
+):
+    payload = _payload('http', check_agent.id, uuid.uuid4().hex)
+    payload['ssl_policy'] = policy
+    sent = []
+    monkeypatch.setattr(smon_agent, 'send_get_request_to_agent', lambda *_: ('{"version":"' + version + '"}').encode())
+    monkeypatch.setattr(smon_agent, 'send_check_to_agent', lambda *args: sent.append(args[-1]))
+    monkeypatch.setattr(smon_agent, 'delete_check', lambda *_: None)
+    headers = auth_headers(2, 1)
+    response = client.post('/api/v1.0/rmon/check/http', json=payload, headers=headers)
+    assert response.status_code == 201, response.get_json()
+    multi_id = response.get_json()['id']
+    check = SMON.get(SMON.multi_check_id == multi_id)
+    assert SmonHttpCheck.get(SmonHttpCheck.smon_id == check.id).ssl_policy == policy
+    assert sent[-1]['fail_if_not_ssl'] is (policy == 'require_https')
+    assert sent[-1]['fail_if_ssl'] is (policy == 'require_http')
+
+    returned = client.get(f'/api/v1.0/rmon/check/http/{multi_id}', headers=headers).get_json()
+    assert returned['ssl_policy'] == policy
+    assert returned['checks'][0]['ssl_policy'] == policy
+    # A restarted agent receives the same policy when requesting all enabled checks.
+    smon_agent.send_http_checks(check_agent.id, check_agent.server_id.ip)
+    assert sent[-1] == sent[-2]
+
+    payload['ssl_policy'] = 'require_http' if policy != 'require_http' else 'require_https'
+    updated = client.put(f'/api/v1.0/rmon/check/http/{multi_id}', json=payload, headers=headers)
+    assert updated.status_code == 201, updated.get_json()
+    assert SmonHttpCheck.get(SmonHttpCheck.smon_id == check.id).ssl_policy == payload['ssl_policy']
+    assert sent[-1]['fail_if_not_ssl'] is (payload['ssl_policy'] == 'require_https')
+    assert sent[-1]['fail_if_ssl'] is (payload['ssl_policy'] == 'require_http')
+
+
+@pytest.mark.functional
+def test_http_policy_defaults_for_existing_api_clients(client, auth_headers, check_agent, monkeypatch):
+    payload = _payload('http', check_agent.id, uuid.uuid4().hex)
+    sent = []
+    monkeypatch.setattr(smon_agent, 'send_check_to_agent', lambda *args: sent.append(args[-1]))
+    response = client.post('/api/v1.0/rmon/check/http', json=payload, headers=auth_headers(2, 1))
+    assert response.status_code == 201, response.get_json()
+    check = SMON.get(SMON.multi_check_id == response.get_json()['id'])
+    assert SmonHttpCheck.get(SmonHttpCheck.smon_id == check.id).ssl_policy == 'default'
+    assert sent[-1]['fail_if_not_ssl'] is False
+    assert sent[-1]['fail_if_ssl'] is False
+
+
+@pytest.mark.functional
+@pytest.mark.parametrize('policy', ['https', 'disabled', '', None, True, 1])
+def test_invalid_http_policy_is_rejected_before_saving(client, auth_headers, check_agent, policy):
+    payload = _payload('http', check_agent.id, uuid.uuid4().hex)
+    payload['ssl_policy'] = policy
+    response = client.post('/api/v1.0/rmon/check/http', json=payload, headers=auth_headers(2, 1))
+    assert response.status_code == 400
+    assert not MultiCheck.select().where(MultiCheck.name == payload['name']).exists()
+
+
+@pytest.mark.parametrize('version', ['1.19', 'unknown', '', '1.18.9'])
+def test_unsupported_agents_do_not_receive_required_http_policy(monkeypatch, version):
+    from types import SimpleNamespace
+    import json
+    monkeypatch.setattr(smon_agent.smon_sql, 'select_en_smon', lambda *_: [SimpleNamespace(ssl_policy='require_https')])
+    monkeypatch.setattr(smon_agent, 'send_get_request_to_agent', lambda *_: json.dumps({'version': version}).encode())
+    def unexpected_send(*_):
+        pytest.fail('An unsupported agent must not receive the check')
+    monkeypatch.setattr(smon_agent, 'send_check_to_agent', unexpected_send)
+    with pytest.raises(ValueError, match='Agent 1.20 or later'):
+        smon_agent.send_http_checks(1, 'agent.example.test')
+
+
+def test_unavailable_policy_support_does_not_block_default_checks(
+    client, auth_headers, check_agent, monkeypatch
+):
+    sent = []
+    monkeypatch.setattr(smon_agent, 'send_check_to_agent', lambda *args: sent.append(args[-1]))
+    monkeypatch.setattr(smon_agent, 'send_get_request_to_agent', lambda *_: b'{"version":"2.0"}')
+    for policy in ('default', 'require_https'):
+        payload = _payload('http', check_agent.id, uuid.uuid4().hex)
+        payload['ssl_policy'] = policy
+        response = client.post('/api/v1.0/rmon/check/http', json=payload, headers=auth_headers(2, 1))
+        assert response.status_code == 201
+    sent.clear()
+    monkeypatch.setattr(smon_agent, 'send_get_request_to_agent', lambda *_: b'{"version":"1.19"}')
+    with pytest.raises(ValueError, match='Agent 1.20 or later'):
+        smon_agent.send_http_checks(check_agent.id, check_agent.server_id.ip)
+    assert len(sent) == 1
+    assert sent[0]['fail_if_not_ssl'] is False
+    assert sent[0]['fail_if_ssl'] is False

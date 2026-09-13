@@ -1,5 +1,4 @@
 {% set sections_name = {
-    'rabbitmq': 'RabbitMQ',
     'main': 'Main',
     'mail': 'Mail',
     'monitoring': 'Monitoring',
@@ -13,8 +12,8 @@
 <table id="settings">
     <tbody>
         {% set section = namespace(section='') %}
-        {% for set in settings %}
-        {% if g.user_params['role'] == 2 and (set.section in ('monitoring', 'rabbitmq', 'mail', 'rmon')) %}
+        {% for set in settings if set.section in sections_name %}
+        {% if g.user_params['role'] == 2 and (set.section in ('monitoring', 'mail', 'rmon')) %}
         <!-- continue -->
         {% else %}
         {% if section.section|string() != set.section|string() %}
@@ -51,14 +50,14 @@
                     </select>
                 {% elif set.param == 'agent_tls_generate' %}
                     {{ checkbox(set.param, checked='checked' if set.value == '1' else '', style='margin: 0') }}
-                {% elif set.param in ('ldap_password', 'rabbitmq_password', 'mail_smtp_password') %}
+                {% elif set.param in ('ldap_password', 'mail_smtp_password') %}
                     {% if set.value is none %}
                         {{ input(set.param, size='25', type='password', style='width: 210px;') }}
                     {% else %}
                         {{ input(set.param, size='25', type='password', style='width: 210px;', placeholder='******') }}
                     {% endif %}
                 {% elif set.param in ('session_ttl', 'token_ttl', 'ldap_port', 'log_time_storage', 'keep_history_range', 'master_port', 'master_port',
-                    'mail_smtp_port', 'rabbitmq_port', 'ssl_expire_warning_alert', 'ssl_expire_critical_alert', 'action_keep_history_range') %}
+                    'mail_smtp_port', 'ssl_expire_warning_alert', 'ssl_expire_critical_alert', 'action_keep_history_range') %}
                     {{ input(set.param, value=set.value, style='width: 210px;', type='number') }}
                 {% elif set.param == 'time_zone' %}
                     <select name="{{set.param}}" id="{{set.param}}" style="width: 215px;">
@@ -70,7 +69,7 @@
                         {% endif %}
                         {% endfor %}
                     </select>
-                {% elif set.param in ('ldap_type', 'ldap_enable', 'syslog_server_enable', 'mail_ssl', 'use_victoria_metrics', 'mail_enabled', 'mail_send_hello_message', 'rabbitmq_enabled', 'json_format') %}
+                {% elif set.param in ('ldap_type', 'ldap_enable', 'syslog_server_enable', 'mail_ssl', 'use_victoria_metrics', 'mail_enabled', 'mail_send_hello_message', 'json_format') %}
                     {% if set.value|int() == 1 %}
                         {{ checkbox(set.param, checked='checked', style='margin: 0') }}
                     {% else %}

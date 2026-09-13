@@ -2,12 +2,10 @@
 {% from 'include/service_version.html' import service_version %}
 {% set services_name = {
 	'rmon-server': { 'name': 'RMON Server', 'desc': lang.admin_page.desc.smon_desc },
-	'rmon-socket': { 'name': 'Socket', 'desc': lang.admin_page.desc.socket_desc },
 	'fail2ban': { 'name': 'Fail2ban', 'desc': 'Fail2ban scans log files (e.g. /var/log/apache/error_log) and bans IPs that show the malicious signs' },
-    'rabbitmq-server': { 'name': 'RabbitMQ', 'desc': 'RabbitMQ server' },
     }
 %}
-{% for s in services %}
+{% for s in services if s.0 in services_name %}
 {% set installed = s.2.get('installed', s.2['current_version'] not in ('0', '', '* is not installed')) %}
 {% set is_service_started_class = '' %}
 {% set is_service_stopped_class = '' %}
@@ -44,7 +42,7 @@
         {% if s.2.get('managed_by') == 'external' %}
             <span>Managed externally</span>
         {% elif installed is sameas false %}
-            {% if s.0 in ('rabbitmq-server', 'fail2ban') %}
+            {% if s.0 == 'fail2ban' %}
                 <a href="https://rmon.io/tools/{{s.0.split('-')[0]}}" target="_blank" rel="noopener noreferrer">{{lang.words.install|title()}}</a>
             {% else %}
                 <button type="button" onclick="updateService('{{s.0}}', 'install')">{{lang.words.install|title()}}</button>

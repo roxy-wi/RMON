@@ -38,7 +38,7 @@ def request(opener, url, payload=None):
 def exercise(scheme):
     prefix = 'rmon-smoke-' + uuid.uuid4().hex[:12]
     network = prefix + '-network'
-    web, proxy, socket_name = (prefix + '-' + component for component in ('web', 'proxy', 'socket'))
+    web, proxy = (prefix + '-' + component for component in ('web', 'proxy'))
     volumes = [prefix + '-' + name for name in ('config', 'data', 'logs', 'tls')]
     mounts = sum((['-v', name + ':' + path] for name, path in zip(volumes[:3],
                   ('/etc/rmon', '/var/lib/rmon', '/var/log/rmon'))), [])
@@ -54,10 +54,6 @@ def exercise(scheme):
             init = [*mounts, '-v', f'{password_file}:/run/password:ro', '-e', 'RMON_ADMIN_PASSWORD_FILE=/run/password']
             docker('run', '--rm', *init, 'rmon-web:test', 'init')
             assert docker('run', '--rm', *init, 'rmon-web:test', 'init', check=False).returncode != 0
-            code = ("from websockets.sync.server import serve; "
-                    "server=serve(lambda ws: ws.send('proxy-smoke'), '0.0.0.0', 8766); server.serve_forever()")
-            docker('run', '-d', '--name', socket_name, '--network', network, '--network-alias', 'socket',
-                   '--entrypoint', '/opt/rmon-venv/bin/python', 'rmon-web:test', '-c', code)
             snapshots = []
             for _ in range(2):
                 docker('run', '-d', '--name', web, '--network', network, '--network-alias', 'web',
@@ -65,7 +61,7 @@ def exercise(scheme):
                        '-e', 'RMON_COOKIE_SECURE=' + ('1' if scheme == 'https' else '0'), 'rmon-web:test')
                 wait_ready(web)
                 docker('run', '-d', '--name', proxy, '--network', network, '-p', f'127.0.0.1::{port}',
-                       '-e', 'RMON_SOCKET_HOST=socket', '-e', f'RMON_PROXY_SCHEME={scheme}',
+                       '-e', f'RMON_PROXY_SCHEME={scheme}',
                        '-e', 'RMON_TLS_NAME=127.0.0.1', '-v', f'{volumes[3]}:/etc/ssl/certs/rmon', 'rmon-proxy:test')
                 mapped = int(docker('port', proxy, str(port)).stdout.strip().split(':')[-1])
                 deadline = time.monotonic() + 60
@@ -114,7 +110,8 @@ def exercise(scheme):
                         key = base64.b64encode(secrets.token_bytes(16)).decode()
                         connection.sendall((f'GET / HTTP/1.1\r\nHost: 127.0.0.1:{mapped}\r\nUpgrade: websocket\r\n'
                                             f'Connection: Upgrade\r\nSec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n\r\n').encode())
-                        assert b'101 Switching Protocols' in connection.recv(4096)
+                        status = connection.recv(4096).split(b'\r\n', 1)[0]
+                        assert status.split()[1] in (b'200', b'302'), status
                 docker('exec', web, '/opt/rmon-venv/bin/python', '-c', 'import ldap, ansible_runner')
                 # Agent installation runs under the web identity, including Ansible's temporary files.
                 docker('exec', '--user', '33:33', web, 'ansible-playbook', '--syntax-check',
@@ -141,9 +138,9 @@ def exercise(scheme):
                     docker('stop', '--time', '30', name)
                     docker('rm', name)
             assert snapshots[0] == snapshots[1], 'Application secrets or config changed after recreation'
-            print(scheme + ': proxy, websocket, login, readiness, DB outage and persistence passed')
+            print(scheme + ': web-only proxy, login, readiness, DB outage and persistence passed')
     finally:
-        for name in (proxy, web, socket_name):
+        for name in (proxy, web):
             docker('rm', '-f', name, check=False)
         docker('network', 'rm', network, check=False)
         for name in volumes:

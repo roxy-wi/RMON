@@ -71,15 +71,6 @@
     }
 %}
 {% set settings = {
-    "rabbitmq": {
-        "rabbitmq_enabled": "Enable alerting in the WEB panel",
-        "rabbitmq_host": "RabbitMQ-server host",
-        "rabbitmq_port": "RabbitMQ-server port",
-        "rabbitmq_vhost": "RabbitMQ-server vhost",
-        "rabbitmq_queue": "RabbitMQ-server queue",
-        "rabbitmq_user": "RabbitMQ-server user",
-        "rabbitmq_password": "RabbitMQ-server password",
-        },
     "monitoring": {
         "port_scan_interval": "Check interval for Port scanner (in minutes)",
         "portscanner_keep_history_range": "Retention period for Port scanner history",
@@ -192,7 +183,6 @@
     "alert_master_backup": "Alert about changing Master/Backup status",
     "new_version": "There is a new version RMON. Check the",
     "all_alerts_enabled": "Alerts are enabled",
-    "disable_alerts": "Disable alerting",
     "work_with_prev": "Here you can work with previous versions of configs",
     "roll_back": "Roll back to them, view or delete",
     "files_been_deleted": "The following files have been deleted",
@@ -266,7 +256,6 @@
         "auto_start_desc": "The Auto Start service allows to restart the HAProxy, NGINX, Apache and Keepalived services if they are down",
         "metrics_desc": "Collects number of connections for HAProxy, NGINX, Apache and HAProxy WAF services",
         "p_s_desc": "Checks the server for open ports and saves history",
-        "socket_desc": "Socket is a service for sending alerts and notifications",
         "a_new_version": "There is a newer version",
         "no_new_version": "There is not a newer version",
         "main_app": "The main application",
@@ -628,7 +617,6 @@
     "test2": "test",
     "disabled": "disabled",
     "via": "via",
-    "web_panel": "web panel",
     "message": "message",
     "menu": "menu",
     "language": "language",
@@ -836,6 +824,11 @@
 
 
 {% set check_editor = {
+    "ssl_policy": "HTTPS policy",
+    "ssl_policy_default": "Default",
+    "ssl_policy_https": "Require HTTPS",
+    "ssl_policy_http": "Require HTTP",
+    "ssl_policy_hint": "Checks the final URL after allowed redirects. HTTPS to HTTP is always an error, including in Default mode. Ignoring certificate errors does not disable this policy.",
     "create": "Create check",
     "edit": "Edit check",
     "sections": "Check setup",

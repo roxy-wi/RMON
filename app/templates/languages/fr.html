@@ -71,15 +71,6 @@
     }
 %}
 {% set settings = {
-    "rabbitmq": {
-        "rabbitmq_enabled": "Activer les alertes dans le panneau WEB",
-        "rabbitmq_host": "RabbitMQ-server serveur",
-        "rabbitmq_port": "RabbitMQ-server port",
-        "rabbitmq_vhost": "RabbitMQ-server vhost",
-        "rabbitmq_queue": "RabbitMQ-server queue",
-        "rabbitmq_user": "RabbitMQ-server utilisateur",
-        "rabbitmq_password": "RabbitMQ-server mot de passe",
-        },
     "monitoring": {
         "port_scan_interval": "Interval de vérification pour le scanner de Port (en minutes)",
         "portscanner_keep_history_range": "Période de rétention pour l\'historiques le scanner de Port",
@@ -192,7 +183,6 @@
     "alert_master_backup": "Alert about changing Master/Backup status",
     "new_version": "Il y a une nouvelle version RMON. Vérifiez le",
     "all_alerts_enabled": "Les alertes sont activées",
-    "disable_alerts": "Désactiver les alertes",
     "work_with_prev": "Ici, vous pouvez travailler avec les versions précédentes des configurations",
     "roll_back": "Revenir en arrière, afficher ou supprimer",
     "files_been_deleted": "Les fichiers suivants ont été supprimés",
@@ -266,7 +256,6 @@
         "auto_start_desc": "Le service Auto Start permet de redémarrer les services HAProxy, NGINX, Apache et Keepalived s\'ils sont hors service.",
         "metrics_desc": "Collecte du nombre de connexions pour les services HAProxy, NGINX, Apache et HAProxy WAF",
         "p_s_desc": "Vérifie les ports ouverts du serveur et enregistre l\'historique.",
-        "socket_desc": "Socket est un service permettant d\'envoyer des alertes et des notifications.",
         "a_new_version": "Il existe une version plus récente",
         "no_new_version": "Il n\'existe pas de version plus récente",
         "main_app": "Application principale",
@@ -628,7 +617,6 @@
     "test2": "test",
     "disabled": "désactivé",
     "via": "via",
-    "web_panel": "volet webl",
     "message": "message",
     "menu": "menu",
     "language": "langage",
@@ -836,6 +824,11 @@
 
 
 {% set check_editor = {
+    "ssl_policy": "Politique HTTPS",
+    "ssl_policy_default": "Par défaut",
+    "ssl_policy_https": "Exiger HTTPS",
+    "ssl_policy_http": "Exiger HTTP",
+    "ssl_policy_hint": "Vérifie l’adresse finale après les redirections autorisées. Un passage de HTTPS à HTTP est toujours une erreur, même en mode Par défaut. Ignorer les erreurs de certificat ne désactive pas cette politique.",
     "create": "Créer une vérification",
     "edit": "Modifier la vérification",
     "sections": "Configuration",

@@ -410,11 +410,6 @@ $( function() {
 	})
 });
 function saveUserSettings(user_id){
-	if ($('#disable_alerting').is(':checked')) {
-		localStorage.removeItem('disabled_alert');
-	} else {
-		localStorage.setItem('disabled_alert', '1');
-	}
 	changeCurrentGroupF(user_id);
 	changeTheme($('#theme_select').val());
 	Cookies.set('lang', $('#lang_select').val(), { expires: 365, path: '/', samesite: 'strict', secure: 'true' });
@@ -490,77 +485,6 @@ function checkLength( o, n, min ) {
 		return true;
 	}
 }
-$(function () {
-	ion.sound({
-		sounds: [
-			{
-				name: "bell_ring",
-			},
-			{
-				name: "glass",
-				volume: 1,
-			},
-			{
-				name: "alert_sound",
-				volume: 0.3,
-				preload: false
-			}
-		],
-		volume: 0.5,
-		path: "/static/js/sounds/",
-		preload: true
-	});
-});
-    let socket = new ReconnectingWebSocket((window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host, null, {maxReconnectAttempts: 20, reconnectInterval: 3000});
-
-socket.onopen = function(e) {
-  console.log("[open] Connection is established with " + window.location.host);
-  getAlerts();
-};
-
-function getAlerts() {
-	socket.send("alert_group " + $('#user_group_socket').val() + " " + $('#user_id_socket').val());
-}
-
-socket.onmessage = function(event) {
-	let cur_url = window.location.href.split('/').pop();
-	cur_url = cur_url.split('/');
-	if (cur_url != 'login' && localStorage.getItem('disabled_alert') === null) {
-		let data = event.data.split(";");
-		for (let i = 0; i < data.length; i++) {
-			if (data[i].indexOf('warning: ') != '-1') {
-				toastr.warning(data[i]);
-				ion.sound.play("bell_ring");
-			} else if (data[i].indexOf('error:') != '-1' || data[i].indexOf('alert') != '-1' || data[i].indexOf('FAILED') != '-1') {
-				if (data[i].indexOf('error: database is locked') == '-1') {
-					toastr.error(data[i]);
-					ion.sound.play("bell_ring");
-				}
-			} else if (data[i].indexOf('info: ') != '-1') {
-				toastr.info(data[i]);
-				ion.sound.play("glass");
-			} else if (data[i].indexOf('success: ') != '-1') {
-				toastr.success(data[i]);
-				ion.sound.play("glass");
-			} else if (data[i].indexOf('critical: ') != '-1') {
-				toastr.error(data[i]);
-				ion.sound.play("bell_ring");
-			}
-		}
-	}
-};
-
-socket.onclose = function(event) {
-  if (event.wasClean) {
-    console.log(`[close] Соединение закрыто чисто, код=${event.code} причина=${event.reason}`);
-  } else {
-    console.log('[close] Соединение прервано');
-  }
-};
-
-socket.onerror = function(error) {
-  console.log(`[error] ${error.message}`);
-};
 function changePassword() {
 	$("#user-change-password-table").dialog({
 		autoOpen: true,
@@ -675,11 +599,6 @@ function common_ajax_action_after_success(dialog_id, new_group, ajax_append_id, 
 	}, 2500 );
 }
 function openUserSettings(user_id) {
-	if (localStorage.getItem('disabled_alert') == '1') {
-		$('#disable_alerting').prop('checked', false).checkboxradio('refresh');
-	} else {
-		$('#disable_alerting').prop('checked', true).checkboxradio('refresh');
-	}
 	let theme = 'light';
 	if (localStorage.getItem('theme') != null) {
 		theme = localStorage.getItem('theme');

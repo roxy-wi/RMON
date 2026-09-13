@@ -46,10 +46,6 @@ services:
       RMON_PROXY_SCHEME: "${RMON_PROXY_SCHEME:-https}"
       RMON_TLS_NAME: "${RMON_TLS_NAME:-localhost}"
       RMON_SELF_SIGNED: "${RMON_SELF_SIGNED:-1}"
-      RMON_SOCKET_HOST: "${RMON_SOCKET_HOST:-host.docker.internal}"
-      RMON_SOCKET_PORT: "${RMON_SOCKET_PORT:-8766}"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     ports:
       - "${RMON_BIND_IP:-0.0.0.0}:${RMON_WEB_PORT:-443}:8080"
     volumes:

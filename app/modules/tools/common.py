@@ -191,7 +191,7 @@ def update_cur_tool_version(tool_name: str) -> dict:
             installed = False
         elif unit.get('LoadState') == 'loaded':
             installed = True
-            if tool_name in ('rmon-server', 'rmon-socket') and unit.get('WorkingDirectory'):
+            if tool_name == 'rmon-server' and unit.get('WorkingDirectory'):
                 current = _source_version(unit['WorkingDirectory'])
     roxy_sql.update_tool_cur_version(tool_name, current or '0')
     return {'current_version': current or '0', 'version_known': bool(current), 'installed': installed}

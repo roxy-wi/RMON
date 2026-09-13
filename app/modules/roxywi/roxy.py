@@ -91,6 +91,8 @@ def update_user_status() -> None:
 
 def action_service(action: str, service: str) -> str:
 	require_feature(SERVICE_CONTROL)
+	if service not in roxy_sql.SUPPORTED_SERVICES:
+		return 'error: Unsupported service'
 	if os.getenv('RMON_CONTAINER') == '1':
 		return 'error: Manage external services outside the RMON web container.'
 	is_in_docker = is_docker()

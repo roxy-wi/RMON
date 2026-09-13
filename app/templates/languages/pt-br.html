@@ -71,15 +71,6 @@
     }
 %}
 {% set settings = {
-    "rabbitmq": {
-        "rabbitmq_enabled": "Habilitar alertas no painel WEB",
-        "rabbitmq_host": "RabbitMQ-server host",
-        "rabbitmq_port": "RabbitMQ-server port",
-        "rabbitmq_vhost": "RabbitMQ-server vhost",
-        "rabbitmq_queue": "RabbitMQ-server queue",
-        "rabbitmq_user": "Usuario de RabbitMQ-server",
-        "rabbitmq_password": "Senha do RabbitMQ-server",
-        },
     "monitoring": {
         "port_scan_interval": "Intervalo de verificação para o Port scanner (em minutos)",
         "portscanner_keep_history_range": "Período de retenção de historico de Port scanner",
@@ -192,7 +183,6 @@
     "alert_master_backup": "Alerta sobre a alteração de estado do Master/Backup",
     "new_version": "Uma nova versão RMON apareceu. Verifica a",
     "all_alerts_enabled": "Alertas são ativadas",
-    "disable_alerts": "Desativar alertas",
     "work_with_prev": "Aqui você pode editar as versões anteriores de configurações",
     "roll_back": "Reverta para eles, visualize ou exclua",
     "files_been_deleted": "Os seguintes arquivos foram exluídos",
@@ -266,7 +256,6 @@
         "auto_start_desc": "O serviços Auto Start permite reiniciar os serviços HAProxy, NGINX, Apache e Keepalived se estiverem inoperantes",
         "metrics_desc": "Coleta o número de conexões para os serviços HAProxy, NGINX, Apache e HAProxy WAF",
         "p_s_desc": "Verifica se há portas abertas no servidor e salva o histórico",
-        "socket_desc": "Socket é um serviço de envio de alertas e notificações",
         "a_new_version": "Há uma versão mais recente",
         "no_new_version": "Nã há uma versão mais recente",
         "main_app": "O aplicativo principal",
@@ -628,7 +617,6 @@
     "test2": "test",
     "disabled": "desativado",
     "via": "via",
-    "web_panel": "painel web",
     "message": "mensagem",
     "menu": "menu",
     "language": "idioma",
@@ -836,6 +824,11 @@
 
 
 {% set check_editor = {
+    "ssl_policy": "Política HTTPS",
+    "ssl_policy_default": "Padrão",
+    "ssl_policy_https": "Exigir HTTPS",
+    "ssl_policy_http": "Exigir HTTP",
+    "ssl_policy_hint": "Verifica o endereço final após os redirecionamentos permitidos. A mudança de HTTPS para HTTP sempre é um erro, inclusive no modo Padrão. Ignorar erros de certificado não desativa esta política.",
     "create": "Criar verificação",
     "edit": "Editar verificação",
     "sections": "Configuração",

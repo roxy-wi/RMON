@@ -32,10 +32,10 @@ class SettingsView(MethodView):
         parameters:
         - name: section
           in: path
-          description: The name of the settings section. Only 'main', 'rmon', 'rabbitmq', 'ldap', 'monitoring', 'logs' are allowed. If none get all settings.
+          description: The name of the settings section. Only 'main', 'rmon', 'ldap', 'monitoring', 'logs' are allowed. If none get all settings.
           required: true
           type: string
-          enum: ['main', 'rmon', 'rabbitmq', 'ldap', 'monitoring', 'logs']
+          enum: ['main', 'rmon', 'ldap', 'monitoring', 'logs']
         - name: group_id
           in: query
           description: This parameter is used only for the superAdmin role.
@@ -94,10 +94,10 @@ class SettingsView(MethodView):
         parameters:
         - name: section
           in: path
-          description: The name of the settings section. Only 'main', 'rmon', 'rabbitmq', 'ldap', 'monitoring', 'logs' are allowed.
+          description: The name of the settings section. Only 'main', 'rmon', 'ldap', 'monitoring', 'logs' are allowed.
           required: true
           type: string
-          enum: ['main', 'rmon', 'rabbitmq', 'ldap', 'monitoring', 'logs']
+          enum: ['main', 'rmon', 'ldap', 'monitoring', 'logs']
         - name: group_id
           in: query
           description: The parameter is used only for the superAdmin role.

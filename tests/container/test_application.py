@@ -15,7 +15,7 @@ def container_mode(monkeypatch):
     monkeypatch.delenv('RMON_SERVER_INTERNAL_URL', raising=False)
 
 
-@pytest.mark.parametrize('service', ['rmon', 'rmon-server', 'rmon-socket', 'rabbitmq-server', 'fail2ban'])
+@pytest.mark.parametrize('service', ['rmon', 'rmon-server', 'fail2ban'])
 def test_container_never_installs_os_packages(monkeypatch, service):
     monkeypatch.setattr(common.server_mod, 'subprocess_execute', Mock(side_effect=AssertionError('Package command')))
     with pytest.raises(ValueError, match='outside'):
@@ -31,10 +31,10 @@ def test_container_never_controls_local_daemons(monkeypatch, action):
 def test_no_false_versions_or_package_queries_for_external_services(monkeypatch):
     monkeypatch.setattr(common, '_version_command', Mock(side_effect=AssertionError('Package query')))
     monkeypatch.setattr(common.server_mod, 'subprocess_execute', Mock(side_effect=AssertionError('Systemctl')))
-    assert common.is_tool_active('rmon-socket') == 'external'
-    assert common.update_cur_tool_version('rmon-socket') == {
+    assert common.is_tool_active('fail2ban') == 'external'
+    assert common.update_cur_tool_version('fail2ban') == {
         'current_version': '0', 'installed': None, 'version_known': False, 'managed_by': 'external'}
-    monkeypatch.setattr(common.roxy_sql, 'get_all_tools', lambda: {'rmon-socket': {'current_version': '1.0', 'new_version': '1.5'}})
+    monkeypatch.setattr(common.roxy_sql, 'get_all_tools', lambda: {'fail2ban': {'current_version': '1.0', 'new_version': '1.5'}})
     service = common.get_services_status()[0]
     assert service[2]['version_known'] is False
     assert service[2]['update_available'] is False

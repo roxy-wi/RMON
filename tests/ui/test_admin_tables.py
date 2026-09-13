@@ -111,14 +111,15 @@ def test_ssh_delete_menu_respects_shared_credential_ownership(app, shared, group
 @pytest.mark.ui
 def test_services_have_one_actions_column_and_native_disabled_controls(app):
     services = [('rmon-server', 'active', {'current_version': '6.33'}),
-                ('rmon-socket', 'inactive', {'current_version': '1.0'}),
-                ('rabbitmq-server', 'missing', {'current_version': '* is not installed'})]
+                ('fail2ban', 'inactive', {'current_version': '1.0'})]
     html = render(app, 'ajax/load_services.html', services=services)
     rows = Rows(html).rows
     assert_actions(rows, 4)
     assert 'disabled' in rows[0][-1]['actions'][0][1]
     assert 'disabled' in rows[1][-1]['actions'][2][1]
-    assert len(rows[2][-1]['actions']) == 1
+    missing = render(app, 'ajax/load_services.html', services=[
+        ('fail2ban', 'missing', {'current_version': '* is not installed'})])
+    assert len(Rows(missing).rows[0][-1]['actions']) == 1
     assert 'id="restart-rmon-server"' in html
 
 
@@ -150,12 +151,13 @@ def test_service_versions_distinguish_source_install_missing_and_unknown(app, la
     kwargs = {'versions': {'current_ver': '1.4.0', 'new_ver': '1.3.0', 'need_update': False}}
     html = render(app, template, language=language, services=[
         ('rmon-server', 'active', details('6.33', True, True)),
-        ('rmon-socket', 'inactive', details('0', False)),
     ], **kwargs)
     assert '6.33' in html
-    assert missing in html
     assert "updateService('rmon-server', 'install')" not in html
-    assert "updateService('rmon-socket', 'install')" in html
+    html = render(app, template, language=language,
+                  services=[('rmon-server', 'inactive', details('0', False))], **kwargs)
+    assert missing in html
+    assert "updateService('rmon-server', 'install')" in html
     html = render(app, template, language=language,
                   services=[('rmon-server', 'active', details('0', True))], **kwargs)
     assert unknown in html

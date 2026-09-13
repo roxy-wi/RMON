@@ -26,8 +26,6 @@
         <a href="#main-content" class="skip-link">{{ lang.ux.skip_content }}</a>
 		{% if g.user_params['user'] %}
         <script>$(show_version);</script>
-            <input type="hidden" id="user_group_socket" value="{{ g.user_params['group_id'] }}">
-            <input type="hidden" id="user_id_socket" value="{{ g.user_params['user_id'] }}">
 		{% include 'include/main_menu.html' %}
 		<main class="container" id="main-content" tabindex="-1">
             <header class="page-header">
@@ -89,12 +87,6 @@
 		</div>
 		<div id="show-user-settings" style="display: none;">
 			<table class="overview" id="show-user-settings-table" title="{{lang.words.user3|title()}} {{lang.words.settings}}">
-				<tr>
-					<td class="padding20" style="width: 70%">{{lang.words.alerts|title()}}</td>
-					<td>
-						{{ checkbox('disable_alerting') }}
-					</td>
-				</tr>
 				<tr class="padding20">
 					<td class="padding20">{{lang.words.language|title()}}</td>
 					<td>

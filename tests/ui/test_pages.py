@@ -32,6 +32,15 @@ CORE_UI_PAGES = (
 SUPPORTED_LANGUAGES = ('en', 'ru', 'fr', 'pt-br')
 
 
+@pytest.mark.ui
+@pytest.mark.parametrize('language', SUPPORTED_LANGUAGES)
+def test_admin_settings_remain_available_without_broker_in_every_language(client, auth_headers, language):
+    client.set_cookie('lang', language)
+    document = _document(client.get('/admin', headers=auth_headers(1, 1)))
+    assert {'main-section-head', 'smon-section-head', 'mail-section-head', 'agent-section-head'} <= set(document.ids)
+    assert document.find(element_id='rabbitmq-section-head') is None
+
+
 class HtmlDocument(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
@@ -147,8 +156,10 @@ def test_authenticated_core_ui_pages_render(
 
     assert expected_ids <= set(document.ids)
     assert document.find(element_id='top-link') is not None
-    assert document.find(tag='input', element_id='user_group_socket')['value'] == '1'
-    assert document.find(tag='input', element_id='user_id_socket')['value'] == '1'
+    assert document.find(element_id='disable_alerting') is None
+    assert document.find(element_id='user_group_socket') is None
+    assert document.find(element_id='user_id_socket') is None
+    assert not any('reconnecting-websocket' in asset or 'ion.sound' in asset for asset in document.local_assets)
 
     for asset in document.local_assets:
         asset_response = client.get(asset)

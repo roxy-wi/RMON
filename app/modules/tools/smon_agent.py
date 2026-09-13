@@ -1,6 +1,7 @@
 import json
 import uuid
 import os
+import re
 from typing import Union
 
 import requests
@@ -330,11 +331,31 @@ def send_dns_checks(agent_id: int, server_ip: str, check_id=None) -> None:
                                                )
 
 
+def _require_http_policy_support(agent_id: int, server_ip: str) -> None:
+    try:
+        data = json.loads(send_get_request_to_agent(agent_id, server_ip, 'version'))
+        version = data.get('version') if isinstance(data, dict) else None
+        match = re.fullmatch(r'(\d+)\.(\d+)(?:\.\d+)?', version or '')
+    except Exception as error:
+        raise ValueError('Cannot verify agent support for HTTPS policy. Check the agent connection and try again.') from error
+    if not match or tuple(map(int, match.group(1, 2))) < (1, 20):
+        raise ValueError('HTTPS policy requires Agent 1.20 or later. Update the agent and resend the check.')
+
+
 def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
     if check_id:
         checks = smon_sql.select_one_smon(check_id, 2)
     else:
         checks = smon_sql.select_en_smon(agent_id, 'http')
+    checks = list(checks)
+    policy_error = None
+    if any(check.ssl_policy != 'default' for check in checks):
+        try:
+            _require_http_policy_support(agent_id, server_ip)
+        except ValueError as error:
+            policy_error = error
+            # Continue synchronizing checks that do not need the optional feature.
+            checks = [check for check in checks if check.ssl_policy == 'default']
     for check in checks:
         body = check.body
         if body:
@@ -356,6 +377,8 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             'body_req': check.body_req,
             'header_req': check.header_req,
             'redirects': check.redirects,
+            'fail_if_not_ssl': check.ssl_policy == 'require_https',
+            'fail_if_ssl': check.ssl_policy == 'require_http',
             'auth': check.auth,
             'proxy': check.proxy,
             'headers_response': check.headers_response,
@@ -370,6 +393,8 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
                                                'error',
                                                extra={'check_id': check.id, 'agent_id': agent_id, 'multi_check_id': check.smon_id.multi_check_id}
                                                )
+    if policy_error:
+        raise policy_error
 
 
 def send_smtp_checks(agent_id: int, server_ip: str, check_id=None) -> None:

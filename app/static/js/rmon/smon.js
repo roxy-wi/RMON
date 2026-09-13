@@ -194,6 +194,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'proxy': proxy,
 		'headers_response': headers_response,
 		'http_version': parseInt($('#new-smon-http_version').val()),
+		'ssl_policy': $('#new-smon-ssl_policy').val() || 'default',
 	}
 	let method = "post";
 	let api_url = api_v_prefix + '/rmon/check/' + check_type;

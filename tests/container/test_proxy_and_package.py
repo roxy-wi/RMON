@@ -11,22 +11,21 @@ spec.loader.exec_module(proxy)
 
 
 @pytest.mark.parametrize('scheme', ['http', 'https'])
-def test_proxy_routes_http_and_websocket_and_hides_readiness(monkeypatch, scheme):
+def test_proxy_routes_only_to_web_and_hides_readiness(monkeypatch, scheme):
     monkeypatch.setenv('RMON_PROXY_SCHEME', scheme)
-    monkeypatch.setenv('RMON_SOCKET_HOST', 'socket')
     result = proxy.render((ROOT / 'container/nginx/default.conf.template').read_text())
     assert 'http://web:8080' in result
-    assert 'http://socket:8766' in result
+    assert 'proxy_set_header Upgrade "";' in result
+    assert 'proxy_set_header Connection "";' in result
     assert 'location ^~ /_rmon/ { return 404; }' in result
-    assert '$http_upgrade' in result and '${RMON_' not in result
+    assert '$http_upgrade' not in result and '${RMON_' not in result
     assert ('listen 8080 ssl' in result) is (scheme == 'https')
     assert ('ssl_certificate_key' in result) is (scheme == 'https')
 
 
-@pytest.mark.parametrize('key,value', [('SCHEME', 'ftp'), ('HOST', 'x;bad'), ('PORT', '0'), ('PORT', '65536')])
-def test_proxy_rejects_configuration_injection(monkeypatch, key, value):
-    env = 'RMON_PROXY_SCHEME' if key == 'SCHEME' else 'RMON_SOCKET_' + key
-    monkeypatch.setenv(env, value)
+@pytest.mark.parametrize('value', ['ftp', 'https;bad', ''])
+def test_proxy_rejects_unsupported_scheme(monkeypatch, value):
+    monkeypatch.setenv('RMON_PROXY_SCHEME', value)
     with pytest.raises(ValueError):
         proxy.settings()
 
@@ -56,7 +55,7 @@ def test_packaged_apache_proxies_to_unix_socket_and_keeps_tls_paths(name):
     text = (ROOT / 'config_other/httpd' / name).read_text()
     assert 'WSGIDaemonProcess' not in text and 'WSGIScriptAlias' not in text
     assert 'unix:/run/rmon/rmon.sock|http://localhost/' in text
-    assert 'ws://localhost:8766/' in text
+    assert 'ws://' not in text and 'websocket' not in text.lower()
     assert '/etc/ssl/certs/rmon.key' in text
     assert 'RequestHeader set X-Forwarded-Proto "https"' in text
 

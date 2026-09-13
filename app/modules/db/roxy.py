@@ -2,6 +2,9 @@ from app.modules.db.db_model import UserName, RoxyTool, Version
 from app.modules.db.common import out_error
 
 
+SUPPORTED_SERVICES = ('rmon-server', 'fail2ban')
+
+
 def insert_user_name(user_name):
 	try:
 		UserName.insert(UserName=user_name).execute()
@@ -67,7 +70,7 @@ def select_user_all():
 
 
 def get_roxy_tools():
-	query = RoxyTool.select()
+	query = RoxyTool.select().where(RoxyTool.name.in_(SUPPORTED_SERVICES))
 	try:
 		query_res = query.where(RoxyTool.is_roxy == 1).execute()
 	except Exception as e:
@@ -81,7 +84,7 @@ def get_roxy_tools():
 
 def get_all_tools():
 	try:
-		query_res = RoxyTool.select().execute()
+		query_res = RoxyTool.select().where(RoxyTool.name.in_(SUPPORTED_SERVICES)).execute()
 	except Exception as e:
 		out_error(e)
 	else:

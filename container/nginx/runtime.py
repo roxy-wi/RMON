@@ -11,13 +11,7 @@ def settings():
     scheme = os.getenv('RMON_PROXY_SCHEME', 'https')
     if scheme not in ('http', 'https'):
         raise ValueError('RMON_PROXY_SCHEME must be http or https')
-    host = os.getenv('RMON_SOCKET_HOST', 'host.docker.internal')
-    if not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9.-]*', host):
-        raise ValueError('RMON_SOCKET_HOST must be a hostname or IPv4 address')
-    port = int(os.getenv('RMON_SOCKET_PORT', '8766'))
-    if not 1 <= port <= 65535:
-        raise ValueError('RMON_SOCKET_PORT must be between 1 and 65535')
-    return scheme, host, port
+    return scheme
 
 
 def certificate_san(host):
@@ -55,19 +49,19 @@ def ensure_certificate(cert=Path('/etc/ssl/certs/rmon.crt'), key=Path('/etc/ssl/
 
 
 def render(template):
-    scheme, host, port = settings()
+    scheme = settings()
     tls = ('ssl_certificate /etc/ssl/certs/rmon.crt;\n'
            'ssl_certificate_key /etc/ssl/certs/rmon.key;\n'
            'ssl_protocols TLSv1.2 TLSv1.3;' if scheme == 'https' else '')
     for name, value in {'RMON_LISTENER': '8080 ssl' if scheme == 'https' else '8080',
-                        'RMON_TLS_DIRECTIVES': tls, 'RMON_SOCKET_HOST': host, 'RMON_SOCKET_PORT': str(port)}.items():
+                        'RMON_TLS_DIRECTIVES': tls}.items():
         template = template.replace('${' + name + '}', value)
     return template
 
 
 if __name__ == '__main__':
     os.umask(0o077)
-    if settings()[0] == 'https':
+    if settings() == 'https':
         ensure_certificate()
     Path('/etc/nginx/conf.d/default.conf').write_text(render(Path('/opt/rmon-proxy/default.conf.template').read_text()))
     subprocess.run(['nginx', '-t'], check=True)

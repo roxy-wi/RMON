@@ -163,6 +163,7 @@ window.CheckEditor = (function () {
         }
         $('<strong>').text((value('new-smon-name') || text('summary')) + ' · ' + (type || '').toUpperCase()).appendTo(host);
         $('<span>').text(target).appendTo(host);
+        if (type === 'http') $('<span>').text(text('ssl_policy') + ': ' + $('#new-smon-ssl_policy option:selected').text()).appendTo(host);
         $('<span>').text($('#new-smon-place option:selected').text() + ' · ' + value('new-smon-interval') + ' ' + text('seconds')).appendTo(host);
         const channels = ['telegram','slack','pd','mm','incidentrelay','email'].filter(c => value('new-smon-' + c) !== '0');
         $('<span>').text(channels.length ? channels.map(c => $('#new-smon-' + c).closest('.check-field').find('label').first().text()).join(', ') : text('no_channels')).appendTo(host);
@@ -189,7 +190,7 @@ window.CheckEditor = (function () {
             url:'url', resole_to_ip:'resole_to_ip', description:'description', packet_size:'packet_size', count_packets:'count_packets',
             interval:'interval', check_timeout:'timeout', username:'username', password:'password', vhost:'vhost', retries:'retries',
             redirects:'redirects', runbook:'runbook', priority:'priority', expiration:'expiration', threshold_timeout:'threshold_timeout',
-            check_group:'group', body_req:'body-req', header_req:'header-req', method:'method', http_version:'http_version'};
+            check_group:'group', body_req:'body-req', header_req:'header-req', method:'method', http_version:'http_version', ssl_policy:'ssl_policy'};
         for (const [key, id] of Object.entries(map)) {
             if (Object.hasOwn(settings, key)) $('#new-smon-' + id).val(settings[key] ?? '');
         }
