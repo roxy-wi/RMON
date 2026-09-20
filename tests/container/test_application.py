@@ -1,4 +1,7 @@
 from pathlib import Path
+import os
+import subprocess
+import sys
 from unittest.mock import Mock
 
 import pytest
@@ -13,6 +16,19 @@ from app.modules.service import installation
 def container_mode(monkeypatch):
     monkeypatch.setenv('RMON_CONTAINER', '1')
     monkeypatch.delenv('RMON_SERVER_INTERNAL_URL', raising=False)
+
+
+def test_migration_cli_works_without_service_metrics_directory(tmp_path):
+    metrics_directory = tmp_path / 'missing-service-metrics'
+    environment = dict(os.environ, RMON_PROMETHEUS_MULTIPROC_DIR=str(metrics_directory),
+                       RMON_SCHEDULER_ENABLED='1', TEMP=str(tmp_path), TMP=str(tmp_path), TMPDIR=str(tmp_path))
+    result = subprocess.run([sys.executable, 'app/migrate.py', 'list'],
+                            cwd=Path(__file__).resolve().parents[2], env=environment,
+                            text=True, capture_output=True, timeout=30)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert '20260916000000_add_operation_queue' in result.stdout
+    assert not metrics_directory.exists()
+    assert not list(tmp_path.glob('rmon-migrate-metrics-*'))
 
 
 @pytest.mark.parametrize('service', ['rmon', 'rmon-server', 'fail2ban'])
@@ -92,9 +108,12 @@ def test_container_artifact_cleanup_preserves_writable_directory(tmp_path, monke
     artifact.mkdir()
     (artifact / 'run').mkdir()
     (artifact / 'run' / 'result').write_text('private artifact')
+    import time
+    jobs.os.utime(artifact / 'run', (time.time() - 3 * 86400,) * 2)
+    (artifact / 'recent').mkdir()
     original_scandir = jobs.os.scandir
     monkeypatch.setattr(jobs.os.path, 'isdir', lambda path: str(path).endswith('/artifacts'))
     monkeypatch.setattr(jobs.os, 'scandir', lambda path: original_scandir(artifact) if str(path).startswith('/var/www/') else original_scandir(path))
     jobs.delete_ansible_artifacts()
     assert artifact.is_dir()
-    assert not list(artifact.iterdir())
+    assert list(artifact.iterdir()) == [artifact / 'recent']

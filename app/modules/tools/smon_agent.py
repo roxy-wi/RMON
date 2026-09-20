@@ -64,7 +64,7 @@ def run_agent_action(agent_id: int, action: str):
     agent = smon_sql.get_agent_data(agent_id)
     server_ip = smon_sql.get_agent_ip_by_id(agent_id)
     inventory = {'server': {'hosts': {server_ip: {'action': action, 'agent_uuid': str(agent.uuid)}}}}
-    return run_ansible(inventory, [server_ip], 'rmon_agent')
+    return run_ansible_thread(inventory, [server_ip], 'rmon_agent', 'Agent', action)
 
 
 def check_agent_limit():

@@ -1,6 +1,8 @@
 """Shared package/container worker policy. TLS belongs to Apache or Nginx."""
 import os
 
+os.environ['RMON_SCHEDULER_ENABLED'] = '0'
+
 container = os.getenv('RMON_CONTAINER') == '1'
 bind = '0.0.0.0:8080' if container else 'unix:/run/rmon/rmon.sock'
 workers = 1

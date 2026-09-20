@@ -31,6 +31,6 @@ def test_protected_api_requires_a_token(client):
 def test_dedicated_scheduler_runner_matches_application_configuration():
     source = (PROJECT_ROOT / 'scheduler_runner.py').read_text(encoding='utf-8')
 
-    assert "os.environ.setdefault('RMON_SCHEDULER_ENABLED', '1')" in source
+    assert "os.environ['RMON_SCHEDULER_ENABLED'] = '1'" in source
     assert "from app import scheduler" in source
     assert 'threading.Event().wait()' in source

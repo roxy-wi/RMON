@@ -4,7 +4,7 @@ import os
 
 from cryptography.fernet import Fernet, InvalidToken
 
-from app.modules.db.db_model import Cred, OidcProvider, conn
+from app.modules.db.db_model import Cred, OidcProvider, OperationJob, conn
 
 
 SECRET_FIELDS = ('password', 'passphrase', 'private_key')
@@ -70,6 +70,21 @@ def rotate_credentials() -> int:
                 client_secret_encrypted=new_fernet.encrypt(plaintext).decode('ascii')
             ).where(OidcProvider.id == provider.id).execute()
             rotated_credentials += 1
+
+        if OperationJob.table_exists():
+            for job in OperationJob.select().where(OperationJob.payload.is_null(False)):
+                token = job.payload.encode('ascii')
+                try:
+                    plaintext = old_fernet.decrypt(token)
+                except InvalidToken as exc:
+                    try:
+                        new_fernet.decrypt(token)
+                    except InvalidToken:
+                        raise RuntimeError(f'Operation {job.task_id} contains an invalid payload token') from exc
+                    continue
+                OperationJob.update(payload=new_fernet.encrypt(plaintext).decode('ascii')).where(
+                    OperationJob.task == job.task_id).execute()
+                rotated_credentials += 1
 
     return rotated_credentials
 

@@ -50,7 +50,7 @@ def mounts(service):
 
 def test_default_deployment_keeps_local_images_and_separates_tls(compose_config):
     config = compose_config()
-    assert set(config['services']) == {'web', 'proxy'}
+    assert set(config['services']) == {'web', 'proxy', 'scheduler', 'operations'}
     web, proxy = config['services']['web'], config['services']['proxy']
     assert web['image'] == 'rmon-web:local'
     assert proxy['image'] == 'rmon-proxy:local'
@@ -59,6 +59,13 @@ def test_default_deployment_keeps_local_images_and_separates_tls(compose_config)
     assert proxy['environment']['RMON_SELF_SIGNED'] == '1'
     assert not web['environment'].get('RMON_SECRET_PHRASE')
     assert any('host.docker.internal' in host for host in web['extra_hosts'])
+    for role in ('scheduler', 'operations'):
+        service = config['services'][role]
+        assert service['command'] == [role]
+        assert service['image'] == web['image']
+        assert not service.get('ports')
+        assert mounts(service) == mounts(web)
+        assert service['healthcheck']['test'][-2:] == ['--role', role]
 
 
 def test_dotenv_preserves_literal_secrets_and_external_server_settings(compose_config):

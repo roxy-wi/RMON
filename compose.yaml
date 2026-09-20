@@ -1,5 +1,4 @@
-services:
-  web:
+x-rmon: &rmon
     image: "${RMON_WEB_IMAGE:-rmon-web:local}"
     build: .
     restart: unless-stopped
@@ -33,6 +32,35 @@ services:
       - no-new-privileges:true
     sysctls:
       net.ipv4.ping_group_range: "0 2147483647"
+
+services:
+  web:
+    <<: *rmon
+
+  scheduler:
+    <<: *rmon
+    command: [scheduler]
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, /opt/rmon-venv/bin/python, -m, container.runtime, healthcheck, --role, scheduler]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+
+  operations:
+    <<: *rmon
+    command: [operations]
+    stop_grace_period: 30m
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, /opt/rmon-venv/bin/python, -m, container.runtime, healthcheck, --role, operations]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
 
   proxy:
     image: "${RMON_PROXY_IMAGE:-rmon-proxy:local}"

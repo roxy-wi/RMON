@@ -11,7 +11,8 @@ for (const status of ['running', 'completed', 'failed']) {
         const refreshed = [];
         const context = vm.createContext({
             Map, console, api_v_prefix: '/api/v1.0',
-            setInterval: () => 1, clearInterval: () => {}, setTimeout: () => {},
+            setInterval: () => 1, clearInterval: () => {}, setTimeout: () => {}, clearTimeout: () => {},
+            document: {hidden: false},
             NProgress: {configure: () => {}},
             toastr: {info: () => {}, success: () => {}, error: () => {}},
             sessionStorage: {getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value)},

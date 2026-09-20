@@ -46,6 +46,20 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  scheduler:
+    environment:
+      RMON_SERVER_INTERNAL_URL: "${RMON_SERVER_INTERNAL_URL:-http://server:5100}"
+      RMON_SERVER_INTERNAL_TOKEN_FILE: /run/secrets/rmon_server_token
+    secrets:
+      - rmon_server_token
+
+  operations:
+    environment:
+      RMON_SERVER_INTERNAL_URL: "${RMON_SERVER_INTERNAL_URL:-http://server:5100}"
+      RMON_SERVER_INTERNAL_TOKEN_FILE: /run/secrets/rmon_server_token
+    secrets:
+      - rmon_server_token
+
 secrets:
   rmon_server_token:
     file: "${RMON_SERVER_TOKEN_FILE:-./secrets/server-token}"

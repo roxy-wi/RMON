@@ -2,6 +2,7 @@
 import base64
 import http.cookiejar
 import json
+import os
 from pathlib import Path
 import secrets
 import socket
@@ -12,6 +13,9 @@ import time
 import urllib.error
 import urllib.request
 import uuid
+
+WEB_IMAGE = os.getenv('RMON_TEST_WEB_IMAGE', 'rmon-web:test')
+PROXY_IMAGE = os.getenv('RMON_TEST_PROXY_IMAGE', 'rmon-proxy:test')
 
 
 def docker(*args, check=True):
@@ -39,6 +43,7 @@ def exercise(scheme):
     prefix = 'rmon-smoke-' + uuid.uuid4().hex[:12]
     network = prefix + '-network'
     web, proxy = (prefix + '-' + component for component in ('web', 'proxy'))
+    workers = {role: prefix + '-' + role for role in ('scheduler', 'operations')}
     volumes = [prefix + '-' + name for name in ('config', 'data', 'logs', 'tls')]
     mounts = sum((['-v', name + ':' + path] for name, path in zip(volumes[:3],
                   ('/etc/rmon', '/var/lib/rmon', '/var/log/rmon'))), [])
@@ -52,17 +57,23 @@ def exercise(scheme):
             password_file.write_text(password)
             password_file.chmod(0o600)
             init = [*mounts, '-v', f'{password_file}:/run/password:ro', '-e', 'RMON_ADMIN_PASSWORD_FILE=/run/password']
-            docker('run', '--rm', *init, 'rmon-web:test', 'init')
-            assert docker('run', '--rm', *init, 'rmon-web:test', 'init', check=False).returncode != 0
+            docker('run', '--rm', *init, WEB_IMAGE, 'init')
+            assert docker('run', '--rm', *init, WEB_IMAGE, 'init', check=False).returncode != 0
             snapshots = []
             for _ in range(2):
                 docker('run', '-d', '--name', web, '--network', network, '--network-alias', 'web',
                        '--security-opt', 'no-new-privileges:true', *mounts,
-                       '-e', 'RMON_COOKIE_SECURE=' + ('1' if scheme == 'https' else '0'), 'rmon-web:test')
+                       '-e', 'RMON_COOKIE_SECURE=' + ('1' if scheme == 'https' else '0'), WEB_IMAGE)
                 wait_ready(web)
+                for role, name in workers.items():
+                    docker('run', '-d', '--name', name, '--network', network, *mounts,
+                           '--security-opt', 'no-new-privileges:true',
+                           '--health-cmd', '/opt/rmon-venv/bin/python -m container.runtime healthcheck --role ' + role,
+                           WEB_IMAGE, role)
+                    wait_ready(name)
                 docker('run', '-d', '--name', proxy, '--network', network, '-p', f'127.0.0.1::{port}',
                        '-e', f'RMON_PROXY_SCHEME={scheme}',
-                       '-e', 'RMON_TLS_NAME=127.0.0.1', '-v', f'{volumes[3]}:/etc/ssl/certs/rmon', 'rmon-proxy:test')
+                       '-e', 'RMON_TLS_NAME=127.0.0.1', '-v', f'{volumes[3]}:/etc/ssl/certs/rmon', PROXY_IMAGE)
                 mapped = int(docker('port', proxy, str(port)).stdout.strip().split(':')[-1])
                 deadline = time.monotonic() + 60
                 while True:
@@ -113,12 +124,12 @@ def exercise(scheme):
                         status = connection.recv(4096).split(b'\r\n', 1)[0]
                         assert status.split()[1] in (b'200', b'302'), status
                 docker('exec', web, '/opt/rmon-venv/bin/python', '-c', 'import ldap, ansible_runner')
-                # Agent installation runs under the web identity, including Ansible's temporary files.
-                docker('exec', '--user', '33:33', web, 'ansible-playbook', '--syntax-check',
+                # Agent installation runs in operations under the application identity.
+                docker('exec', '--user', '33:33', workers['operations'], 'ansible-playbook', '--syntax-check',
                        '/var/www/rmon/app/scripts/ansible/roles/rmon_agent.yml', '-i', 'localhost,')
                 if scheme == 'http' and not snapshots:
-                    docker('cp', str(Path(__file__).with_name('agent_tls_smoke.py')), f'{web}:/tmp/agent_tls_smoke.py')
-                    subprocess.run(['docker', 'exec', '--user', '33:33', web, '/opt/rmon-venv/bin/python',
+                    docker('cp', str(Path(__file__).with_name('agent_tls_smoke.py')), f'{workers["operations"]}:/tmp/agent_tls_smoke.py')
+                    subprocess.run(['docker', 'exec', '--user', '33:33', workers['operations'], '/opt/rmon-venv/bin/python',
                                     '/tmp/agent_tls_smoke.py', '/var/www/rmon/app/scripts/ansible/roles/rmon_agent'],
                                    check=True, timeout=600)
                 snapshot = docker('exec', web, '/opt/rmon-venv/bin/python', '-c',
@@ -134,13 +145,13 @@ def exercise(scheme):
                 finally:
                     docker('exec', web, '/opt/rmon-venv/bin/python', '-c', sql % 'ALTER TABLE settings_outage RENAME TO settings')
                 docker('exec', web, '/opt/rmon-venv/bin/python', '-m', 'container.runtime', 'healthcheck')
-                for name in (proxy, web):
+                for name in (proxy, *workers.values(), web):
                     docker('stop', '--time', '30', name)
                     docker('rm', name)
             assert snapshots[0] == snapshots[1], 'Application secrets or config changed after recreation'
-            print(scheme + ': web-only proxy, login, readiness, DB outage and persistence passed')
+            print(scheme + ': web, scheduler, operations, proxy, login, DB outage and persistence passed', flush=True)
     finally:
-        for name in (proxy, web):
+        for name in (proxy, *workers.values(), web):
             docker('rm', '-f', name, check=False)
         docker('network', 'rm', network, check=False)
         for name in volumes:

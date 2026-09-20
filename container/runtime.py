@@ -184,10 +184,18 @@ def healthcheck():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=('serve', 'init', 'check', 'healthcheck'), default='serve', nargs='?')
-    command = parser.parse_args().command
+    parser.add_argument('command', choices=('serve', 'init', 'check', 'healthcheck', 'scheduler', 'operations'), default='serve', nargs='?')
+    parser.add_argument('--role', choices=('scheduler', 'operations'))
+    parser.add_argument('--live', action='store_true')
+    args = parser.parse_args()
+    command = args.command
     os.umask(0o077)
     if command == 'healthcheck':
+        if args.role:
+            import runtime_health
+            if not runtime_health.healthy(args.role, ready=not args.live):
+                raise RuntimeError('Process is not ready')
+            return
         healthcheck()
         return
     if command == 'check':
@@ -220,6 +228,10 @@ def main():
         if cfg.has_option('container', key):
             os.environ.setdefault('RMON_' + key.upper(), cfg['container'][key])
     subprocess.run([sys.executable, '-m', 'container.runtime', 'check'], check=True, timeout=30)
+    if command in ('scheduler', 'operations'):
+        drop_privileges()
+        os.execv(sys.executable, [sys.executable, str(ROOT / f'{command}_runner.py')])
+    os.environ['RMON_SCHEDULER_ENABLED'] = '0'
     token = secrets.token_urlsafe(32)
     # Ephemeral probe credential only; never part of persistent application secrets.
     token_path = Path('/tmp/rmon-health-token')

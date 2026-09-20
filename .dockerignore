@@ -4,6 +4,8 @@
 !app.wsgi
 !gunicorn.conf.py
 !scheduler_runner.py
+!operations_runner.py
+!runtime_health.py
 !rotate_credential_secret.py
 !favicon.ico
 !LICENSE

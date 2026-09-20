@@ -133,17 +133,17 @@ def test_service_actions_always_use_ssh(client, auth_headers, agent, monkeypatch
     if loopback:
         agent.server_id.ip = '127.0.0.1'
         agent.server_id.save()
-    run = Mock(return_value={})
-    monkeypatch.setattr(agents, 'run_ansible', run)
+    run = Mock(return_value=42)
+    monkeypatch.setattr(agents, 'run_ansible_thread', run)
     response = client.post(f'/rmon/agent/action/{action}', data={'agent_id': agent.id}, headers=auth_headers(1, 1))
-    assert response.status_code == 200 and response.get_json() == {'status': 'ok'}
+    assert response.status_code == 202 and response.get_json() == {'status': 'queued', 'task_id': 42}
     run.assert_called_once_with(
         {'server': {'hosts': {agent.server_id.ip: {'action': action, 'agent_uuid': str(agent.uuid)}}}},
-        [agent.server_id.ip], 'rmon_agent')
+        [agent.server_id.ip], 'rmon_agent', 'Agent', action)
 
 
 def test_service_ssh_errors_have_json_failure_status(client, auth_headers, agent, monkeypatch):
-    monkeypatch.setattr(agents, 'run_ansible', Mock(side_effect=ValueError('SSH credentials are not configured for this server')))
+    monkeypatch.setattr(agents, 'run_ansible_thread', Mock(side_effect=ValueError('SSH credentials are not configured for this server')))
     response = client.post('/rmon/agent/action/start', data={'agent_id': agent.id}, headers=auth_headers(1, 1))
     assert response.status_code == 502
     assert 'SSH credentials' in response.get_json()['error']
@@ -158,7 +158,7 @@ def test_probes_and_actions_enforce_agent_access(client, auth_headers, agent, mo
     request = Mock()
     ssh = Mock()
     monkeypatch.setattr(agents, 'send_get_request_to_agent', request)
-    monkeypatch.setattr(agents, 'run_ansible', ssh)
+    monkeypatch.setattr(agents, 'run_ansible_thread', ssh)
     response = client.get(f'/rmon/agent/status/another.test?agent_id={agent.id}', headers=auth_headers(1, 1))
     assert response.status_code == 403
     response = client.post('/rmon/agent/action/start', data={'agent_id': agent.id}, headers=auth_headers(3, 1))

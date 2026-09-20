@@ -17,7 +17,8 @@ function page(t) {
     const $ = w.jQuery, calls = [], messages = [], actions = [];
     $.ajax = options => { calls.push(options); };
     $.fn.timeago = function () { return this; };
-    w.toastr = {error: (...args) => messages.push(args), clear() {}};
+    w.toastr = {error: (...args) => messages.push(args), info() {}, success() {}, warning() {}, clear() {}};
+    w.api_v_prefix = '/api/v1.0';
     w.confirmAjaxAction = (...args) => actions.push(args);
     return {w, $, calls, messages, actions};
 }
@@ -79,4 +80,67 @@ test('SSH action errors are shown safely and never treated as success', t => {
     assert.equal(messages[0][2].escapeHtml, true);
     calls[0].success('<!doctype html>');
     assert.equal(refreshes, 0);
+});
+
+test('queued agent controls wait for task completion before refreshing', t => {
+    const {w, calls} = page(t);
+    let task;
+    w.runInstallationTaskCheck = (ids, agentId) => task = [Array.from(ids), agentId];
+    w.agentAction('restart', 1, {});
+    w.jQuery.fn.dialog = function () { return this; };
+    calls[0].success({status: 'queued', task_id: 9});
+    assert.deepEqual(task, [[9], 1]);
+});
+
+test('task polling uses one timer, backs off, and stops after completion', t => {
+    const {w, calls} = page(t);
+    Object.defineProperty(w.document, 'hidden', {value: false});
+    let now = 0, sequence = 0;
+    const timers = new Map();
+    w.Date.now = () => now;
+    w.setTimeout = (callback, delay) => {
+        timers.set(++sequence, {callback, delay});
+        return sequence;
+    };
+    w.clearTimeout = id => timers.delete(id);
+    const tick = () => {
+        assert.equal(timers.size, 1);
+        const [id, timer] = [...timers][0];
+        timers.delete(id);
+        now += timer.delay;
+        timer.callback();
+    };
+    w.runInstallationTaskCheck([7, 7]);
+    assert.equal(timers.size, 1);
+    tick();
+    assert.equal(calls.length, 1);
+    w.checkInstallationTask();
+    assert.equal(calls.length, 1); // No overlapping request for the same task.
+    calls[0].success({status: 'created'});
+    calls[0].complete();
+    assert.equal([...timers.values()][0].delay, 10000);
+    tick();
+    calls[1].success({status: 'created'});
+    calls[1].complete();
+    assert.equal([...timers.values()][0].delay, 20000);
+    tick();
+    calls[2].success({status: 'completed', server: 'example.test'});
+    calls[2].complete();
+    assert.equal(timers.size, 0);
+    assert.deepEqual(Array.from(w.getInstallationTasksFromSessionStorage()), []);
+});
+
+test('removed task stops polling after history cleanup', t => {
+    const {w, calls} = page(t);
+    let timer;
+    w.setTimeout = callback => { timer = callback; return 1; };
+    w.clearTimeout = () => { timer = null; };
+    w.runInstallationTaskCheck([8]);
+    const realNow = w.Date.now;
+    w.Date.now = () => realNow() + 60000;
+    timer();
+    calls[0].error({status: 404});
+    calls[0].complete();
+    assert.equal(timer, null);
+    assert.deepEqual(Array.from(w.getInstallationTasksFromSessionStorage()), []);
 });

@@ -557,7 +557,7 @@ class AgentTaskStatusView(MethodView):
         try:
             task = InstallationTasks.get(id=task_id)
         except InstallationTasks.DoesNotExist:
-            return RoxywiResourceNotFound
+            raise RoxywiResourceNotFound
         except Exception as e:
             return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get agent task')
         try:
@@ -572,6 +572,7 @@ class AgentTaskStatusView(MethodView):
                 'status': task.status,
                 'service_name': task.service_name,
                 'error': task.error,
-                'server': task.server_id.hostname,
+                'server': task.server_id.hostname if task.server_id else '',
+                'action': task.action,
             }
         ), 200

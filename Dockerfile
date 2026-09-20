@@ -22,7 +22,7 @@ RUN ANSIBLE_HOME=/tmp/ansible-build ANSIBLE_LOCAL_TEMP=/tmp/ansible-build ansibl
 COPY app ./app
 COPY config_other ./config_other
 COPY container ./container
-COPY app.wsgi gunicorn.conf.py scheduler_runner.py rotate_credential_secret.py favicon.ico LICENSE NOTICE LICENSING.md ./
+COPY app.wsgi gunicorn.conf.py scheduler_runner.py operations_runner.py runtime_health.py rotate_credential_secret.py favicon.ico LICENSE NOTICE LICENSING.md ./
 RUN install -d /etc/rmon /var/lib/rmon /var/log/rmon \
     && install -d -o www-data -g www-data \
        app/scripts/ansible/inventory app/scripts/ansible/artifacts app/scripts/ansible/env /tmp/ansible-local \

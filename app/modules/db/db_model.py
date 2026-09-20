@@ -665,6 +665,31 @@ class InstallationTasks(BaseModel):
 
     class Meta:
         table_name = 'installation_tasks'
+        indexes = ((('status', 'finish_date'), False),)
+
+
+class OperationJob(BaseModel):
+    task = ForeignKeyField(InstallationTasks, primary_key=True, on_delete='CASCADE')
+    server = ForeignKeyField(Server, on_delete='CASCADE')
+    payload = TextField(null=True)
+    status = CharField(default='queued')
+    available_at = DateTimeField()
+    owner = CharField(null=True)
+    lease_until = DateTimeField(null=True)
+    attempts = IntegerField(default=0)
+
+    class Meta:
+        table_name = 'operation_jobs'
+        indexes = ((('status', 'available_at'), False), (('status', 'lease_until'), False),
+                   (('server', 'status', 'task'), False))
+
+
+class OperationLock(BaseModel):
+    server = ForeignKeyField(Server, primary_key=True, on_delete='CASCADE')
+    owner = CharField(null=True, index=True)
+
+    class Meta:
+        table_name = 'operation_locks'
 
 
 class AlertState(BaseModel):
@@ -710,5 +735,5 @@ def create_tables():
              Setting, Cred, Version, ActionHistory, Region,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
              SmonStatusPage, SmonStatusPageCheck, SMON, SmonGroup, MM, RMONAlertsHistory, SmonSMTPCheck, SmonRabbitCheck,
-             Country, MultiCheck, Email, InstallationTasks, Migration, AlertEvent, AlertState, AggregatorLock, IncidentRelay]
+             Country, MultiCheck, Email, InstallationTasks, OperationJob, OperationLock, Migration, AlertEvent, AlertState, AggregatorLock, IncidentRelay]
         )

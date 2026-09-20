@@ -2,16 +2,16 @@
 import os
 import sys
 import argparse
+from tempfile import TemporaryDirectory
 
 # Add the app directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.modules.db.migrations import (
-    create_migration, migrate, rollback, list_migrations, MigrationError
-)
-
-
 def main():
+    from app.modules.db.migrations import (
+        create_migration, migrate, rollback, list_migrations, MigrationError
+    )
+
     parser = argparse.ArgumentParser(description='RMON Database Migration Tool')
     subparsers = parser.add_subparsers(dest='command', help='Command to run')
 
@@ -53,4 +53,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    os.environ['RMON_SCHEDULER_ENABLED'] = '0'
+    # CLI imports initialize metrics too; keep them separate from running services.
+    with TemporaryDirectory(prefix='rmon-migrate-metrics-') as metrics_directory:
+        os.environ['RMON_PROMETHEUS_MULTIPROC_DIR'] = metrics_directory
+        main()

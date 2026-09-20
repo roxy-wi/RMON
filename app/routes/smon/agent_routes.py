@@ -275,7 +275,7 @@ def agent_action(action):
     _require_agent_access(agent_id)
 
     try:
-        smon_agent.run_agent_action(agent_id, action)
+        task_id = smon_agent.run_agent_action(agent_id, action)
     except Exception as e:
         return jsonify(error=str(e)), 502
-    return jsonify(status='ok')
+    return jsonify(status='queued', task_id=task_id), 202

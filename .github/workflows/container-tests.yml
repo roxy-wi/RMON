@@ -22,3 +22,5 @@ jobs:
           docker compose -f compose.yaml -f compose.server.yaml config --quiet
       - name: Test HTTP, HTTPS, bootstrap, persistence and database readiness
         run: python3 tests/container/image_smoke.py
+      - name: Test database operation queue on PostgreSQL and MariaDB
+        run: python3 tests/operations/database_smoke.py
