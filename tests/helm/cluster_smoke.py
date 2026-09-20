@@ -82,7 +82,8 @@ def main():
               'config': {'main': {'secret_phrase': base64.urlsafe_b64encode(secrets.token_bytes(32)).decode()}},
               'image': {'repository': 'rmon-web-test', 'tag': 'ci', 'pullPolicy': 'Never'},
               'bootstrap': {'enabled': True, 'existingSecret': 'initial-password'},
-              'server': {'existingTokenSecret': 'receiver-token'}, 'persistence': {'size': '1Gi'}}
+              'server': {'existingTokenSecret': 'receiver-token', 'image': {'pullPolicy': 'Never'}},
+              'persistence': {'size': '1Gi'}}
     with tempfile.TemporaryDirectory(prefix='rmon-chart-') as directory:
         directory = Path(directory)
         settings = directory / 'values.yaml'
