@@ -8,7 +8,7 @@ services:
       - rmon_server_token
 
   server:
-    image: "${RMON_SERVER_IMAGE:-ghcr.io/roxy-wi/rmon-server:7.0}"
+    image: "${RMON_SERVER_IMAGE:-ghcr.io/roxy-wi/rmon/rmon-server:7.0}"
     user: "33:33"
     restart: unless-stopped
     depends_on:

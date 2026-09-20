@@ -35,6 +35,12 @@ def main():
     assert set(apps) == {'web', 'scheduler', 'operations', 'server'}
     assert not any(d['kind'] == 'Secret' for d in docs)
     for role, app in apps.items():
+        assert app['metadata']['name'] == 'test-rmon-chart-' + role
+        assert app['spec']['selector']['matchLabels'] == {
+            'app.kubernetes.io/name': 'rmon-chart',
+            'app.kubernetes.io/instance': 'test',
+            'app.kubernetes.io/component': role,
+        }
         assert app['spec']['replicas'] == 1
         assert app['spec']['strategy']['type'] == 'Recreate'
         pod = app['spec']['template']['spec']
@@ -42,9 +48,17 @@ def main():
         assert pod['securityContext']['fsGroup'] == 33
         assert 'affinity' in pod
         container = pod['containers'][0]
+        expected_image = ('ghcr.io/roxy-wi/rmon/rmon-server:7.0' if role == 'server'
+                          else 'ghcr.io/roxy-wi/rmon/rmon-web:1.4.0')
+        assert container['image'] == expected_image
+        if role != 'server':
+            env = {v['name']: v.get('value') for v in container['env']}
+            assert env['RMON_AGENT_IMAGE'] == 'ghcr.io/roxy-wi/rmon/rmon-agent:2.0'
         assert all(p in container for p in ('livenessProbe', 'readinessProbe', 'startupProbe'))
         volumes = {v['name'] for v in pod['volumes']}
         assert all(m['name'] in volumes for m in container['volumeMounts'])
+    claim = next(d for d in docs if d['kind'] == 'PersistentVolumeClaim')
+    assert claim['metadata']['name'] == 'test-rmon-chart-data'
     assert apps['operations']['spec']['template']['spec']['terminationGracePeriodSeconds'] == 1800
     maintenance = deployments(render({**BASE, 'maintenance': True}))
     assert all(a['spec']['replicas'] == 0 for a in maintenance.values())

@@ -1,8 +1,8 @@
 apiVersion: v2
-name: rmon
+name: rmon-chart
 description: Service availability monitoring, distributed checks and notifications
 type: application
-version: 1.4.1
+version: 1.4.2
 appVersion: "1.4.0"
 kubeVersion: ">=1.25.0-0"
 home: https://rmon.io

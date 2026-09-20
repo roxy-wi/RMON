@@ -26,7 +26,7 @@ def test_existing_installation_does_not_implicitly_change_transport(config):
 
 
 @pytest.mark.parametrize('configured,environment,expected', [
-    (None, None, 'ghcr.io/roxy-wi/rmon-agent:2.0'),
+    (None, None, 'ghcr.io/roxy-wi/rmon/rmon-agent:2.0'),
     ('example.invalid/rmon-agent:pinned', None, 'example.invalid/rmon-agent:pinned'),
     ('example.invalid/rmon-agent:pinned', 'example.invalid/rmon-agent:custom',
      'example.invalid/rmon-agent:custom'),

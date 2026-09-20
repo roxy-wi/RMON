@@ -1,5 +1,5 @@
 image:
-  repository: ghcr.io/roxy-wi/rmon/rmon
+  repository: ghcr.io/roxy-wi/rmon/rmon-web
   tag: ""
   digest: ""
   pullPolicy: IfNotPresent
@@ -11,7 +11,7 @@ fullnameOverride: ""
 publicURL: ""
 agentControlURL: ""
 cookieSecure: true
-agentImage: ghcr.io/roxy-wi/rmon-agent:2.0
+agentImage: ghcr.io/roxy-wi/rmon/rmon-agent:2.0
 
 # Supply a complete rmon.cfg in an existing Secret, or configure the map below.
 existingConfigSecret: ""
@@ -93,7 +93,7 @@ ingress:
 server:
   enabled: true
   image:
-    repository: ghcr.io/roxy-wi/rmon-server
+    repository: ghcr.io/roxy-wi/rmon/rmon-server
     tag: "7.0"
     digest: ""
     pullPolicy: IfNotPresent

@@ -1,6 +1,6 @@
 ---
 agent_container_name: rmon-agent
-agent_image: ghcr.io/roxy-wi/rmon-agent:2.0
+agent_image: ghcr.io/roxy-wi/rmon/rmon-agent:2.0
 agent_pull: missing
 agent_bind_ip: 0.0.0.0
 agent_config_path: /etc/rmon/rmon-agent.cfg

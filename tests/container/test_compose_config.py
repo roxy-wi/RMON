@@ -48,11 +48,11 @@ def mounts(service):
     return {mount['target']: mount for mount in service['volumes']}
 
 
-def test_default_deployment_keeps_local_images_and_separates_tls(compose_config):
+def test_default_deployment_uses_published_web_image_and_separates_tls(compose_config):
     config = compose_config()
     assert set(config['services']) == {'web', 'proxy', 'scheduler', 'operations'}
     web, proxy = config['services']['web'], config['services']['proxy']
-    assert web['image'] == 'rmon-web:local'
+    assert web['image'] == 'ghcr.io/roxy-wi/rmon/rmon-web:1.4.0'
     assert proxy['image'] == 'rmon-proxy:local'
     assert not web.get('ports')
     assert '/etc/ssl/certs/rmon' not in mounts(web)
@@ -99,7 +99,7 @@ def test_dotenv_preserves_literal_secrets_and_external_server_settings(compose_c
 def test_same_host_server_shares_config_database_and_token(compose_config):
     config = compose_config(server=True)
     web, server = (config['services'][name] for name in ('web', 'server'))
-    assert server['image'] == 'ghcr.io/roxy-wi/rmon-server:7.0'
+    assert server['image'] == 'ghcr.io/roxy-wi/rmon/rmon-server:7.0'
     assert server['user'] == '33:33'
     for target in ('/etc/rmon', '/var/lib/rmon'):
         assert mounts(web)[target]['source'] == mounts(server)[target]['source']

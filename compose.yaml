@@ -1,5 +1,5 @@
 x-rmon: &rmon
-    image: "${RMON_WEB_IMAGE:-rmon-web:local}"
+    image: "${RMON_WEB_IMAGE:-ghcr.io/roxy-wi/rmon/rmon-web:1.4.0}"
     build: .
     restart: unless-stopped
     environment:

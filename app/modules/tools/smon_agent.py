@@ -43,7 +43,7 @@ def generate_agent_inv(server_ip: str, action: str, agent_uuid: uuid, agent_port
         'master_port': master_port,
         'agent_control_url': control_url,
         'agent_image': os.getenv('RMON_AGENT_IMAGE') or config.get(
-            'agent_deployment', 'image', fallback='ghcr.io/roxy-wi/rmon-agent:2.0'),
+            'agent_deployment', 'image', fallback='ghcr.io/roxy-wi/rmon/rmon-agent:2.0'),
     }
 
     for option in ('bind_ip', 'pull'):

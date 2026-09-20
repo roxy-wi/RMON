@@ -23,7 +23,8 @@ concurrency:
 
 env:
   IMAGE: ghcr.io/roxy-wi/rmon/rmon
-  CHART_REGISTRY: oci://ghcr.io/roxy-wi/rmon-charts
+  WEB_IMAGE: ghcr.io/roxy-wi/rmon/rmon-web
+  CHART_REGISTRY: oci://ghcr.io/roxy-wi/rmon
 
 jobs:
   helm-check:
@@ -64,8 +65,8 @@ jobs:
         shell: bash
         run: |
           export DOCKER_CONFIG="$(mktemp -d)"
-          docker pull ghcr.io/roxy-wi/rmon-server:7.0
-          docker manifest inspect ghcr.io/roxy-wi/rmon-agent:2.0 > /dev/null
+          docker pull ghcr.io/roxy-wi/rmon/rmon-server:7.0
+          docker manifest inspect ghcr.io/roxy-wi/rmon/rmon-agent:2.0 > /dev/null
       - name: Validate release metadata
         id: release
         shell: bash
@@ -73,6 +74,7 @@ jobs:
           python3 - <<'PY'
           import os, re, runpy, yaml
           chart = yaml.safe_load(open('helm/rmon/Chart.yaml'))
+          assert chart['name'] == 'rmon-chart'
           version = chart['version']
           assert re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', version)
           assert chart['appVersion'] == runpy.run_path('app/version.py')['get_service_version']()
@@ -107,7 +109,7 @@ jobs:
           sudo install kind-linux-amd64 /usr/local/bin/kind
           kind create cluster --name rmon-chart-test --wait 120s
           kind load docker-image rmon-web-test:ci --name rmon-chart-test
-          kind load docker-image ghcr.io/roxy-wi/rmon-server:7.0 --name rmon-chart-test
+          kind load docker-image ghcr.io/roxy-wi/rmon/rmon-server:7.0 --name rmon-chart-test
       - name: Verify fresh install, persistence, maintenance, HTTPS and mTLS
         run: python3 tests/helm/cluster_smoke.py
       - name: Kubernetes diagnostics on failure
@@ -137,9 +139,15 @@ jobs:
           docker tag rmon-web-test:ci "${IMAGE}:sha-${GITHUB_SHA::12}"
           docker push "${IMAGE}:${APP_VERSION}"
           docker push "${IMAGE}:sha-${GITHUB_SHA::12}"
-          digest=$(docker image inspect "${IMAGE}:${APP_VERSION}" --format '{{index .RepoDigests 0}}')
-          export IMAGE_DIGEST="${digest#*@}"
-          server_ref=$(docker image inspect ghcr.io/roxy-wi/rmon-server:7.0 --format '{{index .RepoDigests 0}}')
+          docker tag rmon-web-test:ci "${WEB_IMAGE}:${APP_VERSION}"
+          docker tag rmon-web-test:ci "${WEB_IMAGE}:sha-${GITHUB_SHA::12}"
+          docker push "${WEB_IMAGE}:${APP_VERSION}"
+          docker push "${WEB_IMAGE}:sha-${GITHUB_SHA::12}"
+          IMAGE_DIGEST=$(docker buildx imagetools inspect "${IMAGE}:${APP_VERSION}" --format '{{json .Manifest}}' | jq -r .digest)
+          export IMAGE_DIGEST
+          web_digest=$(docker buildx imagetools inspect "${WEB_IMAGE}:${APP_VERSION}" --format '{{json .Manifest}}' | jq -r .digest)
+          test "$web_digest" = "$IMAGE_DIGEST"
+          server_ref=$(docker image inspect ghcr.io/roxy-wi/rmon/rmon-server:7.0 --format '{{index .RepoDigests 0}}')
           export SERVER_DIGEST="${server_ref#*@}"
           python3 - <<'PY'
           import os, re, yaml
@@ -156,7 +164,7 @@ jobs:
           PY
           helm package helm/rmon --destination dist
           printf '%s' "$GH_TOKEN" | helm registry login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
-          helm push "dist/rmon-${CHART_VERSION}.tgz" "$CHART_REGISTRY"
+          helm push "dist/rmon-chart-${CHART_VERSION}.tgz" "$CHART_REGISTRY"
           mkdir -p pulled
-          helm pull "${CHART_REGISTRY}/rmon" --version "$CHART_VERSION" --destination pulled
-          cmp "dist/rmon-${CHART_VERSION}.tgz" "pulled/rmon-${CHART_VERSION}.tgz"
+          helm pull "${CHART_REGISTRY}/rmon-chart" --version "$CHART_VERSION" --destination pulled
+          cmp "dist/rmon-chart-${CHART_VERSION}.tgz" "pulled/rmon-chart-${CHART_VERSION}.tgz"

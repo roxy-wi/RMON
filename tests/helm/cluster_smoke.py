@@ -32,7 +32,7 @@ def secret(name, data):
 
 def execute(role, code):
     interpreter = 'python' if role == 'server' else '/opt/rmon-venv/bin/python'
-    return kube('exec', '-i', 'deployment/smoke-rmon-' + role, '-c', role, '--', interpreter, '-', input=code)
+    return kube('exec', '-i', 'deployment/smoke-rmon-chart-' + role, '-c', role, '--', interpreter, '-', input=code)
 
 
 def verify(password, expected=None):
@@ -40,7 +40,7 @@ def verify(password, expected=None):
 import hashlib, json, os, sqlite3, urllib.request
 from pathlib import Path
 opener = urllib.request.build_opener(urllib.request.ProxyHandler({{}}))
-base = 'http://smoke-rmon-web:8080'
+base = 'http://smoke-rmon-chart-web:8080'
 assert opener.open(base + '/login', timeout=15).status == 200
 request = urllib.request.Request(base + '/login', data=json.dumps({{'login': 'admin', 'pass': {password!r}}}).encode(), headers={{'Content-Type': 'application/json'}})
 with opener.open(request, timeout=45) as response:
@@ -65,9 +65,9 @@ print(json.dumps(keys, sort_keys=True))
     assert len(running) == 4
     assert len({p['spec']['nodeName'] for p in running}) == 1, 'RWO pods must share a node'
     for role in ('scheduler', 'operations'):
-        kube('exec', 'deployment/smoke-rmon-' + role, '--', '/opt/rmon-venv/bin/python', '-m',
+        kube('exec', 'deployment/smoke-rmon-chart-' + role, '--', '/opt/rmon-venv/bin/python', '-m',
              'container.runtime', 'healthcheck', '--role', role)
-    kube('exec', 'deployment/smoke-rmon-server', '--', 'python', '-m', 'modules.common.probe', 'ready')
+    kube('exec', 'deployment/smoke-rmon-chart-server', '--', 'python', '-m', 'modules.common.probe', 'ready')
     return fingerprint
 
 
@@ -78,7 +78,7 @@ def main():
     password = secrets.token_urlsafe(24)
     secret('initial-password', {'admin-password': password})
     secret('receiver-token', {'token': secrets.token_urlsafe(32)})
-    values = {'publicURL': 'http://smoke-rmon-web:8080', 'cookieSecure': False,
+    values = {'publicURL': 'http://smoke-rmon-chart-web:8080', 'cookieSecure': False,
               'config': {'main': {'secret_phrase': base64.urlsafe_b64encode(secrets.token_bytes(32)).decode()}},
               'image': {'repository': 'rmon-web-test', 'tag': 'ci', 'pullPolicy': 'Never'},
               'bootstrap': {'enabled': True, 'existingSecret': 'initial-password'},
@@ -103,7 +103,7 @@ def main():
         kube('wait', 'deployment', '-l', SELECTOR, '--for=condition=Available', '--timeout=600s')
         # rollout status also observes the new deployment generation/readiness.
         for role in ('web', 'scheduler', 'operations', 'server'):
-            kube('rollout', 'status', 'deployment/smoke-rmon-' + role, '--timeout=600s')
+            kube('rollout', 'status', 'deployment/smoke-rmon-chart-' + role, '--timeout=600s')
         verify(password, before)
         print('Pod replacement: original login, database marker and application keys preserved', flush=True)
         upgrade('--set', 'maintenance=true', '--set', 'bootstrap.enabled=false')
@@ -121,7 +121,7 @@ def main():
             run('openssl', 'req', '-newkey', 'rsa:2048', '-nodes', '-keyout', str(directory / f'{name}.key'),
                 '-out', str(directory / f'{name}.csr'), '-subj', f'/CN={name}')
             extension = directory / f'{name}.ext'
-            extension.write_text(f'extendedKeyUsage={usage}\nsubjectAltName=DNS:smoke-rmon-server,IP:127.0.0.1\n')
+            extension.write_text(f'extendedKeyUsage={usage}\nsubjectAltName=DNS:smoke-rmon-chart-server,IP:127.0.0.1\n')
             run('openssl', 'x509', '-req', '-in', str(directory / f'{name}.csr'), '-CA', str(directory / 'ca.crt'),
                 '-CAkey', str(directory / 'ca.key'), '-CAcreateserial', '-out', str(directory / f'{name}.crt'),
                 '-days', '1', '-extfile', str(extension))
@@ -139,7 +139,7 @@ import ssl, urllib.request, urllib.error
 context = ssl.create_default_context(cafile='/run/rmon-client-tls/ca.crt')
 opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), urllib.request.HTTPSHandler(context=context))
 try:
-    opener.open('https://smoke-rmon-server:5100/internal/health/live', timeout=5)
+    opener.open('https://smoke-rmon-chart-server:5100/internal/health/live', timeout=5)
 except urllib.error.HTTPError:
     raise AssertionError('mTLS accepted a connection without a client certificate')
 except (urllib.error.URLError, ssl.SSLError, ConnectionError):
@@ -149,7 +149,7 @@ else:
 ''')
             print(mode.upper() + ': receiver API and authenticated probes passed', flush=True)
         run('helm', 'uninstall', 'smoke', '-n', NS, '--wait')
-        assert kube('get', 'pvc', 'smoke-rmon-data', '-o', 'name').strip()
+        assert kube('get', 'pvc', 'smoke-rmon-chart-data', '-o', 'name').strip()
         print('Uninstall preserved the data volume', flush=True)
 
 

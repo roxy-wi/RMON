@@ -21,8 +21,8 @@ Add [hosts and SSH credentials](https://rmon.io/howto/setup), [install agents](h
 For Kubernetes, prepare the Secrets, storage and `values.yaml` using the [Kubernetes guide](https://rmon.io/installation#kubernetes), then install:
 
 ```sh
-helm upgrade --install rmon oci://ghcr.io/roxy-wi/rmon-charts/rmon \
-  --version 1.4.1 --namespace rmon --create-namespace \
+helm upgrade --install rmon oci://ghcr.io/roxy-wi/rmon/rmon-chart \
+  --version 1.4.2 --namespace rmon --create-namespace \
   --values values.yaml --wait --timeout 10m
 ```
 
