@@ -1,5 +1,5 @@
 image:
-  repository: ghcr.io/roxy-wi/rmon-web
+  repository: ghcr.io/roxy-wi/rmon/rmon
   tag: ""
   digest: ""
   pullPolicy: IfNotPresent

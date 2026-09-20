@@ -22,7 +22,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  IMAGE: ghcr.io/roxy-wi/rmon-web
+  IMAGE: ghcr.io/roxy-wi/rmon/rmon
   CHART_REGISTRY: oci://ghcr.io/roxy-wi/rmon-charts
 
 jobs:
@@ -139,13 +139,18 @@ jobs:
           docker push "${IMAGE}:sha-${GITHUB_SHA::12}"
           digest=$(docker image inspect "${IMAGE}:${APP_VERSION}" --format '{{index .RepoDigests 0}}')
           export IMAGE_DIGEST="${digest#*@}"
+          server_ref=$(docker image inspect ghcr.io/roxy-wi/rmon-server:7.0 --format '{{index .RepoDigests 0}}')
+          export SERVER_DIGEST="${server_ref#*@}"
           python3 - <<'PY'
           import os, re, yaml
           digest = os.environ['IMAGE_DIGEST']
           assert re.fullmatch(r'sha256:[a-f0-9]{64}', digest), 'Missing pushed image digest'
+          server_digest = os.environ['SERVER_DIGEST']
+          assert re.fullmatch(r'sha256:[a-f0-9]{64}', server_digest), 'Missing tested server digest'
           path = 'helm/rmon/values.yaml'
           values = yaml.safe_load(open(path))
           values['image']['digest'] = digest
+          values['server']['image']['digest'] = server_digest
           with open(path, 'w') as output:
               yaml.safe_dump(values, output, sort_keys=False)
           PY
