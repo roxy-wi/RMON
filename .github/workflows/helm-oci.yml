@@ -152,5 +152,6 @@ jobs:
           helm package helm/rmon --destination dist
           printf '%s' "$GH_TOKEN" | helm registry login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
           helm push "dist/rmon-${CHART_VERSION}.tgz" "$CHART_REGISTRY"
+          mkdir -p pulled
           helm pull "${CHART_REGISTRY}/rmon" --version "$CHART_VERSION" --destination pulled
           cmp "dist/rmon-${CHART_VERSION}.tgz" "pulled/rmon-${CHART_VERSION}.tgz"
