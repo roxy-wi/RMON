@@ -127,6 +127,41 @@ def test_init_refuses_nonempty_database(cfg, tmp_path, monkeypatch):
     db.close()
 
 
+@pytest.mark.parametrize('populated', [False, True])
+def test_bootstrap_preserves_existing_database(cfg, tmp_path, monkeypatch, populated):
+    monkeypatch.setitem(sys.modules, 'fcntl', Mock(LOCK_EX=2))
+    cfg['main']['lib_path'] = str(tmp_path)
+    monkeypatch.setenv('RMON_DB_PATH', str(tmp_path / 'bootstrap.db'))
+    db = runtime.database(cfg)
+    if populated:
+        db.execute_sql('CREATE TABLE existing (value TEXT)')
+        db.execute_sql("INSERT INTO existing VALUES ('keep')")
+    db.close()
+    run = Mock()
+    monkeypatch.setattr(runtime.subprocess, 'run', run)
+    runtime.bootstrap(cfg)
+    run.assert_called_once_with([sys.executable, '-m', 'container.runtime',
+                                 'check' if populated else 'init'], check=True)
+    if populated:
+        assert db.execute_sql('SELECT value FROM existing').fetchone() == ('keep',)
+        db.close()
+
+
+def test_bootstrap_does_not_reinitialize_after_failed_check(cfg, tmp_path, monkeypatch):
+    monkeypatch.setitem(sys.modules, 'fcntl', Mock(LOCK_EX=2))
+    cfg['main']['lib_path'] = str(tmp_path)
+    monkeypatch.setenv('RMON_DB_PATH', str(tmp_path / 'partial.db'))
+    db = runtime.database(cfg)
+    db.execute_sql('CREATE TABLE existing (value TEXT)')
+    db.close()
+    run = Mock(side_effect=subprocess.CalledProcessError(1, 'check'))
+    monkeypatch.setattr(runtime.subprocess, 'run', run)
+    with pytest.raises(subprocess.CalledProcessError):
+        runtime.bootstrap(cfg)
+    assert run.call_count == 1
+    assert run.call_args.args[0][-1] == 'check'
+
+
 @pytest.mark.parametrize('password,valid', [('short', False), ('long-unique-test-password', True)])
 def test_admin_password_file(tmp_path, monkeypatch, password, valid):
     path = tmp_path / 'password'

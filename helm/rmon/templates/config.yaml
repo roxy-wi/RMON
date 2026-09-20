@@ -1,0 +1,13 @@
+{{- include "rmon.validate" . -}}
+{{- if not .Values.existingConfigSecret }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "rmon.configSecret" . }}
+  labels:
+    {{- include "rmon.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  rmon.cfg: |
+    {{- include "rmon.config" . | trim | nindent 4 }}
+{{- end }}

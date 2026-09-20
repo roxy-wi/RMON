@@ -96,6 +96,21 @@ def require_empty_database(cfg):
         db.close()
 
 
+def bootstrap(cfg):
+    """Initialize only an empty database; never migrate or rotate an existing installation."""
+    import fcntl
+    lock = Path(cfg['main']['lib_path']) / '.bootstrap.lock'
+    with lock.open('a') as stream:
+        fcntl.flock(stream, fcntl.LOCK_EX)
+        db = database(cfg)
+        try:
+            populated = bool(db.get_tables())
+        finally:
+            db.close()
+        command = 'check' if populated else 'init'
+        subprocess.run([sys.executable, '-m', 'container.runtime', command], check=True)
+
+
 def jwt_keys():
     if os.getenv('RMON_JWT_ALGORITHM', 'RS256') != 'RS256':
         return
@@ -184,7 +199,7 @@ def healthcheck():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=('serve', 'init', 'check', 'healthcheck', 'scheduler', 'operations'), default='serve', nargs='?')
+    parser.add_argument('command', choices=('serve', 'init', 'bootstrap', 'check', 'healthcheck', 'scheduler', 'operations'), default='serve', nargs='?')
     parser.add_argument('--role', choices=('scheduler', 'operations'))
     parser.add_argument('--live', action='store_true')
     args = parser.parse_args()
@@ -213,6 +228,9 @@ def main():
     for path in (cfg['main']['lib_path'], cfg['main']['log_path'], '/var/lib/rmon/keys',
                  os.getenv('RMON_PROMETHEUS_MULTIPROC_DIR', '/tmp/rmon-prometheus')):
         prepare_directory(path)
+    if command == 'bootstrap':
+        bootstrap(cfg)
+        return
     if command == 'init':
         require_empty_database(cfg)
         jwt_keys()

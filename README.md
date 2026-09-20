@@ -18,6 +18,14 @@ Choose the administrator password when prompted and open your RMON HTTPS address
 
 Add [hosts and SSH credentials](https://rmon.io/howto/setup), [install agents](https://rmon.io/howto/manage-agents), then [create a check](https://rmon.io/howto/assign-checks). The website covers [HTTPS and mTLS settings](https://rmon.io/settings#agent-connections), [notifications](https://rmon.io/howto/notifications), [status pages](https://rmon.io/howto/status-pages) and [updates and backups](https://rmon.io/update-guide).
 
+For Kubernetes, prepare the Secrets, storage and `values.yaml` using the [Kubernetes guide](https://rmon.io/installation#kubernetes), then install:
+
+```sh
+helm upgrade --install rmon oci://ghcr.io/roxy-wi/rmon-charts/rmon \
+  --version 1.4.0 --namespace rmon --create-namespace \
+  --values values.yaml --wait --timeout 10m
+```
+
 ## Plans and support
 
 RMON is a commercial product. See [plans](https://rmon.io/pricing), [documentation](https://rmon.io/howto) and [support contacts](https://rmon.io/contacts).

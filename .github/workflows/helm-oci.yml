@@ -1,0 +1,148 @@
+name: Docker image and Helm chart
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, release/1.4.0]
+    tags: ['helm-*']
+    paths:
+      - 'helm/**'
+      - 'container/**'
+      - 'tests/helm/**'
+      - 'Dockerfile'
+      - '.github/workflows/helm-oci.yml'
+  pull_request:
+    branches: [main, release/1.4.0]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: helm-oci-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/roxy-wi/rmon-web
+  CHART_REGISTRY: oci://ghcr.io/roxy-wi/rmon-charts
+
+jobs:
+  helm-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        helm: [v3.21.3, v4.2.3]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: azure/setup-helm@v5.0.1
+        with:
+          version: ${{ matrix.helm }}
+      - run: python3 -m pip install PyYAML==6.0.2
+      - run: helm lint helm/rmon --set publicURL=https://rmon.example.test --set existingConfigSecret=settings --set server.existingTokenSecret=receiver
+      - run: python3 tests/helm/validate.py
+
+  image-and-chart:
+    needs: helm-check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: azure/setup-helm@v5.0.1
+        with:
+          version: v3.21.3
+      - run: python3 -m pip install PyYAML==6.0.2
+      - name: Validate release metadata
+        id: release
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, re, runpy, yaml
+          chart = yaml.safe_load(open('helm/rmon/Chart.yaml'))
+          version = chart['version']
+          assert re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', version)
+          assert chart['appVersion'] == runpy.run_path('app/version.py')['get_service_version']()
+          if os.environ['GITHUB_REF_TYPE'] == 'tag':
+              assert os.environ['GITHUB_REF_NAME'] == 'helm-' + version
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write(f'version={version}\napp-version={chart["appVersion"]}\n')
+          PY
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image for Kubernetes validation
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          load: true
+          platforms: linux/amd64
+          tags: rmon-web-test:ci
+          labels: |
+            org.opencontainers.image.source=https://github.com/roxy-wi/RMON
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.release.outputs.app-version }}
+            org.opencontainers.image.licenses=Elastic-2.0
+          cache-from: type=gha,scope=rmon-web
+          cache-to: type=gha,mode=max,scope=rmon-web
+      - name: Set up disposable Kubernetes cluster
+        shell: bash
+        run: |
+          curl -fsSLO https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64
+          curl -fsSLO https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64.sha256sum
+          sha256sum --check kind-linux-amd64.sha256sum
+          chmod +x kind-linux-amd64
+          sudo install kind-linux-amd64 /usr/local/bin/kind
+          kind create cluster --name rmon-chart-test --wait 120s
+          kind load docker-image rmon-web-test:ci --name rmon-chart-test
+      - name: Verify fresh install, persistence, maintenance, HTTPS and mTLS
+        run: python3 tests/helm/cluster_smoke.py
+      - name: Kubernetes diagnostics on failure
+        if: failure()
+        run: |
+          kubectl -n rmon-helm-test get pods,deployments,jobs,pvc || true
+          kubectl -n rmon-helm-test get events --sort-by=.lastTimestamp | tail -60 || true
+          kubectl -n rmon-helm-test logs -l app.kubernetes.io/instance=smoke --all-containers --tail=80 --prefix || true
+      - name: Remove test cluster
+        if: always()
+        run: kind delete cluster --name rmon-chart-test
+      - uses: docker/login-action@v3
+        if: startsWith(github.ref, 'refs/tags/helm-')
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish the tested image and OCI chart
+        if: startsWith(github.ref, 'refs/tags/helm-')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APP_VERSION: ${{ steps.release.outputs.app-version }}
+          CHART_VERSION: ${{ steps.release.outputs.version }}
+        shell: bash
+        run: |
+          docker tag rmon-web-test:ci "${IMAGE}:${APP_VERSION}"
+          docker tag rmon-web-test:ci "${IMAGE}:sha-${GITHUB_SHA::12}"
+          docker push "${IMAGE}:${APP_VERSION}"
+          docker push "${IMAGE}:sha-${GITHUB_SHA::12}"
+          digest=$(docker image inspect "${IMAGE}:${APP_VERSION}" --format '{{index .RepoDigests 0}}')
+          export IMAGE_DIGEST="${digest#*@}"
+          python3 - <<'PY'
+          import os, re, yaml
+          digest = os.environ['IMAGE_DIGEST']
+          assert re.fullmatch(r'sha256:[a-f0-9]{64}', digest), 'Missing pushed image digest'
+          path = 'helm/rmon/values.yaml'
+          values = yaml.safe_load(open(path))
+          values['image']['digest'] = digest
+          with open(path, 'w') as output:
+              yaml.safe_dump(values, output, sort_keys=False)
+          PY
+          helm package helm/rmon --destination dist
+          printf '%s' "$GH_TOKEN" | helm registry login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          helm push "dist/rmon-${CHART_VERSION}.tgz" "$CHART_REGISTRY"
+          helm pull "${CHART_REGISTRY}/rmon" --version "$CHART_VERSION" --destination pulled
+          cmp "dist/rmon-${CHART_VERSION}.tgz" "pulled/rmon-${CHART_VERSION}.tgz"

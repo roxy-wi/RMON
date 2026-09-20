@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rmon.fullname" . }}-web
+  labels:
+    {{- include "rmon.labels" . | nindent 4 }}
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "rmon.selector" . | nindent 4 }}
+    app.kubernetes.io/component: web
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: http
+{{- if .Values.server.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rmon.fullname" . }}-server
+  labels:
+    {{- include "rmon.labels" . | nindent 4 }}
+  {{- with .Values.server.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.server.service.type }}
+  {{- with .Values.server.service.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  selector:
+    {{- include "rmon.selector" . | nindent 4 }}
+    app.kubernetes.io/component: server
+  ports:
+    - name: api
+      port: {{ .Values.server.service.port }}
+      targetPort: api
+      {{- if and .Values.server.service.nodePort (ne .Values.server.service.type "ClusterIP") }}
+      nodePort: {{ .Values.server.service.nodePort }}
+      {{- end }}
+{{- end }}

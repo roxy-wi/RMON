@@ -1,0 +1,52 @@
+{{- if .Values.migration.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "rmon.fullname" . }}-migrate-{{ .Release.Revision }}
+  labels:
+    {{- include "rmon.labels" . | nindent 4 }}
+    app.kubernetes.io/component: migration
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        {{- include "rmon.selector" . | nindent 8 }}
+        app.kubernetes.io/component: migration
+    spec:
+      restartPolicy: Never
+      serviceAccountName: {{ include "rmon.account" . }}
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 33
+        runAsGroup: 33
+        runAsNonRoot: true
+        fsGroup: 33
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- include "rmon.placement" . | nindent 6 }}
+      containers:
+        - name: migrate
+          image: {{ include "rmon.image" (dict "image" .Values.image "version" .Chart.AppVersion) | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: [/opt/rmon-venv/bin/python]
+          args: [/var/www/rmon/app/migrate.py, migrate]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          env:
+            {{- include "rmon.env" . | nindent 12 }}
+          resources:
+            {{- toYaml .Values.web.resources | nindent 12 }}
+          volumeMounts:
+            {{- include "rmon.mounts" . | nindent 12 }}
+      volumes:
+        {{- include "rmon.volumes" . | nindent 8 }}
+{{- end }}

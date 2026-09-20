@@ -1,0 +1,119 @@
+{{- range $role := list "web" "scheduler" "operations" }}
+{{- $settings := index $.Values $role }}
+{{- if or (eq $role "web") $settings.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "rmon.fullname" $ }}-{{ $role }}
+  labels:
+    {{- include "rmon.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $role }}
+spec:
+  replicas: {{ ternary 0 1 $.Values.maintenance }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "rmon.selector" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ $role }}
+  template:
+    metadata:
+      labels:
+        {{- include "rmon.selector" $ | nindent 8 }}
+        app.kubernetes.io/component: {{ $role }}
+      annotations:
+        checksum/config: {{ include "rmon.config" $ | sha256sum }}
+        {{- with $.Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "rmon.account" $ }}
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: {{ default 45 $settings.terminationGracePeriodSeconds }}
+      securityContext:
+        fsGroup: 33
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      {{- with $.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- include "rmon.placement" $ | nindent 6 }}
+      {{- include "rmon.colocate" $ | nindent 6 }}
+      {{- if and (eq $role "web") $.Values.bootstrap.enabled }}
+      initContainers:
+        - name: initialize
+          image: {{ include "rmon.image" (dict "image" $.Values.image "version" $.Chart.AppVersion) | quote }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          args: [bootstrap]
+          securityContext:
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+          env:
+            {{- include "rmon.env" $ | nindent 12 }}
+            - name: RMON_ADMIN_PASSWORD_FILE
+              value: /run/rmon-bootstrap/password
+          resources:
+            {{- toYaml $.Values.web.resources | nindent 12 }}
+          volumeMounts:
+            {{- include "rmon.mounts" $ | nindent 12 }}
+            - name: bootstrap
+              mountPath: /run/rmon-bootstrap
+              readOnly: true
+      {{- end }}
+      containers:
+        - name: {{ $role }}
+          image: {{ include "rmon.image" (dict "image" $.Values.image "version" $.Chart.AppVersion) | quote }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          args: [{{ ternary "serve" $role (eq $role "web") }}]
+          securityContext:
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+          env:
+            {{- include "rmon.env" $ | nindent 12 }}
+          {{- if eq $role "web" }}
+          ports:
+            - name: http
+              containerPort: 8080
+          {{- end }}
+          startupProbe:
+            exec:
+              command: [/opt/rmon-venv/bin/python, -m, container.runtime, healthcheck{{ if ne $role "web" }}, --role, {{ $role }}{{ end }}]
+            periodSeconds: 10
+            timeoutSeconds: 8
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: [/opt/rmon-venv/bin/python, -m, container.runtime, healthcheck{{ if ne $role "web" }}, --role, {{ $role }}{{ end }}]
+            periodSeconds: 15
+            timeoutSeconds: 8
+          livenessProbe:
+            {{- if eq $role "web" }}
+            tcpSocket:
+              port: http
+            {{- else }}
+            exec:
+              command: [/opt/rmon-venv/bin/python, -m, container.runtime, healthcheck, --role, {{ $role }}, --live]
+            {{- end }}
+            periodSeconds: 30
+            timeoutSeconds: 8
+            failureThreshold: 3
+          resources:
+            {{- toYaml $settings.resources | nindent 12 }}
+          volumeMounts:
+            {{- include "rmon.mounts" $ | nindent 12 }}
+      volumes:
+        {{- include "rmon.volumes" $ | nindent 8 }}
+        {{- if and (eq $role "web") $.Values.bootstrap.enabled }}
+        - name: bootstrap
+          secret:
+            secretName: {{ $.Values.bootstrap.existingSecret }}
+            defaultMode: 0400
+            items:
+              - key: {{ $.Values.bootstrap.passwordKey }}
+                path: password
+        {{- end }}
+{{- end }}
+{{- end }}

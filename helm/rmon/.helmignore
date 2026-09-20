@@ -1,0 +1,7 @@
+*.tgz
+.git/
+AGENTS.md
+*.swp
+*.bak
+*.tmp
+*.orig
