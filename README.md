@@ -22,7 +22,7 @@ For Kubernetes, prepare the Secrets, storage and `values.yaml` using the [Kubern
 
 ```sh
 helm upgrade --install rmon oci://ghcr.io/roxy-wi/rmon-charts/rmon \
-  --version 1.4.0 --namespace rmon --create-namespace \
+  --version 1.4.1 --namespace rmon --create-namespace \
   --values values.yaml --wait --timeout 10m
 ```
 

@@ -2,7 +2,7 @@ apiVersion: v2
 name: rmon
 description: Service availability monitoring, distributed checks and notifications
 type: application
-version: 1.4.0
+version: 1.4.1
 appVersion: "1.4.0"
 kubeVersion: ">=1.25.0-0"
 home: https://rmon.io
