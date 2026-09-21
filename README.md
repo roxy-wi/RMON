@@ -28,7 +28,7 @@ helm upgrade --install rmon oci://ghcr.io/roxy-wi/rmon/rmon-chart \
 
 ## Plans and support
 
-RMON is a commercial product. See [plans](https://rmon.io/pricing), [documentation](https://rmon.io/howto) and [support contacts](https://rmon.io/contacts).
+RMON is a commercial product. See [documentation](https://rmon.io/howto) and [support contacts](https://rmon.io/contacts).
 
 ## License
 
