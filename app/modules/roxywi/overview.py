@@ -1,5 +1,3 @@
-import json
-
 from flask import render_template
 
 import app.modules.db.sql as sql
@@ -66,8 +64,7 @@ def show_overview(server_ip) -> str:
         agent_id = 0
 
     try:
-        req = smon_agent.send_get_request_to_agent(agent_id, server_ip, 'scheduler')
-        req = json.loads(req.decode('utf-8'))
+        req = smon_agent.get_agent_health(agent_id, server_ip)
     except Exception:
         req = {'running': False}
 

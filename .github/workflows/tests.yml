@@ -6,11 +6,28 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
 
 jobs:
+  frontend-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: tests/frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tests/frontend/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm test
+
   unit-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -35,7 +52,7 @@ jobs:
           python -m pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Compile Python sources
-        run: python -m compileall -q app tests scheduler_runner.py rotate_credential_secret.py
+        run: python -m compileall -q app tests container gunicorn.conf.py scheduler_runner.py rotate_credential_secret.py
 
       - name: Smoke test application startup
         run: python -m pytest tests/smoke -q

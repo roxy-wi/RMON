@@ -1,0 +1,52 @@
+/* Scoped to the check editor; dashboard tables keep their own layout. */
+body .check-editor { color: var(--color-black, #172b3b); padding: 0 22px 20px !important; }
+.check-editor-intro { margin: 16px 0; line-height: 1.6; color: var(--color-grey-dark, #526575); }
+.check-editor-tabs { display: flex; gap: 8px; margin: 0 0 20px; padding: 4px 0 10px; border-bottom: 1px solid #aebfcb; }
+body .check-editor-tabs button { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 8px; white-space: normal; padding: 10px; border: 1px solid #aebfcb; border-radius: 7px; background: transparent; color: inherit; }
+body .check-editor-tabs [aria-selected=true] { background: #087fab; border-color: #087fab; color: white; }
+.check-editor-tabs button span { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 1px solid currentColor; flex: 0 0 auto; }
+.check-editor h3 { margin: 0 0 8px; padding: 0; background: none; border: 0; height: auto; font-size: 18px; }
+.check-editor .field-help { margin: 0 0 18px; }
+.check-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; }
+.check-field { min-width: 0; }
+.check-field-wide { grid-column: 1 / -1; }
+.check-field-label { display: block; font-weight: 600; margin-bottom: 7px; line-height: 1.5; }
+.check-field-control { min-width: 0; }
+body .check-editor .form-control, body .check-editor .ui-selectmenu-button, body .check-editor .tagify { box-sizing: border-box; width: 100% !important; max-width: 100%; margin: 0; }
+body .check-editor .form-control { min-height: 40px; padding: 9px 10px; border: 1px solid #92a6b5 !important; border-radius: 5px; background: var(--color-white); color: inherit; }
+body .check-editor textarea.form-control { font-family: monospace; min-height: 110px; }
+body .check-editor .ui-selectmenu-button { padding: 10px !important; min-height: 40px; }
+body .check-editor .tagify { min-height: 40px; border-radius: 5px; }
+.check-editor .tagify__input { min-width: 60px; }
+.check-editor .tagify + #new-smon-status-code { display: none !important; }
+.check-editor .tooltip { display: block; width: auto; max-width: none; margin-top: 6px; line-height: 1.5; font-size: 12px; }
+.check-advanced { margin-top: 18px; border: 1px solid #aebfcb; border-radius: 7px; }
+.check-advanced > summary { padding: 14px; cursor: pointer; font-weight: 600; }
+.check-advanced[open] > summary { border-bottom: 1px solid #aebfcb; }
+.check-advanced > .check-fields { padding: 18px; }
+.check-field-control > input + input, .check-field-control textarea + textarea { margin-top: 8px !important; }
+.check-editor-summary { display: grid; gap: 6px; border-left: 4px solid #087fab; background: #087fab10; padding: 14px; margin-bottom: 20px; overflow-wrap: anywhere; }
+.check-editor-error, .check-field-error { color: #a82e27; background: #ffeded; border-radius: 4px; padding: 9px; line-height: 1.5; }
+.check-editor-error { margin-bottom: 16px; }
+.check-field-error { margin: 6px 0 0; }
+body .check-editor [aria-invalid=true] { border-color: #b72c24 !important; }
+.check-editor .country, .check-entity-headings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; width: 100%; height: auto; }
+.check-entity-headings { font-weight: 600; margin-bottom: 8px; }
+.check-editor #all-entities, .check-editor #checked-entities { width: auto; height: auto; min-height: 52px; max-height: 220px; overflow: auto; float: none; margin: 0; border: 1px solid #aebfcb; border-radius: 5px; }
+.check-editor #all-entities { grid-column: 1; grid-row: 1; }
+.check-editor #checked-entities { grid-column: 2; grid-row: 1; }
+.check-editor .country .all-checks, .check-editor #checked-entities > div { display: flex; width: auto; height: auto; min-height: 42px; align-items: center; padding: 4px; gap: 4px; }
+.check-editor .country .check-name { flex: 1; min-width: 0; width: auto; float: none; overflow-wrap: anywhere; white-space: normal; margin: 0; }
+.check-editor .country .check-button { margin: 0; float: none; flex: 0 0 auto; }
+body #check-editor-submit { background: #087fab; color: white; border-color: #087fab; font-weight: 600; }
+body #check-editor-submit:disabled { opacity: .6; }
+@media (max-width: 640px) {
+    body .check-editor { padding: 0 12px 12px !important; }
+    .check-fields { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+    .check-editor-tabs { gap: 4px; }
+    body .check-editor-tabs button { flex-direction: column; font-size: 12px; padding: 8px 4px; }
+    .check-editor-intro { font-size: 13px; }
+    .check-advanced > .check-fields { padding: 12px; }
+    body .ui-dialog:has(.check-editor) .ui-dialog-buttonset { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; float: none; }
+    body .ui-dialog:has(.check-editor) .ui-dialog-buttonset button { margin: 0; padding: 8px; font-size: 13px; }
+}

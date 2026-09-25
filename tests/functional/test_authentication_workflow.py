@@ -51,11 +51,24 @@ def test_web_login_sets_cookie_and_rejects_external_next_url(client, monkeypatch
     )
 
     assert response.status_code == 200
-    assert response.get_json()['next_url'] == 'https://localhost/overview'
+    assert response.get_json()['next_url'] == '/overview'
     assert 'access_token_cookie=' in response.headers['Set-Cookie']
 
     cookie_authenticated_response = client.get('/api/v1.0/servers')
     assert cookie_authenticated_response.status_code == 200
+
+
+@pytest.mark.functional
+@pytest.mark.parametrize('scheme', ['http', 'https'])
+def test_web_login_preserves_local_return_path_and_transport(client, monkeypatch, scheme):
+    user, password = _create_login_user()
+    monkeypatch.setattr('app.login.roxy.update_plan', lambda: None)
+    response = client.post(
+        '/login', base_url=f'{scheme}://rmon.example.test',
+        json={'login': user.username, 'pass': password, 'next': '/rmon/dashboard?group=1#checks'},
+    )
+    assert response.status_code == 200
+    assert response.get_json()['next_url'] == '/rmon/dashboard?group=1#checks'
 
 
 @pytest.mark.functional

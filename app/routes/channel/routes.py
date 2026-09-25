@@ -43,13 +43,11 @@ def load_channels():
 @feature_required(ALERTING_CHANNELS)
 def check_sender():
     json_data = request.get_json()
-    sender = json_data.get('sender')
-    send_function = {
-        'email': alerting.check_email_alert,
-        'web': alerting.check_rabbit_alert
-    }
+    sender = json_data.get('sender') if isinstance(json_data, dict) else None
+    if sender != 'email':
+        return jsonify({'error': 'Unsupported notification channel'}), 400
     try:
-        send_function[sender]()
+        alerting.check_email_alert()
         return jsonify({'status': 'success'})
     except Exception as e:
         return roxywi_common.handle_json_exceptions(e, f'Cannot send message via {sender.title()}')

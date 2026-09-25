@@ -1,20 +1,33 @@
+import json
 import uuid
+import os
+import re
 from typing import Union
 
 import requests
 from requests import Response
+from flask import current_app, has_app_context, has_request_context, request
 
 import app.modules.db.sql as sql
 import app.modules.db.smon as smon_sql
 import app.modules.db.server as server_sql
 import app.modules.roxywi.common as roxywi_common
 from app.modules.subscription.access import MONITORING_AGENTS, enforce_resource_limit
-from app.modules.service.installation import run_ansible_thread
+from app.modules.service.installation import run_ansible, run_ansible_thread
 from app.modules.roxywi.class_models import RmonAgent
 from app.modules.roxywi.exception import RoxywiResourceNotFound
+from app.modules.roxy_wi_tools import GetConfigVar
+from app.modules.common import agent_transport
 
 
-def generate_agent_inv(server_ip: str, action: str, agent_uuid: uuid, agent_port=5101) -> object:
+def generate_agent_inv(server_ip: str, action: str, agent_uuid: uuid, agent_port=5101,
+                       *, group_id=None, result_transport=None) -> object:
+    config = GetConfigVar().config
+    control_url = os.getenv('RMON_AGENT_CONTROL_URL') or config.get('agent_deployment', 'control_url', fallback='')
+    if not control_url and has_app_context():
+        control_url = current_app.config.get('PUBLIC_URL', '')
+    if not control_url and has_request_context():
+        control_url = request.url_root.rstrip('/')
     master_port = sql.get_setting('master_port')
     master_ip = sql.get_setting('master_ip')
     if not master_ip: raise Exception(' Master IP cannot be empty')
@@ -28,9 +41,30 @@ def generate_agent_inv(server_ip: str, action: str, agent_uuid: uuid, agent_port
         'agent_uuid': agent_uuid,
         'master_ip': master_ip,
         'master_port': master_port,
+        'agent_control_url': control_url,
+        'agent_image': os.getenv('RMON_AGENT_IMAGE') or config.get(
+            'agent_deployment', 'image', fallback='ghcr.io/roxy-wi/rmon/rmon-agent:2.0'),
     }
 
+    for option in ('bind_ip', 'pull'):
+        if config.has_option('agent_deployment', option):
+            inv['server']['hosts'][server_ip]['agent_' + option] = config.get('agent_deployment', option)
+    if action == 'install' and result_transport is not None:
+        if group_id is None:
+            raise ValueError('The agent owner group is required')
+        inv['server']['hosts'][server_ip].update(
+            agent_transport.inventory_settings(group_id, agent_uuid, result_transport))
+
     return inv, server_ips
+
+
+def run_agent_action(agent_id: int, action: str):
+    if action not in ('start', 'stop', 'restart'):
+        raise ValueError('Unsupported agent action')
+    agent = smon_sql.get_agent_data(agent_id)
+    server_ip = smon_sql.get_agent_ip_by_id(agent_id)
+    inventory = {'server': {'hosts': {server_ip: {'action': action, 'agent_uuid': str(agent.uuid)}}}}
+    return run_ansible_thread(inventory, [server_ip], 'rmon_agent', 'Agent', action)
 
 
 def check_agent_limit():
@@ -51,20 +85,24 @@ def add_agent(data: RmonAgent) -> Union[tuple[int, int], tuple[dict, int], None]
         return roxywi_common.handle_json_exceptions('', 'The agent is already installed the server'), 409
     agent_uuid = str(uuid.uuid4())
     check_agent_limit()
+    server = server_sql.get_server_by_ip(server_ip)
+    mode = data.result_transport or agent_transport.group_settings(server.group_id)['agent_result_transport']
     agent_kwargs = data.model_dump(mode='json', exclude={'reconfigure': True})
     agent_kwargs['uuid'] = agent_uuid
+    agent_kwargs['result_transport'] = mode
 
     try:
-        inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid, data.port)
+        inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid, data.port,
+                                             group_id=server.group_id, result_transport=mode)
     except Exception as e:
         roxywi_common.handle_exceptions(e, 'Cannot generate inventory')
     try:
-        task_id = run_ansible_thread(inv, server_ips, 'rmon_agent', 'Agent', 'install')
-    except Exception as e:
-        roxywi_common.handle_exceptions(e, 'Cannot install RMON agent')
-
-    try:
         last_id = smon_sql.add_agent(**agent_kwargs)
+        try:
+            task_id = run_ansible_thread(inv, server_ips, 'rmon_agent', 'Agent', 'install')
+        except Exception:
+            smon_sql.delete_agent(last_id)
+            raise
         roxywi_common.logger('A new RMON agent has been created', 'info', keep_history=1, service='RMON')
         return last_id, task_id
     except Exception as e:
@@ -76,7 +114,7 @@ def delete_agent(agent_id: int):
         server_ip = smon_sql.get_agent_ip_by_id(agent_id)
     except Exception as e:
         raise e
-    agent_uuid = ''
+    agent_uuid = str(smon_sql.get_agent_data(agent_id).uuid)
     try:
         inv, server_ips = generate_agent_inv(server_ip, 'uninstall', agent_uuid)
         return run_ansible_thread(inv, server_ips, 'rmon_agent', 'Agent', 'delete')
@@ -85,22 +123,31 @@ def delete_agent(agent_id: int):
 
 
 def update_agent(agent_id: int, data: RmonAgent):
+    agent = smon_sql.get_agent_data(agent_id)
+    if data.server_id != agent.server_id_id:
+        raise ValueError('An installed agent cannot be moved to another server')
     json_data = data.model_dump(mode='python', exclude={'reconfigure': True, 'uuid': True}, exclude_none=True)
-
+    inv = None
+    if data.reconfigure:
+        mode = data.result_transport or agent.result_transport
+        inv, server_ips = generate_agent_inv(agent.server_id.ip, 'install', agent.uuid, data.port,
+                                             group_id=agent.server_id.group_id, result_transport=mode)
     try:
         smon_sql.update_agent(agent_id, **json_data)
     except Exception as e:
         raise e
 
     if data.reconfigure:
-        return reconfigure_agent(agent_id)
+        return run_ansible_thread(inv, server_ips, 'rmon_agent', 'Agent', 'reconfigure')
 
 
 def reconfigure_agent(agent_id: int):
     agent = smon_sql.get_agent_data(agent_id)
     server_ip = smon_sql.select_server_ip_by_agent_id(agent_id)
     try:
-        inv, server_ips = generate_agent_inv(server_ip, 'install', agent.uuid, agent.port)
+        inv, server_ips = generate_agent_inv(server_ip, 'install', agent.uuid, agent.port,
+                                             group_id=agent.server_id.group_id,
+                                             result_transport=agent.result_transport)
         return run_ansible_thread(inv, server_ips, 'rmon_agent', 'Agent', 'reconfigure')
     except Exception as e:
         raise e
@@ -123,10 +170,30 @@ def send_get_request_to_agent(agent_id: int, server_ip: str, api_path: str) -> b
     server_ip = smon_sql.get_agent_ip_by_id(agent_id)
     try:
         req = requests.get(f'http://{server_ip}:{agent.port}/{api_path}', headers=headers, timeout=5)
-        return req.content
+        try:
+            req.raise_for_status()
+            return req.content
+        finally:
+            req.close()
+    except requests.HTTPError:
+        raise
     except Exception as e:
         roxywi_common.logger(f'Cannot get agent status: {e}', 'error')
         raise Exception(' Cannot get agent status')
+
+
+def get_agent_health(agent_id: int, server_ip: str) -> dict:
+    try:
+        result = send_get_request_to_agent(agent_id, server_ip, 'health')
+    except requests.HTTPError as error:
+        if error.response is None or error.response.status_code != 404:
+            raise
+        # Older agents expose status only through Flask-APScheduler.
+        result = send_get_request_to_agent(agent_id, server_ip, 'scheduler')
+    data = json.loads(result)
+    if not isinstance(data, dict) or not isinstance(data.get('running'), bool):
+        raise ValueError('Invalid agent health response')
+    return data
 
 
 def send_post_request_to_agent(agent_id: int, server_ip: str, api_path: str, json_data: object) -> Response:
@@ -264,11 +331,31 @@ def send_dns_checks(agent_id: int, server_ip: str, check_id=None) -> None:
                                                )
 
 
+def _require_http_policy_support(agent_id: int, server_ip: str) -> None:
+    try:
+        data = json.loads(send_get_request_to_agent(agent_id, server_ip, 'version'))
+        version = data.get('version') if isinstance(data, dict) else None
+        match = re.fullmatch(r'(\d+)\.(\d+)(?:\.\d+)?', version or '')
+    except Exception as error:
+        raise ValueError('Cannot verify agent support for HTTPS policy. Check the agent connection and try again.') from error
+    if not match or tuple(map(int, match.group(1, 2))) < (1, 20):
+        raise ValueError('HTTPS policy requires Agent 1.20 or later. Update the agent and resend the check.')
+
+
 def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
     if check_id:
         checks = smon_sql.select_one_smon(check_id, 2)
     else:
         checks = smon_sql.select_en_smon(agent_id, 'http')
+    checks = list(checks)
+    policy_error = None
+    if any(check.ssl_policy != 'default' for check in checks):
+        try:
+            _require_http_policy_support(agent_id, server_ip)
+        except ValueError as error:
+            policy_error = error
+            # Continue synchronizing checks that do not need the optional feature.
+            checks = [check for check in checks if check.ssl_policy == 'default']
     for check in checks:
         body = check.body
         if body:
@@ -290,6 +377,8 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
             'body_req': check.body_req,
             'header_req': check.header_req,
             'redirects': check.redirects,
+            'fail_if_not_ssl': check.ssl_policy == 'require_https',
+            'fail_if_ssl': check.ssl_policy == 'require_http',
             'auth': check.auth,
             'proxy': check.proxy,
             'headers_response': check.headers_response,
@@ -304,6 +393,8 @@ def send_http_checks(agent_id: int, server_ip: str, check_id=None) -> None:
                                                'error',
                                                extra={'check_id': check.id, 'agent_id': agent_id, 'multi_check_id': check.smon_id.multi_check_id}
                                                )
+    if policy_error:
+        raise policy_error
 
 
 def send_smtp_checks(agent_id: int, server_ip: str, check_id=None) -> None:

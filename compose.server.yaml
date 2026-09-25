@@ -1,0 +1,65 @@
+# Use together with compose.yaml to run RMON Server on the same Docker host.
+services:
+  web:
+    environment:
+      RMON_SERVER_INTERNAL_URL: "${RMON_SERVER_INTERNAL_URL:-http://server:5100}"
+      RMON_SERVER_INTERNAL_TOKEN_FILE: /run/secrets/rmon_server_token
+    secrets:
+      - rmon_server_token
+
+  server:
+    image: "${RMON_SERVER_IMAGE:-ghcr.io/roxy-wi/rmon/rmon-server:7.0}"
+    user: "33:33"
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      RMON_CONFIG_FILE: "${RMON_CONFIG_FILE:-/etc/rmon/rmon.cfg}"
+      RMON_DB_PATH: "${RMON_DB_PATH:-/var/lib/rmon/rmon.db}"
+      RMON_INTERNAL_API_TOKEN_FILE: /run/secrets/rmon_server_token
+      RMON_SERVER_WORKERS: "${RMON_SERVER_WORKERS:-1}"
+      RMON_SERVER_THREADS: "${RMON_SERVER_THREADS:-4}"
+      RMON_SERVER_LOG_PATH: "-"
+      RMON_SERVER_TRANSPORT:
+      RMON_TLS_CERT_FILE:
+      RMON_TLS_KEY_FILE:
+      RMON_TLS_CA_FILE:
+      RMON_PROBE_SCHEME:
+      RMON_PROBE_CA_FILE:
+      RMON_PROBE_CLIENT_CERT_FILE:
+      RMON_PROBE_CLIENT_KEY_FILE:
+    volumes:
+      - "${RMON_CONFIG_SOURCE:-rmon-config}:/etc/rmon:ro"
+      - "${RMON_DATA_SOURCE:-rmon-data}:/var/lib/rmon"
+    secrets:
+      - rmon_server_token
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${RMON_SERVER_BIND_IP:-127.0.0.1}:${RMON_SERVER_PORT:-5100}:5100"
+    stop_grace_period: 45s
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=32m,mode=1777
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+
+  scheduler:
+    environment:
+      RMON_SERVER_INTERNAL_URL: "${RMON_SERVER_INTERNAL_URL:-http://server:5100}"
+      RMON_SERVER_INTERNAL_TOKEN_FILE: /run/secrets/rmon_server_token
+    secrets:
+      - rmon_server_token
+
+  operations:
+    environment:
+      RMON_SERVER_INTERNAL_URL: "${RMON_SERVER_INTERNAL_URL:-http://server:5100}"
+      RMON_SERVER_INTERNAL_TOKEN_FILE: /run/secrets/rmon_server_token
+    secrets:
+      - rmon_server_token
+
+secrets:
+  rmon_server_token:
+    file: "${RMON_SERVER_TOKEN_FILE:-./secrets/server-token}"

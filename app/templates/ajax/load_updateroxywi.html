@@ -1,7 +1,7 @@
 {% import 'languages/'+lang|default('en')+'.html' as lang %}
+{% from 'include/service_version.html' import service_version %}
 {% set services_name = {
     'rmon-server': { 'link': 'rmon-server', 'name': 'RMON Server', 'desc': lang.admin_page.desc.smon_desc },
-    'rmon-socket': { 'link': 'socket', 'name': 'Socket', 'desc': lang.admin_page.desc.socket_desc },
     }
 %}
 <tr class="odd">
@@ -11,10 +11,10 @@
     <td>
         <b
                 {% if versions.need_update %}
-                title=lang.admin_page.desc.a_new_version+" RMON"
+                title="{{lang.admin_page.desc.a_new_version}} RMON"
                 style="color: var(--red-color)"
                 {% else %}
-                title=lang.admin_page.desc.no_new_version+" RMON"
+                title="{{lang.admin_page.desc.no_new_version}} RMON"
                 style="color: var(--green-color)"
                 {% endif %}
         >
@@ -24,57 +24,54 @@
     <td class="padding10">
         <b>{{versions.new_ver}}</b>
     </td>
-    <td>
-        {% if versions.need_update %}
-        <a class="ui-button ui-widget ui-corner-all" onclick="updateService('rmon')" title="{{lang.words.w_update|title()}} RMON">{{lang.words.w_update|title()}}</a>
+    <td>{{lang.admin_page.desc.main_app}}</td>
+    <td class="actions-column">
+        {% if versions.get('managed_by') == 'docker' %}
+        <span>Update container image</span>
+        {% elif versions.need_update %}
+        <button type="button" onclick="updateService('rmon')">{{lang.words.w_update|title()}}</button>
         {% endif %}
-    </td>
-    <td colspan="2">
-        {{lang.admin_page.desc.main_app}}
     </td>
 </tr>
 {% for s in services %}
-    {% if s.0 in ('rmon-server', 'rmon-socket') %}
-        {% set is_need_update = 0 %}
-        {% if s.2['current_version']|float < s.2['new_version']|float %}
-            {% set is_need_update = 1 %}
-        {% endif %}
+    {% if s.0 == 'rmon-server' %}
+        {% set is_need_update = s.2.get('update_available', false) %}
+        {% set installed = s.2.get('installed') %}
+        {% set known_version = s.2.get('version_known', s.2['current_version'] not in ('0', '', '* is not installed')) %}
 <tr class="{{ loop.cycle('even', 'odd') }}">
     <td class="padding10 first-collumn">
         <a href="https://rmon.io/tools/{{services_name[s.0]['link']}}" title="{{lang.words.read|title()}} {{lang.words.more}} {{lang.words.about}} {{services_name[s.0]['name']}}" target="_blank" class="link" rel="noopener noreferrer">{{services_name[s.0]['name']}}</a>
     </td>
     <td>
-        {% if s.2['current_version'] != '* is not installed' and s.2['current_version'] != '' %}
         <b id="current-version-{{s.0}}"
-                {% if is_need_update %}
+                {% if known_version and is_need_update %}
                 title="{{lang.admin_page.desc.a_new_version}} {{services_name[s.0]['name']}}"
                 style="color: var(--red-color)"
-                {% else %}
+                {% elif known_version %}
                 title="{{lang.admin_page.desc.no_new_version}} {{services_name[s.0]['name']}}"
                 style="color: var(--green-color)"
                 {% endif %}
         >
-            {{s.2['current_version']}}
+            {{service_version(s.2, lang)}}
         </b>
-        {% endif %}
     </td>
     <td class="padding10">
         <b>
             {{s.2['new_version']}}
         </b>
     </td>
-    <td>
-        {% if 'is not installed' not in s.2['current_version'] and s.2['current_version'] != '' and s.2['current_version'] != '0' %}
-            {% if is_need_update %}
-                <a class="ui-button ui-widget ui-corner-all" onclick="updateService('{{s.0}}')" title="{{lang.words.w_update|title()}} {{services_name[s.0]['name']}}">{{lang.words.w_update|title()}}</a>
-            {% endif %}
+    <td>{{services_name[s.0]['desc']|safe}}</td>
+    <td class="actions-column">
+        {% if s.2.get('managed_by') == 'external' %}
+            <span>Managed externally</span>
+        {% elif s.2.get('managed_by') == 'docker' %}
+            <a href="https://rmon.io/installation#standalone-server" target="_blank" rel="noopener noreferrer">Docker</a>
+        {% elif known_version and is_need_update %}
+            <button type="button" onclick="updateService('{{s.0}}')">{{lang.words.w_update|title()}}</button>
         {% endif %}
-        {% if s.2['current_version'] == '0'  %}
-            <a class="ui-button ui-widget ui-corner-all" onclick="updateService('{{s.0}}', 'install')" title="{{lang.words.install|title()}} {{service_name}}">{{lang.words.install|title()}}</a>
+        {% if installed is sameas false and s.2.get('managed_by') not in ('docker', 'external') %}
+            <button type="button" onclick="updateService('{{s.0}}', 'install')">{{lang.words.install|title()}}</button>
         {% endif %}
-    </td>
-    <td colspan="3">
-        {{services_name[s.0]['desc']|safe}}
     </td>
 </tr>
 {% endif %}

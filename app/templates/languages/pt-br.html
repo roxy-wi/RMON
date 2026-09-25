@@ -1,4 +1,30 @@
 {% set lang_short = 'pt-br' %}
+{% set agent_transport = {
+    "section": "Agent connections",
+    "label": "Result delivery",
+    "preserve": "Keep current configuration",
+    "unknown": "Not yet verified",
+    "pending": "Changes pending application",
+    "checked": "Connection verified",
+    "help": "Uses the agent owner's group settings. Apply connection changes with Reconfigure. Configure the result server for the selected mode. The agent management API remains HTTP.",
+    "settings_help": "Certificate paths refer to files accessible to RMON inside this group's directory:",
+    "fields": {
+        "agent_result_transport": "Default connection",
+        "agent_tls_ca_file": "Trusted CA",
+        "agent_tls_generate": "Generate client certificates",
+        "agent_tls_ca_key_file": "CA signing key",
+        "agent_tls_cert_file": "Client certificate",
+        "agent_tls_key_file": "Client private key"
+    },
+    "descriptions": {
+        "agent_result_transport": "Default for newly installed agents. Existing agents keep their selected mode.",
+        "agent_tls_ca_file": "Path to the trusted CA bundle. Leave empty for HTTPS with system trust. Required for mTLS.",
+        "agent_tls_generate": "Issue a separate client certificate for each agent when a pair is missing.",
+        "agent_tls_ca_key_file": "Path to the CA signing key for certificate generation. The key stays in RMON.",
+        "agent_tls_cert_file": "Path to an existing client certificate. Use {uuid} for an individual file for each agent.",
+        "agent_tls_key_file": "Path to the matching client private key. Supports {uuid}."
+    }
+} %}
 {% set menu_links = dict() %}
 {% set menu_links = {
     "overview": {
@@ -45,15 +71,6 @@
     }
 %}
 {% set settings = {
-    "rabbitmq": {
-        "rabbitmq_enabled": "Habilitar alertas no painel WEB",
-        "rabbitmq_host": "RabbitMQ-server host",
-        "rabbitmq_port": "RabbitMQ-server port",
-        "rabbitmq_vhost": "RabbitMQ-server vhost",
-        "rabbitmq_queue": "RabbitMQ-server queue",
-        "rabbitmq_user": "Usuario de RabbitMQ-server",
-        "rabbitmq_password": "Senha do RabbitMQ-server",
-        },
     "monitoring": {
         "port_scan_interval": "Intervalo de verificação para o Port scanner (em minutos)",
         "portscanner_keep_history_range": "Período de retenção de historico de Port scanner",
@@ -166,7 +183,6 @@
     "alert_master_backup": "Alerta sobre a alteração de estado do Master/Backup",
     "new_version": "Uma nova versão RMON apareceu. Verifica a",
     "all_alerts_enabled": "Alertas são ativadas",
-    "disable_alerts": "Desativar alertas",
     "work_with_prev": "Aqui você pode editar as versões anteriores de configurações",
     "roll_back": "Reverta para eles, visualize ou exclua",
     "files_been_deleted": "Os seguintes arquivos foram exluídos",
@@ -240,7 +256,6 @@
         "auto_start_desc": "O serviços Auto Start permite reiniciar os serviços HAProxy, NGINX, Apache e Keepalived se estiverem inoperantes",
         "metrics_desc": "Coleta o número de conexões para os serviços HAProxy, NGINX, Apache e HAProxy WAF",
         "p_s_desc": "Verifica se há portas abertas no servidor e salva o histórico",
-        "socket_desc": "Socket é um serviço de envio de alertas e notificações",
         "a_new_version": "Há uma versão mais recente",
         "no_new_version": "Nã há uma versão mais recente",
         "main_app": "O aplicativo principal",
@@ -602,7 +617,6 @@
     "test2": "test",
     "disabled": "desativado",
     "via": "via",
-    "web_panel": "painel web",
     "message": "mensagem",
     "menu": "menu",
     "language": "idioma",
@@ -773,3 +787,92 @@
     "accept": "aceitar",
     }
 %}
+
+{% set ux = {
+    "skip_content": "Ir para o conteúdo",
+    "toggle_menu": "Mostrar ou ocultar o menu",
+    "close_menu": "Fechar o menu",
+    "retry": "Tentar novamente",
+    "loading": "Carregando…",
+    "widget_error": "Estas informações estão temporariamente indisponíveis.",
+    "network_error": "Não foi possível conectar ao RMON. Verifique sua conexão.",
+    "request_error": "Não foi possível concluir a solicitação. Tente novamente.",
+    "server_error": "O RMON não pôde concluir a solicitação. Tente mais tarde.",
+    "validation_error": "Verifique os campos obrigatórios e seus valores.",
+    "unauthorized": "Sua sessão expirou. Entre novamente para continuar.",
+    "forbidden": "Você não tem permissão para esta ação.",
+    "not_found": "Este item não está mais disponível. Atualize a página.",
+    "conflict": "Este item mudou ou já existe. Atualize a página.",
+    "rate_limit": "Muitas solicitações. Aguarde e tente novamente.",
+    "login_failed": "Login ou senha incorretos, ou conta desativada.",
+    "show_password": "Mostrar senha",
+    "hide_password": "Ocultar senha",
+    "no_checks": "Ainda não há verificações",
+    "no_checks_description": "Adicione uma verificação para monitorar a disponibilidade e receber alertas.",
+    "no_status_pages": "Ainda não há páginas de status",
+    "no_status_pages_description": "Crie uma página pública para compartilhar a disponibilidade dos serviços.",
+    "slug_hint": "Letras minúsculas, números, sublinhados ou hífens. Hífens consecutivos não são permitidos.",
+    "table_label": "Tabela de dados. Role horizontalmente para ver todas as colunas.",
+    "name_required": "Digite um nome.",
+    "slug_invalid": "Digite um endereço de página válido.",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "action": "Ação",
+    "service_not_installed": "Não instalado",
+    "service_version_unknown": "Versão indisponível"
+} %}
+
+
+{% set check_editor = {
+    "ssl_policy": "Política HTTPS",
+    "ssl_policy_default": "Padrão",
+    "ssl_policy_https": "Exigir HTTPS",
+    "ssl_policy_http": "Exigir HTTP",
+    "ssl_policy_hint": "Verifica o endereço final após os redirecionamentos permitidos. A mudança de HTTPS para HTTP sempre é um erro, inclusive no modo Padrão. Ignorar erros de certificado não desativa esta política.",
+    "create": "Criar verificação",
+    "edit": "Editar verificação",
+    "sections": "Configuração",
+    "target": "Verificação",
+    "settings": "Parâmetros",
+    "notifications": "Notificações",
+    "intro": "Comece pelo destino. Os valores padrão estão prontos; expanda as opções avançadas quando necessário.",
+    "target_hint": "Escolha o destino e os locais de execução.",
+    "settings_hint": "Intervalos e tempos limite estão em segundos. Expanda os blocos para opções avançadas.",
+    "notifications_hint": "Escolha os canais ou deixe-os desativados. Você poderá alterar as opções depois.",
+    "locations": "Locais de execução",
+    "available": "Disponíveis",
+    "selected": "Selecionados",
+    "request": "Requisição e conexão",
+    "response": "Validação da resposta",
+    "authentication": "Autenticação",
+    "proxy": "Proxy",
+    "extra": "Configurações adicionais",
+    "back": "Voltar",
+    "next": "Próximo",
+    "save": "Salvar alterações",
+    "saving": "Salvando…",
+    "required": "Preencha este campo.",
+    "invalid_url": "Digite uma URL HTTP ou HTTPS com um nome de host.",
+    "number": "Digite um número no intervalo permitido.",
+    "port": "Digite uma porta de 2 a 65535.",
+    "timeout": "O tempo limite deve ser menor que o intervalo.",
+    "ping_timeout": "Quantidade de pacotes × tempo limite deve ser menor que o intervalo.",
+    "entities": "Selecione pelo menos um local.",
+    "status_codes": "Adicione pelo menos um código HTTP aceito.",
+    "json": "Digite um objeto JSON válido.",
+    "save_error": "A verificação não foi salva. Os dados foram mantidos; confira os campos e tente novamente.",
+    "loading": "Carregando configurações…",
+    "load_error": "Não foi possível carregar a verificação. Feche a janela e tente novamente.",
+    "copy": "cópia",
+    "disabled": "Desativado",
+    "summary": "Resumo",
+    "seconds": "s",
+    "summary_empty": "Escolha um destino",
+    "no_channels": "Notificações desativadas",
+    "json_path": "Caminho JSON",
+    "json_value": "Valor JSON esperado",
+    "proxy_host": "Host do proxy",
+    "proxy_port": "Porta do proxy",
+    "proxy_username": "Usuário do proxy",
+    "proxy_password": "Senha do proxy"
+} %}

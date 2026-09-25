@@ -1,4 +1,8 @@
 $( function() {
+	$('#agent-section-head').click(function () { hideAndShowSettings('agent'); });
+	$('.agent-setting-select').selectmenu({change: function () {
+		updateSettings(this.id, 'agent', this.value);
+	}});
 	$('#main-section-head').click(function () {
 		hideAndShowSettings('main');
 	});
@@ -10,9 +14,6 @@ $( function() {
 	});
 	$('#logs-section-head').click(function () {
 		hideAndShowSettings('logs');
-	});
-	$('#rabbitmq-section-head').click(function () {
-		hideAndShowSettings('rabbitmq');
 	});
 	$('#mail-section-head').click(function () {
 		hideAndShowSettings('mail');
@@ -78,6 +79,7 @@ function updateSettings(param, section, val) {
 					$("#" + param).parent().parent().removeClass("update");
 				}, 2500);
 			}
-		}
+		},
+		error: function (xhr) { toastr.error(xhr.responseJSON?.error || xhr.statusText); }
 	});
 }

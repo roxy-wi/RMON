@@ -129,8 +129,9 @@ def show_roxywi_version():
 @validate()
 def scan_port(server_ip: Union[IPvAnyAddress, DomainName]):
     ip = str(server_ip)
-    cmd = f"sudo nmap -sS {ip} |grep -E '^[[:digit:]]'|sed 's/  */ /g'"
-    cmd1 = f"sudo nmap -sS {ip} |head -5|tail -2"
+    scanner = 'nmap -sT' if os.getenv('RMON_CONTAINER') == '1' else 'sudo nmap -sS'
+    cmd = f"{scanner} {ip} |grep -E '^[[:digit:]]'|sed 's/  */ /g'"
+    cmd1 = f"{scanner} {ip} |head -5|tail -2"
 
     stdout, stderr = server_mod.subprocess_execute(cmd)
     stdout1, stderr1 = server_mod.subprocess_execute(cmd1)

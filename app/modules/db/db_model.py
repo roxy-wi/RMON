@@ -248,11 +248,11 @@ class OidcProvider(BaseModel):
     token_endpoint = TextField(null=True)
     userinfo_endpoint = TextField(null=True)
     jwks_uri = TextField(null=True)
-    scope = CharField(constraints=[SQL('DEFAULT "openid email profile"')])
-    subject_claim = CharField(constraints=[SQL('DEFAULT "sub"')])
-    email_claim = CharField(constraints=[SQL('DEFAULT "email"')])
-    username_claim = CharField(constraints=[SQL('DEFAULT "preferred_username"')])
-    groups_claim = CharField(constraints=[SQL('DEFAULT "groups"')])
+    scope = CharField(constraints=[SQL("DEFAULT 'openid email profile'")])
+    subject_claim = CharField(constraints=[SQL("DEFAULT 'sub'")])
+    email_claim = CharField(constraints=[SQL("DEFAULT 'email'")])
+    username_claim = CharField(constraints=[SQL("DEFAULT 'preferred_username'")])
+    groups_claim = CharField(constraints=[SQL("DEFAULT 'groups'")])
     allowed_domains = TextField(null=True)
     auto_create_users = IntegerField(constraints=[SQL('DEFAULT 0')])
     auto_link_by_email = IntegerField(constraints=[SQL('DEFAULT 1')])
@@ -383,6 +383,10 @@ class SmonAgent(BaseModel):
     shared = IntegerField(constraints=[SQL('DEFAULT 0')], index=True)
     port = IntegerField(constraints=[SQL('DEFAULT 5701')])
     region_id = ForeignKeyField(Region, null=True, on_delete='SET NULL', index=True)
+    result_transport = CharField(null=True)
+    applied_result_transport = CharField(null=True)
+    transport_settings_hash = CharField(null=True)
+    transport_checked_at = DateTimeField(null=True)
 
     class Meta:
         table_name = 'smon_agents'
@@ -573,11 +577,12 @@ class SmonHttpCheck(BaseModel):
     body_req = JSONField(null=True)
     ignore_ssl_error = IntegerField(constraints=[SQL('DEFAULT 0')])
     redirects = IntegerField(constraints=[SQL('DEFAULT 10')])
+    ssl_policy = CharField(default='default', constraints=[SQL("DEFAULT 'default'")])
     auth = JSONField(null=True)
     body_json = JSONField(null=True)
     proxy = JSONField(null=True)
     headers_response = JSONField(null=True)
-    accept_cookies = BooleanField(constraints=[SQL('DEFAULT 1')])
+    accept_cookies = BooleanField(constraints=[SQL('DEFAULT TRUE')])
     http_version = IntegerField(constraints=[SQL('DEFAULT 0')])
     resole_to_ip = CharField(null=True)
 
@@ -660,6 +665,31 @@ class InstallationTasks(BaseModel):
 
     class Meta:
         table_name = 'installation_tasks'
+        indexes = ((('status', 'finish_date'), False),)
+
+
+class OperationJob(BaseModel):
+    task = ForeignKeyField(InstallationTasks, primary_key=True, on_delete='CASCADE')
+    server = ForeignKeyField(Server, on_delete='CASCADE')
+    payload = TextField(null=True)
+    status = CharField(default='queued')
+    available_at = DateTimeField()
+    owner = CharField(null=True)
+    lease_until = DateTimeField(null=True)
+    attempts = IntegerField(default=0)
+
+    class Meta:
+        table_name = 'operation_jobs'
+        indexes = ((('status', 'available_at'), False), (('status', 'lease_until'), False),
+                   (('server', 'status', 'task'), False))
+
+
+class OperationLock(BaseModel):
+    server = ForeignKeyField(Server, primary_key=True, on_delete='CASCADE')
+    owner = CharField(null=True, index=True)
+
+    class Meta:
+        table_name = 'operation_locks'
 
 
 class AlertState(BaseModel):
@@ -705,5 +735,5 @@ def create_tables():
              Setting, Cred, Version, ActionHistory, Region,
              SystemInfo, UserName, PD, SmonHistory, SmonAgent, SmonTcpCheck, SmonHttpCheck, SmonPingCheck, SmonDnsCheck, RoxyTool,
              SmonStatusPage, SmonStatusPageCheck, SMON, SmonGroup, MM, RMONAlertsHistory, SmonSMTPCheck, SmonRabbitCheck,
-             Country, MultiCheck, Email, InstallationTasks, Migration, AlertEvent, AlertState, AggregatorLock, IncidentRelay]
+             Country, MultiCheck, Email, InstallationTasks, OperationJob, OperationLock, Migration, AlertEvent, AlertState, AggregatorLock, IncidentRelay]
         )

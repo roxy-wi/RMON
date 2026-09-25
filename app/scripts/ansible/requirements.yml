@@ -1,0 +1,8 @@
+---
+collections:
+  - name: community.docker
+    version: 3.13.3
+  - name: community.general
+    version: 9.5.5
+  - name: community.crypto
+    version: 2.26.9

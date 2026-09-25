@@ -1,0 +1,9 @@
+{% macro service_version(details, lang) -%}
+    {%- if details.get('version_known', details['current_version'] not in ('0', '', '* is not installed')) -%}
+        {{ details['current_version'] }}
+    {%- elif details.get('installed') is sameas false -%}
+        {{ lang.ux.service_not_installed }}
+    {%- else -%}
+        {{ lang.ux.service_version_unknown }}
+    {%- endif -%}
+{%- endmacro %}

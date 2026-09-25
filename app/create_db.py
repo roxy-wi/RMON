@@ -48,14 +48,6 @@ def default_values():
 		{'param': 'use_victoria_metrics', 'value': '0', 'section': 'smon', 'desc': '', 'group_id': '1'},
 		{'param': 'victoria_metrics_select', 'value': '', 'section': 'smon', 'desc': '', 'group_id': '1'},
 		{'param': 'victoria_metrics_insert', 'value': '', 'section': 'smon', 'desc': '', 'group_id': '1'},
-		{'param': 'rabbitmq_enabled', 'value': '0', 'section': 'rabbitmq', 'desc': 'Enable alerting in the WEB panel', 'group_id': '1'},
-		{'param': 'rabbitmq_host', 'value': '127.0.0.1', 'section': 'rabbitmq', 'desc': 'RabbitMQ-server host', 'group_id': '1'},
-		{'param': 'rabbitmq_port', 'value': '5672', 'section': 'rabbitmq', 'desc': 'RabbitMQ-server port', 'group_id': '1'},
-		{'param': 'rabbitmq_port', 'value': '5672', 'section': 'rabbitmq', 'desc': 'RabbitMQ-server port', 'group_id': '1'},
-		{'param': 'rabbitmq_vhost', 'value': '/', 'section': 'rabbitmq', 'desc': 'RabbitMQ-server vhost', 'group_id': '1'},
-		{'param': 'rabbitmq_queue', 'value': 'rmon', 'section': 'rabbitmq', 'desc': 'RabbitMQ-server queue', 'group_id': '1'},
-		{'param': 'rabbitmq_user', 'value': 'rmon', 'section': 'rabbitmq', 'desc': 'RabbitMQ-server user', 'group_id': '1'},
-		{'param': 'rabbitmq_password', 'value': 'rmon123', 'section': 'rabbitmq', 'desc': 'RabbitMQ-server user password', 'group_id': '1'},
 		{'param': 'mail_ssl', 'value': '0', 'section': 'mail', 'desc': 'Enable TLS', 'group_id': '1'},
 		{'param': 'mail_from', 'value': '', 'section': 'mail', 'desc': 'Address of sender', 'group_id': '1'},
 		{'param': 'mail_smtp_host', 'value': '', 'section': 'mail', 'desc': 'SMTP server address', 'group_id': '1'},
@@ -70,7 +62,8 @@ def default_values():
 	]
 
 	try:
-		Setting.insert_many(data_source).on_conflict_ignore().execute()
+		from app.modules.common.agent_transport import setting_rows
+		Setting.insert_many(data_source + setting_rows(1)).on_conflict_ignore().execute()
 	except Exception as e:
 		print(str(e))
 
@@ -124,10 +117,8 @@ def default_values():
 		print(str(e))
 
 	data_source = [
-		{'name': 'rmon-socket', 'current_version': '1.0', 'new_version': '0', 'is_roxy': 1, 'desc': ''},
 		{'name': 'rmon-server', 'current_version': '1.0', 'new_version': '0', 'is_roxy': 1, 'desc': ''},
 		{'name': 'fail2ban', 'current_version': '1.0', 'new_version': '1.0', 'is_roxy': 0, 'desc': 'Fail2ban service'},
-		{'name': 'rabbitmq-server', 'current_version': '1.0', 'new_version': '1.0', 'is_roxy': 0, 'desc': 'Rabbitmq service'},
 	]
 
 	try:
@@ -146,5 +137,20 @@ def default_values():
 
 
 if __name__ == "__main__":
+	# Models describe the current schema; historical rename/drop migrations must
+	# not be replayed against a freshly created database.
+	bootstrap_connection = connect()
+	try:
+		was_empty = not bootstrap_connection.get_tables()
+	finally:
+		bootstrap_connection.close()
 	create_tables()
 	default_values()
+	if was_empty:
+		from app.modules.db.migrations import get_migration_files
+		from app.version import get_service_version
+		if User.select().count() != 3 or Role.select().count() != 4 or not Setting.select().exists():
+			raise RuntimeError('New database initialization is incomplete; migrations were not baselined')
+		for filename in get_migration_files():
+			Migration.create(name=filename[:-3])
+		Version.insert(version=get_service_version()).execute()

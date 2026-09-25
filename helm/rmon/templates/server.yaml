@@ -1,0 +1,130 @@
+{{- if .Values.server.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "rmon.fullname" . }}-server
+  labels:
+    {{- include "rmon.labels" . | nindent 4 }}
+    app.kubernetes.io/component: server
+spec:
+  replicas: {{ ternary 0 1 .Values.maintenance }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "rmon.selector" . | nindent 6 }}
+      app.kubernetes.io/component: server
+  template:
+    metadata:
+      labels:
+        {{- include "rmon.selector" . | nindent 8 }}
+        app.kubernetes.io/component: server
+      annotations:
+        checksum/config: {{ include "rmon.config" . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "rmon.account" . }}
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 45
+      securityContext:
+        runAsUser: 33
+        runAsGroup: 33
+        runAsNonRoot: true
+        fsGroup: 33
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- include "rmon.placement" . | nindent 6 }}
+      {{- include "rmon.colocate" . | nindent 6 }}
+      containers:
+        - name: server
+          image: {{ include "rmon.image" (dict "image" .Values.server.image "version" "7.0") | quote }}
+          imagePullPolicy: {{ .Values.server.image.pullPolicy }}
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          env:
+            - name: RMON_CONFIG_FILE
+              value: /etc/rmon/rmon.cfg
+            - name: RMON_DB_PATH
+              value: /var/lib/rmon/rmon.db
+            - name: RMON_INTERNAL_API_TOKEN_FILE
+              value: /run/rmon-token/token
+            - name: RMON_SERVER_WORKERS
+              value: "1"
+            - name: RMON_SERVER_THREADS
+              value: "4"
+            - name: RMON_SERVER_LOG_PATH
+              value: "-"
+            - name: RMON_SERVER_TRANSPORT
+              value: {{ .Values.server.transport | quote }}
+            {{- if ne .Values.server.transport "http" }}
+            - name: RMON_TLS_CERT_FILE
+              value: /run/rmon-server-tls/tls.crt
+            - name: RMON_TLS_KEY_FILE
+              value: /run/rmon-server-tls/tls.key
+            - name: RMON_TLS_CA_FILE
+              value: /run/rmon-server-tls/ca.crt
+            - name: RMON_PROBE_SCHEME
+              value: https
+            - name: RMON_PROBE_CA_FILE
+              value: /run/rmon-client-tls/ca.crt
+            {{- if eq .Values.server.transport "mtls" }}
+            - name: RMON_PROBE_CLIENT_CERT_FILE
+              value: /run/rmon-client-tls/tls.crt
+            - name: RMON_PROBE_CLIENT_KEY_FILE
+              value: /run/rmon-client-tls/tls.key
+            {{- end }}
+            {{- end }}
+          ports:
+            - name: api
+              containerPort: 5100
+          startupProbe:
+            exec:
+              command: [python, -m, modules.common.probe, ready]
+            periodSeconds: 10
+            timeoutSeconds: 8
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: [python, -m, modules.common.probe, ready]
+            periodSeconds: 15
+            timeoutSeconds: 8
+          livenessProbe:
+            exec:
+              command: [python, -m, modules.common.probe, live]
+            periodSeconds: 30
+            timeoutSeconds: 8
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.server.resources | nindent 12 }}
+          volumeMounts:
+            {{- include "rmon.mounts" . | nindent 12 }}
+            - name: tmp
+              mountPath: /tmp
+            {{- if ne .Values.server.transport "http" }}
+            - name: server-tls
+              mountPath: /run/rmon-server-tls
+              readOnly: true
+            {{- end }}
+      volumes:
+        {{- include "rmon.volumes" . | nindent 8 }}
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 32Mi
+        {{- if ne .Values.server.transport "http" }}
+        - name: server-tls
+          secret:
+            secretName: {{ .Values.server.tls.existingServerSecret }}
+            defaultMode: 0440
+        {{- end }}
+{{- end }}

@@ -1,9 +1,9 @@
 $( function() {
-	$("#ajax-servers input").change(function () {
+	$("#ajax-servers").on('change', 'input', function () {
 		let id = $(this).attr('id').split('-');
 		updateServer(id[1])
 	});
-	$("#ajax-servers select").on('selectmenuchange', function () {
+	$("#ajax-servers").on('selectmenuchange', 'select', function () {
 		let id = $(this).attr('id').split('-');
 		updateServer(id[1])
 	});
@@ -125,10 +125,10 @@ function removeServer(id) {
 		contentType: "application/json; charset=utf-8",
 		statusCode: {
 			204: function (xhr) {
-				$("#server-" + id).remove();
+				RmonUI.removeTableRow("#server-" + id);
 			},
 			404: function (xhr) {
-				$("#server-" + id).remove();
+				RmonUI.removeTableRow("#server-" + id);
 			}
 		},
 		success: function (data) {
@@ -244,11 +244,14 @@ function serverIsUp(server_id) {
 			} else {
 				$('#server_enabled-' + server_id).prop('checked', false);
 			}
-			$('#server_enabled-' + server_id).checkboxradio("refresh");
+			const enabled = $('#server_enabled-' + server_id);
+			if (enabled.checkboxradio('instance')) enabled.checkboxradio('refresh');
 			$('#servergroup-' + server_id).val(data.group_id).change();
 			$('#credentials-' + server_id).val(data.cred_id).change();
-			$('#servergroup-' + server_id).selectmenu("refresh");
-			$('#credentials-' + server_id).selectmenu("refresh");
+			for (const prefix of ['servergroup-', 'credentials-']) {
+				const select = $('#' + prefix + server_id);
+				if (select.selectmenu('instance')) select.selectmenu('refresh');
+			}
 		}
 	});
 }

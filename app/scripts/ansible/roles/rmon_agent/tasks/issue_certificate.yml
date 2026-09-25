@@ -1,0 +1,54 @@
+---
+- name: Require an authorized signing CA for certificate generation
+  ansible.builtin.assert:
+    that:
+      - agent_tls_generate | bool
+      - agent_tls_ca_file | length > 0
+      - agent_tls_ca_key_file | length > 0
+    fail_msg: Supply existing client credentials or enable generation with the trusted CA certificate and signing key on the controller.
+
+- name: Issue a client certificate without sending the CA key to the agent
+  delegate_to: localhost
+  become: false
+  block:
+    - name: Create the private certificate directory
+      ansible.builtin.file:
+        path: '{{ agent_certificate_directory }}/{{ agent_uuid }}'
+        state: directory
+        mode: '0700'
+
+    - name: Generate the agent private key when needed
+      community.crypto.openssl_privatekey:
+        path: '{{ agent_certificate_directory }}/{{ agent_uuid }}/agent.key'
+        type: ECC
+        curve: secp256r1
+        mode: '0600'
+      no_log: true
+
+    - name: Create a client authentication certificate request
+      community.crypto.openssl_csr_pipe:
+        privatekey_path: '{{ agent_certificate_directory }}/{{ agent_uuid }}/agent.key'
+        common_name: 'rmon-agent-{{ agent_uuid }}'
+        use_common_name_for_san: false
+        key_usage: [digitalSignature]
+        extended_key_usage: [clientAuth]
+        basic_constraints: ['CA:FALSE']
+        basic_constraints_critical: true
+      register: agent_client_csr
+      no_log: true
+
+    - name: Sign the agent certificate with the supplied CA
+      community.crypto.x509_certificate:
+        path: '{{ agent_certificate_directory }}/{{ agent_uuid }}/agent.crt'
+        csr_content: '{{ agent_client_csr.csr }}'
+        provider: ownca
+        ownca_path: '{{ agent_tls_ca_file }}'
+        ownca_privatekey_path: '{{ agent_tls_ca_key_file }}'
+        ownca_not_after: +365d
+        mode: '0644'
+      no_log: true
+
+    - name: Select the generated credentials for copying
+      ansible.builtin.set_fact:
+        agent_client_cert_source: '{{ agent_certificate_directory }}/{{ agent_uuid }}/agent.crt'
+        agent_client_key_source: '{{ agent_certificate_directory }}/{{ agent_uuid }}/agent.key'

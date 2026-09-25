@@ -34,7 +34,7 @@ $( function() {
 			}
 		}]
 	});
-	$( "#ajax-users input" ).change(function() {
+	$("#ajax-users").on('change', 'input', function() {
 		let id = $(this).attr('id').split('-');
 		if ($('#role-'+id + ' option:selected' ).val() === 'Select a role') {
 			toastr.warning(superAdmin_pass);
@@ -43,7 +43,7 @@ $( function() {
 			updateUser(id[1])
 		}
 	});
-	$( "#ajax-users select" ).on('selectmenuchange',function() {
+	$("#ajax-users").on('selectmenuchange', 'select', function() {
 		let id = $(this).attr('id').split('-');
 		if ($('#role-'+id + ' option:selected' ).val() === 'Select a role') {
 			toastr.warning(superAdmin_pass);
@@ -191,7 +191,7 @@ function removeUser(id) {
 					toastr.error(data.error);
 				}
 			} else {
-				$("#user-" + id).remove();
+				RmonUI.removeTableRow("#user-" + id);
 			}
 		}
 	});

@@ -1,4 +1,30 @@
 {% set lang_short = 'en' %}
+{% set agent_transport = {
+    "section": "Agent connections",
+    "label": "Result delivery",
+    "preserve": "Keep current configuration",
+    "unknown": "Not yet verified",
+    "pending": "Changes pending application",
+    "checked": "Connection verified",
+    "help": "Uses the agent owner's group settings. Apply connection changes with Reconfigure. Configure the result server for the selected mode. The agent management API remains HTTP.",
+    "settings_help": "Certificate paths refer to files accessible to RMON inside this group's directory:",
+    "fields": {
+        "agent_result_transport": "Default connection",
+        "agent_tls_ca_file": "Trusted CA",
+        "agent_tls_generate": "Generate client certificates",
+        "agent_tls_ca_key_file": "CA signing key",
+        "agent_tls_cert_file": "Client certificate",
+        "agent_tls_key_file": "Client private key"
+    },
+    "descriptions": {
+        "agent_result_transport": "Default for newly installed agents. Existing agents keep their selected mode.",
+        "agent_tls_ca_file": "Path to the trusted CA bundle. Leave empty for HTTPS with system trust. Required for mTLS.",
+        "agent_tls_generate": "Issue a separate client certificate for each agent when a pair is missing.",
+        "agent_tls_ca_key_file": "Path to the CA signing key for certificate generation. The key stays in RMON.",
+        "agent_tls_cert_file": "Path to an existing client certificate. Use {uuid} for an individual file for each agent.",
+        "agent_tls_key_file": "Path to the matching client private key. Supports {uuid}."
+    }
+} %}
 {% set menu_links = dict() %}
 {% set menu_links = {
     "overview": {
@@ -45,15 +71,6 @@
     }
 %}
 {% set settings = {
-    "rabbitmq": {
-        "rabbitmq_enabled": "Enable alerting in the WEB panel",
-        "rabbitmq_host": "RabbitMQ-server host",
-        "rabbitmq_port": "RabbitMQ-server port",
-        "rabbitmq_vhost": "RabbitMQ-server vhost",
-        "rabbitmq_queue": "RabbitMQ-server queue",
-        "rabbitmq_user": "RabbitMQ-server user",
-        "rabbitmq_password": "RabbitMQ-server password",
-        },
     "monitoring": {
         "port_scan_interval": "Check interval for Port scanner (in minutes)",
         "portscanner_keep_history_range": "Retention period for Port scanner history",
@@ -166,7 +183,6 @@
     "alert_master_backup": "Alert about changing Master/Backup status",
     "new_version": "There is a new version RMON. Check the",
     "all_alerts_enabled": "Alerts are enabled",
-    "disable_alerts": "Disable alerting",
     "work_with_prev": "Here you can work with previous versions of configs",
     "roll_back": "Roll back to them, view or delete",
     "files_been_deleted": "The following files have been deleted",
@@ -240,7 +256,6 @@
         "auto_start_desc": "The Auto Start service allows to restart the HAProxy, NGINX, Apache and Keepalived services if they are down",
         "metrics_desc": "Collects number of connections for HAProxy, NGINX, Apache and HAProxy WAF services",
         "p_s_desc": "Checks the server for open ports and saves history",
-        "socket_desc": "Socket is a service for sending alerts and notifications",
         "a_new_version": "There is a newer version",
         "no_new_version": "There is not a newer version",
         "main_app": "The main application",
@@ -602,7 +617,6 @@
     "test2": "test",
     "disabled": "disabled",
     "via": "via",
-    "web_panel": "web panel",
     "message": "message",
     "menu": "menu",
     "language": "language",
@@ -773,3 +787,92 @@
     "accept": "accept",
     }
 %}
+
+{% set ux = {
+    "skip_content": "Skip to content",
+    "toggle_menu": "Toggle navigation",
+    "close_menu": "Close navigation",
+    "retry": "Try again",
+    "loading": "Loading…",
+    "widget_error": "This information is temporarily unavailable.",
+    "network_error": "Cannot reach RMON. Check your connection and try again.",
+    "request_error": "The request could not be completed. Please try again.",
+    "server_error": "RMON could not complete this request. Try again shortly.",
+    "validation_error": "Check the required fields and their values, then try again.",
+    "unauthorized": "Your session has expired. Sign in again to continue.",
+    "forbidden": "You do not have permission to perform this action.",
+    "not_found": "This item is no longer available. Refresh the page.",
+    "conflict": "This item has changed or already exists. Refresh and try again.",
+    "rate_limit": "Too many requests. Wait a moment and try again.",
+    "login_failed": "Login or password is incorrect, or this account is disabled.",
+    "show_password": "Show password",
+    "hide_password": "Hide password",
+    "no_checks": "No checks yet",
+    "no_checks_description": "Add your first check to monitor availability and receive alerts.",
+    "no_status_pages": "No status pages yet",
+    "no_status_pages_description": "Create a public page to share the availability of your monitored services.",
+    "slug_hint": "Use lowercase letters, numbers, underscores or dashes. Consecutive dashes are not allowed.",
+    "table_label": "Data table. Scroll horizontally to see all columns.",
+    "name_required": "Enter a name.",
+    "slug_invalid": "Enter a valid URL slug.",
+    "edit": "Edit",
+    "delete": "Delete",
+    "action": "Action",
+    "service_not_installed": "Not installed",
+    "service_version_unknown": "Version unavailable"
+} %}
+
+
+{% set check_editor = {
+    "ssl_policy": "HTTPS policy",
+    "ssl_policy_default": "Default",
+    "ssl_policy_https": "Require HTTPS",
+    "ssl_policy_http": "Require HTTP",
+    "ssl_policy_hint": "Checks the final URL after allowed redirects. HTTPS to HTTP is always an error, including in Default mode. Ignoring certificate errors does not disable this policy.",
+    "create": "Create check",
+    "edit": "Edit check",
+    "sections": "Check setup",
+    "target": "Check",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "intro": "Start with the target. Defaults are ready to use; tune advanced settings only when needed.",
+    "target_hint": "Choose what to monitor and where to run the check.",
+    "settings_hint": "Intervals and timeouts are in seconds. Expand the blocks below for advanced settings.",
+    "notifications_hint": "Choose notification channels or leave them disabled. You can change these settings later.",
+    "locations": "Run checks from",
+    "available": "Available",
+    "selected": "Selected",
+    "request": "Request and connection",
+    "response": "Response validation",
+    "authentication": "Authentication",
+    "proxy": "Proxy",
+    "extra": "Additional settings",
+    "back": "Back",
+    "next": "Next",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "required": "Fill in this field.",
+    "invalid_url": "Enter an HTTP or HTTPS URL with a hostname.",
+    "number": "Enter a number in the allowed range.",
+    "port": "Enter a port from 2 to 65535.",
+    "timeout": "The timeout must be shorter than the interval.",
+    "ping_timeout": "Packet count × timeout must be shorter than the interval.",
+    "entities": "Select at least one location.",
+    "status_codes": "Add at least one accepted HTTP status code.",
+    "json": "Enter a valid JSON object.",
+    "save_error": "The check was not saved. Your input is still here; review the fields and try again.",
+    "loading": "Loading check settings…",
+    "load_error": "Unable to load the check. Close this window and try again.",
+    "copy": "copy",
+    "disabled": "Disabled",
+    "summary": "Review",
+    "seconds": "s",
+    "summary_empty": "Choose a target",
+    "no_channels": "Notifications are disabled",
+    "json_path": "JSON path",
+    "json_value": "Expected JSON value",
+    "proxy_host": "Proxy hostname",
+    "proxy_port": "Proxy port",
+    "proxy_username": "Proxy username",
+    "proxy_password": "Proxy password"
+} %}

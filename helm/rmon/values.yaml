@@ -1,0 +1,118 @@
+image:
+  repository: ghcr.io/roxy-wi/rmon/rmon-web
+  tag: ""
+  digest: ""
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Address reachable by users and agents. HTTPS is recommended.
+publicURL: ""
+agentControlURL: ""
+cookieSecure: true
+agentImage: ghcr.io/roxy-wi/rmon/rmon-agent:2.0
+
+# Supply a complete rmon.cfg in an existing Secret, or configure the map below.
+existingConfigSecret: ""
+config:
+  main:
+    log_path: /var/log/rmon
+    lib_path: /var/lib/rmon
+    # Required Fernet key. Preserve the existing value when moving RMON.
+    secret_phrase: ""
+  mysql:
+    enable: 0
+    mysql_host: ""
+    mysql_port: 3306
+    mysql_user: rmon
+    mysql_password: ""
+    mysql_db: rmon
+  pgsql:
+    enable: 0
+    host: ""
+    port: 5432
+    user: rmon
+    password: ""
+    db: rmon
+
+# Enable only when preparing a new installation. An existing database is
+# checked without changing its schema, accounts or application keys.
+bootstrap:
+  enabled: false
+  existingSecret: ""
+  passwordKey: admin-password
+
+# Data and keys must remain persistent even with an external database.
+# Use RWO storage on one node for SQLite. RWX is for external databases only.
+persistence:
+  existingClaim: ""
+  size: 5Gi
+  storageClass: ""
+  accessModes: [ReadWriteOnce]
+  keep: true
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# The published web image supports amd64, matching the default node selection.
+nodeSelector:
+  kubernetes.io/arch: amd64
+tolerations: []
+podAnnotations: {}
+extraEnv: []
+extraVolumes: []
+extraVolumeMounts: []
+maintenance: false
+migration:
+  enabled: false
+
+web:
+  replicaCount: 1
+  resources: {}
+scheduler:
+  enabled: true
+  resources: {}
+operations:
+  enabled: true
+  terminationGracePeriodSeconds: 1800
+  resources: {}
+
+service:
+  port: 8080
+  annotations: {}
+ingress:
+  enabled: false
+  className: ""
+  host: ""
+  annotations: {}
+  tls: []
+
+server:
+  enabled: true
+  image:
+    repository: ghcr.io/roxy-wi/rmon/rmon-server
+    tag: "7.0"
+    digest: ""
+    pullPolicy: IfNotPresent
+  # The same token is used by RMON and its result server.
+  existingTokenSecret: ""
+  tokenKey: token
+  # Used when enabled=false. Mount any outbound TLS files with extraVolumes.
+  externalURL: ""
+  transport: http
+  # Server identity: tls.crt, tls.key, ca.crt. Client identity: ca.crt and,
+  # for mTLS, tls.crt/tls.key. The server certificate must cover its Service
+  # DNS name and 127.0.0.1 (used by the local health probe).
+  tls:
+    existingServerSecret: ""
+    existingClientSecret: ""
+  service:
+    type: ClusterIP
+    port: 5100
+    nodePort: null
+    annotations: {}
+    loadBalancerSourceRanges: []
+  resources: {}

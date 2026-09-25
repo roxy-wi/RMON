@@ -1,0 +1,53 @@
+---
+- name: Check whether Docker is installed
+  ansible.builtin.command:
+    argv: [docker, --version]
+  register: agent_docker_cli
+  changed_when: false
+  failed_when: false
+
+- name: Check the supported package manager
+  ansible.builtin.assert:
+    that: ansible_facts.os_family in ['Debian', 'RedHat']
+    fail_msg: Docker installation requires a Debian/Ubuntu or EL host.
+
+- name: Read installed packages before contacting package mirrors
+  ansible.builtin.package_facts:
+    manager: auto
+  when: ansible_facts.os_family == 'Debian'
+
+- name: Install Docker and module dependencies on Debian or Ubuntu
+  vars:
+    agent_required_packages: "{{ ['python3-requests', 'python3-cryptography', 'openssl'] + (['docker.io'] if agent_docker_cli.rc != 0 else []) }}"
+  ansible.builtin.apt:
+    name: '{{ agent_required_packages }}'
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+  when:
+    - ansible_facts.os_family == 'Debian'
+    - agent_required_packages | difference(ansible_facts.packages.keys() | list) | length > 0
+
+- name: Configure the Docker repository on EL
+  ansible.builtin.yum_repository:
+    name: docker-ce-stable
+    description: Docker CE stable
+    baseurl: https://download.docker.com/linux/centos/$releasever/$basearch/stable
+    gpgcheck: true
+    gpgkey: https://download.docker.com/linux/centos/gpg
+    enabled: true
+  when:
+    - ansible_facts.os_family == 'RedHat'
+    - agent_docker_cli.rc != 0
+
+- name: Install Docker and module dependencies on EL
+  ansible.builtin.dnf:
+    name: "{{ ['python3-requests', 'python3-cryptography', 'openssl'] + (['docker-ce', 'docker-ce-cli', 'containerd.io'] if agent_docker_cli.rc != 0 else []) }}"
+    state: present
+  when: ansible_facts.os_family == 'RedHat'
+
+- name: Enable and start Docker
+  ansible.builtin.systemd_service:
+    name: docker
+    state: started
+    enabled: true

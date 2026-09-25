@@ -1,3 +1,4 @@
+<!doctype html>
 <html lang="{{lang|default('en')}}">
 {% set chosen_lang = lang|default('en') %}
 {% import 'languages/'+lang|default('en')+'.html' as lang %}
@@ -21,17 +22,20 @@
               data-unknown="{{ lang.smon_page.desc.UNKNOWN }}" data-warning="{{ lang.smon_page.desc.WARNING }}"/>
         {% include 'include/main_head.html' %}
 	</head>
-	<body>
+	<body class="app-shell">
+        <a href="#main-content" class="skip-link">{{ lang.ux.skip_content }}</a>
 		{% if g.user_params['user'] %}
-		<script>show_version();</script>
-            <input type="hidden" id="user_group_socket" value="{{ g.user_params['group_id'] }}">
-            <input type="hidden" id="user_id_socket" value="{{ g.user_params['user_id'] }}">
+        <script>$(show_version);</script>
 		{% include 'include/main_menu.html' %}
-		<div class="container">
+		<main class="container" id="main-content" tabindex="-1">
+            <header class="page-header">
+                <button type="button" id="menu-toggle" class="icon-button" aria-controls="main-navigation" aria-expanded="true" aria-label="{{ lang.ux.toggle_menu }}">☰</button>
 			<h2>
 				{% block h2 %}{% endblock %}
-				{% include 'include/login.html' %}
 			</h2>
+                {% include 'include/login.html' %}
+            </header>
+            <button type="button" id="menu-backdrop" class="menu-backdrop" tabindex="-1" aria-label="{{ lang.ux.close_menu }}" hidden></button>
 			<ul id='browse_history'></ul>
 			{% if g.user_params['role'] %}
 				{% if g.user_params['role'] <= 2 %}
@@ -44,7 +48,7 @@
 			{% block content %}{% endblock %}
 			<div id="ajax-compare"></div>
 			<div id="ajax"></div>			
-		</div>	
+		</main>
 		<div id="show-updates" style="display: none;">	
 			<div>
 				{{lang.phrases.new_version}} <a href="{{ url_for('admin.admin') }}#updatehapwi" class="link">{{lang.words.w_update|title()}}</a>
@@ -53,13 +57,13 @@
 		<div class="footer">
 			<a href="#" id="hide_menu" title="{{lang.words.hide|title()}} {{lang.words.menu}}" style="float: left;">
 				<span class="ui-state-default ui-corner-all">
-					<span class="ui-icon ui-icon-arrowthick-1-w" id="arrow"></span>
+					<span class="ui-icon ui-icon-arrowthick-1-w" ></span>
 				</span>
 			</a>
 			<div class="show_menu" style="display: none; float: left;">
 				<a href="#" id="show_menu" title="{{lang.words.show|title()}} {{lang.words.menu}}">
 					<span class="ui-state-default ui-corner-all">
-						<span class="ui-icon ui-icon-arrowthick-1-e" id="arrow"></span>
+						<span class="ui-icon ui-icon-arrowthick-1-e" ></span>
 					</span>
 				</a>
 			</div>
@@ -83,12 +87,6 @@
 		</div>
 		<div id="show-user-settings" style="display: none;">
 			<table class="overview" id="show-user-settings-table" title="{{lang.words.user3|title()}} {{lang.words.settings}}">
-				<tr>
-					<td class="padding20" style="width: 70%">{{lang.words.alerts|title()}}</td>
-					<td>
-						{{ checkbox('disable_alerting') }}
-					</td>
-				</tr>
 				<tr class="padding20">
 					<td class="padding20">{{lang.words.language|title()}}</td>
 					<td>

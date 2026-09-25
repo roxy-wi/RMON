@@ -13,6 +13,7 @@ import app.modules.tools.smon as smon_mod
 from app.middleware import get_user_params, page_for_admin, check_group
 from app.modules.roxywi.class_models import BaseResponse, GroupQuery, SettingsRequest
 from app.modules.common.common_classes import SupportClass
+from app.modules.common import agent_transport
 
 
 class SettingsView(MethodView):
@@ -31,10 +32,10 @@ class SettingsView(MethodView):
         parameters:
         - name: section
           in: path
-          description: The name of the settings section. Only 'main', 'rmon', 'rabbitmq', 'ldap', 'monitoring', 'logs' are allowed. If none get all settings.
+          description: The name of the settings section. Only 'main', 'rmon', 'ldap', 'monitoring', 'logs' are allowed. If none get all settings.
           required: true
           type: string
-          enum: ['main', 'rmon', 'rabbitmq', 'ldap', 'monitoring', 'logs']
+          enum: ['main', 'rmon', 'ldap', 'monitoring', 'logs']
         - name: group_id
           in: query
           description: This parameter is used only for the superAdmin role.
@@ -74,9 +75,10 @@ class SettingsView(MethodView):
         try:
             group_id = SupportClass.return_group_id(query)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get Settings')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get Settings')
 
-        settings = sql.get_setting('', group_id=group_id, section=section, all=1)
+        settings = sql.get_setting('', group_id=group_id,
+                                   section='smon' if section == 'rmon' else section, all=section is None)
 
         return jsonify([model_to_dict(setting) for setting in settings])
 
@@ -92,10 +94,10 @@ class SettingsView(MethodView):
         parameters:
         - name: section
           in: path
-          description: The name of the settings section. Only 'main', 'rmon', 'rabbitmq', 'ldap', 'monitoring', 'logs' are allowed.
+          description: The name of the settings section. Only 'main', 'rmon', 'ldap', 'monitoring', 'logs' are allowed.
           required: true
           type: string
-          enum: ['main', 'rmon', 'rabbitmq', 'ldap', 'monitoring', 'logs']
+          enum: ['main', 'rmon', 'ldap', 'monitoring', 'logs']
         - name: group_id
           in: query
           description: The parameter is used only for the superAdmin role.
@@ -126,12 +128,19 @@ class SettingsView(MethodView):
         try:
             group_id = SupportClass.return_group_id(query)
         except Exception as e:
-            return roxywi_common.handle_json_exceptions(e, 'Cannot get Settings')
+            return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot get Settings')
         try:
+            if body.param in agent_transport.DEFAULTS or section == 'agent':
+                if section != 'agent':
+                    raise ValueError('Use the agent connection settings section')
+                body.value = agent_transport.validate_setting(body.param, body.value, group_id)
             sql.update_setting(body.param, body.value, group_id)
         except Exception as e:
-            roxywi_common.handle_json_exceptions(e, 'Cannot update settings')
-        roxywi_common.logger(f'The {body.param} setting has been changed to: {body.value}', login=1)
+            return roxywi_common.handle_json_exceptions(e, 'Cannot update settings'), 400
+        if body.param in agent_transport.DEFAULTS:
+            roxywi_common.logger(f'The {body.param} setting has been changed', login=1)
+        else:
+            roxywi_common.logger(f'The {body.param} setting has been changed to: {body.value}', login=1)
 
         if body.param == 'master_port':
             try:

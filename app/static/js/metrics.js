@@ -5,11 +5,11 @@ function getChartDataHapWiRam(ip) {
     }
     $.ajax({
         url: "/metrics/ram",
+        global: false,
+        error: () => RmonUI.widgetState("#ram_div", "error", () => getChartDataHapWiRam(ip)),
 		data: JSON.stringify(jsonData),
         contentType: "application/json; charset=utf-8",
-		beforeSend: function() {
-			$('#ram').html('<img class="loading_hapwi_overview" src="/static/images/loading.gif" alt="loading..." />')
-		},
+		beforeSend: () => RmonUI.widgetState("#ram_div", "loading"),
 		type: "POST",
         success: function (result) {
             let data = [];
@@ -19,6 +19,7 @@ function getChartDataHapWiRam(ip) {
 
             // Преобразование значений в числа
             const formattedData = ramsData.map(value => parseFloat(value));
+            RmonUI.widgetState("#ram_div", "ready");
             renderChartHapWiRam(formattedData);
         }
     });
@@ -83,6 +84,9 @@ function getChartDataHapWiCpu(ip) {
     }
     $.ajax({
         url: "/metrics/cpu",
+        global: false,
+        beforeSend: () => RmonUI.widgetState("#cpu_div", "loading"),
+        error: () => RmonUI.widgetState("#cpu_div", "error", () => getChartDataHapWiCpu(ip)),
 		data: JSON.stringify(jsonData),
         contentType: "application/json; charset=utf-8",
 		type: "POST",
@@ -92,6 +96,7 @@ function getChartDataHapWiCpu(ip) {
 
             // Преобразование значений в числа
             const formattedData = ramsData.map(value => parseFloat(value));
+            RmonUI.widgetState("#cpu_div", "ready");
             renderChartHapWiCpu(formattedData);
         }
     });

@@ -14,7 +14,7 @@ import app.modules.db.server as server_sql
 import app.modules.tools.smon_agent as smon_agent
 import app.modules.tools.common as tools_common
 import app.modules.roxywi.common as roxywi_common
-import app.modules.server.server as server_mod
+from app.modules.common import agent_transport
 
 
 def _require_agent_access(agent_id: int, server_ip: str = None):
@@ -140,6 +140,15 @@ def get_free_agents():
     return jsonify(servers)
 
 
+@bp.get('/agent/transport-settings')
+@jwt_required()
+@get_user_params()
+@page_for_admin(level=2)
+def get_agent_transport_settings():
+    group_id = g.user_params['group_id']
+    return jsonify(result_transport=agent_transport.group_settings(group_id)['agent_result_transport'])
+
+
 @bp.get('/agent/count')
 @jwt_required()
 def get_agent_count():
@@ -157,7 +166,9 @@ def get_agent_count():
 def get_agent_info(agent_id):
     try:
         _require_agent_access(agent_id)
-        agent_data = smon_sql.get_agent(agent_id)
+        agent_data = list(smon_sql.get_agent(agent_id))
+        for item in agent_data:
+            item.transport_pending = agent_transport.pending(item)
     except Exception as e:
         return f'{e}'
 
@@ -205,7 +216,7 @@ def get_agent_version(server_ip):
             j_resp['update'] = "1"
         return jsonify(j_resp)
     except Exception as e:
-        return f'{e}'
+        return jsonify(error='Cannot get agent version'), 502
 
 
 @bp.get('/agent/uptime/<server_ip>')
@@ -217,9 +228,12 @@ def get_agent_uptime(server_ip):
 
     try:
         req = smon_agent.send_get_request_to_agent(agent_id, agent.ip, 'uptime')
-        return req
+        data = json.loads(req)
+        if not isinstance(data, dict) or not isinstance(data.get('uptime'), str):
+            raise ValueError('Invalid agent uptime response')
+        return jsonify(data)
     except Exception as e:
-        return f'{e}'
+        return jsonify(error='Cannot get agent uptime'), 502
 
 
 @bp.get('/agent/status/<server_ip>')
@@ -230,10 +244,9 @@ def get_agent_status(server_ip):
     agent = _require_agent_access(agent_id, server_ip)
 
     try:
-        req = smon_agent.send_get_request_to_agent(agent_id, agent.ip, 'scheduler')
-        return req
+        return jsonify(smon_agent.get_agent_health(agent_id, agent.ip))
     except Exception as e:
-        return f'{e}'
+        return jsonify(error='Cannot get agent health. Check connectivity and update agents without a health endpoint.'), 502
 
 
 @bp.get('/agent/checks/<server_ip>')
@@ -245,9 +258,12 @@ def get_agent_checks(server_ip):
 
     try:
         req = smon_agent.send_get_request_to_agent(agent_id, agent.ip, 'checks')
-        return req
+        count = json.loads(req)
+        if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+            raise ValueError('Invalid agent check count')
+        return jsonify(count)
     except Exception as e:
-        return f'{e}'
+        return jsonify(error='Cannot get agent check count'), 502
 
 
 @bp.post('/agent/action/<any(start, stop, restart):action>')
@@ -255,12 +271,11 @@ def get_agent_checks(server_ip):
 @get_user_params()
 @page_for_admin(level=2)
 def agent_action(action):
-    agent = _require_agent_access(int(request.form.get('agent_id')))
-    server_ip = agent.ip
+    agent_id = int(request.form.get('agent_id'))
+    _require_agent_access(agent_id)
 
     try:
-        command = f'sudo systemctl {action} rmon-agent'
-        server_mod.ssh_command(server_ip, command, timeout=30)
+        task_id = smon_agent.run_agent_action(agent_id, action)
     except Exception as e:
-        return f'{e}'
-    return 'ok'
+        return jsonify(error=str(e)), 502
+    return jsonify(status='queued', task_id=task_id), 202

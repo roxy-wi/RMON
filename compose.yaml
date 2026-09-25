@@ -1,0 +1,88 @@
+x-rmon: &rmon
+    image: "${RMON_WEB_IMAGE:-ghcr.io/roxy-wi/rmon/rmon-web:1.4.0}"
+    build: .
+    restart: unless-stopped
+    environment:
+      - RMON_PUBLIC_URL
+      - RMON_COOKIE_SECURE
+      - RMON_AGENT_IMAGE
+      - RMON_AGENT_CONTROL_URL
+      - RMON_CONFIG_FILE
+      - RMON_DB_PATH
+      - RMON_SECRET_KEY
+      - RMON_SECRET_KEY_FILE
+      - RMON_SECRET_PHRASE
+      - RMON_JWT_ALGORITHM
+      - RMON_JWT_SECRET_KEY
+      - RMON_JWT_PRIVATE_KEY_FILE
+      - RMON_JWT_PUBLIC_KEY_FILE
+      - RMON_SERVER_INTERNAL_URL
+      - RMON_SERVER_INTERNAL_TOKEN_FILE
+      - RMON_SERVER_CA_FILE
+      - RMON_SERVER_CLIENT_CERT_FILE
+      - RMON_SERVER_CLIENT_KEY_FILE
+    volumes:
+      - "${RMON_CONFIG_SOURCE:-rmon-config}:/etc/rmon"
+      - "${RMON_DATA_SOURCE:-rmon-data}:/var/lib/rmon"
+      - "${RMON_LOG_SOURCE:-rmon-logs}:/var/log/rmon"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    stop_grace_period: 45s
+    security_opt:
+      - no-new-privileges:true
+    sysctls:
+      net.ipv4.ping_group_range: "0 2147483647"
+
+services:
+  web:
+    <<: *rmon
+
+  scheduler:
+    <<: *rmon
+    command: [scheduler]
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, /opt/rmon-venv/bin/python, -m, container.runtime, healthcheck, --role, scheduler]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+
+  operations:
+    <<: *rmon
+    command: [operations]
+    stop_grace_period: 30m
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, /opt/rmon-venv/bin/python, -m, container.runtime, healthcheck, --role, operations]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+
+  proxy:
+    image: "${RMON_PROXY_IMAGE:-rmon-proxy:local}"
+    build:
+      context: container/nginx
+    restart: unless-stopped
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      RMON_PROXY_SCHEME: "${RMON_PROXY_SCHEME:-https}"
+      RMON_TLS_NAME: "${RMON_TLS_NAME:-localhost}"
+      RMON_SELF_SIGNED: "${RMON_SELF_SIGNED:-1}"
+    ports:
+      - "${RMON_BIND_IP:-0.0.0.0}:${RMON_WEB_PORT:-443}:8080"
+    volumes:
+      - "${RMON_TLS_SOURCE:-rmon-tls}:/etc/ssl/certs/rmon"
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  rmon-config:
+  rmon-data:
+  rmon-logs:
+  rmon-tls:

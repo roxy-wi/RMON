@@ -1,57 +1,47 @@
-# ![alt text](https://rmon.io/static/images/logo/orange_640.png "Logo")
-RMON (remote monitoring) is an easy to understand and use geo-distributed monitoring.
+# RMON
 
-# Get involved
-* [Telegram Channel](https://t.me/roxy_wi_channel) about RMON, talks and questions are welcome
+RMON monitors service availability from multiple locations, records results and alerts your team. It supports HTTP(S), TCP, Ping, DNS, SMTP and RabbitMQ checks, notification channels and public status pages.
 
-![alt text](https://rmon.io/static//images/rmon_history_dashboard.png "RMON check history")
+![RMON Dashboard](https://rmon.io/static/images/docs/dashboard.jpg)
 
-# Features:
-1. Checking ping availability
-2. Checking DNS records availability
-3. Checking the availability of TCP and UDP ports
-4. Checking HTTP statuses
-5. Checking the BODY of HTTP(s) responses
-6. Checking the SSL expiration date
-7. Checking SMTP service
-8. Checking RabbitMQ service
-9. Sending Telegram, Slack, PagerDuty and Email notifications
-10. Real-time alerting via RMON web interface
-11. Checking network connectivity
-12. Providing information upon response time
-13. Providing information upon servers uptime and downtime
-14. Storing the alarm history
-15. Storing the history of events for each host
-16. Status pages
-17. RMON Agents 
-18. Network tools
+## Get started
 
-# Install
+Follow the [installation guide](https://rmon.io/installation) for native installations or Docker. For a new Docker deployment, prepare `compose.yaml` and `.env` as described in the [Docker guide](https://rmon.io/installation#docker), make the selected images available on the host, then run:
 
-For installation on EL and Ubuntu read this [guide](https://rmon.io/installation)
+```sh
+docker compose config --quiet
+docker compose run --rm --no-deps web init
+docker compose up -d --no-build
+```
 
-## Security configuration
+Choose the administrator password when prompted and open your RMON HTTPS address. For an existing installation, follow the [migration guide](https://rmon.io/installation#docker-existing-rmon-installation) and preserve the database and application keys; do not run `init`.
 
-RMON no longer ships reusable application or credential-encryption secrets. Set these values in the service environment before starting RMON:
+Add [hosts and SSH credentials](https://rmon.io/howto/setup), [install agents](https://rmon.io/howto/manage-agents), then [create a check](https://rmon.io/howto/assign-checks). The website covers [HTTPS and mTLS settings](https://rmon.io/settings#agent-connections), [notifications](https://rmon.io/howto/notifications), [status pages](https://rmon.io/howto/status-pages) and [updates and backups](https://rmon.io/update-guide).
 
-- `RMON_SECRET_KEY`: a random value of at least 32 characters for Flask sessions.
-- `RMON_SECRET_PHRASE`: a Fernet key for stored SSH passwords, passphrases, and private keys. Generate one with `python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`.
-- `RMON_JWT_PRIVATE_KEY_FILE` and `RMON_JWT_PUBLIC_KEY_FILE`: optional overrides for the default JWT key paths in `/var/lib/rmon/keys`.
+For Kubernetes, prepare the Secrets, storage and `values.yaml` using the [Kubernetes guide](https://rmon.io/installation#kubernetes), then install:
 
-The Flask secret may instead be stored in `RMON_SECRET_KEY_FILE`; when neither setting exists, RMON creates `/var/lib/rmon/keys/flask-secret` with mode `0600`. The scheduler itself remains enabled by default, but its unauthenticated REST API is disabled. Set `RMON_SCHEDULER_ENABLED=0` when a separate scheduler process is used.
+```sh
+helm upgrade --install rmon oci://ghcr.io/roxy-wi/rmon/rmon-chart \
+  --version 1.4.2 --namespace rmon --create-namespace \
+  --values values.yaml --wait --timeout 10m
+```
 
-To rotate an existing credential key, back up the database and run `rotate_credential_secret.py` with both `RMON_OLD_SECRET_PHRASE` and the new `RMON_SECRET_PHRASE` in the environment. The update is transactional and can safely skip values that were already rotated.
+## Plans and support
 
-## OpenID Connect
+RMON is a commercial product. See [documentation](https://rmon.io/howto) and [support contacts](https://rmon.io/contacts).
 
-Super administrators can configure one or more OIDC providers under **Admin area → OIDC**. RMON supports discovery metadata, signed ID-token validation through JWKS, optional UserInfo claims, verified-email and domain policies, automatic user creation or email linking, and external-group mappings to RMON groups and roles. Local and LDAP login remain available.
+## License
 
-Set `RMON_PUBLIC_URL=https://rmon.example.com` when RMON is behind a reverse proxy so the generated callback URL uses the public origin. Register the displayed `/oidc/<provider>/callback` URL in the identity provider and include at least the `openid` scope. OIDC client secrets are encrypted with `RMON_SECRET_PHRASE` and are included in `rotate_credential_secret.py` rotations.
+Starting with the 1.4.0 release line, RMON is source-available under the
+[Elastic License 2.0](LICENSE) (`Elastic-2.0`). Self-hosted and internal use is
+available subject to ELv2. Offering RMON, or a service exposing a substantial
+set of its functionality, to third parties as a hosted or managed service
+requires rights permitted by ELv2 or a separate commercial license.
 
-## Subscription feature catalog
+See [LICENSING.md](LICENSING.md) for usage examples and historical release
+terms, and [COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md) for commercial
+licensing. Contributions are subject to [CLA.md](CLA.md); see
+[CONTRIBUTING.md](CONTRIBUTING.md) for the signing process.
 
-Subscription checks are centralized in `app/modules/subscription/access.py`, following the Roxy-WI entitlement model. The catalog covers OIDC, action history, monitoring history, alert history, alerting channels, status pages, monitoring check and agent limits, and service control.
-
-All cataloged features are currently free. `SUBSCRIPTION_ENFORCEMENT_ENABLED` is intentionally set to `False` in the subscription module, so stored license status and plan values do not restrict access. When paid enforcement is ready, change that code constant to `True`; the existing feature policies, route guards, business-service checks, UI visibility rules, and plan limits will become active together.
-
-![alt text](https://rmon.io/static//images/rmon_checks.png "RMON checks")
+Historical versions and copies retain the terms that accompanied them.
+Third-party dependencies and vendored components retain their own licenses.

@@ -1,0 +1,20 @@
+---
+agent_container_name: rmon-agent
+agent_image: ghcr.io/roxy-wi/rmon/rmon-agent:2.0
+agent_pull: missing
+agent_bind_ip: 0.0.0.0
+agent_config_path: /etc/rmon/rmon-agent.cfg
+agent_data_path: /var/lib/rmon/rmon-agent
+agent_log_path: /var/log/rmon
+agent_docker_host: unix:///var/run/docker.sock
+agent_lock_path: /run/lock/rmon-agent-deployment
+agent_transport: preserve
+agent_mtls_enabled: false
+agent_tls_ca_file: ''
+agent_tls_ca_key_file: ''
+agent_tls_cert_file: ''
+agent_tls_key_file: ''
+agent_tls_generate: true
+agent_verify_result_connection: false
+agent_tls_directory: /etc/rmon/mtls
+agent_certificate_directory: /var/lib/rmon/keys/agent-certificates

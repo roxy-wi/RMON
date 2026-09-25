@@ -1,0 +1,51 @@
+---
+- name: Find Docker without installing it for a service action
+  ansible.builtin.command:
+    argv: [docker, --version]
+  register: agent_control_docker
+  changed_when: false
+  failed_when: false
+
+- name: Inspect the container on this SSH host
+  community.docker.docker_container_info:
+    docker_host: '{{ agent_docker_host }}'
+    name: '{{ agent_container_name }}'
+  register: agent_control_container
+  when: agent_control_docker.rc == 0
+  no_log: true
+
+- name: Require an agent managed by this installation
+  ansible.builtin.assert:
+    that:
+      - agent_control_container.container.Config.Labels.get('io.rmon.managed') == 'true'
+      - agent_control_container.container.Config.Labels.get('io.rmon.uuid') == agent_uuid
+    fail_msg: Refusing to manage a container belonging to another agent.
+  when: agent_control_container.exists | default(false)
+
+- name: Manage the container without deleting configuration or data
+  community.docker.docker_container:
+    docker_host: '{{ agent_docker_host }}'
+    name: '{{ agent_container_name }}'
+    state: "{{ {'start': 'started', 'stop': 'stopped', 'restart': 'started', 'uninstall': 'absent'}[action] }}"
+    restart: "{{ action == 'restart' }}"
+    stop_timeout: 30
+    keep_volumes: true
+  when: agent_control_container.exists | default(false)
+
+- name: Inspect native service availability
+  ansible.builtin.service_facts:
+  when: not agent_control_container.exists | default(false)
+
+- name: Manage the existing native service when no container is installed
+  ansible.builtin.systemd_service:
+    name: rmon-agent
+    state: "{{ {'start': 'started', 'stop': 'stopped', 'restart': 'restarted', 'uninstall': 'stopped'}[action] }}"
+    enabled: "{{ false if action == 'uninstall' else omit }}"
+  when:
+    - not agent_control_container.exists | default(false)
+    - "'rmon-agent.service' in ansible_facts.services"
+
+- name: Report a missing agent for start, stop or restart
+  ansible.builtin.assert:
+    that: action == 'uninstall' or agent_control_container.exists | default(false) or 'rmon-agent.service' in ansible_facts.services
+    fail_msg: No agent is installed on this server.

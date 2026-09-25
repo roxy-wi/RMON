@@ -23,30 +23,3 @@
 	</td>
     <td></td>
 </tr>
-<tr class="odd">
-	<td class="padding10 first-collumn-wi">
-		{% if roxy_tools_status['rmon-socket'] == 'active' %}
-			<span class="serverUp server-status-small" title="Socket {{lang.words.started}}"></span>
-			{% if role <= 1 %}
-				<a href="{{ url_for('logs.logs_internal') }}" title="{{lang.words.view|title()}} {{lang.words.logs2}}" class="logs_link">
-					Socket service
-				</a>
-			{% else %}
-					Socket service
-			{% endif %}
-		{% else %}
-			{% if roxy_tools_status['rmon-socket']  == 'inactive' or roxy_tools_status['rmon-socket']  == 'failed' %}
-				<span class="serverDown server-status-small" title="Socket {{lang.words.stopped}}"></span>
-				<a href="{{ url_for('admin.admin') }}#services" title="{{lang.words.start|title()}} Socket" class="logs_link">
-					Socket service
-				</a>
-			{% else %}
-				<span title="Socket service is not installed"><span class="serverNone server-status-small"></span></span>
-				<a href="https://rmon.io/tools/socket" title="Socket service" target="_blank" class="logs_link">
-					Socket service
-				</a>
-			{% endif %}
-		{% endif %}
-	</td>
-    <td></td>
-</tr>

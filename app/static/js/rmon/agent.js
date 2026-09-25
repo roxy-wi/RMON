@@ -47,6 +47,7 @@ function addAgentDialog(agent_id=0, edit=false) {
 			return false;
 		}
 		getFreeServers();
+		if (!getAgentTransportDefaults()) return false;
 		buttons = [
 			{
 				text: add_word,
@@ -100,6 +101,8 @@ function addAgent(dialog_id, agent_id=0, edit=false, reconfigure=false) {
         'enabled': agent_enabled,
         'shared': agent_shared
     };
+	const resultTransport = $('#new-agent-result-transport').val();
+	if (resultTransport) agent_data.result_transport = resultTransport;
 	let method = 'POST';
 	let req_url = api_v_prefix + "/rmon/agent";
 	if (edit) {
@@ -124,11 +127,11 @@ function addAgent(dialog_id, agent_id=0, edit=false, reconfigure=false) {
 					if (edit) {
 						getAgent(agent_id, false);
 						if (reconfigure) {
-							runInstallationTaskCheck(data.tasks_ids);
+							runInstallationTaskCheck(data.tasks_ids, agent_id);
 						}
 					} else {
 						getAgent(data.id, new_agent = true);
-						runInstallationTaskCheck(data.tasks_ids);
+						runInstallationTaskCheck(data.tasks_ids, data.id);
 					}
 				}
 			}
@@ -142,10 +145,12 @@ function getAgentSettings(agent_id) {
 		success: function (data) {
 			$('#new-agent-name').val(data['name'].replaceAll("'", ""));
 			$('#new-agent-port').val(data['port']);
+			$('#new-agent-result-transport option[value=""]').prop('disabled', Boolean(data.result_transport));
+			$('#new-agent-result-transport').val(data.result_transport || '').selectmenu('refresh');
 			$('#new-agent-select-tr').hide();
 			generateSelect('#new-agent-server-id', data['server_id'], data['server_id'], 'selected')
 			$('#new-agent-server-id').attr('disabled', 'disabled');
-			$('#new-agent-desc').val(data['description'].replaceAll("'", ""));
+			$('#new-agent-desc').val((data['description'] || '').replaceAll("'", ""));
 			$('#new-agent-enabled').checkboxradio("refresh");
 			if (data['enabled'] == '1') {
 				$('#new-agent-enabled').prop('checked', true)
@@ -177,10 +182,27 @@ function getFreeServers() {
 		}
 	});
 }
+function getAgentTransportDefaults() {
+	let loaded = false;
+	$.ajax({
+		url: '/rmon/agent/transport-settings',
+		async: false,
+		success: function (data) {
+			if (!['http', 'https', 'mtls'].includes(data.result_transport)) return;
+			$('#new-agent-result-transport option[value=""]').prop('disabled', true);
+			$('#new-agent-result-transport').val(data.result_transport).selectmenu('refresh');
+			loaded = true;
+		},
+		error: function (xhr) { toastr.error(xhr.responseJSON?.error || xhr.statusText); }
+	});
+	return loaded;
+}
 function cleanAgentAddForm() {
 	$('#new-agent-name').val('');
 	$('#new-agent-server-id').val('------').change();
 	$('#new-agent-desc').val('');
+	$('#new-agent-result-transport option[value=""]').prop('disabled', false);
+	$('#new-agent-result-transport').val('').selectmenu('refresh');
 	$('#new-agent-shared').prop('checked', false);
 	$('#new-agent-enabled').prop('checked', true);
 	$('#new-agent-shared').checkboxradio("refresh");
@@ -213,6 +235,7 @@ function getAgentVersion(server_ip, agent_id){
 	$.ajax({
 		url: '/rmon/agent/version/' + server_ip,
 		type: 'get',
+		dataType: 'json',
 		data: {agent_id: agent_id},
 		success: function (data){
 			try {
@@ -230,68 +253,53 @@ function getAgentUptime(server_ip, agent_id){
 	$.ajax({
 		url: '/rmon/agent/uptime/' + server_ip,
 		type: 'get',
+		dataType: 'json',
 		data: {agent_id: agent_id},
 		success: function (data){
 			try {
-				data = JSON.parse(data);
+				if (!data || typeof data.uptime !== 'string') throw new Error('Invalid agent uptime');
 				$('#agent-uptime-' + agent_id).text(data['uptime']);
 				$('#agent-uptime-' + agent_id).attr('datetime', data['uptime']);
 				$("#agent-uptime-"+agent_id).timeago();
 			} catch (e) {
 				console.log(e)
 			}
-		}
+		},
+		error: function () { $('#agent-uptime-' + agent_id).text('—').removeAttr('datetime'); }
 	});
+}
+function setAgentStatus(agent_id, running) {
+	$('#agent-' + agent_id).removeClass('div-server-head-up div-server-head-down div-server-head-pause')
+		.addClass(running === null ? 'div-server-head-down' : (running ? 'div-server-head-up' : 'div-server-head-pause'));
+	for (const [action, prefix, enabled] of [['start', 'start', running !== true], ['restart', 'reload', true], ['stop', 'stop', running !== null]]) {
+		$('#' + prefix + '-' + agent_id).children().toggleClass('disabled-button', !enabled)
+			.attr('aria-disabled', String(!enabled)).removeAttr('onclick').off('click.rmonAgent')
+			.on('click.rmonAgent', function () { if (enabled) confirmAjaxAction(action, agent_id); });
+	}
 }
 function getAgentStatus(server_ip, agent_id){
 	$.ajax({
 		url: '/rmon/agent/status/' + server_ip,
 		type: 'get',
+		dataType: 'json',
 		data: {agent_id: agent_id},
 		success: function (data){
-			try {
-				data = JSON.parse(data);
-				if (data['running']) {
-					$('#agent-'+agent_id).addClass('div-server-head-up');
-					$('#start-'+agent_id).children().addClass('disabled-button');
-					$('#start-'+agent_id).children().removeAttr('onclick');
-					$('#agent-'+agent_id).removeClass('div-server-head-down');
-				} else {
-					$('#agent-'+agent_id).removeClass('div-server-head-up');
-					$('#agent-'+agent_id).addClass('div-server-head-pause');
-					$('#pause-'+agent_id).children().addClass('disabled-button');
-					$('#pause-'+agent_id).children().removeAttr('onclick');
-				}
-			} catch (e) {
-				console.log(e);
-				$('#agent-'+agent_id).addClass('div-server-head-down');
-				$('#stop-'+agent_id).children().addClass('disabled-button');
-				$('#pause-'+agent_id).children().addClass('disabled-button');
-				$('#pause-'+agent_id).children().removeAttr('onclick');
-				$('#stop-'+agent_id).children().removeAttr('onclick');
-			}
-		}
+			setAgentStatus(agent_id, data && typeof data.running === 'boolean' ? data.running : null);
+		},
+		error: function () { setAgentStatus(agent_id, null); }
 	});
 }
 function getAgentTotalChecks(server_ip, agent_id){
 	$.ajax({
 		url: '/rmon/agent/checks/' + server_ip,
 		type: 'get',
+		dataType: 'json',
 		data: {agent_id: agent_id},
 		contentType: "application/json; charset=utf-8",
 		success: function (data){
-			try {
-				data = JSON.parse(data);
-				if (data.error) {
-					$('#agent-total-checks-'+agent_id).text(data.error);
-				} else {
-					$('#agent-total-checks-'+agent_id).text(data);
-				}
-			} catch (e) {
-				console.log(e);
-				$('#agent-'+agent_id).addClass('div-server-head-down')
-			}
-		}
+			$('#agent-total-checks-' + agent_id).text(Number.isInteger(data) && data >= 0 ? data : '—');
+		},
+		error: function () { $('#agent-total-checks-' + agent_id).text('—'); }
 	});
 }
 function confirmDeleteAgent(id) {
@@ -372,16 +380,23 @@ function agentAction(action, id, dialog_id) {
 	$.ajax({
 		url: "/rmon/agent/action/"+ action,
 		type: "post",
+		dataType: 'json',
 		data: {agent_id: id},
 		success: function (data) {
-			data = data.replace(/\s+/g, ' ');
-			if (data.indexOf('error:') != '-1' || data.indexOf('unique') != '-1') {
-				toastr.error(data);
+			if (!data || !['ok', 'queued'].includes(data.status)) {
+				toastr.error(window.RmonUI ? RmonUI.text('request_error') : 'Unexpected server response');
 			} else {
 				toastr.clear();
 				$(dialog_id).dialog("close");
-				getAgent(id, false);
+				if (data.task_id) runInstallationTaskCheck([data.task_id], id);
+				else getAgent(id, false);
 			}
+		},
+		error: function (xhr) {
+			const message = xhr.responseJSON && xhr.responseJSON.error;
+			if (typeof message === 'string') toastr.error(message, '', {escapeHtml: true});
+			else if (window.RmonUI) RmonUI.notifyRequestError(xhr);
+			else toastr.error('Cannot manage agent over SSH');
 		}
 	});
 }
@@ -456,61 +471,95 @@ function moveChecks(agent_id, agent_ip, dialog_id) {
 	});
 }
 const INSTALLATION_TASKS_KEY = 'installationTasks';
+const installationTaskAgents = new Map();
+const installationTaskPolls = new Map();
+let checkInstallationTaskTimer = null;
+
 function getInstallationTasksFromSessionStorage() {
-    const tasks = sessionStorage.getItem(INSTALLATION_TASKS_KEY);
-    return tasks ? JSON.parse(tasks) : [];
+    try {
+        const tasks = JSON.parse(sessionStorage.getItem(INSTALLATION_TASKS_KEY) || '[]');
+        return Array.isArray(tasks) ? [...new Set(tasks.map(String))] : [];
+    } catch (_) {
+        sessionStorage.removeItem(INSTALLATION_TASKS_KEY);
+        return [];
+    }
 }
 function addItemToSessionStorageInstallTask(taskId) {
-	if (!sessionStorage.getItem(INSTALLATION_TASKS_KEY)) {
-		sessionStorage.setItem(INSTALLATION_TASKS_KEY, JSON.stringify([])); // Создаем пустой массив
-	}
-	let tasks = getInstallationTasksFromSessionStorage();
-
-	tasks.push(taskId);
-
-	sessionStorage.setItem(INSTALLATION_TASKS_KEY, JSON.stringify(tasks));
+    const tasks = new Set(getInstallationTasksFromSessionStorage());
+    tasks.add(String(taskId));
+    sessionStorage.setItem(INSTALLATION_TASKS_KEY, JSON.stringify([...tasks]));
 }
 function removeItemFromSessionStorage(taskId) {
-      let tasks = getInstallationTasksFromSessionStorage();
-
-      tasks = tasks.filter(item => item !== taskId);
-
-      sessionStorage.setItem(INSTALLATION_TASKS_KEY, JSON.stringify(tasks));
-    }
-
-function checkInstallationTask() {
-	let tasks = getInstallationTasksFromSessionStorage(); // Извлекаем список
-	if (tasks && tasks.length > 0) {
-		tasks.forEach(item => {
-			checkInstallationStatus(item);
-		});
-	} else {
-		console.log('No tasks');
-		clearInterval(checkInstallationTaskInterval);
-	}
+    sessionStorage.setItem(INSTALLATION_TASKS_KEY, JSON.stringify(
+        getInstallationTasksFromSessionStorage().filter(item => item !== String(taskId))));
+    installationTaskPolls.delete(String(taskId));
 }
-function runInstallationTaskCheck(tasks_ids) {
-	toastr.info('Installation started. You can continue to use the system while it is installing');
-	tasks_ids.forEach(item => {
-		addItemToSessionStorageInstallTask(item);
-		setTimeout(function () {
-			setInterval(checkInstallationTask, 3000);
-		}, 5000);
-	});
+function scheduleInstallationTaskCheck() {
+    clearTimeout(checkInstallationTaskTimer);
+    checkInstallationTaskTimer = null;
+    const now = Date.now();
+    const waiting = getInstallationTasksFromSessionStorage().map(id => {
+        if (!installationTaskPolls.has(id)) installationTaskPolls.set(id, {next: now + 5000, delay: 5000, pending: false});
+        return installationTaskPolls.get(id);
+    }).filter(state => !state.pending);
+    if (!waiting.length) return;
+    const delay = Math.max(document.hidden ? 30000 : 1000, Math.min(...waiting.map(state => state.next - now)));
+    checkInstallationTaskTimer = setTimeout(checkInstallationTask, delay);
+}
+function checkInstallationTask() {
+    checkInstallationTaskTimer = null;
+    for (const id of getInstallationTasksFromSessionStorage()) {
+        const state = installationTaskPolls.get(id);
+        if (state && !state.pending && state.next <= Date.now()) checkInstallationStatus(id);
+    }
+    scheduleInstallationTaskCheck();
+}
+function runInstallationTaskCheck(taskIds, agentId=null) {
+    toastr.info('Agent operation queued. You can continue using RMON.');
+    for (const id of taskIds) {
+        if (agentId !== null) installationTaskAgents.set(String(id), agentId);
+        addItemToSessionStorageInstallTask(id);
+    }
+    scheduleInstallationTaskCheck();
 }
 function checkInstallationStatus(taskId) {
-	NProgress.configure({showSpinner: false});
-	$.ajax({
-		url: api_v_prefix + "/rmon/task-status/" + taskId,
-		success: function (data) {
-			if (data.status === 'completed') {
-				toastr.success('Installation completed for ' + data.service_name + ' successfully on ' + data.server);
-				removeItemFromSessionStorage(taskId);
-			} else if (data.status === 'failed') {
-				toastr.error('Cannot install ' + data.service_name + '. Error: ' + data.error);
-				removeItemFromSessionStorage(taskId);
-			}
-		}
-	});
+    taskId = String(taskId);
+    const state = installationTaskPolls.get(taskId);
+    if (!state || state.pending) return;
+    state.pending = true;
+    $.ajax({
+        url: api_v_prefix + '/rmon/task-status/' + taskId,
+        dataType: 'json',
+        timeout: 10000,
+        success: function (data) {
+            if (data.status === 'completed' || data.status === 'failed') {
+                if (data.status === 'completed') {
+                    toastr.success('Agent operation completed on ' + data.server, '', {escapeHtml: true});
+                } else {
+                    toastr.error(data.error || 'Agent operation failed.', '', {escapeHtml: true});
+                }
+                removeItemFromSessionStorage(taskId);
+                const agentId = installationTaskAgents.get(taskId);
+                if (agentId !== undefined) getAgent(agentId);
+                installationTaskAgents.delete(taskId);
+            } else {
+                state.delay = data.status === 'running' ? 10000 : Math.min(30000, state.delay * 2);
+            }
+        },
+        error: function (xhr) {
+            if ([401, 403, 404].includes(xhr.status)) {
+                removeItemFromSessionStorage(taskId);
+                installationTaskAgents.delete(taskId);
+                toastr.warning('This operation is no longer available. Refresh the agent status.');
+            } else {
+                state.delay = Math.min(60000, state.delay * 2);
+            }
+        },
+        complete: function () {
+            state.pending = false;
+            state.next = Date.now() + state.delay;
+            scheduleInstallationTaskCheck();
+        }
+    });
 }
-let checkInstallationTaskInterval = setInterval(checkInstallationTask, 3000);
+scheduleInstallationTaskCheck();

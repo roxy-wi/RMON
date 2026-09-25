@@ -1,0 +1,15 @@
+apiVersion: v2
+name: rmon-chart
+description: Service availability monitoring, distributed checks and notifications
+type: application
+version: 1.4.2
+appVersion: "1.4.0"
+kubeVersion: ">=1.25.0-0"
+home: https://rmon.io
+sources:
+  - https://github.com/roxy-wi/RMON
+keywords: [monitoring, availability, alerting]
+annotations:
+  org.opencontainers.image.source: https://github.com/roxy-wi/RMON
+  org.opencontainers.image.description: RMON Helm chart for service availability monitoring
+  org.opencontainers.image.licenses: Elastic-2.0

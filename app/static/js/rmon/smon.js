@@ -79,54 +79,9 @@ function showSmon(action) {
 	window.location.reload();
 }
 function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
-	let valid = true;
-	let check_type = $('#check_type').val();
-	let allFields = '';
-	let statusList = [];
-	if (check_type === 'tcp') {
-		allFields = $([]).add($('#new-smon-ip')).add($('#new-smon-port')).add($('#new-smon-name')).add($('#new-smon-interval')).add($('#new-smon-timeout'))
-		allFields.removeClass("ui-state-error");
-		valid = valid && checkLength($('#new-smon-port'), "Port", 1);
-		valid = valid && checkLength($('#new-smon-ip'), "Hostname", 1);
-	}
-	if (check_type === 'http') {
-		allFields = $([]).add($('#new-smon-url')).add($('#new-smon-name')).add($('#new-smon-interval')).add($('#new-smon-timeout'))
-		allFields.removeClass("ui-state-error");
-		valid = valid && checkLength($('#new-smon-url'), "URL", 1);
-		statusList = window.tagify.value.map(tag => tag.value);
-	}
-	if (check_type === 'ping') {
-		allFields = $([]).add($('#new-smon-ip')).add($('#new-smon-name')).add($('#new-smon-packet_size')).add($('#new-smon-count_packets')).add($('#new-smon-interval')).add($('#new-smon-timeout'))
-		allFields.removeClass("ui-state-error");
-		valid = valid && checkLength($('#new-smon-ip'), "Hostname", 1);
-	}
-	if (check_type === 'dns') {
-		allFields = $([]).add($('#new-smon-ip')).add($('#new-smon-port')).add($('#new-smon-name')).add($('#new-smon-resolver-server')).add($('#new-smon-interval')).add($('#new-smon-timeout'))
-		allFields.removeClass("ui-state-error");
-		valid = valid && checkLength($('#new-smon-port'), "Port", 1);
-		valid = valid && checkLength($('#new-smon-resolver-server'), "Resolver server", 1);
-		valid = valid && checkLength($('#new-smon-ip'), "Hostname", 1);
-	}
-	if (check_type === 'smtp') {
-		allFields = $([]).add($('#new-smon-ip')).add($('#new-smon-port')).add($('#new-smon-name')).add($('#new-smon-username')).add($('#new-smon-password')).add($('#new-smon-interval')).add($('#new-smon-timeout'))
-		allFields.removeClass("ui-state-error");
-		valid = valid && checkLength($('#new-smon-port'), "Port", 1);
-		valid = valid && checkLength($('#new-smon-username'), "Username", 1);
-		valid = valid && checkLength($('#new-smon-password'), "Password", 1);
-		valid = valid && checkLength($('#new-smon-ip'), "Hostname", 1);
-	}
-	if (check_type === 'rabbit') {
-		allFields = $([]).add($('#new-smon-ip')).add($('#new-smon-port')).add($('#new-smon-name')).add($('#new-smon-username')).add($('#new-smon-password')).add($('#new-smon-vhost')).add($('#new-smon-interval')).add($('#new-smon-timeout'))
-		allFields.removeClass("ui-state-error");
-		valid = valid && checkLength($('#new-smon-port'), "Port", 1);
-		valid = valid && checkLength($('#new-smon-username'), "Username", 1);
-		valid = valid && checkLength($('#new-smon-password'), "Password", 1);
-		valid = valid && checkLength($('#new-smon-vhost'), "VHost", 1);
-		valid = valid && checkLength($('#new-smon-ip'), "Hostname", 1);
-	}
-	valid = valid && checkLength($('#new-smon-name'), "Name", 1);
-	valid = valid && checkLength($('#new-smon-interval'), "Check interval", 1);
-	valid = valid && checkLength($('#new-smon-timeout'), "Timeout", 1);
+	if (CheckEditor.isBlocked() || !CheckEditor.validate()) return false;
+	const check_type = $('#check_type').val();
+	const statusList = check_type === 'http' ? window.tagify.value.map(tag => tag.value) : [];
 	let enable = 0;
 	if ($('#new-smon-enable').is(':checked')) {
 		enable = '1';
@@ -148,12 +103,6 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		let entity_id = elem.id.split('-')[1]
 		entities.push(entity_id);
 	});
-	if ($('#new-smon-place option:selected').val() !== 'all') {
-		if (entities.length === 0) {
-			toastr.warning('Check must have at least one entity');
-			return false;
-		}
-	}
 	let auth = null;
 	if ($('#smon_http_check_auth_method').val() === 'basic') {
 		auth = {'basic':{
@@ -245,6 +194,7 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		'proxy': proxy,
 		'headers_response': headers_response,
 		'http_version': parseInt($('#new-smon-http_version').val()),
+		'ssl_policy': $('#new-smon-ssl_policy').val() || 'default',
 	}
 	let method = "post";
 	let api_url = api_v_prefix + '/rmon/check/' + check_type;
@@ -252,26 +202,20 @@ function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 		method = "put";
 		api_url = api_v_prefix + '/rmon/check/' + check_type + "/" + smon_id;
 	}
-	if (valid) {
-		$.ajax( {
-			url: api_url,
-            data: JSON.stringify(jsonData),
-            contentType: "application/json; charset=utf-8",
-			type: method,
-			success: function( data ) {
-				if (data.status === 'failed') {
-					toastr.error(data);
-				} else {
-					let check_id = check_types[check_type];
-					if (edit) {
-						getSmonCheck(smon_id, check_id, dialog_id);
-					} else {
-						getSmonCheck(data.id, check_id, dialog_id, true);
-					}
-				}
-			}
-		} );
-	}
+    CheckEditor.setBusy(true);
+    return $.ajax({
+        url: api_url, data: JSON.stringify(jsonData),
+        contentType: "application/json; charset=utf-8", type: method,
+        error: function () { CheckEditor.showError(CheckEditor.text('save_error')); },
+        success: function (data) {
+            if (data.status === 'failed') {
+                CheckEditor.showError(CheckEditor.text('save_error'));
+            } else {
+                CheckEditor.setBusy(false);
+                getSmonCheck(edit ? smon_id : data.id, check_types[check_type], dialog_id, !edit);
+            }
+        }
+    });
 }
 function confirmDeleteSmon(id, check_type) {
 	$( "#dialog-confirm" ).dialog({
@@ -312,266 +256,68 @@ function removeSmon(smon_id, check_type) {
 	});
 }
 function openSmonDialog(check_type, smon_id=0, edit=false) {
-	check_and_clear_check_type(check_type);
-	$('#checked-entities').empty();
-	$('#all-entities').empty();
-	$('#new-smon-place').val('all').change();
-	$('#new-smon-place').selectmenu('refresh');
-	let smon_add_tabel_title = $("#smon-add-table-overview").attr('title');
-	if (edit) {
-		add_word = $('#translate').attr('data-edit');
-		smon_add_tabel_title = $("#smon-add-table-overview").attr('data-edit');
-		$('#check_type').attr('disabled', 'disabled');
-		$('#new-smon-place').attr('disabled', 'disabled');
-		$('#check_type').selectmenu("refresh");
-		$('#new-smon-place').selectmenu("refresh");
-	} else {
-		if (!checkChecksLimit()) {
-			return false;
-		}
-		$('#check_type').removeAttr('disabled');
-		$('#new-smon-place').removeAttr('disabled');
-		$('#check_type').selectmenu("refresh");
-		$('#new-smon-place').selectmenu("refresh");
-		$('#new-smon-name').val('');
-	}
-	let addSmonServer = $("#smon-add-table").dialog({
-		autoOpen: false,
-		resizable: false,
-		height: "auto",
-		width: 1225,
-		modal: true,
-		title: smon_add_tabel_title,
-		show: {
-			effect: "fade",
-			duration: 200
-		},
-		hide: {
-			effect: "fade",
-			duration: 200
-		},
-		open: function () {
-			const input = document.querySelector('#new-smon-status-code')
-
-			if (input && !input._tagify) { // предотвращаем повторную инициализацию
-				const allStatusCodes = []
-				allStatusCodes.push("1**", "2**", "3**", "4**", "5**", "100-199", "200-299", "300-399", "400-499", "500-599")
-				for (let i = 100; i <= 599; i++) allStatusCodes.push(i.toString())
-
-				window.tagify = new Tagify(input, {
-					whitelist: allStatusCodes,
-					duplicates: false,
-					enforceWhitelist: true,
-					dropdown: {
-						enabled: 1,
-						maxItems: 15
-					},
-				});
-				if (!edit) {
-					window.tagify.addTags(["200"]);
-				}
-			}
-		},
-		close: function () {
-			if (window.tagify) {
-				window.tagify.removeAllTags();
-			}
-		},
-		buttons: [{
-			text: add_word,
-			click: function () {
-				if (edit) {
-					addNewSmonServer(this, smon_id, check_type);
-				} else {
-					addNewSmonServer(this);
-				}
-			}
-		}, {
-			text: cancel_word,
-			click: function () {
-				$(this).dialog("close");
-				clearTips();
-			}
-		}]
-	});
-	addSmonServer.dialog('open');
+    if (!edit && !checkChecksLimit()) return false;
+    CheckEditor.reset(check_type);
+    $('#check_type, #new-smon-place').prop('disabled', edit);
+    CheckEditor.refresh();
+    const dialog = $('#smon-add-table').dialog({
+        autoOpen: false, resizable: false, height: "auto", width: 940, modal: true,
+        title: CheckEditor.text(edit ? 'edit' : 'create'),
+        show: {effect: "fade", duration: 150}, hide: {effect: "fade", duration: 150},
+        beforeClose: function () { return !CheckEditor.isBusy(); },
+        open: function () {
+            const input = document.querySelector('#new-smon-status-code');
+            if (input && !input._tagify) {
+                const codes = ["1**", "2**", "3**", "4**", "5**", "100-199", "200-299", "300-399", "400-499", "500-599"];
+                for (let i = 100; i <= 599; i++) codes.push(String(i));
+                window.tagify = new Tagify(input, {whitelist: codes, duplicates: false,
+                    // The API accepts arbitrary valid ranges such as 300-304.
+                    enforceWhitelist: false, pattern: /^(?:[1-5][0-9]{2}|[1-5]\*\*|[1-5][0-9]{2}-[1-5][0-9]{2})$/,
+                    dropdown: {enabled: 1, maxItems: 15}});
+            }
+            if (!edit) window.tagify.addTags(["200"]);
+            CheckEditor.refresh();
+            CheckEditor.showStep(0);
+        },
+        close: function () { if (window.tagify) window.tagify.removeAllTags(); },
+        buttons: [
+            {id: 'check-editor-back', text: CheckEditor.text('back'), click: CheckEditor.back},
+            {id: 'check-editor-next', text: CheckEditor.text('next'), click: CheckEditor.next},
+            {id: 'check-editor-submit', text: CheckEditor.text(edit ? 'save' : 'create'),
+                click: function () { addNewSmonServer(this, smon_id, edit); }},
+            {id: 'check-editor-cancel', text: cancel_word, click: function () { $(this).dialog('close'); }}
+        ]
+    });
+    dialog.dialog('open');
+    if (!edit && !window.tagify.value.length) window.tagify.addTags(["200"]);
+    CheckEditor.showStep(0);
+    return dialog;
 }
-function getCheckSettings(smon_id, check_type) {
-	$.ajax({
-		url: api_v_prefix + "/rmon/check/" + check_type + "/" + smon_id,
-		type: "get",
-		async: false,
-		dataType: "json",
-		success: function (data) {
-			$('#new-smon-name').val(data['name'].replaceAll("'", ""));
-			$('#new-smon-ip').val(data['checks'][0]['ip']);
-			$('#new-smon-port').val(data['checks'][0]['port']);
-			$('#new-smon-resolver-server').val(data['checks'][0]['resolver']);
-			$('#new-smon-dns_record_typer').val(data['checks'][0]['record_type']);
-			$('#new-smon-url').val(data['checks'][0]['url']);
-			$('#new-smon-resole_to_ip').val(data['checks'][0]['resole_to_ip']);
-			$('#new-smon-description').val(data['description'].replaceAll("'", ""))
-			$('#new-smon-packet_size').val(data['checks'][0]['packet_size']);
-			$('#new-smon-count_packets').val(data['checks'][0]['count_packets']);
-			$('#new-smon-interval').val(data['checks'][0]['interval']);
-			$('#new-smon-username').val(data['checks'][0]['username']);
-			$('#new-smon-password').val(data['checks'][0]['password']);
-			$('#new-smon-retries').val(data['retries']);
-			$('#new-smon-redirects').val(data['redirects']);
-			$('#new-smon-runbook').val(data['runbook']);
-			$('#new-smon-priority').val(data['priority']);
-			$('#new-smon-expiration').val(data['expiration']);
-			$('#new-smon-threshold_timeout').val(data['threshold_timeout']);
-			if (data['check_group']) {
-				$('#new-smon-group').val(data['check_group'].replaceAll("'", ""));
-			}
-			if (data['checks'][0]['smon_id']['check_timeout']) {
-				$('#new-smon-timeout').val(data['checks'][0]['smon_id']['check_timeout']);
-			}
-			try {
-				$('#new-smon-body-req').val(data['checks'][0]['body_req'].replaceAll("'", ""));
-			} catch (e) {
-				$('#new-smon-body-req').val(data['checks'][0]['body_req']);
-			}
-			try {
-				$('#new-smon-header-req').val(data['checks'][0]['headers'].replaceAll("'", ""));
-			} catch (e) {
-				$('#new-smon-header-req').val(data['checks'][0]['headers']);
-			}
-			window.tagify.addTags(data['checks'][0]['accepted_status_codes']);
-			$('#new-smon-place').val(data['place']).change();
-			$('#new-smon-telegram').selectmenu("refresh");
-			$('#new-smon-place').trigger('selectmenuchange');
-			$('#new-smon-slack').selectmenu("refresh");
-			if (data['place'] != 'all') {
-				for (let entity_id of data['entities']) {
-					getEntityJson(entity_id, data['place']);
-				}
-			}
-			if (data['body']) {
-				$('#new-smon-body-keyword').val(data['body'].replaceAll("'", ""));
-				$('#smon_http_check_body_type').val('keyword').change();
-				$('#smon_http_check_body_type').selectmenu("refresh");
-				$('.smon_http_check_body_type_keyword').show();
-				$('.smon_http_check_body_type_json').hide();
-			}
-			if (data['body_json']) {
-				$('#new-smon-body-json-path').val(data['body_json']['path']);
-				$('#new-smon-body-json-value').val(data['body_json']['value']);
-				$('#smon_http_check_body_type').val('json').change();
-				$('#smon_http_check_body_type').selectmenu("refresh");
-				$('.smon_http_check_body_type_keyword').hide();
-				$('.smon_http_check_body_type_json').show();
-			}
-			if (data['checks'][0]['smon_id']['email_channel_id']) {
-				$('#new-smon-email').val(data['checks'][0]['smon_id']['email_channel_id']).change();
-				$('#new-smon-email').selectmenu("refresh");
-			}
-			if (data['checks'][0]['smon_id']['mm_channel_id']) {
-				$('#new-smon-mm').val(data['checks'][0]['smon_id']['mm_channel_id']).change();
-				$('#new-smon-mm').selectmenu("refresh");
-			}
-			if (data['checks'][0]['smon_id']['incidentrelay_channel_id']) {
-				$('#new-smon-incidentrelay').val(data['checks'][0]['smon_id']['incidentrelay_channel_id']).change();
-				$('#new-smon-incidentrelay').selectmenu("refresh");
-			}
-			if (data['checks'][0]['smon_id']['pd_channel_id']) {
-				$('#new-smon-pd').val(data['checks'][0]['smon_id']['pd_channel_id']).change();
-				$('#new-smon-mm').selectmenu("refresh");
-			}
-			if (data['checks'][0]['smon_id']['telegram_channel_id']) {
-				$('#new-smon-telegram').val(data['checks'][0]['smon_id']['telegram_channel_id']).change();
-				$('#new-smon-mm').selectmenu("refresh");
-			}
-			if (data['checks'][0]['smon_id']['slack_channel_id']) {
-				$('#new-smon-slack').val(data['checks'][0]['smon_id']['slack_channel_id']).change();
-				$('#new-smon-mm').selectmenu("refresh");
-			}
-			if (data['checks'][0]['method']) {
-				$('#new-smon-method').val(data['checks'][0]['method']).change();
-				$('#new-smon-method').selectmenu("refresh");
-			}
-			if (data['checks'][0]['http_version']) {
-				$('#new-smon-http_version').val(data['checks'][0]['http_version']).change();
-				$('#new-smon-http_version').selectmenu("refresh");
-			}
-			$('select').selectmenu("refresh");
-			if (data['checks'][0]['smon_id']['enabled']) {
-				$('#new-smon-enable').prop('checked', true)
-			} else {
-				$('#new-smon-enable').prop('checked', false)
-			}
-			if (data['checks'][0]['ignore_ssl_error']) {
-				$('#new-smon-ignore_ssl_error').prop('checked', true)
-			} else {
-				$('#new-smon-ignore_ssl_error').prop('checked', false)
-			}
-			if (data['checks'][0]['accept_cookies']) {
-				$('#new-smon-accept_cookies').prop('checked', true)
-			} else {
-				$('#new-smon-accept_cookies').prop('checked', false)
-			}
-			if (data['checks'][0]['use_kernel_timestamp']) {
-				$('#new-smon-use_kernel_timestamp').prop('checked', true)
-			} else {
-				$('#new-smon-use_kernel_timestamp').prop('checked', false)
-			}
-			if (data['checks'][0]['auth']) {
-				if (data['checks'][0]['auth'].hasOwnProperty('basic')) {
-					$('#new-smon-basic_username').val(data['checks'][0]['auth']['basic']['username']);
-					$('#new-smon-basic_password').val(data['checks'][0]['auth']['basic']['password']);
-					$('#smon_http_check_auth_method').val('basic');
-					$('#smon_http_check_basic').show();
-				} else if (data['checks'][0]['auth'].hasOwnProperty('mtls')) {
-					$('#new-smon-mtls_key').val(data['checks'][0]['auth']['mtls']['key']);
-					$('#new-smon-mtls_cert').val(data['checks'][0]['auth']['mtls']['cert']);
-					$('#new-smon-mtls_ca').val(data['checks'][0]['auth']['mtls']['ca']);
-					$('#smon_http_check_auth_method').val('mtls');
-					$('.smon_http_check_mtls').show();
-				}
-				$('#smon_http_check_auth_method').selectmenu("refresh");
-			}
-			$('#new-smon-enable').checkboxradio("refresh");
-			$('#new-smon-ignore_ssl_error').checkboxradio("refresh");
-			$('#new-smon-accept_cookies').checkboxradio("refresh");
-			$('#new-smon-use_kernel_timestamp').checkboxradio("refresh");
-			if (data['checks'][0]['proxy']) {
-				$('#smon_http_check_proxy_method').val(data['checks'][0]['proxy']['type']);
-				$('.smon_http_check_proxy').show();
-				$('#new-smon-http_proxy_host').val(data['checks'][0]['proxy']['host']);
-				$('#new-smon-http_proxy_port').val(data['checks'][0]['proxy']['port']);
-				$('#new-smon-http_proxy_username').val(data['checks'][0]['proxy']['username']);
-				$('#new-smon-http_proxy_password').val(data['checks'][0]['proxy']['password']);
-			} else {
-				$('#smon_http_check_proxy_method').val('0');
-				$('.smon_http_check_proxy').hide();
-			}
-			if (data['checks'][0]['headers_response']) {
-				$('#smon_http_check_headers_response_type').val('check');
-				$('#new-smon-headers-response').show();
-				$('#new-smon-header-response-forbidden').val(data['checks'][0]['headers_response']['forbidden_headers'].map(h => `"${h}"`).join(",\n "));
-				if (data['checks'][0]['headers_response']['required_response_headers']) {
-					$('#new-smon-header-response-required').val(JSON.stringify(data['checks'][0]['headers_response']['required_response_headers'], null, 2));
-				}
-			} else {
-				$('#smon_http_check_headers_response_type').val('0');
-				$('#new-smon-headers-response').hide();
-			}
-			$('#smon_http_check_proxy_method').selectmenu("refresh");
-			$('#smon_http_check_headers_response_type').selectmenu("refresh");
-		}
-	});
+function getCheckSettings(smon_id, check_type, onLoaded) {
+    CheckEditor.setBusy(true, true);
+    return $.ajax({
+        url: api_v_prefix + "/rmon/check/" + check_type + "/" + smon_id,
+        type: "get", dataType: "json", timeout: 15000,
+        error: function () { CheckEditor.showError(CheckEditor.text('load_error'), true); },
+        success: function (data) {
+            try {
+                CheckEditor.populate(data);
+                CheckEditor.setBusy(false);
+                if (onLoaded) onLoaded();
+            } catch (_) { CheckEditor.showError(CheckEditor.text('load_error'), true); }
+        }
+    });
 }
 function editSmon(smon_id, check_type) {
-	check_and_clear_check_type(check_type);
-	openSmonDialog(check_type, smon_id, true);
-	getCheckSettings(smon_id, check_type);
-
+    openSmonDialog(check_type, smon_id, true);
+    return getCheckSettings(smon_id, check_type);
 }
 function cloneSmon(id, check_type) {
-	check_and_clear_check_type(check_type);
-	getCheckSettings(id, check_type);
-	openSmonDialog(check_type);
+    if (!openSmonDialog(check_type)) return false;
+    return getCheckSettings(id, check_type, function () {
+        $('#new-smon-name').val($('#new-smon-name').val() + ' (' + CheckEditor.text('copy') + ')');
+        CheckEditor.summary();
+    });
 }
 function getSmonCheck(smon_id, check_id, dialog_id, new_check=false) {
 	$.ajax({
@@ -592,109 +338,7 @@ function getSmonCheck(smon_id, check_id, dialog_id, new_check=false) {
 	$(dialog_id).dialog("close");
 }
 function check_and_clear_check_type(check_type) {
-	$("#check_type").val(check_type);
-	$('#check_type').selectmenu("refresh");
-	if (check_type === 'http') {
-		$('.new_smon_hostname').hide();
-		$('.smon_tcp_check').hide();
-		$('.smon_ping_check').hide();
-		$('.smon_dns_check').hide();
-		$('.smon_smtp_check').hide();
-		$('.smon_rabbit_check').hide();
-		clear_check_vals();
-		hideAuthFields();
-		$("#new-smon-body-keyword").val('');
-		$("#new-smon-body-json-path").val('');
-		$("#new-smon-body-json-value").val('');
-		$("#smon_http_check_body_type").val('0');
-		$('#smon_http_check_body_type').selectmenu("refresh");
-		$("#smon_http_check_auth_method").val('0');
-		$('#smon_http_check_auth_method').selectmenu("refresh");
-		$("#smon_http_check_headers_response_type").val('0');
-		$('#smon_http_check_headers_response_type').selectmenu("refresh");
-		$('.smon_http_check').show();
-		$('.smon_http_check_proxy').hide();
-		$('.smon_http_check_body_type_keyword').hide();
-		$('.smon_http_check_body_type_json').hide();
-		$('#new-smon-headers-response').hide();
-	} else if (check_type === 'tcp') {
-		$('.new_smon_hostname').show();
-		$('.smon_http_check').hide();
-		$('.smon_dns_check').hide();
-		$('.smon_ping_check').hide();
-		$('.smon_smtp_check').hide();
-		$('.smon_rabbit_check').hide();
-		$('.smon_http_check_proxy').hide();
-		clear_check_vals();
-		hideAuthFields();
-		$('.smon_tcp_check').show();
-	} else if (check_type === 'dns') {
-		$('.new_smon_hostname').show();
-		$('.smon_tcp_check').hide();
-		$('.smon_http_check').hide();
-		$('.smon_ping_check').hide();
-		$('.smon_smtp_check').hide();
-		$('.smon_rabbit_check').hide();
-		$('.smon_http_check_proxy').hide();
-		clear_check_vals();
-		hideAuthFields();
-		$('#new-smon-port').val('53');
-		$('.smon_dns_check').show();
-	} else if (check_type === 'smtp') {
-		$('.new_smon_hostname').show();
-		$('.smon_tcp_check').hide();
-		$('.smon_http_check').hide();
-		$('.smon_ping_check').hide();
-		$('.smon_dns_check').hide();
-		$('.smon_rabbit_check').hide();
-		$('.smon_http_check_proxy').hide();
-		clear_check_vals();
-		hideAuthFields();
-		$('#new-smon-port').val('587');
-		$('#new-smon-username').attr('placeholder', 'examplte@example.com');
-		$('.smon_smtp_check').show();
-	} else if (check_type === 'rabbitmq') {
-		$('.new_smon_hostname').show();
-		$('.smon_tcp_check').hide();
-		$('.smon_http_check').hide();
-		$('.smon_ping_check').hide();
-		$('.smon_dns_check').hide();
-		$('.smon_smtp_check').hide();
-		$('.smon_http_check_proxy').hide();
-		clear_check_vals();
-		hideAuthFields();
-		$('#new-smon-port').val('5672');
-		$('#new-smon-vhost').val('/');
-		$('#new-smon-username').attr('placeholder', 'guest');
-		$('.smon_rabbit_check').show();
-	} else {
-		$('.new_smon_hostname').show();
-		$('.smon_http_check').hide();
-		$('.smon_tcp_check').hide();
-		$('.smon_dns_check').hide();
-		$('.smon_smtp_check').hide();
-		$('.smon_rabbit_check').hide();
-		$('.smon_http_check_proxy').hide();
-		clear_check_vals();
-		hideAuthFields();
-		$('#new-smon-packet_size').val('56');
-		$('#new-smon-count_packets').val('4');
-		$('.smon_ping_check').show();
-	}
-}
-function clear_check_vals() {
-	const inputs_for_clean = ['url', 'body', 'body-req', 'port', 'packet_size', 'ip', 'header-req', 'username',
-		'password', 'vhost', 'group', 'description', 'runbook', 'expiration', 'count_packets', 'new-smon-mtls_key',
-		'new-smon-mtls_cert', 'new-smon-mtls_ca', 'new-smon-basic_username', 'new-smon-basic_password', 'http_proxy_host',
-		'http_proxy_port', 'http_proxy_username', 'http_proxy_password', 'use_kernel_timestamp', 'resole_to_ip'
-	]
-	for (let i of inputs_for_clean) {
-		$('#new-smon-' + i).val('');
-	}
-}
-function hideAuthFields() {
-	$('.smon_http_check_mtls').hide();
-	$('.smon_http_check_basic').hide();
+    CheckEditor.setType(check_type);
 }
 function show_smon_history_statuses(check_id, id_for_history_replace) {
 	$.ajax({

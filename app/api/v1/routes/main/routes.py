@@ -45,7 +45,7 @@ bp.add_url_rule(
 )
 
 bp.add_url_rule(
-    '/settings/<any(rmon, main, rabbitmq, ldap, monitoring, mail, logs):section>',
+    '/settings/<any(rmon, main, ldap, monitoring, mail, logs, agent):section>',
     view_func=SettingsView.as_view('settings_section'),
     methods=['GET', 'POST']
 )

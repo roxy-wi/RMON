@@ -139,16 +139,7 @@
     }
 
     function actionButton(cssClass, title, handler) {
-        return $('<a>')
-            .addClass(cssClass)
-            .attr({title: title, role: 'button', tabindex: 0})
-            .on('click', handler)
-            .on('keydown', function (event) {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    handler();
-                }
-            });
+        return $('<button>', {type: 'button', 'data-action': cssClass}).text(title).on('click', handler);
     }
 
     function renderProviders() {
@@ -163,16 +154,15 @@
             ).appendTo(row);
             $('<td>').text(provider.enabled ? translations.enabled : translations.disabled).appendTo(row);
             $('<td>').text(provider.client_id || '').appendTo(row);
-            $('<td>').append(actionButton('map', translations.mappings_action, function () {
+            $('<td>', {class: 'actions-column'}).append(actionButton('map', translations.mappings_action, function () {
                 openMappings(provider);
-            })).appendTo(row);
-            $('<td>').append(actionButton('edit', translations.edit_action, function () {
+            }), actionButton('edit', translations.edit_action, function () {
                 editProvider(provider);
             })).appendTo(row);
             body.append(row);
         });
         if (!providers.length) {
-            body.append($('<tr>').append($('<td colspan="5">').addClass('padding10').text(translations.no_providers)));
+            body.append($('<tr>').append($('<td colspan="4">').addClass('padding10').text(translations.no_providers)));
         }
     }
 
@@ -219,10 +209,9 @@
             $('<td>').text(mapping.role_name || mapping.role_id).appendTo(row);
             $('<td>').text(mapping.active ? translations.active : translations.disabled).appendTo(row);
             $('<td>').text(mapping.priority).appendTo(row);
-            $('<td>').append(actionButton('edit', translations.edit_action, function () {
+            $('<td>', {class: 'actions-column'}).append(actionButton('edit', translations.edit_action, function () {
                 editMapping(mapping);
-            })).appendTo(row);
-            $('<td>').append(actionButton('delete', translations.delete_action, function () {
+            }), actionButton('delete', translations.delete_action, function () {
                 if (!window.confirm(translate('delete_mapping_confirm', {group: mapping.external_group}))) return;
                 $.ajax({
                     url: '/admin/oidc/mappings/' + mapping.id,
@@ -237,7 +226,7 @@
             body.append(row);
         });
         if (!mappings.length) {
-            body.append($('<tr>').append($('<td colspan="7">').addClass('padding10').text(translations.no_mappings)));
+            body.append($('<tr>').append($('<td colspan="6">').addClass('padding10').text(translations.no_mappings)));
         }
     }
 

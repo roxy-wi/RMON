@@ -89,6 +89,7 @@ def create_http_check(data: HttpCheckRequest, check_id: int) -> Optional[tuple[d
         'accepted_status_codes': data.accepted_status_codes,
         'ignore_ssl_error': data.ignore_ssl_error,
         'redirects': data.redirects,
+        'ssl_policy': data.ssl_policy,
         'auth': data.auth,
         'proxy': data.proxy.model_dump(mode='json') if data.proxy else None,
         'headers_response': data.headers_response.model_dump(mode='json') if data.headers_response else None,

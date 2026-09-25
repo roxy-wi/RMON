@@ -1,7 +1,6 @@
 import json
 from typing import Union
 
-import pika
 import pagerduty
 import telebot
 from telebot import apihelper
@@ -18,34 +17,6 @@ import app.modules.db.channel as channel_sql
 import app.modules.common.common as common
 import app.modules.roxywi.common as roxywi_common
 from app.modules.subscription.access import ALERTING_CHANNELS, is_feature_available, require_feature
-
-
-def send_message_to_rabbit(message: str, **kwargs) -> None:
-	require_feature(ALERTING_CHANNELS)
-	rabbit_user = sql.get_setting('rabbitmq_user')
-	rabbit_password = sql.get_setting('rabbitmq_password')
-	rabbit_host = sql.get_setting('rabbitmq_host')
-	rabbit_port = sql.get_setting('rabbitmq_port')
-	rabbit_vhost = sql.get_setting('rabbitmq_vhost')
-	if kwargs.get('rabbit_queue'):
-		rabbit_queue = kwargs.get('rabbit_queue')
-	else:
-		rabbit_queue = sql.get_setting('rabbitmq_queue')
-
-	credentials = pika.PlainCredentials(rabbit_user, rabbit_password)
-	parameters = pika.ConnectionParameters(
-		rabbit_host,
-		rabbit_port,
-		rabbit_vhost,
-		credentials
-	)
-
-	connection = pika.BlockingConnection(parameters)
-	channel = connection.channel()
-	channel.queue_declare(queue=rabbit_queue)
-	channel.basic_publish(exchange='', routing_key=rabbit_queue, body=message)
-
-	connection.close()
 
 
 def send_email_to_server_group(subject: str, mes: str, level: str, group_id: int) -> None:
@@ -506,23 +477,6 @@ def incidentrelay_send_mess(mess, level, **kwargs):
 			raise Exception(error)
 
 	return 'ok'
-
-
-def check_rabbit_alert() -> Union[str, dict]:
-	require_feature(ALERTING_CHANNELS)
-	claims = roxywi_common.get_jwt_token_claims()
-	try:
-		user_group_id = claims['group']
-	except Exception as e:
-		return roxywi_common.handle_json_exceptions(e, 'Cannot get group')
-
-	try:
-		json_for_sending = {"user_group": user_group_id, "message": 'info: Test message'}
-		send_message_to_rabbit(json.dumps(json_for_sending))
-	except Exception as e:
-		return roxywi_common.handle_json_exceptions(e, 'Cannot get group')
-	else:
-		return 'ok'
 
 
 def email_send_mess(mess, o_level, **kwargs):

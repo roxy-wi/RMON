@@ -1,4 +1,30 @@
 {% set lang_short = 'fr' %}
+{% set agent_transport = {
+    "section": "Agent connections",
+    "label": "Result delivery",
+    "preserve": "Keep current configuration",
+    "unknown": "Not yet verified",
+    "pending": "Changes pending application",
+    "checked": "Connection verified",
+    "help": "Uses the agent owner's group settings. Apply connection changes with Reconfigure. Configure the result server for the selected mode. The agent management API remains HTTP.",
+    "settings_help": "Certificate paths refer to files accessible to RMON inside this group's directory:",
+    "fields": {
+        "agent_result_transport": "Default connection",
+        "agent_tls_ca_file": "Trusted CA",
+        "agent_tls_generate": "Generate client certificates",
+        "agent_tls_ca_key_file": "CA signing key",
+        "agent_tls_cert_file": "Client certificate",
+        "agent_tls_key_file": "Client private key"
+    },
+    "descriptions": {
+        "agent_result_transport": "Default for newly installed agents. Existing agents keep their selected mode.",
+        "agent_tls_ca_file": "Path to the trusted CA bundle. Leave empty for HTTPS with system trust. Required for mTLS.",
+        "agent_tls_generate": "Issue a separate client certificate for each agent when a pair is missing.",
+        "agent_tls_ca_key_file": "Path to the CA signing key for certificate generation. The key stays in RMON.",
+        "agent_tls_cert_file": "Path to an existing client certificate. Use {uuid} for an individual file for each agent.",
+        "agent_tls_key_file": "Path to the matching client private key. Supports {uuid}."
+    }
+} %}
 {% set menu_links = dict() %}
 {% set menu_links = {
     "overview": {
@@ -45,15 +71,6 @@
     }
 %}
 {% set settings = {
-    "rabbitmq": {
-        "rabbitmq_enabled": "Activer les alertes dans le panneau WEB",
-        "rabbitmq_host": "RabbitMQ-server serveur",
-        "rabbitmq_port": "RabbitMQ-server port",
-        "rabbitmq_vhost": "RabbitMQ-server vhost",
-        "rabbitmq_queue": "RabbitMQ-server queue",
-        "rabbitmq_user": "RabbitMQ-server utilisateur",
-        "rabbitmq_password": "RabbitMQ-server mot de passe",
-        },
     "monitoring": {
         "port_scan_interval": "Interval de vérification pour le scanner de Port (en minutes)",
         "portscanner_keep_history_range": "Période de rétention pour l\'historiques le scanner de Port",
@@ -166,7 +183,6 @@
     "alert_master_backup": "Alert about changing Master/Backup status",
     "new_version": "Il y a une nouvelle version RMON. Vérifiez le",
     "all_alerts_enabled": "Les alertes sont activées",
-    "disable_alerts": "Désactiver les alertes",
     "work_with_prev": "Ici, vous pouvez travailler avec les versions précédentes des configurations",
     "roll_back": "Revenir en arrière, afficher ou supprimer",
     "files_been_deleted": "Les fichiers suivants ont été supprimés",
@@ -240,7 +256,6 @@
         "auto_start_desc": "Le service Auto Start permet de redémarrer les services HAProxy, NGINX, Apache et Keepalived s\'ils sont hors service.",
         "metrics_desc": "Collecte du nombre de connexions pour les services HAProxy, NGINX, Apache et HAProxy WAF",
         "p_s_desc": "Vérifie les ports ouverts du serveur et enregistre l\'historique.",
-        "socket_desc": "Socket est un service permettant d\'envoyer des alertes et des notifications.",
         "a_new_version": "Il existe une version plus récente",
         "no_new_version": "Il n\'existe pas de version plus récente",
         "main_app": "Application principale",
@@ -602,7 +617,6 @@
     "test2": "test",
     "disabled": "désactivé",
     "via": "via",
-    "web_panel": "volet webl",
     "message": "message",
     "menu": "menu",
     "language": "langage",
@@ -773,3 +787,92 @@
     "accept": "accepter",
     }
 %}
+
+{% set ux = {
+    "skip_content": "Aller au contenu",
+    "toggle_menu": "Afficher ou masquer le menu",
+    "close_menu": "Fermer le menu",
+    "retry": "Réessayer",
+    "loading": "Chargement…",
+    "widget_error": "Ces informations sont temporairement indisponibles.",
+    "network_error": "Connexion à RMON impossible. Vérifiez votre connexion.",
+    "request_error": "La demande n’a pas abouti. Veuillez réessayer.",
+    "server_error": "RMON n’a pas pu traiter la demande. Réessayez plus tard.",
+    "validation_error": "Vérifiez les champs obligatoires et leurs valeurs.",
+    "unauthorized": "Votre session a expiré. Connectez-vous à nouveau.",
+    "forbidden": "Vous n’avez pas l’autorisation d’effectuer cette action.",
+    "not_found": "Cet élément n’est plus disponible. Actualisez la page.",
+    "conflict": "Cet élément a changé ou existe déjà. Actualisez la page.",
+    "rate_limit": "Trop de demandes. Réessayez dans un instant.",
+    "login_failed": "Identifiant ou mot de passe incorrect, ou compte désactivé.",
+    "show_password": "Afficher le mot de passe",
+    "hide_password": "Masquer le mot de passe",
+    "no_checks": "Aucune vérification pour le moment",
+    "no_checks_description": "Ajoutez une vérification pour surveiller la disponibilité et recevoir des alertes.",
+    "no_status_pages": "Aucune page de statut pour le moment",
+    "no_status_pages_description": "Créez une page publique pour partager la disponibilité de vos services.",
+    "slug_hint": "Lettres minuscules, chiffres, tirets bas ou tirets. Pas de tirets consécutifs.",
+    "table_label": "Tableau de données. Faites défiler horizontalement pour voir toutes les colonnes.",
+    "name_required": "Saisissez un nom.",
+    "slug_invalid": "Saisissez une adresse de page valide.",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "action": "Action",
+    "service_not_installed": "Non installé",
+    "service_version_unknown": "Version indisponible"
+} %}
+
+
+{% set check_editor = {
+    "ssl_policy": "Politique HTTPS",
+    "ssl_policy_default": "Par défaut",
+    "ssl_policy_https": "Exiger HTTPS",
+    "ssl_policy_http": "Exiger HTTP",
+    "ssl_policy_hint": "Vérifie l’adresse finale après les redirections autorisées. Un passage de HTTPS à HTTP est toujours une erreur, même en mode Par défaut. Ignorer les erreurs de certificat ne désactive pas cette politique.",
+    "create": "Créer une vérification",
+    "edit": "Modifier la vérification",
+    "sections": "Configuration",
+    "target": "Vérification",
+    "settings": "Paramètres",
+    "notifications": "Notifications",
+    "intro": "Commencez par la cible. Les valeurs par défaut sont prêtes ; développez les paramètres avancés si nécessaire.",
+    "target_hint": "Choisissez la cible et les emplacements d’exécution.",
+    "settings_hint": "Les intervalles et délais sont en secondes. Développez les blocs pour les paramètres avancés.",
+    "notifications_hint": "Choisissez les canaux ou laissez-les désactivés. Ces paramètres restent modifiables.",
+    "locations": "Emplacements",
+    "available": "Disponibles",
+    "selected": "Sélectionnés",
+    "request": "Requête et connexion",
+    "response": "Validation de la réponse",
+    "authentication": "Authentification",
+    "proxy": "Proxy",
+    "extra": "Paramètres supplémentaires",
+    "back": "Retour",
+    "next": "Suivant",
+    "save": "Enregistrer",
+    "saving": "Enregistrement…",
+    "required": "Remplissez ce champ.",
+    "invalid_url": "Saisissez une URL HTTP ou HTTPS avec un nom d’hôte.",
+    "number": "Saisissez un nombre dans la plage autorisée.",
+    "port": "Saisissez un port entre 2 et 65535.",
+    "timeout": "Le délai doit être inférieur à l’intervalle.",
+    "ping_timeout": "Nombre de paquets × délai doit être inférieur à l’intervalle.",
+    "entities": "Sélectionnez au moins un emplacement.",
+    "status_codes": "Ajoutez au moins un code HTTP accepté.",
+    "json": "Saisissez un objet JSON valide.",
+    "save_error": "La vérification n’a pas été enregistrée. Vos données sont conservées ; vérifiez les champs et réessayez.",
+    "loading": "Chargement des paramètres…",
+    "load_error": "Impossible de charger la vérification. Fermez cette fenêtre et réessayez.",
+    "copy": "copie",
+    "disabled": "Désactivé",
+    "summary": "Résumé",
+    "seconds": "s",
+    "summary_empty": "Choisissez une cible",
+    "no_channels": "Notifications désactivées",
+    "json_path": "Chemin JSON",
+    "json_value": "Valeur JSON attendue",
+    "proxy_host": "Hôte du proxy",
+    "proxy_port": "Port du proxy",
+    "proxy_username": "Utilisateur du proxy",
+    "proxy_password": "Mot de passe du proxy"
+} %}

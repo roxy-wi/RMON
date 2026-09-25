@@ -32,6 +32,14 @@
     </div>
     <div class="server-desc">
         <div>
+            <b>{{ lang.agent_transport.label }}</b>:
+            {{ {'http': 'HTTP', 'https': 'HTTPS', 'mtls': 'HTTPS + mTLS'}.get(agent.applied_result_transport, lang.agent_transport.unknown) }}
+            {% if agent.transport_pending %}<span class="transport-pending">— {{ lang.agent_transport.pending }}</span>{% endif %}
+            {% if agent.transport_checked_at %}
+                <span title="{{ lang.agent_transport.checked }}">({{ agent.transport_checked_at }})</span>
+            {% endif %}
+        </div>
+        <div>
             <b>{{ lang.words.server|title() }}</b>: {{ copy_to_clipboard(value=agent.hostname) }}
             <b>{{ lang.words.server|title() }} IP</b>: {{ copy_to_clipboard(value=agent.ip) }}
         </div>

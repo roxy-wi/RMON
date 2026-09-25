@@ -1,11 +1,10 @@
 {% if g.user_params['user'] %}
-	<span id="show-user-settings-button" class="user-circle login" title="{{lang.words.user3|title()}} {{lang.words.settings}}" style="margin-top: 5px;" onclick="openUserSettings('{{ g.user_params['user_id'] }}')">
-        {{g.user_params['user']}}
-    </span>
+    <div class="account-actions">
+        <button type="button" id="show-user-settings-button" class="user-circle login icon-button"
+                title="{{lang.words.user3|title()}} {{lang.words.settings}}"
+                onclick="openUserSettings('{{ g.user_params['user_id'] }}')">{{ g.user_params['user'] }}</button>
+        <a href="{{ url_for('logout') }}" class="icon-button" aria-label="{{ lang.words.logout|title() }}" title="{{ lang.words.logout|title() }}"><i class="fas fa-sign-out-alt" aria-hidden="true"></i></a>
+    </div>
 {% else %}
-	<a href=/app/login title="Login" class="login"> Login</a>
+    <a href="{{ url_for('login_page') }}" class="login">{{ lang.words.login2|title() }}</a>
 {% endif %}
-<a href="/logout" title="{{lang.words.logout|title()}}" style="float: right;
-    right: 27px;
-    position: absolute;
-    top: 12px;"><i class="fas fa-sign-out-alt"></i></a>

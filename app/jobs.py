@@ -67,6 +67,8 @@ def delete_old_logs():
 
 @scheduler.task('interval', id='update_owner_on_log', hours=12, misfire_grace_time=None)
 def update_owner_on_log():
+    if os.getenv('RMON_CONTAINER') == '1':
+        return
     log_path = get_config.get_config_var('main', 'log_path')
     try:
         if distro.id() == 'ubuntu':
@@ -79,13 +81,28 @@ def update_owner_on_log():
 
 @scheduler.task('interval', id='delete_ansible_artifacts', hours=24, misfire_grace_time=None)
 def delete_ansible_artifacts():
+    from app.modules.db.db_model import OperationJob, conn
+    try:
+        if OperationJob.select().where(OperationJob.status == 'running').exists():
+            return
+    finally:
+        conn.close()
     ansible_path = '/var/www/rmon/app/scripts/ansible'
     folders = ['artifacts', 'env']
 
     for folder in folders:
         if os.path.isdir(f'{ansible_path}/{folder}'):
             try:
-                shutil.rmtree(f'{ansible_path}/{folder}')
+                # Preserve writable roots and recent files created by operations.
+                cutoff = datetime.datetime.now().timestamp() - 2 * 86400
+                with os.scandir(f'{ansible_path}/{folder}') as entries:
+                    for entry in entries:
+                        if entry.stat(follow_symlinks=False).st_mtime >= cutoff:
+                            continue
+                        if entry.is_dir(follow_symlinks=False):
+                            shutil.rmtree(entry.path)
+                        else:
+                            os.unlink(entry.path)
             except Exception as e:
                 raise Exception(f'error: Cron cannot delete ansible folders: {e}')
 
@@ -110,3 +127,13 @@ def delete_smon_history():
     app = scheduler.app
     with app.app_context():
         smon_sql.delete_smon_history()
+
+
+@scheduler.task('interval', id='cleanup_operations', hours=24, max_instances=1, coalesce=True)
+def cleanup_operations():
+    from app.modules.operations.queue import cleanup
+    from app.modules.db.db_model import conn
+    try:
+        return cleanup()
+    finally:
+        conn.close()

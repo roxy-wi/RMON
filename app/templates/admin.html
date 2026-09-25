@@ -55,7 +55,7 @@
 				<th class="padding10" style="width: 0;">Id</th>
 				<th class="padding10 first-collumn">{{lang.words.name|title()}}</th>
 				<th style="width: 100%;">{{lang.words.desc|title()}}</th>
-				<th></th>
+				<th class="actions-column">Actions</th>
 			</tr>
             </thead>
 			<tbody>
@@ -65,7 +65,7 @@
 			{% if group.name == "Default" %}
 				<td class="padding10 first-collumn" style="padding: 8px 0;">{{ group.name }}</td>
 				<td>{{ group.description.replace("'", "") }}</td>
-				<td></td>
+				<td class="actions-column"></td>
 			{% else %}
 				<td class="padding10 first-collumn" style="padding: 8px 0;">
 					{% set id = 'name-' + group.group_id|string() %}
@@ -81,8 +81,8 @@
 					{% endif %}
                     <span style="display: none">{{ group.description.replace("'", "") }}</span>
 				</td>
-				<td>
-					<a class="delete" onclick="confirmDeleteGroup({{ group.group_id }})" title="{{lang.words.delete|title()}} {{lang.words.group2}} {{group.name.replace("'", "")}}" style="cursor: pointer;"></a>
+				<td class="actions-column">
+					<button type="button" onclick="confirmDeleteGroup({{ group.group_id }})">{{lang.words.delete|title()}} {{group.name}}</button>
 				</td>
 			{% endif %}
 			</tr>
@@ -104,16 +104,14 @@
 					<td class="padding10 first-collumn" style="width: 25%;">
 						{{lang.words.service|title()}}
 					</td>
-					<td class="padding10 first-collumn">
-						{{lang.words.actions|title()}}
-					</td>
 					<td class="first-collumn">{{lang.words.version|title()}}</td>
 					<td style="width: 100%">{{lang.words.desc|title()}}</td>
-					<td><span onclick="loadServices()" class="refresh" title="{{lang.words.reload|title()}} {{lang.words.services}}"></span></td>
+					<th class="actions-column">Actions</th>
 				</tr>
 			</thead>
 			<tbody id="ajax-services-body"></tbody>
 		</table>
+        <div class="admin-page-actions"><button type="button" class="retry-button" onclick="loadServices()">{{lang.words.reload|title()}} {{lang.words.services}}</button></div>
 		<div class="add-note alert addName alert-info" style="width: inherit; margin-right: 15px;">
 			{{lang.words.read|title()}} {{lang.words.about}} {{lang.words.services}} <a href="https://rmon.io/tools" title="RMON {{lang.words.services4}}" target="_blank">{{lang.words.here}}</a>
 		</div>
@@ -126,14 +124,16 @@
 				<td class="padding10 first-collumn" style="width: 25%;">{{lang.words.service|title()}}</td>
 				<td class="first-collumn" style="width: 10%">{{lang.words.current2|title()}} {{lang.words.version}}</td>
 				<td class="padding10" style="width: 10%">{{lang.words.latest|title()}} {{lang.words.version}}</td>
-				<td style="width: 10%"></td>
 				<td style="width: 100%">{{lang.words.desc|title()}}</td>
-				<td><span onclick="checkUpdateRoxy()" class="refresh service-restart" title="{{lang.words.check|title()}} {{lang.words.new4}} {{lang.words.versions}}"></span></td>
-				<td><span onclick="loadupdatehapwi()" class="refresh" title="{{lang.words.refresh|title()}}"></span></td>
+				<th class="actions-column">Actions</th>
 			</tr>
 			</thead>
 			<tbody id="ajax-updatehapwi-body"></tbody>
 		</table>
+        <div class="admin-page-actions">
+            <button type="button" class="retry-button" onclick="checkUpdateRoxy()">{{lang.words.check|title()}} {{lang.words.new4}} {{lang.words.versions}}</button>
+            <button type="button" class="retry-button" onclick="loadupdatehapwi()">{{lang.words.refresh|title()}}</button>
+        </div>
 		<div class="add-note alert addName alert-info" style="width: inherit; margin-right: 15px;">
 			<b style="font-size: 20px; display: block; padding-bottom: 10px;">{{lang.words.note|title()}}:</b>
 			{{lang.admin_page.desc.proxy_settings}}
@@ -177,20 +177,7 @@
 		{% endfor %}
 	});
     $(document).ready(function() {
-        $('#ajax-group').on('page.dt')
-            .DataTable({
-                dom: 'Blfrtip',
-                colReorder: true,
-                "pageLength": 25,
-                stateSave: true,
-                "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
-                "columnDefs": [
-                    {
-                        "searchable": false,
-                        "orderable": false
-                    }
-                ],
-            });
+        RmonUI.initAdminTable('#ajax-group');
     });
 </script>
 <link href="{{ url_for('static', filename='css/servers.css') }}" rel="stylesheet"/>

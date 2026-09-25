@@ -2,21 +2,7 @@
 {% if not adding %}
 <script>
 $(document).ready(function() {
-    $('#ajax-servers').on('page.dt')
-        .DataTable({
-            dom: 'Blfrtip',
-            colReorder: true,
-            "pageLength": 25,
-            stateSave: true,
-            "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]],
-            "columnDefs": [
-                {
-                    "searchable": false,
-                    "orderable": false
-                }
-            ],
-            "stripeClasses": [ 'odd', 'even' ]
-        });
+    RmonUI.initAdminTable('#ajax-servers');
 });
 </script>
 <table class="overview overview-overflow" id="ajax-servers">
@@ -30,15 +16,9 @@ $(document).ready(function() {
 			<th style="width: 10%">{{lang.words.group|title()}}</th>
 			{% endif %}
 			<th class="checkbox-head" style="min-width: 70px;">{{lang.words.enabled|title()}}</th>
-			<th style="min-width: 120px;" class="help_cursor" id="server-firewalld-th">
-				<span title="If the server has a firewall enabled, enable this option">Firewalld</span>
-			</th>
 			<th class="cred-field">{{lang.words.creds|title()}}</th>
 			<th style="width: 100%">{{lang.words.desc|title()}}</th>
-			<th style="min-width: 17px;"></th>
-			<th></th>
-			<th></th>
-			<th></th>
+			<th class="actions-column">Actions</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -83,11 +63,6 @@ $(document).ready(function() {
 					{{ checkbox(id) }}
 				{% endif %}
 			</td>
-			<td class="checkbox" style="padding-left: 0">
-				<div class="controlgroup">
-					<button onclick="viewFirewallRules('{{server.2}}')" title="{{lang.words.view|title()}} firewall {{lang.words.rules2}} {{lang.words.on}} {{lang.words.server2}} {{server.1}}" class="overflow" style="width: 60px;height: 28px;">{{lang.words.view}}</button>
-				</div>
-			</td>
 			<td>
 				<div class="controlgroup">
 					<select id="credentials-{{server.0}}">
@@ -100,7 +75,6 @@ $(document).ready(function() {
 							{% endif %}
 						{% endfor %}
 					</select>
-					<button onclick="checkSshConnect('{{server.2}}')" title="Check SSH connect to the server {{server.1}}" class="overflow" style="width: 70px;height: 25px;">{{lang.words.check}}</button>
 				</div>
 			</td>
 			<td>
@@ -111,17 +85,13 @@ $(document).ready(function() {
 					{{ input(id, size='20') }}
 				{% endif %}
 			</td>
-			<td>
-				<a href="/history/server/{{server.2}}" title="{{lang.words.view|title}} {{lang.words.history}} {{lang.words.for}} {{lang.words.this}} {{lang.words.server}}" class="history"></a>
-			</td>
-			<td style="min-width: 17px;">
-				<a class="info" onclick="showServerInfo('{{server.0}}', '{{server.2}}')" id="server_info_link-{{server.0}}" title="{{lang.words.show|title()}} {{lang.words.server}} {{lang.words.info}}" style="cursor: pointer; color: var(--color-blue)"></a>
-			</td>
-			<td>
-				<a class="add" onclick="cloneServer({{server.0}})" id="clone-{{server.0}}" title="{{lang.words.w_copy|title()}} {{lang.words.settings}} {{server.1}}" style="cursor: pointer;"></a>
-			</td>
-			<td>
-				<a class="delete" onclick="confirmDeleteServer({{server.0}})" title="{{lang.words.delete|title()}} {{lang.words.server}} {{server.1}}" style="cursor: pointer;"></a>
+			<td class="actions-column">
+                <button type="button" onclick="checkSshConnect('{{server.2}}')">{{lang.words.check|title()}} SSH</button>
+                <button type="button" onclick="viewFirewallRules('{{server.2}}')">{{lang.words.view|title()}} firewall {{lang.words.rules2}}</button>
+                <a href="/history/server/{{server.2}}">{{lang.words.view|title()}} {{lang.words.history}}</a>
+                <button type="button" onclick="showServerInfo('{{server.0}}', '{{server.2}}')" id="server_info_link-{{server.0}}">{{lang.words.show|title()}} {{lang.words.server}} {{lang.words.info}}</button>
+                <button type="button" onclick="cloneServer({{server.0}})" id="clone-{{server.0}}">{{lang.words.w_copy|title()}} {{lang.words.settings}}</button>
+                <button type="button" onclick="confirmDeleteServer({{server.0}})">{{lang.words.delete|title()}} {{server.1}}</button>
 			</td>
 		</tr>
 		{% endfor %}
