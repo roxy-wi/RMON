@@ -1,0 +1,121 @@
+<section id="client-checks" class="cc" data-can-edit="{{ 'true' if can_edit else 'false' }}" data-api="{{ url_for('api_v1_0_main.client.projects') }}">
+    <script id="cc-strings" type="application/json">{{ c|tojson }}</script>
+    {% include 'client/preset_labels.html' %}
+    <p class="cc-intro">{{ c.intro }}</p>
+    {% if not can_edit %}<p class="cc-notice">{{ c.read_only }}</p>{% endif %}
+    <div id="cc-message" role="alert" class="cc-message" hidden></div>
+    <div class="cc-toolbar cc-project-toolbar">
+        <label class="cc-grow">{{ c.project }}<select id="cc-project" disabled><option value="">{{ c.loading }}</option></select></label>
+        <button type="button" id="cc-more-projects" hidden>{{ c.more_projects }}</button>
+        {% if can_edit %}<button type="button" id="cc-new-project" class="cc-primary">+ {{ c.new_project }}</button>{% endif %}
+        <label>{{ c.period }}<select id="cc-period">
+            {% for value, label in [(1,c.hour),(6,c.hours6),(24,c.day),(168,c.days7),(720,c.days30),(2160,c.days90)] %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+        </select></label>
+        <button type="button" id="cc-refresh">{{ c.refresh }}</button>
+        <label class="cc-check cc-auto-refresh"><input type="checkbox" id="cc-auto-refresh" checked>{{ c.auto_refresh }}</label>
+    </div>
+    <p id="cc-refresh-status" class="cc-muted" hidden></p>
+    <div id="cc-empty" class="cc-empty" hidden><h3>{{ c.new_project }}</h3><p>{{ c.create_project_hint }}</p></div>
+    <div id="cc-project-area" hidden>
+        <div class="cc-project-heading"><div><h3 id="cc-project-name"></h3><p id="cc-project-description" class="cc-muted"></p></div>
+            <span id="cc-project-state" class="cc-badge"></span>
+            {% if can_edit %}<button type="button" id="cc-toggle-collection"></button>{% endif %}
+        </div>
+        <div class="cc-tabs" role="tablist" aria-label="{{ c.title }}">
+            {% for name, label in [('overview',c.overview),('report',c.report),('connect',c.connect),('events',c.events)] %}
+            <button type="button" role="tab" id="cc-tab-{{ name }}" aria-controls="cc-panel-{{ name }}" aria-selected="{{ 'true' if loop.first else 'false' }}" tabindex="{{ '0' if loop.first else '-1' }}" data-tab="{{ name }}">{{ label }}</button>
+            {% endfor %}
+        </div>
+        <section id="cc-panel-overview" role="tabpanel" aria-labelledby="cc-tab-overview">
+            <div class="cc-section-head"><h3>{{ c.overview }}</h3>{% if can_edit %}<button type="button" class="cc-primary" id="cc-new-check">+ {{ c.new_check }}</button>{% endif %}</div>
+            <p class="cc-muted">{{ c.minute_hint }}</p>
+            <div id="cc-overview-state" role="status"></div>
+            <div id="cc-overview-cards" class="cc-overview-grid"></div>
+            <details class="cc-overview-table"><summary>{{ c.table_view }}</summary>
+            <div class="cc-table-wrap" tabindex="0" role="region" aria-label="{{ c.overview }}">
+                <table class="cc-table"><thead><tr><th>{{ c.check }}</th><th>{{ c.observations }}</th><th>{{ c.error_rate }}</th><th>{{ c.primary }}</th><th>≈ p95</th><th>{{ c.state }}</th></tr></thead><tbody id="cc-overview-rows"></tbody></table>
+            </div>
+            </details>
+            <div class="cc-pagination"><button type="button" id="cc-overview-prev" disabled>{{ c.previous }}</button><button type="button" id="cc-overview-next" disabled>{{ c.next }}</button></div>
+        </section>
+        <section id="cc-panel-report" role="tabpanel" aria-labelledby="cc-tab-report" hidden>
+            <form id="cc-report-form">
+                <div class="cc-toolbar cc-check-toolbar">
+                    <label class="cc-grow">{{ c.check }}<select id="cc-report-check" class="cc-check-select"></select></label>
+                    <button type="button" class="cc-more-checks" hidden>{{ c.more_checks }}</button>
+                    {% if can_edit %}<button type="button" id="cc-edit-definition" disabled>{{ c.edit_definition }}</button>{% endif %}
+                </div>
+                <div class="cc-toolbar cc-report-toolbar">
+                    <label>{{ c.metric }}<select id="cc-report-metric"></select></label>
+                    <label>{{ c.outcome }}<select id="cc-report-outcome"><option value="all">{{ c.all }}</option><option value="ok">{{ c.ok }}</option><option value="error">{{ c.error }}</option></select></label>
+                    <label>{{ c.group_by }}<select id="cc-report-group"></select></label>
+                </div>
+                <details class="cc-filter-panel">
+                <summary>{{ c.filters }}</summary>
+                <div class="cc-section-head"><span>{{ c.context }}</span><button type="button" id="cc-add-filter">+ {{ c.add_filter }}</button></div>
+                <div id="cc-filters" class="cc-fields"></div>
+                <button type="submit" class="cc-primary">{{ c.apply }}</button>
+                </details>
+            </form>
+            <div id="cc-report-state" role="status" class="cc-notice"></div>
+            <div id="cc-report-data" hidden>
+                <div id="cc-stats" class="cc-stats"></div>
+                <p id="cc-report-quality" class="cc-muted"></p>
+                <div class="cc-card cc-chart-card"><h3 id="cc-chart-title">{{ c.timeline }}</h3><p id="cc-chart-empty" class="cc-muted" hidden>{{ c.no_data_hint }}</p><div class="cc-chart"><canvas id="cc-chart" role="img" aria-label="{{ c.timeline }}"></canvas></div>
+                    <details><summary>{{ c.table_view }}</summary><div class="cc-table-wrap" tabindex="0" role="region" aria-label="{{ c.table_view }}"><table class="cc-table"><thead><tr><th>{{ c.time }}</th><th>{{ c.observations }}</th><th>{{ c.metric_count }}</th><th>≈ p50</th><th>≈ p95</th><th>≈ p99</th></tr></thead><tbody id="cc-series-rows"></tbody></table></div></details>
+                </div>
+                <p class="cc-muted">{{ c.percentile_note }}</p>
+                <p id="cc-sampling" class="cc-muted"></p>
+                <p class="cc-muted">{{ c.chart_gap_hint }}</p>
+                <div id="cc-groups" class="cc-card" hidden><h3>{{ c.groups }}</h3><div class="cc-table-wrap" tabindex="0" role="region" aria-label="{{ c.groups }}"><table class="cc-table"><thead><tr><th>{{ c.group }}</th><th>{{ c.observations }}</th><th>{{ c.error_rate }}</th><th>{{ c.metric_count }}</th><th>≈ p95</th></tr></thead><tbody id="cc-group-rows"></tbody></table></div><p id="cc-omitted" class="cc-muted"></p></div>
+            </div>
+        </section>
+        <section id="cc-panel-connect" role="tabpanel" aria-labelledby="cc-tab-connect" hidden>
+            <div class="cc-toolbar"><label class="cc-grow">{{ c.check }}<select id="cc-connect-check" class="cc-check-select"></select></label><button type="button" class="cc-more-checks" hidden>{{ c.more_checks }}</button><span id="cc-connect-version"></span></div>
+            <div class="cc-card">
+                <label>{{ c.endpoint }}<input id="cc-endpoint" type="url" maxlength="2048" placeholder="https://collector.example.com/api/v1/client/events" autocomplete="off"></label>
+                <p class="cc-muted">{{ c.endpoint_hint }}</p>
+                <label>{{ c.project_key }}<input id="cc-sending-key" type="text" maxlength="52" autocomplete="off" spellcheck="false" placeholder="rmon_pub_…"></label>
+                <p id="cc-key-once" role="status" class="cc-notice" hidden>{{ c.key_once }}</p><p class="cc-muted">{{ c.key_hint }}</p>
+                <div class="cc-toolbar"><label>{{ c.environment }}<input id="cc-example-env" value="production" maxlength="128"></label><label>{{ c.platform }}<input id="cc-example-platform" value="browser" maxlength="128"></label><label>{{ c.example_format }}<select id="cc-example-format"><option value="json">{{ c.json }}</option><option value="curl">curl</option><option value="browser">{{ c.browser }}</option></select></label><button type="button" id="cc-copy-example" disabled>{{ c['copy'] }}</button></div>
+                <p id="cc-example-state" role="status">{{ c.sample_setup }}</p><pre id="cc-example" tabindex="0"></pre><p class="cc-muted">{{ c.preview_hint }}</p><p class="cc-muted">{{ c.delivery_hint }}</p>
+            </div>
+            <div class="cc-section-head"><h3>{{ c['keys'] }}</h3>{% if can_edit %}<button type="button" id="cc-new-key" class="cc-primary">+ {{ c.new_key }}</button>{% endif %}</div>
+            <div id="cc-keys-state" role="status"></div><div id="cc-key-list" class="cc-fields"></div>
+            <div class="cc-pagination"><button type="button" id="cc-keys-prev" disabled>{{ c.previous }}</button><button type="button" id="cc-keys-next" disabled>{{ c.next }}</button></div>
+        </section>
+        <section id="cc-panel-events" role="tabpanel" aria-labelledby="cc-tab-events" hidden>
+            <h3>{{ c.events }}</h3><div id="cc-events-state" role="status"></div>
+            <div class="cc-table-wrap" tabindex="0" role="region" aria-label="{{ c.events }}"><table class="cc-table"><thead><tr><th>{{ c.received }}</th><th>{{ c.check }}</th><th>{{ c.state }}</th><th>{{ c.duration }}</th><th>{{ c.country }}</th><th>{{ c.page_url }}</th><th>{{ c.details }}</th></tr></thead><tbody id="cc-event-rows"></tbody></table></div>
+            <div class="cc-pagination"><button type="button" id="cc-events-prev" disabled>{{ c.previous }}</button><button type="button" id="cc-events-next" disabled>{{ c.next }}</button></div>
+        </section>
+    </div>
+    <p class="cc-muted">{{ c.geo_hint }} <a href="https://db-ip.com" target="_blank" rel="noopener noreferrer">{{ c.geo_attribution }}</a> (CC BY 4.0).</p>
+    <p class="cc-muted">{{ c.page_hint }}</p>
+    {% if can_edit %}
+    <dialog id="cc-project-dialog" aria-labelledby="cc-project-title"><form id="cc-project-form"><h3 id="cc-project-title">{{ c.new_project }}</h3>
+        <label>{{ c.name }}<input name="name" required maxlength="160"></label><label>{{ c.description }}<textarea name="description" maxlength="1000" rows="3"></textarea></label>
+        <p class="cc-form-error" role="alert" hidden></p><div class="cc-dialog-actions"><button type="button" data-close>{{ c.cancel }}</button><button type="submit" class="cc-primary">{{ c.save }}</button></div>
+    </form></dialog>
+    <dialog id="cc-definition-dialog" class="cc-wide-dialog" aria-labelledby="cc-definition-title"><form id="cc-definition-form">
+        <h3 id="cc-definition-title">{{ c.new_check }}</h3><p id="cc-version-hint" class="cc-notice" hidden>{{ c.version_hint }}</p>
+        <div class="cc-field-grid"><label>{{ c.name }}<input name="name" required maxlength="160"></label><label>{{ c.code }}<input name="code" required maxlength="64" pattern="[a-z][a-z0-9_.]{0,63}" spellcheck="false"></label></div>
+        <p class="cc-muted">{{ c.code_hint }}</p><label>{{ c.description }}<textarea name="description" maxlength="1000" rows="2"></textarea></label>
+        <label class="cc-check"><input type="checkbox" id="cc-has-outcome" checked>{{ c.has_outcome }}</label>
+        <label class="cc-check"><input type="checkbox" id="cc-has-duration" checked>{{ c.include_duration }}</label>
+        <div id="cc-duration-fields" class="cc-field-grid"><label>{{ c.label }}<input id="cc-duration-label" maxlength="160" value="{{ c.duration }}"></label><label>{{ c.minimum }}<input id="cc-duration-min" type="number" step="any" min="0" value="0"></label><label>{{ c.maximum }}<input id="cc-duration-max" type="number" step="any" min="0"></label><label class="cc-check"><input id="cc-duration-required" type="checkbox">{{ c.required }}</label></div>
+        <div class="cc-section-head"><h4>{{ c.metrics }}</h4><button type="button" id="cc-add-metric">+ {{ c.add_metric }}</button></div><div id="cc-metrics" class="cc-fields"></div>
+        <label>{{ c.primary }}<select id="cc-primary-metric"></select></label>
+        <div class="cc-section-head"><h4>{{ c.context }}</h4><button type="button" id="cc-add-context">+ {{ c.add_context }}</button></div><p class="cc-muted">{{ c.context_hint }}</p><div id="cc-context" class="cc-fields"></div>
+        <details><summary>{{ c.preview }}</summary><p class="cc-muted">{{ c.preview_hint }}</p><pre id="cc-definition-preview" tabindex="0"></pre></details>
+        <p class="cc-form-error" role="alert" hidden></p><div class="cc-dialog-actions"><button type="button" data-close>{{ c.cancel }}</button><button type="submit" class="cc-primary">{{ c.save }}</button></div>
+    </form></dialog>
+    <dialog id="cc-key-dialog" aria-labelledby="cc-key-title"><form id="cc-key-form"><h3 id="cc-key-title">{{ c.new_key }}</h3>
+        <label>{{ c.name }}<input name="name" maxlength="160" required></label><fieldset><legend>{{ c.check }}</legend><div id="cc-key-checks" class="cc-fields"></div><button type="button" class="cc-more-checks" hidden>{{ c.more_checks }}</button></fieldset>
+        <label>{{ c.key_environments }}<input name="environments" value="production" required maxlength="2560"></label>
+        <label>{{ c.origins }}<textarea name="origins" rows="3" maxlength="10240" placeholder="https://shop.example.com"></textarea></label><p class="cc-muted">{{ c.origin_hint }}</p>
+        <label class="cc-check"><input name="allow_no_origin" type="checkbox" checked>{{ c.allow_no_origin }}</label>
+        <p class="cc-form-error" role="alert" hidden></p><div class="cc-dialog-actions"><button type="button" data-close>{{ c.cancel }}</button><button type="submit" class="cc-primary">{{ c.new_key }}</button></div>
+    </form></dialog>
+    {% endif %}
+</section>

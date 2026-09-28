@@ -1,0 +1,22 @@
+# Optional client checks with reception and analytics in the server container.
+# Use with compose.yaml, compose.server.yaml and a server image supporting client checks.
+services:
+  server:
+    command: [python, -m, modules.common.runtime]
+    environment:
+      RMON_CLIENT_ENABLED: "1"
+      RMON_CLIENT_BIND: "0.0.0.0:5102"
+      RMON_CLIENT_WORKERS: "${RMON_CLIENT_WORKERS:-1}"
+      RMON_CLIENT_THREADS: "${RMON_CLIENT_THREADS:-2}"
+      # Optional country MMDB file mounted read-only by the deployment.
+      RMON_CLIENT_GEOIP_DB: "${RMON_CLIENT_GEOIP_DB:-}"
+      RMON_CLIENT_TRUSTED_PROXIES: "${RMON_CLIENT_TRUSTED_PROXIES:-}"
+    healthcheck:
+      test: [CMD, python, -m, modules.common.runtime, health]
+      interval: 30s
+      timeout: 15s
+      start_period: 40s
+
+  proxy:
+    environment:
+      RMON_CLIENT_UPSTREAM: "http://server:5102"

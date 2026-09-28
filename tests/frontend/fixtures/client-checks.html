@@ -1,0 +1,303 @@
+<section id="client-checks" class="cc" data-can-edit="true" data-api="/api/v1.0/client/projects">
+    <script id="cc-strings" type="application/json">{"active": "Collection enabled", "add_context": "Add context field", "add_filter": "Add filter", "add_metric": "Add metric", "all": "All", "allow_no_origin": "Allow applications without an Origin header", "app_version": "App version", "apply": "Apply", "auto_refresh": "Auto-refresh \u00b7 30 s", "boolean": "Yes / no", "browser": "Browser JavaScript", "cancel": "Cancel", "chart_gap_hint": "Lines connect received measurements. Empty intervals do not mean zero or continuous observation.", "check": "Check", "choose_check": "Select a check", "choose_project": "Select a project", "close": "Close", "code": "Code", "code_hint": "Lowercase letters, digits, dots and underscores; start with a letter.", "connect": "Connect", "context": "Custom context", "context_hint": "Environment, platform, app version, country and network type are available by default. Up to two custom fields can be used for filtering.", "copied": "Copied", "copy": "Copy", "copy_failed": "Select the text and copy it manually.", "country": "Country", "create_project_hint": "Create a project, define the data you want to receive, then connect your application.", "day": "Last 24 hours", "days30": "Last 30 days", "days7": "Last 7 days", "days90": "Last 90 days", "definition": "Data definition", "definition_changed": "Another version was saved. Close and reopen the editor to load it.", "delivery_hint": "Send from the application being measured. A new operation needs a new event_id. Retry the same event_id only for network errors, 429 or 5xx, with a bounded delay. HTTP 202 means accepted; 200 means already received.", "description": "Description", "details": "Event details", "duration": "Duration", "edit_definition": "New definition version", "endpoint": "Event endpoint", "endpoint_hint": "The event endpoint is filled in for this RMON. Change it if your administrator uses a different collection address.", "enum": "Allowed values", "enum_hint": "One value per line", "environment": "Environment", "error": "Failed", "error_rate": "Error rate", "errors": "Errors", "events": "Recent events", "example_format": "Example format", "false": "No", "filterable": "Allow filtering and grouping", "filters": "Filters", "forbidden": "Your role does not allow this action.", "geo_attribution": "IP Geolocation by DB-IP", "geo_hint": "Country comes from the client or, when configured, from its IP address. IP location is approximate; older events cannot be located retroactively.", "group": "Group", "group_by": "Compare by", "groups": "Comparison", "has_outcome": "Record success or failure", "hour": "Last hour", "hours6": "Last 6 hours", "include_duration": "Measure duration in milliseconds", "integer": "Integer", "intro": "Measure operations in browsers, mobile apps and desktop software using the same event format.", "invalid_definition": "Check field names, unique codes, ranges and allowed values.", "invalid_filters": "Choose distinct fields and enter a value for each filter, or select Missing value.", "json": "HTTP JSON body", "key_environments": "Allowed environments (comma separated)", "key_hint": "This key can be embedded in applications. It allows sending events only; it cannot read reports.", "key_once": "Copy this key now. Its full value will not be shown again after leaving this project or reloading the page.", "keys": "Sending keys", "label": "Display name", "lag": "Processing delay, s", "last_processed": "Last processed", "last_received": "Last received", "last_refreshed": "Data refreshed", "loading": "Loading\u2026", "maximum": "Maximum", "mean": "Mean", "metric": "Metric", "metric_count": "Measured values", "metrics": "Custom metrics", "minimum": "Minimum", "minute_hint": "Reports include completed minutes. New observations appear after their minute ends.", "missing": "Missing value", "more_checks": "More checks", "more_projects": "More projects", "name": "Name", "network_type": "Network type", "new_check": "New check", "new_key": "Issue key", "new_project": "New project", "next": "Next page", "no_checks": "No checks yet. Define an operation or a measurement to start collecting data.", "no_data": "No observations", "no_data_hint": "No observations in this period. This alone does not indicate an outage.", "no_events": "No events received. Open Connect to prepare your first event.", "no_keys": "No keys issued yet.", "none": "None", "number": "Number", "observations": "Observations", "observed": "Observed", "ok": "Successful", "omitted": "Observations in other groups", "open_report": "Open report", "origin_hint": "For a browser, add the exact website origin, for example https://shop.example.com, without a path.", "origins": "Allowed website origins (one per line)", "outcome": "Metric outcomes", "overview": "Overview", "page_hint": "Source pages contain the host and path, without query parameters or fragments. Older events without a page address remain unassigned.", "page_url": "Source page", "pause": "Pause collection", "pause_confirm": "Pause new events for this project? Existing reports remain available.", "paused": "Collection paused", "percentile_note": "Percentiles are approximate. Each metric uses only observations containing that value.", "period": "Period", "platform": "Platform", "preset_http_reachability_context_device": "Device type", "preset_http_reachability_description": "One HEAD request to the home page after loading: HTTP status and time to response headers. This is not an ICMP ping.", "preset_http_reachability_metric_duration_ms": "Time to response headers", "preset_http_reachability_metric_http_status": "HTTP status", "preset_http_reachability_name": "Browser HTTP response", "preset_page_load_context_device": "Device type", "preset_page_load_description": "Document loading and connection timings measured in the visitor\u2019s browser.", "preset_page_load_metric_dns_ms": "DNS", "preset_page_load_metric_dom_ready_ms": "DOM ready", "preset_page_load_metric_download_ms": "HTML download", "preset_page_load_metric_duration_ms": "Full page load", "preset_page_load_metric_fcp_ms": "First contentful paint", "preset_page_load_metric_server_wait_ms": "Server response wait", "preset_page_load_metric_tcp_ms": "TCP without TLS", "preset_page_load_metric_tls_ms": "TLS", "preset_page_load_metric_transfer_bytes": "Transferred bytes", "preset_page_load_metric_ttfb_ms": "Time to first byte", "preset_page_load_name": "Page load", "preset_site_description": "Browser measurements from visitors to {site}", "preset_site_key": "Website snippet", "preview": "Example event", "preview_hint": "Example values must be replaced with actual measurements.", "previous": "Previous page", "primary": "Primary metric", "processing": "Processing", "processing_hint": "Some events are still being processed. Results may be incomplete.", "project": "Project", "project_key": "Sending key", "read_only": "You can view data. Ask an editor to create checks and issue keys.", "ready": "Up to date", "received": "Received", "refresh": "Refresh", "refresh_paused_dialog": "Auto-refresh paused while editing", "refresh_paused_filters": "Apply filters to resume auto-refresh", "refresh_paused_history": "Auto-refresh paused on earlier pages", "remove": "Remove", "report": "Report", "report_too_large": "Narrow the period or add filters to reduce the report size.", "request_error": "Unable to load data. Try again.", "required": "Required", "resume": "Resume collection", "retry": "Retry", "revoke": "Revoke", "revoke_confirm": "Revoke this key? Applications using it will no longer be able to send events.", "revoked": "Revoked", "sample_key_required": "The example is ready. Paste the sending key saved during setup, or issue a new key below. Existing keys cannot be shown again.", "sample_setup": "Select a check, enter an endpoint and a sending key to prepare the example.", "sampling": "Sampling probability", "sampling_hint": "Statistics describe the received sample, without estimating the total number of users.", "save": "Save", "saved": "Saved", "state": "Data status", "string": "Text", "table_view": "Show values as a table", "time": "Time", "timeline": "Metric over time", "timeout": "The request timed out. Try again or select a shorter period.", "title": "Client checks", "true": "Yes", "type": "Type", "unauthorized": "Sign in again to continue.", "unit": "Unit", "validation_error": "Check the fields and try again.", "value": "Value", "version": "Definition version", "version_hint": "Saving creates a new version. Existing clients can continue sending their previous version. Types, units and operation outcome cannot change under the same field or check code."}</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script id="cc-preset-labels" type="application/json">{"preset_http_reachability_context_device": ["Device type", "\u0422\u0438\u043f \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0430", "Type d\u2019appareil", "Tipo de dispositivo"], "preset_http_reachability_description": ["One HEAD request to the home page after loading: HTTP status and time to response headers. This is not an ICMP ping.", "\u041e\u0434\u0438\u043d HEAD-\u0437\u0430\u043f\u0440\u043e\u0441 \u043a \u0433\u043b\u0430\u0432\u043d\u043e\u0439 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u0435 \u043f\u043e\u0441\u043b\u0435 \u0437\u0430\u0433\u0440\u0443\u0437\u043a\u0438: HTTP-\u0441\u0442\u0430\u0442\u0443\u0441 \u0438 \u0432\u0440\u0435\u043c\u044f \u0434\u043e \u0437\u0430\u0433\u043e\u043b\u043e\u0432\u043a\u043e\u0432. \u042d\u0442\u043e \u043d\u0435 ICMP-\u043f\u0438\u043d\u0433.", "Une requ\u00eate HEAD vers la page d\u2019accueil apr\u00e8s chargement : statut HTTP et d\u00e9lai jusqu\u2019aux en-t\u00eates. Ce n\u2019est pas un ping ICMP.", "Uma requisi\u00e7\u00e3o HEAD para a p\u00e1gina inicial ap\u00f3s o carregamento: status HTTP e tempo at\u00e9 os cabe\u00e7alhos. N\u00e3o \u00e9 um ping ICMP."], "preset_http_reachability_metric_duration_ms": ["Time to response headers", "\u0412\u0440\u0435\u043c\u044f \u0434\u043e \u0437\u0430\u0433\u043e\u043b\u043e\u0432\u043a\u043e\u0432 \u043e\u0442\u0432\u0435\u0442\u0430", "D\u00e9lai jusqu\u2019aux en-t\u00eates de r\u00e9ponse", "Tempo at\u00e9 os cabe\u00e7alhos da resposta"], "preset_http_reachability_metric_http_status": ["HTTP status", "HTTP-\u0441\u0442\u0430\u0442\u0443\u0441", "Statut HTTP", "Status HTTP"], "preset_http_reachability_name": ["Browser HTTP response", "HTTP-\u043e\u0442\u0432\u0435\u0442 \u0438\u0437 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0430", "R\u00e9ponse HTTP du navigateur", "Resposta HTTP do navegador"], "preset_page_load_context_device": ["Device type", "\u0422\u0438\u043f \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0430", "Type d\u2019appareil", "Tipo de dispositivo"], "preset_page_load_description": ["Document loading and connection timings measured in the visitor\u2019s browser.", "\u0412\u0440\u0435\u043c\u044f \u0437\u0430\u0433\u0440\u0443\u0437\u043a\u0438 \u0434\u043e\u043a\u0443\u043c\u0435\u043d\u0442\u0430 \u0438 \u044d\u0442\u0430\u043f\u043e\u0432 \u0441\u043e\u0435\u0434\u0438\u043d\u0435\u043d\u0438\u044f \u0432 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0435 \u043f\u043e\u0441\u0435\u0442\u0438\u0442\u0435\u043b\u044f.", "Temps de chargement du document et de connexion mesur\u00e9s dans le navigateur du visiteur.", "Tempos de carregamento do documento e de conex\u00e3o medidos no navegador do visitante."], "preset_page_load_metric_dns_ms": ["DNS", "DNS", "DNS", "DNS"], "preset_page_load_metric_dom_ready_ms": ["DOM ready", "DOM \u0433\u043e\u0442\u043e\u0432", "DOM pr\u00eat", "DOM pronto"], "preset_page_load_metric_download_ms": ["HTML download", "\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0430 HTML", "T\u00e9l\u00e9chargement HTML", "Download do HTML"], "preset_page_load_metric_duration_ms": ["Full page load", "\u041f\u043e\u043b\u043d\u0430\u044f \u0437\u0430\u0433\u0440\u0443\u0437\u043a\u0430", "Chargement complet", "Carregamento completo"], "preset_page_load_metric_fcp_ms": ["First contentful paint", "\u041f\u0435\u0440\u0432\u043e\u0435 \u0441\u043e\u0434\u0435\u0440\u0436\u0438\u043c\u043e\u0435", "Premier affichage de contenu", "Primeira renderiza\u00e7\u00e3o de conte\u00fado"], "preset_page_load_metric_server_wait_ms": ["Server response wait", "\u041e\u0436\u0438\u0434\u0430\u043d\u0438\u0435 \u043e\u0442\u0432\u0435\u0442\u0430 \u043f\u043e\u0441\u043b\u0435 \u043e\u0442\u043f\u0440\u0430\u0432\u043a\u0438 \u0437\u0430\u043f\u0440\u043e\u0441\u0430", "Attente de la r\u00e9ponse du serveur", "Espera pela resposta do servidor"], "preset_page_load_metric_tcp_ms": ["TCP without TLS", "TCP \u0431\u0435\u0437 TLS", "TCP sans TLS", "TCP sem TLS"], "preset_page_load_metric_tls_ms": ["TLS", "TLS", "TLS", "TLS"], "preset_page_load_metric_transfer_bytes": ["Transferred bytes", "\u041f\u0435\u0440\u0435\u0434\u0430\u043d\u043e \u043f\u043e \u0441\u0435\u0442\u0438", "Octets transf\u00e9r\u00e9s", "Bytes transferidos"], "preset_page_load_metric_ttfb_ms": ["Time to first byte", "\u0412\u0440\u0435\u043c\u044f \u0434\u043e \u043f\u0435\u0440\u0432\u043e\u0433\u043e \u0431\u0430\u0439\u0442\u0430", "Temps jusqu\u2019au premier octet", "Tempo at\u00e9 o primeiro byte"], "preset_page_load_name": ["Page load", "\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0430 \u0441\u0442\u0440\u0430\u043d\u0438\u0446\u044b", "Chargement de la page", "Carregamento da p\u00e1gina"], "preset_site_description": ["Browser measurements from visitors to {site}", "\u0418\u0437\u043c\u0435\u0440\u0435\u043d\u0438\u044f \u0438\u0437 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u043e\u0432 \u043f\u043e\u0441\u0435\u0442\u0438\u0442\u0435\u043b\u0435\u0439 {site}", "Mesures des navigateurs des visiteurs de {site}", "Medi\u00e7\u00f5es dos navegadores dos visitantes de {site}"], "preset_site_key": ["Website snippet", "\u041a\u043e\u0434 \u0441\u0430\u0439\u0442\u0430", "Code du site", "C\u00f3digo do site"]}</script>
+    <p class="cc-intro">Measure operations in browsers, mobile apps and desktop software using the same event format.</p>
+
+    <div id="cc-message" role="alert" class="cc-message" hidden></div>
+    <div class="cc-toolbar cc-project-toolbar">
+        <label class="cc-grow">Project<select id="cc-project" disabled><option value="">Loading…</option></select></label>
+        <button type="button" id="cc-more-projects" hidden>More projects</button>
+        <button type="button" id="cc-new-project" class="cc-primary">+ New project</button>
+        <label>Period<select id="cc-period">
+            <option value="1">Last hour</option><option value="6">Last 6 hours</option><option value="24">Last 24 hours</option><option value="168">Last 7 days</option><option value="720">Last 30 days</option><option value="2160">Last 90 days</option>
+        </select></label>
+        <button type="button" id="cc-refresh">Refresh</button>
+        <label class="cc-check cc-auto-refresh"><input type="checkbox" id="cc-auto-refresh" checked>Auto-refresh · 30 s</label>
+    </div>
+    <p id="cc-refresh-status" class="cc-muted" hidden></p>
+    <div id="cc-empty" class="cc-empty" hidden><h3>New project</h3><p>Create a project, define the data you want to receive, then connect your application.</p></div>
+    <div id="cc-project-area" hidden>
+        <div class="cc-project-heading"><div><h3 id="cc-project-name"></h3><p id="cc-project-description" class="cc-muted"></p></div>
+            <span id="cc-project-state" class="cc-badge"></span>
+            <button type="button" id="cc-toggle-collection"></button>
+        </div>
+        <div class="cc-tabs" role="tablist" aria-label="Client checks">
+
+            <button type="button" role="tab" id="cc-tab-overview" aria-controls="cc-panel-overview" aria-selected="true" tabindex="0" data-tab="overview">Overview</button>
+
+            <button type="button" role="tab" id="cc-tab-report" aria-controls="cc-panel-report" aria-selected="false" tabindex="-1" data-tab="report">Report</button>
+
+            <button type="button" role="tab" id="cc-tab-connect" aria-controls="cc-panel-connect" aria-selected="false" tabindex="-1" data-tab="connect">Connect</button>
+
+            <button type="button" role="tab" id="cc-tab-events" aria-controls="cc-panel-events" aria-selected="false" tabindex="-1" data-tab="events">Recent events</button>
+
+        </div>
+        <section id="cc-panel-overview" role="tabpanel" aria-labelledby="cc-tab-overview">
+            <div class="cc-section-head"><h3>Overview</h3><button type="button" class="cc-primary" id="cc-new-check">+ New check</button></div>
+            <p class="cc-muted">Reports include completed minutes. New observations appear after their minute ends.</p>
+            <div id="cc-overview-state" role="status"></div>
+            <div id="cc-overview-cards" class="cc-overview-grid"></div>
+            <details class="cc-overview-table"><summary>Show values as a table</summary>
+            <div class="cc-table-wrap" tabindex="0" role="region" aria-label="Overview">
+                <table class="cc-table"><thead><tr><th>Check</th><th>Observations</th><th>Error rate</th><th>Primary metric</th><th>≈ p95</th><th>Data status</th></tr></thead><tbody id="cc-overview-rows"></tbody></table>
+            </div>
+            </details>
+            <div class="cc-pagination"><button type="button" id="cc-overview-prev" disabled>Previous page</button><button type="button" id="cc-overview-next" disabled>Next page</button></div>
+        </section>
+        <section id="cc-panel-report" role="tabpanel" aria-labelledby="cc-tab-report" hidden>
+            <form id="cc-report-form">
+                <div class="cc-toolbar cc-check-toolbar">
+                    <label class="cc-grow">Check<select id="cc-report-check" class="cc-check-select"></select></label>
+                    <button type="button" class="cc-more-checks" hidden>More checks</button>
+                    <button type="button" id="cc-edit-definition" disabled>New definition version</button>
+                </div>
+                <div class="cc-toolbar cc-report-toolbar">
+                    <label>Metric<select id="cc-report-metric"></select></label>
+                    <label>Metric outcomes<select id="cc-report-outcome"><option value="all">All</option><option value="ok">Successful</option><option value="error">Failed</option></select></label>
+                    <label>Compare by<select id="cc-report-group"></select></label>
+                </div>
+                <details class="cc-filter-panel">
+                <summary>Filters</summary>
+                <div class="cc-section-head"><span>Custom context</span><button type="button" id="cc-add-filter">+ Add filter</button></div>
+                <div id="cc-filters" class="cc-fields"></div>
+                <button type="submit" class="cc-primary">Apply</button>
+                </details>
+            </form>
+            <div id="cc-report-state" role="status" class="cc-notice"></div>
+            <div id="cc-report-data" hidden>
+                <div id="cc-stats" class="cc-stats"></div>
+                <p id="cc-report-quality" class="cc-muted"></p>
+                <div class="cc-card cc-chart-card"><h3 id="cc-chart-title">Metric over time</h3><p id="cc-chart-empty" class="cc-muted" hidden>No observations in this period. This alone does not indicate an outage.</p><div class="cc-chart"><canvas id="cc-chart" role="img" aria-label="Metric over time"></canvas></div>
+                    <details><summary>Show values as a table</summary><div class="cc-table-wrap" tabindex="0" role="region" aria-label="Show values as a table"><table class="cc-table"><thead><tr><th>Time</th><th>Observations</th><th>Measured values</th><th>≈ p50</th><th>≈ p95</th><th>≈ p99</th></tr></thead><tbody id="cc-series-rows"></tbody></table></div></details>
+                </div>
+                <p class="cc-muted">Percentiles are approximate. Each metric uses only observations containing that value.</p>
+                <p id="cc-sampling" class="cc-muted"></p>
+                <p class="cc-muted">Lines connect received measurements. Empty intervals do not mean zero or continuous observation.</p>
+                <div id="cc-groups" class="cc-card" hidden><h3>Comparison</h3><div class="cc-table-wrap" tabindex="0" role="region" aria-label="Comparison"><table class="cc-table"><thead><tr><th>Group</th><th>Observations</th><th>Error rate</th><th>Measured values</th><th>≈ p95</th></tr></thead><tbody id="cc-group-rows"></tbody></table></div><p id="cc-omitted" class="cc-muted"></p></div>
+            </div>
+        </section>
+        <section id="cc-panel-connect" role="tabpanel" aria-labelledby="cc-tab-connect" hidden>
+            <div class="cc-toolbar"><label class="cc-grow">Check<select id="cc-connect-check" class="cc-check-select"></select></label><button type="button" class="cc-more-checks" hidden>More checks</button><span id="cc-connect-version"></span></div>
+            <div class="cc-card">
+                <label>Event endpoint<input id="cc-endpoint" type="url" maxlength="2048" placeholder="https://collector.example.com/api/v1/client/events" autocomplete="off"></label>
+                <p class="cc-muted">The event endpoint is filled in for this RMON. Change it if your administrator uses a different collection address.</p>
+                <label>Sending key<input id="cc-sending-key" type="text" maxlength="52" autocomplete="off" spellcheck="false" placeholder="rmon_pub_…"></label>
+                <p id="cc-key-once" role="status" class="cc-notice" hidden>Copy this key now. Its full value will not be shown again after leaving this project or reloading the page.</p><p class="cc-muted">This key can be embedded in applications. It allows sending events only; it cannot read reports.</p>
+                <div class="cc-toolbar"><label>Environment<input id="cc-example-env" value="production" maxlength="128"></label><label>Platform<input id="cc-example-platform" value="browser" maxlength="128"></label><label>Example format<select id="cc-example-format"><option value="json">HTTP JSON body</option><option value="curl">curl</option><option value="browser">Browser JavaScript</option></select></label><button type="button" id="cc-copy-example" disabled>Copy</button></div>
+                <p id="cc-example-state" role="status">Select a check, enter an endpoint and a sending key to prepare the example.</p><pre id="cc-example" tabindex="0"></pre><p class="cc-muted">Example values must be replaced with actual measurements.</p><p class="cc-muted">Send from the application being measured. A new operation needs a new event_id. Retry the same event_id only for network errors, 429 or 5xx, with a bounded delay. HTTP 202 means accepted; 200 means already received.</p>
+            </div>
+            <div class="cc-section-head"><h3>Sending keys</h3><button type="button" id="cc-new-key" class="cc-primary">+ Issue key</button></div>
+            <div id="cc-keys-state" role="status"></div><div id="cc-key-list" class="cc-fields"></div>
+            <div class="cc-pagination"><button type="button" id="cc-keys-prev" disabled>Previous page</button><button type="button" id="cc-keys-next" disabled>Next page</button></div>
+        </section>
+        <section id="cc-panel-events" role="tabpanel" aria-labelledby="cc-tab-events" hidden>
+            <h3>Recent events</h3><div id="cc-events-state" role="status"></div>
+            <div class="cc-table-wrap" tabindex="0" role="region" aria-label="Recent events"><table class="cc-table"><thead><tr><th>Received</th><th>Check</th><th>Data status</th><th>Duration</th><th>Country</th><th>Source page</th><th>Event details</th></tr></thead><tbody id="cc-event-rows"></tbody></table></div>
+            <div class="cc-pagination"><button type="button" id="cc-events-prev" disabled>Previous page</button><button type="button" id="cc-events-next" disabled>Next page</button></div>
+        </section>
+    </div>
+    <p class="cc-muted">Country comes from the client or, when configured, from its IP address. IP location is approximate; older events cannot be located retroactively. <a href="https://db-ip.com" target="_blank" rel="noopener noreferrer">IP Geolocation by DB-IP</a> (CC BY 4.0).</p>
+    <p class="cc-muted">Source pages contain the host and path, without query parameters or fragments. Older events without a page address remain unassigned.</p>
+
+    <dialog id="cc-project-dialog" aria-labelledby="cc-project-title"><form id="cc-project-form"><h3 id="cc-project-title">New project</h3>
+        <label>Name<input name="name" required maxlength="160"></label><label>Description<textarea name="description" maxlength="1000" rows="3"></textarea></label>
+        <p class="cc-form-error" role="alert" hidden></p><div class="cc-dialog-actions"><button type="button" data-close>Cancel</button><button type="submit" class="cc-primary">Save</button></div>
+    </form></dialog>
+    <dialog id="cc-definition-dialog" class="cc-wide-dialog" aria-labelledby="cc-definition-title"><form id="cc-definition-form">
+        <h3 id="cc-definition-title">New check</h3><p id="cc-version-hint" class="cc-notice" hidden>Saving creates a new version. Existing clients can continue sending their previous version. Types, units and operation outcome cannot change under the same field or check code.</p>
+        <div class="cc-field-grid"><label>Name<input name="name" required maxlength="160"></label><label>Code<input name="code" required maxlength="64" pattern="[a-z][a-z0-9_.]{0,63}" spellcheck="false"></label></div>
+        <p class="cc-muted">Lowercase letters, digits, dots and underscores; start with a letter.</p><label>Description<textarea name="description" maxlength="1000" rows="2"></textarea></label>
+        <label class="cc-check"><input type="checkbox" id="cc-has-outcome" checked>Record success or failure</label>
+        <label class="cc-check"><input type="checkbox" id="cc-has-duration" checked>Measure duration in milliseconds</label>
+        <div id="cc-duration-fields" class="cc-field-grid"><label>Display name<input id="cc-duration-label" maxlength="160" value="Duration"></label><label>Minimum<input id="cc-duration-min" type="number" step="any" min="0" value="0"></label><label>Maximum<input id="cc-duration-max" type="number" step="any" min="0"></label><label class="cc-check"><input id="cc-duration-required" type="checkbox">Required</label></div>
+        <div class="cc-section-head"><h4>Custom metrics</h4><button type="button" id="cc-add-metric">+ Add metric</button></div><div id="cc-metrics" class="cc-fields"></div>
+        <label>Primary metric<select id="cc-primary-metric"></select></label>
+        <div class="cc-section-head"><h4>Custom context</h4><button type="button" id="cc-add-context">+ Add context field</button></div><p class="cc-muted">Environment, platform, app version, country and network type are available by default. Up to two custom fields can be used for filtering.</p><div id="cc-context" class="cc-fields"></div>
+        <details><summary>Example event</summary><p class="cc-muted">Example values must be replaced with actual measurements.</p><pre id="cc-definition-preview" tabindex="0"></pre></details>
+        <p class="cc-form-error" role="alert" hidden></p><div class="cc-dialog-actions"><button type="button" data-close>Cancel</button><button type="submit" class="cc-primary">Save</button></div>
+    </form></dialog>
+    <dialog id="cc-key-dialog" aria-labelledby="cc-key-title"><form id="cc-key-form"><h3 id="cc-key-title">Issue key</h3>
+        <label>Name<input name="name" maxlength="160" required></label><fieldset><legend>Check</legend><div id="cc-key-checks" class="cc-fields"></div><button type="button" class="cc-more-checks" hidden>More checks</button></fieldset>
+        <label>Allowed environments (comma separated)<input name="environments" value="production" required maxlength="2560"></label>
+        <label>Allowed website origins (one per line)<textarea name="origins" rows="3" maxlength="10240" placeholder="https://shop.example.com"></textarea></label><p class="cc-muted">For a browser, add the exact website origin, for example https://shop.example.com, without a path.</p>
+        <label class="cc-check"><input name="allow_no_origin" type="checkbox" checked>Allow applications without an Origin header</label>
+        <p class="cc-form-error" role="alert" hidden></p><div class="cc-dialog-actions"><button type="button" data-close>Cancel</button><button type="submit" class="cc-primary">Issue key</button></div>
+    </form></dialog>
+
+</section>

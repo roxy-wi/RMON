@@ -1,4 +1,6 @@
 {% set lang_short = 'fr' %}
+{% import 'languages/client_fr.html' as client_catalog %}
+{% set client_checks = client_catalog.client_checks %}
 {% set agent_transport = {
     "section": "Agent connections",
     "label": "Result delivery",

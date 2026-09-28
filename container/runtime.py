@@ -153,11 +153,12 @@ def initialize_schema(password):
                                         Migration, Version, RoxyTool)
     from app.modules.db.migrations import get_migration_files
     from app.version import get_service_version
+    from app.modules.client_telemetry.models import CLIENT_TABLES
     # Check again under the application identity; never baseline an existing schema.
     if conn.get_tables():
         raise ValueError('Refusing to initialize a nonempty database')
     with conn.atomic():
-        conn.create_tables(BaseModel.__subclasses__())
+        conn.create_tables([*BaseModel.__subclasses__(), *CLIENT_TABLES])
         create_db.default_values()
         if read_config()['pgsql']['enable'] == '1':
             # The explicit Default group id must advance the sequence in this transaction.

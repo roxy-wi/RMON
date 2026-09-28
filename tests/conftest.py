@@ -1,4 +1,5 @@
 import os
+import configparser
 import tempfile
 from pathlib import Path
 
@@ -6,6 +7,25 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RUNTIME_DIR = Path(tempfile.mkdtemp(prefix='rmon-tests-'))
 PROJECT_RUNTIME_DIR = PROJECT_ROOT / 'tests' / '.runtime'
+TEST_CONFIG = PROJECT_ROOT / 'tests' / 'fixtures' / 'rmon.cfg'
+
+# Explicit opt-in for disposable SQL services in the database contract job.
+# Never use the application's normal database configuration for tests.
+test_database = os.getenv('RMON_TEST_DATABASE', 'sqlite')
+if test_database not in {'sqlite', 'postgres', 'mysql'}:
+    raise RuntimeError('RMON_TEST_DATABASE must be sqlite, postgres or mysql')
+if test_database != 'sqlite':
+    config = configparser.ConfigParser()
+    config.read(TEST_CONFIG)
+    section = 'pgsql' if test_database == 'postgres' else 'mysql'
+    config.set(section, 'enable', '1')
+    prefix = '' if section == 'pgsql' else 'mysql_'
+    for name, value in {'db': 'rmon_client_test', 'user': 'rmon_test', 'password': 'rmon-test-only',
+                        'host': '127.0.0.1', 'port': '5432' if section == 'pgsql' else '3306'}.items():
+        config.set(section, prefix + name, value)
+    TEST_CONFIG = RUNTIME_DIR / 'rmon-test.cfg'
+    with TEST_CONFIG.open('w', encoding='utf-8') as output:
+        config.write(output)
 
 for directory in (
     PROJECT_RUNTIME_DIR / 'log',
@@ -16,7 +36,7 @@ for directory in (
 
 os.environ.update({
     'RMON_TESTING': '1',
-    'RMON_CONFIG_FILE': str(PROJECT_ROOT / 'tests' / 'fixtures' / 'rmon.cfg'),
+    'RMON_CONFIG_FILE': str(TEST_CONFIG),
     'RMON_DB_PATH': str(RUNTIME_DIR / 'rmon.db'),
     'RMON_PROMETHEUS_MULTIPROC_DIR': str(RUNTIME_DIR / 'prometheus'),
     'RMON_SECRET_KEY': 'test-only-flask-secret-key-with-at-least-32-chars',

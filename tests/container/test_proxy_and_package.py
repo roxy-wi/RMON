@@ -30,6 +30,31 @@ def test_proxy_rejects_unsupported_scheme(monkeypatch, value):
         proxy.settings()
 
 
+def test_client_route_is_exact_and_hides_other_server_endpoints(monkeypatch):
+    monkeypatch.setenv('RMON_CLIENT_UPSTREAM', 'http://server:5102')
+    text = proxy.render((ROOT / 'container/nginx/default.conf.template').read_text())
+    assert 'location = /api/v1/client/events {' in text
+    assert 'client_max_body_size 48k;' in text
+    assert 'set $client_upstream http://server:5102;' in text
+    assert 'proxy_set_header Cookie "";' in text
+    assert 'proxy_next_upstream off;' in text
+    assert 'location ^~ /internal/ { return 404; }' in text
+    version_route = text.split('location = /internal/show_version {', 1)[1].split('}', 1)[0]
+    assert 'set $rmon_upstream http://web:8080;' in version_route
+    assert 'proxy_pass $rmon_upstream;' in version_route
+    assert 'proxy_set_header Host $http_host;' in version_route
+    assert 'proxy_set_header X-Forwarded-Proto $scheme;' in version_route
+    assert 'location = /agent/check/result { return 404; }' in text
+    assert 'location /agent' not in text and 'location /internal' not in text
+
+
+@pytest.mark.parametrize('value', ['http://server:5102;bad', 'https://server:5102', 'http://server:0', 'http://server:99999'])
+def test_invalid_client_upstream_fails_before_writing_nginx_config(monkeypatch, value):
+    monkeypatch.setenv('RMON_CLIENT_UPSTREAM', value)
+    with pytest.raises(ValueError):
+        proxy.render('')
+
+
 @pytest.mark.parametrize('host,san', [('192.0.2.10', 'IP:192.0.2.10'), ('::1', 'IP:::1'), ('rmon.test', 'DNS:rmon.test')])
 def test_self_signed_certificate_supports_ips_and_dns(host, san):
     assert proxy.certificate_san(host) == san

@@ -26,7 +26,7 @@ COPY app.wsgi gunicorn.conf.py scheduler_runner.py operations_runner.py runtime_
 RUN install -d /etc/rmon /var/lib/rmon /var/log/rmon \
     && install -d -o www-data -g www-data \
        app/scripts/ansible/inventory app/scripts/ansible/artifacts app/scripts/ansible/env /tmp/ansible-local \
-    && chmod -R go-w /var/www/rmon
+    && chmod -R a+rX,go-w /var/www/rmon
 
 EXPOSE 8080
 STOPSIGNAL SIGTERM

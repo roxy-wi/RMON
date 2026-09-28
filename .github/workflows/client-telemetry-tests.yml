@@ -1,0 +1,56 @@
+name: Client telemetry databases
+
+on:
+  push:
+    branches: [main, release/2.0]
+  pull_request:
+    branches: [main, release/2.0]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        database: [sqlite, postgres, mysql]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: rmon_client_test
+          POSTGRES_USER: rmon_test
+          POSTGRES_PASSWORD: rmon-test-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rmon_test -d rmon_client_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: rmon_client_test
+          MYSQL_USER: rmon_test
+          MYSQL_PASSWORD: rmon-test-only
+          MYSQL_ROOT_PASSWORD: rmon-test-root-only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      RMON_TEST_DATABASE: ${{ matrix.database }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt -r requirements-dev.txt
+      - name: Validate client contracts on the selected database
+        run: python -m pytest tests/functional/test_client_management.py tests/functional/test_client_reports.py -q -p no:cacheprovider

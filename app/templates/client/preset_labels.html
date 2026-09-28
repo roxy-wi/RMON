@@ -1,0 +1,10 @@
+{# Recognize preset defaults in every supported language; custom text stays unchanged. #}
+{% from 'languages/languages.html' import languages %}
+{% set presets = namespace(labels={}) %}
+{% for language in languages %}
+    {% import 'languages/client_' ~ language ~ '.html' as catalog %}
+    {% for key, value in catalog.client_checks.items() if key.startswith('preset_') %}
+        {% set unused = presets.labels.setdefault(key, []).append(value) %}
+    {% endfor %}
+{% endfor %}
+<script id="cc-preset-labels" type="application/json">{{ presets.labels|tojson }}</script>

@@ -1,7 +1,7 @@
 import os
 from typing import Union, Literal
 
-from flask import render_template, g, send_from_directory, jsonify
+from flask import render_template, g, send_from_directory, jsonify, abort
 from flask_jwt_extended import jwt_required
 from flask_pydantic import validate
 from pydantic import IPvAnyAddress
@@ -20,6 +20,22 @@ from app.modules.subscription.access import ACTION_HISTORY, feature_required
 import app.modules.server.server as server_mod
 from app.modules.roxywi.class_models import ErrorResponse, NettoolsRequest, DomainName, EscapedString
 from app.modules.db.db_model import conn
+
+
+@bp.get('/client-checks')
+@jwt_required()
+@get_user_params()
+def client_checks():
+    from app.modules.db.db_model import UserGroups
+    if not UserGroups.select().where((UserGroups.user_id == g.user_params['user_id'])
+                                      & (UserGroups.user_group_id == g.user_params['group_id'])).exists():
+        abort(403)
+    language = g.user_params['lang']
+    if language not in ('en', 'ru', 'fr', 'pt-br'):
+        language = 'en'
+    response = app.make_response(render_template('client/checks.html', lang=language))
+    response.headers['Cache-Control'] = 'no-store'
+    return response
 
 
 @app.before_request

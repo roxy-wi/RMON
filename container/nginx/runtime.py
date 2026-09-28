@@ -53,8 +53,34 @@ def render(template):
     tls = ('ssl_certificate /etc/ssl/certs/rmon.crt;\n'
            'ssl_certificate_key /etc/ssl/certs/rmon.key;\n'
            'ssl_protocols TLSv1.2 TLSv1.3;' if scheme == 'https' else '')
+    upstream = os.getenv('RMON_CLIENT_UPSTREAM', '')
+    client_location = ''
+    if upstream:
+        if not re.fullmatch(r'http://[a-zA-Z0-9][a-zA-Z0-9_.-]*:[0-9]{1,5}', upstream):
+            raise ValueError('RMON_CLIENT_UPSTREAM must be an internal HTTP host and port')
+        if not 1 <= int(upstream.rsplit(':', 1)[1]) <= 65535:
+            raise ValueError('Invalid client upstream port')
+        client_location = '''location = /api/v1/client/events {
+        client_max_body_size 48k;
+        client_body_timeout 10s;
+        set $client_upstream ''' + upstream + ''';
+        proxy_pass $client_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header Connection "";
+        proxy_set_header Upgrade "";
+        proxy_set_header Cookie "";
+        proxy_set_header Authorization "";
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 30s;
+        proxy_send_timeout 30s;
+        proxy_next_upstream off;
+        access_log off;
+    }'''
     for name, value in {'RMON_LISTENER': '8080 ssl' if scheme == 'https' else '8080',
-                        'RMON_TLS_DIRECTIVES': tls}.items():
+                        'RMON_TLS_DIRECTIVES': tls, 'RMON_CLIENT_LOCATION': client_location}.items():
         template = template.replace('${' + name + '}', value)
     return template
 

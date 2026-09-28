@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}{{ lang.client_checks.title }} · RMON{% endblock %}
+{% block h2 %}{{ lang.client_checks.title }}{% endblock %}
+{% block content %}
+{% set c = lang.client_checks %}
+{% set can_edit = g.user_params['role'] <= 3 %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/client_checks.css', v='2') }}">
+{% include 'client/workspace.html' %}
+<script src="{{ url_for('static', filename='js/chart.min-4.3.0.js') }}"></script>
+<script src="{{ url_for('static', filename='js/rmon/client_contract.js', v='2') }}"></script>
+<script src="{{ url_for('static', filename='js/rmon/client_checks.js', v='7') }}"></script>
+{% endblock %}

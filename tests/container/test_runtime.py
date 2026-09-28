@@ -211,6 +211,7 @@ from container.runtime import initialize_schema
 initialize_schema('fresh-container-test-password')
 from app import app
 from app.modules.db.db_model import User, Migration, BaseModel, conn
+from app.modules.client_telemetry.models import CLIENT_TABLES
 from app.modules.db.migrations import get_migration_files
 from app.modules.roxywi import roxy
 from werkzeug.security import check_password_hash
@@ -218,6 +219,7 @@ assert check_password_hash(User.get(User.username == 'admin').password, 'fresh-c
 assert all(not u.enabled and u.password is None for u in User.select().where(User.username != 'admin'))
 assert set(m.name for m in Migration.select()) == set(n[:-3] for n in get_migration_files())
 assert set(m._meta.table_name for m in BaseModel.__subclasses__()) <= set(conn.get_tables())
+assert set(m._meta.table_name for m in CLIENT_TABLES) <= set(conn.get_tables())
 roxy.update_plan = lambda: None
 client = app.test_client()
 assert client.get('/login').status_code == 200

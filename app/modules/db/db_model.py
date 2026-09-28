@@ -31,6 +31,10 @@ class SafePooledPostgresqlExtDatabase(PooledPostgresqlExtDatabase):
         try:
             return super().execute_sql(sql, params=params, commit=commit, **kwargs)
         except (InterfaceError, OperationalError):
+            # Replaying one statement after reconnect would discard earlier
+            # writes in the transaction and could acknowledge a partial batch.
+            if self.in_transaction():
+                raise
             try:
                 self.close()
             except Exception:
@@ -58,7 +62,8 @@ def connect(get_migrator=None):
             "user": get_config.get_config_var('mysql', 'mysql_user'),
             "password": get_config.get_config_var('mysql', 'mysql_password'),
             "host": get_config.get_config_var('mysql', 'mysql_host'),
-            "port": int(get_config.get_config_var('mysql', 'mysql_port'))
+            "port": int(get_config.get_config_var('mysql', 'mysql_port')),
+            "charset": "utf8mb4"
         }
         conn = ReconnectMySQLDatabase(mysql_db, **kwargs)
         migration = MySQLMigrator(conn)
@@ -728,6 +733,7 @@ class AggregatorLock(BaseModel):
 
 
 def create_tables():
+    from app.modules.client_telemetry.models import CLIENT_TABLES
     conn = connect()
     with conn:
         conn.create_tables(
@@ -737,3 +743,6 @@ def create_tables():
              SmonStatusPage, SmonStatusPageCheck, SMON, SmonGroup, MM, RMONAlertsHistory, SmonSMTPCheck, SmonRabbitCheck,
              Country, MultiCheck, Email, InstallationTasks, OperationJob, OperationLock, Migration, AlertEvent, AlertState, AggregatorLock, IncidentRelay]
         )
+        # Existing telemetry tables may need column migrations before new
+        # indexes can be created. Bootstrap only missing tables here.
+        conn.create_tables([model for model in CLIENT_TABLES if not conn.table_exists(model._meta.table_name)])
