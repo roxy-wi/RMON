@@ -42,8 +42,13 @@ $( document ).ajaxSend(function( event, request, settings ) {
 $( document ).ajaxComplete(function( event, request, settings ) {
 	NProgress.done();
 });
-$.ajaxSetup({
-	headers: {"X-CSRF-TOKEN": csrf_token},
+$.ajaxPrefilter(function (options, originalOptions, xhr) {
+    // Read the current cookie for every request, including requests from a tab
+    // opened before the user renewed the session or switched groups.
+    if (new URL(options.url, window.location.href).origin === window.location.origin) {
+        const csrf = Cookies.get('csrf_access_token');
+        if (csrf) xhr.setRequestHeader('X-CSRF-TOKEN', csrf);
+    }
 });
 $(document).ajaxError(function myErrorHandler(event, xhr, ajaxOptions, thrownError) {
 	if (xhr.statusText !== 'abort' && !ajaxOptions.error) {

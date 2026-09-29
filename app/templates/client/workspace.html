@@ -12,9 +12,11 @@
             {% for value, label in [(1,c.hour),(6,c.hours6),(24,c.day),(168,c.days7),(720,c.days30),(2160,c.days90)] %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
         </select></label>
         <button type="button" id="cc-refresh">{{ c.refresh }}</button>
-        <label class="cc-check cc-auto-refresh"><input type="checkbox" id="cc-auto-refresh" checked>{{ c.auto_refresh }}</label>
+        <div class="cc-refresh-controls">
+            <label class="cc-check cc-auto-refresh"><input type="checkbox" id="cc-auto-refresh" checked>{{ c.auto_refresh }}</label>
+            <p id="cc-refresh-status" class="cc-muted" hidden></p>
+        </div>
     </div>
-    <p id="cc-refresh-status" class="cc-muted" hidden></p>
     <div id="cc-empty" class="cc-empty" hidden><h3>{{ c.new_project }}</h3><p>{{ c.create_project_hint }}</p></div>
     <div id="cc-project-area" hidden>
         <div class="cc-project-heading"><div><h3 id="cc-project-name"></h3><p id="cc-project-description" class="cc-muted"></p></div>

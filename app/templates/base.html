@@ -25,6 +25,7 @@
 	<body class="app-shell">
         <a href="#main-content" class="skip-link">{{ lang.ux.skip_content }}</a>
 		{% if g.user_params['user'] %}
+        <script defer id="rmon-session" src="{{ url_for('static', filename='js/session.js', v=1) }}" data-refresh-url="{{ url_for('api_v1_0_main.refresh_session') }}"></script>
         <script>$(show_version);</script>
 		{% include 'include/main_menu.html' %}
 		<main class="container" id="main-content" tabindex="-1">

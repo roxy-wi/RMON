@@ -1,54 +1,35 @@
 {% extends "base.html" %}
 {% block title %}{{ lang.menu_links.monitoring.smon.dashboard }}{% endblock %}
 {% block h2 %}{{ lang.menu_links.monitoring.smon.dashboard }}{% endblock %}
-{% from 'include/input_macros.html' import input, checkbox, select, checking_types %}
+{% from 'include/input_macros.html' import input %}
 {% block content %}
-<script src="{{ url_for('static', filename='js/rmon/agent.js') }}"></script>
-<script src="{{ url_for('static', filename='js/rmon/smon.js') }}"></script>
-<script src="{{ url_for('static', filename='js/rmon/region.js') }}"></script>
-<script src="{{ url_for('static', filename='js/rmon/country.js') }}"></script>
-<script src="{{ url_for('static', filename='js/users.js') }}"></script>
-<script src="{{ url_for('static', filename='js/fontawesome.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/jquery.timeago.js') }}" type="text/javascript"></script>
-<link href="{{ url_for('static', filename='css/servers.css') }}" rel="stylesheet"/>
-<link href="{{ url_for('static', filename='css/smon.css') }}" rel="stylesheet"/>
+{% from 'languages/dashboard_'+chosen_lang+'.html' import dashboard as d %}
+<script src="{{ url_for('static', filename='js/rmon/smon.js', v='20260928-dashboard-cleanup') }}"></script>
+<link href="{{ url_for('static', filename='css/servers.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/smon.css') }}" rel="stylesheet">
 <link href="{{ url_for('static', filename='css/ha.css') }}" rel="stylesheet">
-{% if smon_status in ('failed', 'inactive', 'ERROR') %}
-<div class="empty-state">
-	<br />
-	<h3>{{lang.smon_page.desc.smon_is_not_run}}</h3>
-	<img src="{{ url_for('static', filename='images/no_servers.png')}}" alt="">
-	<h4>{{lang.smon_page.desc.run_smon}} <a href="{{ url_for('admin.admin') }}#tools" title="RMON services" target="_blank">{{lang.words.here}}</a> {{lang.smon_page.desc.before_use}}</h4>
-</div>
-{% elif multi_checks|length == 0 %}
-<div class="empty-state">
-	<br />
-	<h3>{{ lang.ux.no_checks }}</h3>
-	<img src="{{ url_for('static', filename='images/no_servers.png')}}" alt="">
-		<p>{{ lang.ux.no_checks_description }}</p>
-	<br />
-</div>
-    {% if g.user_params['role'] <= 3 %}
-        <button type="button" class="add-button add-button-big" title="{{lang.words.add|title()}} {{ lang.words.check2 }}" onclick="openSmonDialog('http')">+ {{lang.words.add|title()}} {{ lang.words.check2 }}</button>
-    {% endif %}
-{% else %}
-    {% if g.user_params['role'] <= 3 %}
-        <button type="button" class="add-button add-button-big" title="{{lang.words.add|title()}} {{ lang.words.check2 }}" onclick="openSmonDialog('http')">+ {{lang.words.add|title()}} {{ lang.words.check2 }}</button>
-    {% endif %}
-    <div class="main" id="smon_dashboard">
-		{% include 'ajax/smon/smon_dashboard.html' %}
-	</div>
-{% endif %}
+<link href="{{ url_for('static', filename='css/dashboard.css', v=1) }}" rel="stylesheet">
+<section id="rmon-dashboard" class="rd" data-endpoint="{{ url_for('smon.dashboard_data') }}" data-can-edit="{{ 'true' if g.user_params['role'] <= 3 else 'false' }}">
+    {% if smon_status in ('failed', 'inactive', 'ERROR') %}<p class="rd-notice">{{ lang.smon_page.desc.smon_is_not_run }} <a href="{{ url_for('admin.admin') }}#tools">{{ lang.smon_page.desc.run_smon }}</a></p>{% endif %}
+    <div class="rd-heading"><div><h3>{{ d.heading }}</h3><p class="rd-muted">{{ d.description }}</p></div>{% if g.user_params['role'] <= 3 %}<button class="rd-primary" type="button" onclick="openSmonDialog('http')">+ {{ lang.words.add|title }} {{ lang.words.check2 }}</button>{% endif %}</div>
+    <div class="rd-summary" aria-label="{{ d.summary }}">
+        {% for state in ('up', 'down', 'stale') %}<button type="button" class="rd-kpi rd-{{ state }}" data-status="{{ state }}" aria-pressed="false"><span>{{ d[state] }}</span><strong data-count="{{ state }}">—</strong><small>{{ d.filter_hint }}</small></button>{% endfor %}
+    </div>
+    <div class="rd-toolbar">
+        <label class="rd-search">{{ d.search }}<input type="search" id="rd-search" placeholder="{{ d.search_placeholder }}" autocomplete="off"></label>
+        <label>{{ d.group }}<select id="rd-group"><option value="all">{{ d.all_groups }}</option></select></label>
+        <label>{{ d.sort }}<select id="rd-sort"><option value="group">{{ d.sort_group }}</option><option value="status">{{ d.sort_status }}</option><option value="name">{{ d.sort_name }}</option></select></label>
+        <div class="rd-refresh"><label class="rd-toggle"><input type="checkbox" id="rd-auto" checked>{{ d.auto }}</label><button type="button" id="rd-refresh">{{ d.refresh }}</button></div>
+    </div>
+    <div class="rd-filter-bar"><div class="rd-filters" aria-label="{{ d.filter_status }}">{% for state in ('all', 'warning', 'disabled') %}<button type="button" data-status="{{ state }}" aria-pressed="{{ 'true' if state == 'all' else 'false' }}">{{ d[state] }} <span data-count="{{ state }}">—</span></button>{% endfor %}<button type="button" id="rd-clear" hidden>{{ d.clear }}</button></div><span class="rd-muted" id="rd-updated" role="status">{{ d.loading }}</span></div>
+    <p id="rd-error" class="rd-notice" role="alert" hidden></p>
+    <div id="dashboards" aria-busy="true"></div>
+    <div id="rd-empty" class="rd-empty" hidden><h3>{{ d.empty }}</h3><p>{{ d.empty_description }}</p></div>
+    <p id="rd-no-match" class="rd-empty" hidden>{{ d.no_match }}</p>
+    <p class="rd-footnote" id="rd-history-note" hidden>{{ d.history_note }}</p>
+</section>
+<script id="rd-strings" type="application/json">{{ d|tojson }}</script>
+<script defer src="{{ url_for('static', filename='js/rmon/dashboard.js', v=2) }}"></script>
 {% include 'include/smon/add_form.html' %}
-<div id="check-group-edit-table" style="display: none;">
-	<table class="overview" id="check-group-edit-table-overview" title="{{lang.words.edit|title()}} {{lang.words.group}}">
-    <tr>
-        <td class="padding20">
-            {{ lang.words.name|title() }}
-            <span class="need-field">*</span>
-        </td>
-        <td>{{ input('check-group-name') }}</td>
-    </tr>
-    </table>
-</div>
+<div id="check-group-edit-table" style="display: none;"><table class="overview" id="check-group-edit-table-overview" title="{{ lang.words.edit|title }} {{ lang.words.group }}"><tr><td class="padding20">{{ lang.words.name|title }} <span class="need-field">*</span></td><td>{{ input('check-group-name') }}</td></tr></table></div>
 {% endblock %}

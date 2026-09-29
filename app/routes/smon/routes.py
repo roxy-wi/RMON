@@ -1,7 +1,7 @@
 import json
 import time
 
-from flask import render_template, request, g, Response, stream_with_context
+from flask import render_template, request, g, Response, stream_with_context, jsonify
 from flask_jwt_extended import jwt_required
 from flask_pydantic import validate
 
@@ -18,6 +18,7 @@ from app.modules.subscription.access import (
     MONITORING_HISTORY,
     STATUS_PAGES,
     feature_required,
+    is_feature_available,
 )
 import app.modules.tools.smon as smon_mod
 import app.modules.tools.common as tools_common
@@ -35,12 +36,9 @@ def smon_main_dashboard():
     """
     roxywi_common.check_user_group_for_flask()
     group_id = g.user_params['group_id']
-    multi_checks = smon_sql.select_multi_checks(group_id)
     kwargs = {
         'lang': g.user_params['lang'],
-        'multi_checks': multi_checks,
         'group': group_id,
-        'smon_groups': smon_sql.select_smon_groups(group_id),
         'smon_status': tools_common.is_tool_active('rmon-server'),
         'telegrams': channel_sql.get_user_receiver_by_group('telegram', group_id),
         'incidentrelay': channel_sql.get_user_receiver_by_group('incidentrelay', group_id),
@@ -48,10 +46,31 @@ def smon_main_dashboard():
         'pds': channel_sql.get_user_receiver_by_group('pd', group_id),
         'mms': channel_sql.get_user_receiver_by_group('mm', group_id),
         'emails': channel_sql.get_user_receiver_by_group('email', group_id),
-        'sort': request.args.get('sort', None)
     }
 
     return render_template('smon/dashboard.html', **kwargs)
+
+
+@bp.get('/dashboard/data')
+@jwt_required()
+@get_user_params()
+def dashboard_data():
+    from app.modules.tools.dashboard import snapshot
+    from app.modules.db.db_model import UserGroups
+    from peewee import DatabaseError
+    from flask import current_app
+    user = g.user_params
+    if not UserGroups.select().where((UserGroups.user_id == user['user_id']) &
+                                     (UserGroups.user_group_id == user['group_id'])).exists():
+        return jsonify(error='group_denied'), 403
+    try:
+        response = jsonify(snapshot(user['group_id'], include_history=is_feature_available(MONITORING_HISTORY)))
+    except DatabaseError:
+        current_app.logger.exception('Cannot load dashboard measurements')
+        response = jsonify(error='storage_unavailable')
+        response.status_code = 503
+    response.headers['Cache-Control'] = 'no-store'
+    return response
 
 
 @bp.route('/dashboard/<int:smon_id>/<int:check_id>')

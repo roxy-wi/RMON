@@ -1,15 +1,91 @@
 """Reports read persisted results without a collector or aggregation runtime."""
 import json
 from datetime import datetime, timezone
+from unittest.mock import Mock, call
 
 import pytest
+from peewee import OperationalError
 
 from test_client_management import setup
 from app.modules.client_telemetry import distributions, reports, service
 from app.modules.client_telemetry.models import ClientDefinition, ClientDirtyInterval, ClientRollup, ClientSegment, ClientSegmentDimension
 from app.modules.client_telemetry.segments import fingerprint
+from app.modules.db.db_model import ReconnectMySQLDatabase
 
 pytestmark = pytest.mark.functional
+
+
+@pytest.fixture
+def mysql_snapshot(monkeypatch):
+    database = ReconnectMySQLDatabase('unused')
+    driver = Mock(server_version='8.4.0')
+    connect = Mock(return_value=driver)
+    # Keep Peewee's real transaction and reconnect logic; replace only the driver.
+    monkeypatch.setattr(database, '_connect', connect)
+    monkeypatch.setattr(reports, 'conn', database)
+    yield database, driver, connect
+    database.close()
+
+
+def test_mysql_report_snapshot_keeps_repeatable_read(mysql_snapshot):
+    database, driver, connect = mysql_snapshot
+    with reports.snapshot():
+        assert database.in_transaction()
+    assert driver.cursor.return_value.execute.call_args_list == [
+        call('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ'), call('BEGIN'), call('COMMIT'),
+    ]
+    assert not database.in_transaction()
+    connect.assert_called_once_with()
+
+
+@pytest.mark.parametrize('failed_statement', [0, 1], ids=['isolation', 'begin'])
+def test_mysql_report_snapshot_reapplies_isolation_after_reconnect(mysql_snapshot, failed_statement):
+    database, first_driver, connect = mysql_snapshot
+    second_driver = Mock(server_version='8.4.0')
+    connect.side_effect = [first_driver, second_driver]
+    first_driver.cursor.return_value.execute.side_effect = [None] * failed_statement + [
+        OperationalError(2013, 'Lost connection to MySQL server'),
+    ]
+    with reports.snapshot():
+        assert database.in_transaction()
+    first_driver.close.assert_called_once_with()
+    assert connect.call_count == 2
+    assert second_driver.cursor.return_value.execute.call_args_list == [
+        call('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ'), call('BEGIN'), call('COMMIT'),
+    ]
+
+
+def test_mysql_report_snapshot_does_not_retry_inside_transaction(mysql_snapshot):
+    database, driver, connect = mysql_snapshot
+    driver.cursor.return_value.execute.side_effect = [None, None,
+        OperationalError(2013, 'Lost connection to MySQL server'), None]
+    with pytest.raises(OperationalError, match='Lost connection'):
+        with reports.snapshot():
+            database.execute_sql('SELECT 1')
+    assert driver.cursor.return_value.execute.call_args_list == [
+        call('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ'), call('BEGIN'),
+        call('SELECT 1', ()), call('ROLLBACK'),
+    ]
+    connect.assert_called_once_with()
+    assert not database.in_transaction()
+
+
+def test_mysql_report_snapshot_propagates_other_errors(mysql_snapshot):
+    database, driver, connect = mysql_snapshot
+    driver.cursor.return_value.execute.side_effect = OperationalError(1231, 'Invalid isolation level')
+    with pytest.raises(OperationalError, match='Invalid isolation level'):
+        with reports.snapshot():
+            pytest.fail('Snapshot must not start after a database error')
+    connect.assert_called_once_with()
+    assert not database.in_transaction()
+
+
+def test_mysql_default_transaction_still_works(mysql_snapshot):
+    database, driver, connect = mysql_snapshot
+    with database.atomic():
+        assert database.in_transaction()
+    assert driver.cursor.return_value.execute.call_args_list == [call('BEGIN'), call('COMMIT')]
+    connect.assert_called_once_with()
 
 
 @pytest.fixture

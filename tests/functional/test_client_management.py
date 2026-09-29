@@ -1,5 +1,4 @@
 import importlib.util
-from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import Mock
 from uuid import uuid4
@@ -9,7 +8,7 @@ from peewee import IntegrityError, MySQLDatabase
 
 from app.modules.client_telemetry import service
 from app.modules.client_telemetry.models import (
-    CLIENT_TABLES, ClientCheck, ClientDefinition, ClientDirtyInterval, ClientKey,
+    ClientCheck, ClientDefinition, ClientDirtyInterval, ClientKey,
     ClientObservation, ClientProject, ClientReceipt,
 )
 from app.modules.db.db_model import ActionHistory, Groups, conn, connect, create_tables
@@ -24,15 +23,6 @@ def definition():
             'primary_metric': 'duration_ms',
             'metrics': {'items': {'label': 'Items', 'unit': 'count', 'type': 'integer', 'required': True}},
             'context': {'region': {'label': 'Region', 'type': 'enum', 'values': ['EU', 'US'], 'filterable': True}}}
-
-
-def event(**updates):
-    value = {'event_id': str(uuid4()), 'check': 'catalog.load', 'definition_version': 1,
-             'observed_at': datetime.now(timezone.utc).isoformat(), 'status': 'ok', 'duration_ms': 243,
-             'metrics': {'items': 48}, 'context': {'platform': 'android', 'environment': 'production', 'region': 'EU'}}
-    value.update(updates)
-    return value
-
 
 
 @pytest.fixture
@@ -59,6 +49,23 @@ def setup(client, auth_headers):
 def counts(project_id):
     return (ClientReceipt.select().where(ClientReceipt.project == project_id).count(),
             ClientObservation.select().where(ClientObservation.project == project_id).count())
+
+
+@pytest.mark.parametrize('body,content_type,status,error', [
+    ('{"name":"Shop"}', 'text/plain;charset=UTF-8', 415, 'unsupported_media_type'),
+    ('{"name":"Shop"}', 'application/json;charset=latin-1', 415, 'unsupported_media_type'),
+    ('{"name":"Shop","name":"Other"}', 'application/json', 400, 'invalid_json'),
+    ('{"name":"Shop","events_per_minute":NaN}', 'application/json', 400, 'invalid_json'),
+    ('{"name":"Shop\\u0000"}', 'application/json', 400, 'invalid_json'),
+    (b'\xff', 'application/json', 400, 'invalid_json'),
+    ('x' * (48 * 1024 + 1), 'application/json', 413, 'payload_too_large'),
+], ids=['plain-text', 'charset', 'duplicate-field', 'nan', 'nul', 'invalid-utf8', 'oversized'])
+def test_management_rejects_invalid_json_without_creating_project(client, auth_headers, body, content_type, status, error):
+    before = ClientProject.select().count()
+    response = client.post(API, data=body, content_type=content_type, headers=auth_headers(2, 1))
+    assert response.status_code == status
+    assert response.get_json()['error'] == error
+    assert ClientProject.select().count() == before
 
 
 

@@ -188,9 +188,11 @@
             <option value="1">Last hour</option><option value="6">Last 6 hours</option><option value="24">Last 24 hours</option><option value="168">Last 7 days</option><option value="720">Last 30 days</option><option value="2160">Last 90 days</option>
         </select></label>
         <button type="button" id="cc-refresh">Refresh</button>
-        <label class="cc-check cc-auto-refresh"><input type="checkbox" id="cc-auto-refresh" checked>Auto-refresh · 30 s</label>
+        <div class="cc-refresh-controls">
+            <label class="cc-check cc-auto-refresh"><input type="checkbox" id="cc-auto-refresh" checked>Auto-refresh · 30 s</label>
+            <p id="cc-refresh-status" class="cc-muted" hidden></p>
+        </div>
     </div>
-    <p id="cc-refresh-status" class="cc-muted" hidden></p>
     <div id="cc-empty" class="cc-empty" hidden><h3>New project</h3><p>Create a project, define the data you want to receive, then connect your application.</p></div>
     <div id="cc-project-area" hidden>
         <div class="cc-project-heading"><div><h3 id="cc-project-name"></h3><p id="cc-project-description" class="cc-muted"></p></div>

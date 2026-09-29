@@ -1029,9 +1029,6 @@ label {
 .main {
 	margin: var(--indent);
 }
-.sort_menu {
-	clear: both;
-}
 .smon_group {
 	clear: both;
 }
@@ -1063,14 +1060,6 @@ label {
 }
 .check-name-desc {
 	width: 265px;
-}
-#good_services {
-	clear: both;
-	margin-bottom: 30px;
-}
-#err_services {
-	clear: both;
-	margin-bottom: 30px;
 }
 .ip {
 	font-size: 18px;

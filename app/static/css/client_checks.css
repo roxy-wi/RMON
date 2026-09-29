@@ -66,7 +66,9 @@
 .cc .cc-project-heading { margin: 20px 0 10px; }
 .cc #cc-project-name { font-size: 23px; }
 .cc .cc-project-heading p { margin: 4px 0; }
-.cc label.cc-auto-refresh { min-height: 36px; margin: 0 0 0 auto; font-size: 12px; }
+.cc .cc-refresh-controls { margin-left: auto; max-width: 320px; }
+.cc label.cc-auto-refresh { min-height: 36px; margin: 0; font-size: 12px; }
+.cc .cc-refresh-controls p { margin: 3px 0 0; }
 .cc .cc-report-toolbar > label:first-child { flex: 1 1 280px; max-width: 440px; }
 .cc .cc-filter-panel { border-top: 1px solid var(--cc-line); padding-top: 4px; }
 .cc .cc-overview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 1fr)); gap: 12px; }
@@ -87,7 +89,7 @@
     .cc .cc-chart { height: 230px; }
     .cc input:not([type=checkbox]), .cc select, .cc textarea { font-size: 16px; }
     .cc button { min-height: 44px; }
-    .cc label.cc-auto-refresh { margin-left: 0; }
+    .cc .cc-refresh-controls { margin-left: 0; max-width: 100%; }
 }
 @media (max-width: 480px) {
     .cc .cc-field-grid { grid-template-columns: minmax(0, 1fr); }

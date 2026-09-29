@@ -1,10 +1,12 @@
 from flask_swagger import swagger
-from flask import jsonify, request, render_template
+from flask import current_app, jsonify, request, render_template
+from flask_jwt_extended import get_jwt, jwt_required, set_access_cookies
 
 from app import app, jwt
 from app.api.v1.routes.main import bp
 import app.modules.roxywi.auth as roxywi_auth
 import app.modules.roxywi.common as roxywi_common
+from app.modules.db.db_model import User, UserGroups
 from app.views.server.views import ServerGroupView, ServerGroupsView, ServersView
 from app.views.user.views import UsersView
 from app.views.channel.views import ChannelView, ChannelsView, ChannelCheckView
@@ -59,6 +61,26 @@ def my_expired_token_callback(jwt_header, jwt_payload):
 @jwt.unauthorized_loader
 def custom_unauthorized_response(_err):
     return jsonify(error=f"Authorize first {_err}"), 401
+
+
+@bp.post('/session/refresh')
+@jwt_required(locations=['cookies'])
+def refresh_session():
+    """Extend an unexpired browser session after interaction with the application."""
+    claims = get_jwt()
+    user = User.get_or_none(User.user_id == claims['user_id'])
+    if user is None or not user.enabled:
+        return jsonify(error='Session is no longer available'), 401
+    if not UserGroups.select().where((UserGroups.user_id == user.user_id) &
+                                     (UserGroups.user_group_id == claims.get('group'))).exists():
+        return jsonify(error='Group access is no longer available'), 403
+    lifetime = current_app.config['JWT_ACCESS_TOKEN_EXPIRES'].total_seconds()
+    response = jsonify(refresh_after=max(1, min(300, lifetime // 4)))
+    response.headers['Cache-Control'] = 'no-store'
+    token = roxywi_auth.create_jwt_token(
+        {'user': user.user_id, 'group': claims['group']}, csrf=claims.get('csrf'))
+    set_access_cookies(response, token)
+    return response
 
 
 @bp.route("/spec")

@@ -61,23 +61,6 @@ $(function () {
 		}
 	});
 });
-function sort_by_status() {
-	$('<div id="err_services" style="clear: both;"></div>').appendTo('.main');
-	$('<div id="good_services" style="clear: both;"></div>').appendTo('.main');
-	$('<div id="dis_services" style="clear: both;"></div>').appendTo('.main');
-	$(".good").prependTo("#good_services");
-	$(".err").prependTo("#err_services");
-	$(".dis").prependTo("#dis_services");
-	$('.group').remove();
-	$('.group_name').detach();
-	window.history.pushState("RMON Dashboard", "RMON Dashboard", "?sort=by_status");
-}
-function showSmon(action) {
-	if (action === 'not_sort') {
-		window.history.pushState("RMON Dashboard", "RMON Dashboard", "/rmon/dashboard");
-	}
-	window.location.reload();
-}
 function addNewSmonServer(dialog_id, smon_id=0, edit=false) {
 	if (CheckEditor.isBlocked() || !CheckEditor.validate()) return false;
 	const check_type = $('#check_type').val();
@@ -247,6 +230,7 @@ function removeSmon(smon_id, check_type) {
 		success: function (data, statusText, xhr) {
 			if (xhr.status === 204) {
 				$("#smon-" + smon_id).remove();
+				if (window.RmonDashboard) window.RmonDashboard.refresh();
 			} else {
 				if (data.status === 'failed') {
 					toastr.error(data);
@@ -320,6 +304,10 @@ function cloneSmon(id, check_type) {
     });
 }
 function getSmonCheck(smon_id, check_id, dialog_id, new_check=false) {
+	if (window.RmonDashboard) {
+		if (dialog_id) $(dialog_id).dialog("close");
+		return window.RmonDashboard.refresh();
+	}
 	$.ajax({
 		url: "/rmon/check/" + smon_id + "/" + check_id,
 		type: "get",

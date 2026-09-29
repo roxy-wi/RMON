@@ -23,7 +23,10 @@ else:
 
 
 class ReconnectMySQLDatabase(ReconnectMixin, MySQLDatabase):
-    pass
+    def begin(self, isolation_level=None):
+        # Peewee 3.17's ReconnectMixin.begin omits MySQL's isolation argument.
+        # Retry the full BEGIN sequence so a new connection keeps that level.
+        return self._reconnect(super(ReconnectMixin, self).begin, isolation_level=isolation_level)
 
 
 class SafePooledPostgresqlExtDatabase(PooledPostgresqlExtDatabase):

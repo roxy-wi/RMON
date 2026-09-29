@@ -124,8 +124,12 @@ def build_login_redirect(user_params: dict, next_url: str):
     return response
 
 
-def create_jwt_token(user_params: dict) -> str:
+def create_jwt_token(user_params: dict, *, csrf=None) -> str:
     additional_claims = {'group': str(user_params['group'])}
+    if csrf is not None:
+        # Renewing a browser session must not invalidate in-flight forms or
+        # requests from another tab. A new login still gets a new CSRF value.
+        additional_claims['csrf'] = csrf
     return create_access_token(str(user_params['user']), additional_claims=additional_claims)
 
 

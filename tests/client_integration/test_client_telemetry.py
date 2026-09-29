@@ -18,7 +18,6 @@ from app.modules.client_telemetry.models import (
     CLIENT_TABLES, ClientCheck, ClientDefinition, ClientDirtyInterval, ClientKey,
     ClientObservation, ClientProject, ClientReceipt,
 )
-from app.modules.client_telemetry.schemas import Batch
 from app.modules.db.db_model import ActionHistory, Groups, conn, connect
 
 pytestmark = pytest.mark.functional

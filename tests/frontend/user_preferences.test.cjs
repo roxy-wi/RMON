@@ -17,13 +17,13 @@ for (const protocol of ['http', 'https']) {
             {url: `${protocol}://rmon.test/overview`, runScripts: 'outside-only', pretendToBeVisual: true, virtualConsole: output});
         t.after(() => dom.window.close());
         const w = dom.window;
-        w.csrf_token = 'test-only-csrf';
         w.matchMedia = () => ({matches: false, addEventListener() {}});
         w.WebSocket = function () { throw new Error('Unexpected WebSocket connection'); };
         for (const file of ['jquery-3.6.0.min.js', 'jquery-ui.min.js', 'js.cookie.min.js',
             'select2.js', 'element.js', 'variables.js', 'nprogress.js', 'toastr.js', 'ux.js']) {
             w.eval(fs.readFileSync(path.join(scripts, file), 'utf8'));
         }
+        const ajax = w.jQuery.ajax;
         w.jQuery.ajax = () => w.jQuery.Deferred().resolve().promise();
         w.jQuery.getScript = () => w.jQuery.Deferred().resolve().promise();
         w.eval(fs.readFileSync(path.join(scripts, 'script.js'), 'utf8'));
@@ -36,5 +36,17 @@ for (const protocol of ['http', 'https']) {
         assert.equal(w.localStorage.getItem('theme'), 'dark');
         if (protocol === 'https') assert.equal(w.Cookies.get('lang'), 'ru');
         assert.equal(w.document.querySelectorAll('link[href="/static/css/dark.css"]').length, 1);
+        w.jQuery.ajax = ajax;
+        const headers = [];
+        w.jQuery.ajaxTransport('+*', () => ({
+            send(values, complete) { headers.push(values); complete(200, 'OK', {text: '{}'}); }, abort() {}
+        }));
+        for (const token of ['first-csrf', 'renewed-csrf']) {
+            w.Cookies.set('csrf_access_token', token);
+            await w.jQuery.ajax({url: '/api/v1.0/settings', type: 'POST', global: false});
+            assert.equal(headers.at(-1)['X-CSRF-TOKEN'], token);
+        }
+        await w.jQuery.ajax({url: 'https://other.example/data', type: 'POST', global: false});
+        assert.equal(headers.at(-1)['X-CSRF-TOKEN'], undefined);
     });
 }

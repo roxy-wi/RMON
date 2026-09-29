@@ -199,6 +199,7 @@ function removeCheckGroup(check_group_id) {
 		contentType: "application/json; charset=utf-8",
 		success: function (data, statusText, xhr) {
 			if (xhr.status === 204) {
+				if (window.RmonDashboard) { window.RmonDashboard.refresh(); return; }
 				$('#smon-group-' + check_group_id).appendTo('#smon-group-')
 				$("#check-group-" + check_group_id).remove();
 			} else {
@@ -254,6 +255,7 @@ function editCheckGroup(dialogId, check_group_id) {
 			} else {
 				$('#smon_group_name-' + check_group_id).text($('#check-group-name').val());
 				$(dialogId).dialog('close');
+				if (window.RmonDashboard) window.RmonDashboard.refresh();
 			}
 		}
 	});

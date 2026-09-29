@@ -22,7 +22,8 @@ def check_login():
         'login_page', 'static', 'main.show_roxywi_version', 'smon.show_smon_status_page', 'smon.smon_history_statuses_avg',
         'smon.smon_history_statuses', 'smon.agent_get_checks', 'smon.get_check_status', 'smon.smon_history_metric', 'api', 'favicon',
         'prometheus_metrics', 'api_v1_0_main.spec', 'api_v1_0_main.swagger_ui', 'api_v1_0_main.do_login',
-        'oidc.public_providers', 'oidc.oidc_login', 'oidc.oidc_callback'
+        'oidc.public_providers', 'oidc.oidc_login', 'oidc.oidc_callback',
+        'api_v1_0_main.refresh_session'
     )
     if request.endpoint not in allowed_endpoints:
         try:

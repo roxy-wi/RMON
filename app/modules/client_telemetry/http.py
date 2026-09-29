@@ -42,11 +42,10 @@ def _portable_strings(value):
             _portable_strings(item)
 
 
-def read_body(schema, *, beacon=False):
+def read_body(schema):
     if request.content_encoding not in (None, 'identity'):
         raise TelemetryError(415, 'unsupported_encoding', 'Send an uncompressed JSON body')
-    allowed = {'application/json', 'text/plain'} if beacon else {'application/json'}
-    if request.mimetype not in allowed or request.mimetype_params.get('charset', 'utf-8').lower() != 'utf-8':
+    if request.mimetype != 'application/json' or request.mimetype_params.get('charset', 'utf-8').lower() != 'utf-8':
         raise TelemetryError(415, 'unsupported_media_type', 'Send JSON encoded as UTF-8')
     if request.content_length is not None and request.content_length > MAX_BATCH_BYTES:
         raise RequestEntityTooLarge()
@@ -58,7 +57,7 @@ def read_body(schema, *, beacon=False):
         _portable_strings(body)
     except (ValueError, UnicodeError, RecursionError):
         raise TelemetryError(400, 'invalid_json', 'Send UTF-8 JSON with unique fields, finite numbers and no NUL characters') from None
-    return schema.model_validate(body), len(raw)
+    return schema.model_validate(body)
 
 
 def register_errors(target):

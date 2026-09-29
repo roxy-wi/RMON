@@ -17,7 +17,7 @@ from test_client_telemetry import collector, setup, event, send, definition
 from app.modules.client_telemetry import distributions, reports, service as management
 from modules.client_telemetry import aggregation, retention, segments, service
 from app.modules.client_telemetry.models import (
-    ClientCheck, ClientDefinition, ClientDirtyInterval, ClientObservation, ClientProject, ClientReceipt, ClientRollup, ClientSegment,
+    ClientCheck, ClientDefinition, ClientDirtyInterval, ClientObservation, ClientProject, ClientRollup, ClientSegment,
 )
 from app.modules.db.db_model import Groups, conn, connect, create_tables
 

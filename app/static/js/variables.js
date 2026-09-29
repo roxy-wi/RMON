@@ -15,9 +15,6 @@ const script = `${scriptPath}/script.js`;
 const overview = `${scriptPath}/overview.js`;
 const awesome = `${scriptPath}/fontawesome.min.js`;
 
-// csrf_token
-const csrf_token = Cookies.get('csrf_access_token');
-
 // Current API version prefix
 const api_v_prefix = '/api/v1.0'
 

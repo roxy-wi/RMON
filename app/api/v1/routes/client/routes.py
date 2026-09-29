@@ -77,7 +77,7 @@ def key_json(value):
 @bp.route('/projects', methods=['GET', 'POST'])
 def projects():
     if request.method == 'POST':
-        body, _ = read_body(ProjectInput)
+        body = read_body(ProjectInput)
         result = service.create_project(body, group_id(body.group_id), g.user_params['user_id'])
         return jsonify(project_json(result)), 201
     selected = number_argument('group_id', int(g.user_params['group_id']), 1, 2147483647)
@@ -93,7 +93,7 @@ def projects():
 def project_detail(project_id):
     value = project(project_id)
     if request.method == 'PATCH':
-        body, _ = read_body(ProjectState)
+        body = read_body(ProjectState)
         service.set_project_state(project_id, body.enabled, g.user_params['user_id'])
         value = project(project_id)
     return jsonify(project_json(value))
@@ -103,7 +103,7 @@ def project_detail(project_id):
 def checks(project_id):
     project(project_id)
     if request.method == 'POST':
-        body, _ = read_body(CheckInput)
+        body = read_body(CheckInput)
         return jsonify(check_json(service.create_check(project_id, body, g.user_params['user_id']))), 201
     after = number_argument('after_id', 0, 0, 2147483647)
     limit = number_argument('limit', 50, 1, 100)
@@ -119,7 +119,7 @@ def definitions(project_id, check_id):
     if not ClientCheck.select().where((ClientCheck.id == check_id) & (ClientCheck.project == project_id)).exists():
         raise service.TelemetryError(404, 'check_not_found', 'Check was not found')
     if request.method == 'POST':
-        body, _ = read_body(Definition)
+        body = read_body(Definition)
         expected = request.headers.get('If-Match')
         if expected is not None:
             if expected.startswith('"') and expected.endswith('"'):
@@ -138,7 +138,7 @@ def definitions(project_id, check_id):
 def keys(project_id):
     project(project_id)
     if request.method == 'POST':
-        body, _ = read_body(KeyInput)
+        body = read_body(KeyInput)
         key, token = service.issue_key(project_id, body, g.user_params['user_id'])
         return jsonify(**key_json(key), project_key=token), 201
     after = number_argument('after_id', 0, 0, 2147483647)
