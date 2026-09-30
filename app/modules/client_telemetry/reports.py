@@ -105,11 +105,13 @@ def quality(definitions, start, end, now):
         .where((ClientDirtyInterval.definition.in_(definitions)) & (ClientDirtyInterval.minute >= start)
                & (ClientDirtyInterval.minute < end)).dicts().get())
     oldest = row['oldest']
-    return {'pending_intervals': row['pending'] or 0, 'failed_intervals': row['failed'] or 0,
+    # MySQL SUM returns Decimal, which Flask would encode as a JSON string.
+    pending_count, failed_count = int(row['pending'] or 0), int(row['failed'] or 0)
+    return {'pending_intervals': pending_count, 'failed_intervals': failed_count,
             'oldest_pending_at': iso_minute(oldest) if oldest is not None else None,
             'lag_seconds': max(0, now // 1000000 - (oldest + 1) * 60) if oldest is not None else 0,
             'last_received_us': row['last_received'] or None, 'last_processed_us': row['last_processed'] or None,
-            'complete': not row['pending']}
+            'complete': pending_count == 0}
 
 
 def iso_minute(minute):

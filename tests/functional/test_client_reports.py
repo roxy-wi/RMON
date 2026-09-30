@@ -1,6 +1,7 @@
 """Reports read persisted results without a collector or aggregation runtime."""
 import json
 from datetime import datetime, timezone
+from decimal import Decimal
 from unittest.mock import Mock, call
 
 import pytest
@@ -129,11 +130,39 @@ def test_report_reads_published_histograms_and_groups(client, setup, published):
     assert report(client, setup, filters=json.dumps({'platform': 'android'})).get_json()['summary']['observations'] == 2
 
 
-def test_pending_recomputation_is_visible_without_losing_published_data(client, setup, published):
-    ClientDirtyInterval.update(pending=True, generation=2).where(ClientDirtyInterval.id == published.id).execute()
+@pytest.mark.parametrize('last_error', [None, 'aggregation_failed'])
+def test_pending_recomputation_is_visible_without_losing_published_data(client, setup, published, last_error):
+    ClientDirtyInterval.update(pending=True, generation=2, last_error=last_error).where(ClientDirtyInterval.id == published.id).execute()
     result = report(client, setup).get_json()
     assert result['state'] == 'processing'
     assert result['aggregation']['pending_intervals'] == 1
+    assert result['aggregation']['failed_intervals'] == int(last_error is not None)
+    assert type(result['aggregation']['pending_intervals']) is int
+    assert type(result['aggregation']['failed_intervals']) is int
+    assert result['summary']['observations'] == 3
+
+
+@pytest.mark.parametrize('pending,failed', [
+    (None, None), (Decimal(0), Decimal(0)), (Decimal(1), Decimal(0)), (Decimal(2), Decimal(1)),
+], ids=['empty', 'complete', 'pending', 'failed'])
+def test_mysql_decimal_aggregation_counts_remain_json_numbers(client, setup, published, monkeypatch, pending, failed):
+    # Reproduce MySQL SUM results on every backend and exercise Flask's JSON encoding.
+    query = Mock()
+    query.where.return_value = query
+    query.dicts.return_value = query
+    query.get.return_value = {'pending': pending, 'failed': failed,
+                             'oldest': published.minute if pending else None,
+                             'last_received': None, 'last_processed': published.updated_us}
+    monkeypatch.setattr(ClientDirtyInterval, 'select', Mock(return_value=query))
+    response = report(client, setup)
+    assert response.status_code == 200
+    result = response.get_json()
+    aggregation = result['aggregation']
+    for field, expected in [('pending_intervals', int(pending or 0)), ('failed_intervals', int(failed or 0))]:
+        assert type(aggregation[field]) is int
+        assert aggregation[field] == expected
+    assert aggregation['complete'] is (not pending)
+    assert result['state'] == ('processing' if pending else 'ready')
     assert result['summary']['observations'] == 3
 
 
