@@ -1,194 +1,47 @@
 {% extends "base.html" %}
 {% from 'include/input_macros.html' import input, checkbox, select %}
-{% block title %}{{ lang.menu_links.history.title }} {{ smon_name|replace("'","") }}{% endblock %}
-{% block h2 %}{{ lang.menu_links.history.title }} {{ smon_name|replace("'","") }}{% endblock %}
+{% block title %}{{ smon_name }}{% endblock %}
+{% block h2 %}{{ smon_name }}{% endblock %}
 {% block content %}
-{% set checking_types = {'1': 'TCP', '2': 'HTTP', '3': 'SMTP', '4': 'Ping', '5': 'DNS', '6': 'RabbitMQ'} %}
-{% if not subscription_features['monitoring_history'] %}
-	{% include 'include/no_sub.html' %}
-{% else %}
-<link href="{{ url_for('static', filename='css/chart.min.css') }}" rel="stylesheet">
+{% from 'languages/check_detail_'+chosen_lang+'.html' import check_detail as d %}
 <link href="{{ url_for('static', filename='css/servers.css') }}" rel="stylesheet">
 <link href="{{ url_for('static', filename='css/smon.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/dashboard.css', v=1) }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/check_detail.css', v=1) }}" rel="stylesheet">
 <script src="{{ url_for('static', filename='js/chart.min-4.3.0.js') }}"></script>
-<script src="{{ url_for('static', filename='js/metrics.js') }}"></script>
-<script src="{{ url_for('static', filename='js/rmon/agent.js') }}"></script>
-<script src="{{ url_for('static', filename='js/rmon/smon.js') }}"></script>
-<script src="{{ url_for('static', filename='js/rmon/region.js') }}"></script>
-<script src="{{ url_for('static', filename='js/rmon/country.js') }}"></script>
-<script src="{{ url_for('static', filename='js/rmon/check.js') }}"></script>
-    <script>
-    // ждем полной загрузки страницы
-    window.onload = () => {
-        // устанавливаем настройки
-        const options = {
-            // родитель целевого элемента - область просмотра
-            root: null,
-            // без отступов
-            rootMargin: '0px',
-            // процент пересечения - половина изображения
-            threshold: 0.1
-        }
-
-        // создаем наблюдатель
-        const observer = new IntersectionObserver((entries, observer) => {
-            // для каждой записи-целевого элемента
-            entries.forEach(entry => {
-                // если элемент является наблюдаемым
-                if (entry.isIntersecting) {
-                    const check = entry.target
-                    let checkId = check.getAttribute('data-check-id')
-                    let checkType = check.getAttribute('data-check-type')
-                    // меняем фон контейнера
-                    getSmonHistoryCheckData(checkId, checkType)
-                    // прекращаем наблюдение
-                    observer.unobserve(check)
-                }
-            })
-        }, options)
-
-        // с помощью цикла следим за всеми check на странице
-        const arr = document.querySelectorAll('.chart-container_overview')
-        arr.forEach(i => {
-            observer.observe(i)
-        })
-    }
-    </script>
-<div class="row wrap1">
-{% for s in smon %}
-    <div id="smon_name" class="col-md-8">
-    {% if check_type_id == 2 %}
-        <a href="{{s.url}}" title="{{lang.words.open|title()}}" target="_blank">{{s.url}}</a>
-    {% elif check_type_id == 1 %}
-       {{s.ip}}:{{s.port}}
-    {% elif check_type_id == 5 %}
-        {{s.ip}} {{lang.phrases.resource_record_type}}: {{s.record_type|upper()}}
-    {% else %}
-        {{s.ip}}
-    {% endif %}
-        <a class="edit edit-button"
-           title="{{ lang.words.edit|title() }} {{ lang.words.this }} {{ lang.words.check }}"
-           onclick="editSmon('{{s.smon_id.multi_check_id}}', '{{ s.smon_id.check_type }}')"></a>
-        <a href="/rmon/history/check/{{s.smon_id.multi_check_id}}"
-           title="{{lang.words.view|title()}} {{lang.words.alerts}} {{lang.words.history}} {{lang.words.for}} {{s.smon_id.name}} {{lang.words.host}}"
-           class="history" style="font-size: 14px;"></a>
+<script src="{{ url_for('static', filename='js/rmon/smon.js', v='20260929-detail') }}"></script>
+<section id="rmon-check-detail" class="rd cd" data-endpoint="{{ url_for('smon.check_detail_data', smon_id=dashboard_id, check_id=check_type_id) }}" data-check-id="{{ dashboard_id }}" data-can-edit="{{ 'true' if g.user_params['role'] <= 3 else 'false' }}">
+    <a class="cd-back" href="{{ url_for('smon.smon_main_dashboard') }}">← {{ d.back }}</a>
+    <div class="rd-heading"><div><div class="cd-title"><h3 id="cd-name">{{ smon_name }}</h3><span id="cd-status" class="rd-badge">{{ d.loading }}</span></div><p id="cd-description" class="rd-muted"></p></div>{% if g.user_params['role'] <= 3 %}<button id="cd-edit" type="button" disabled>{{ d.settings }}</button>{% endif %}</div>
+    <div class="cd-toolbar"><label>{{ d.period }}<select id="cd-period"><option value="1">{{ d.hour }}</option><option value="6">{{ d.hours6 }}</option><option value="24">{{ d.hours24 }}</option></select></label><div class="cd-refresh"><div><label class="rd-toggle"><input id="cd-auto" type="checkbox" checked>{{ d.auto }}</label><span id="cd-updated" class="rd-muted" role="status">{{ d.loading }}</span></div><button id="cd-refresh" type="button">{{ d.refresh }}</button></div></div>
+    <nav class="cd-tabs" aria-label="{{ d.sections }}"><div role="tablist" aria-label="{{ d.sections }}"><button id="cd-tab-overview" type="button" role="tab" aria-controls="cd-overview" aria-selected="true" data-tab="overview">{{ d.overview }}</button><button id="cd-tab-diagnostic" type="button" role="tab" aria-controls="cd-diagnostic" aria-selected="false" tabindex="-1" data-tab="diagnostic">{{ d.diagnostic }}</button></div><a href="{{ url_for('smon.smon_multi_check_history', multi_check_id=dashboard_id) }}">{{ d.alert_history }}</a></nav>
+    <p id="cd-error" class="rd-notice" role="alert" hidden></p>
+    <div id="cd-content" aria-busy="true">
+        <section id="cd-overview" role="tabpanel" aria-labelledby="cd-tab-overview">
+            <div id="cd-notice" class="rd-notice" hidden></div>
+            <div class="rd-summary cd-summary">
+                <div class="cd-panel"><span class="rd-muted">{{ d.response }}</span><strong id="cd-response">—</strong><small class="rd-muted">{{ d.response_hint }}</small></div>
+                <div class="cd-panel"><span class="rd-muted">{{ d.uptime }}</span><strong id="cd-uptime">—</strong><small class="rd-muted">{{ d.uptime_hint }}</small></div>
+                <div class="cd-panel"><span class="rd-muted">{{ d.locations }}</span><strong id="cd-count">—</strong><small class="rd-muted">{{ d.available_now }}</small></div>
+            </div>
+            <div id="cd-overview-chart"></div>
+            <div class="cd-columns"><section class="cd-panel"><h4>{{ d.locations }}</h4><div id="cd-locations"></div></section><section class="cd-panel"><h4>{{ d.parameters }}</h4><dl id="cd-parameters" class="cd-parameters"></dl></section></div>
+        </section>
+        <section id="cd-diagnostic" role="tabpanel" aria-labelledby="cd-tab-diagnostic" hidden>
+            <div class="cd-workspace"><aside id="cd-picker" aria-label="{{ d.location }}"></aside><div class="cd-stack"><section class="cd-panel" id="cd-result"></section><div id="cd-diagnostic-chart"></div><section class="cd-panel"><h4>{{ d.results }}</h4><div id="cd-events"></div></section></div></div>
+        </section>
+        <section id="cd-chart-panel" class="cd-panel">
+            <div class="cd-chart-heading"><h4 id="cd-chart-title">{{ d.response_chart }}</h4><span id="cd-chart-time" class="rd-muted"></span></div>
+            <div class="cd-canvas"><canvas id="cd-chart" role="img" aria-label="{{ d.response_chart }}"></canvas></div>
+            <p id="cd-no-data" class="cd-empty" hidden>{{ d.no_data }}</p>
+            <div id="cd-legend" class="cd-legend"></div>
+            <p id="cd-limited" class="rd-muted" hidden></p>
+        </section>
     </div>
-</div>
-<div class="row statuses wrap">
-    <div class="col-md-8" style="transform: translateX(0px);">
-        {% for check in all_checks %}
-            <span class="gray_text">
-        {% if check.country_id %}
-            <b>{{ lang.words.country|title() }}</b> {{ check.country_id.name }}
-        {% endif %}
-        {% if check.region_id %}
-            <b>{{ lang.words.region|title() }}</b> {{ check.region_id.name }}
-        {% endif %}
-        {% if check.agent_id %}
-            <b>{{ lang.words.agent|title() }}</b> {{ check.agent_id.name }}:
-        {% endif %}
-        </span>
-        <div id="smon_history_statuses-{{ check.id }}" style="width: 370px;"></div>
-        <div style="cursor: pointer;display: inline;float: right;margin-top: -14px;margin-right: 60%;"
-             title="{{ lang.words.show|title() }} {{ lang.words.route }}"
-             onclick="showRoute('{{ check.id }}')">
-            <i class="fas fa-route" style="color: var(--color-grey);"></i>
-        </div>
-        {% endfor %}
-        <div id="check_interval" class="gray_text">
-            {{lang.words.checking|title()}} {{lang.words.every}} <span id="interval">{{s.interval}}</span> {{lang.words.seconds2}},
-            {{ lang.words.created_at }}: {{ s.smon_id.created_at|strftime }},
-            {{ lang.words.updated_at }}: <span id="updated_at">{{ s.smon_id.updated_at|strftime }}</span>
-        </div>
-    </div>
-    <div class="col-md-4" id="cur_status">
-    {% for check in all_checks %}
-    <div id="cur_status-{{ check.id }}" style="margin-top: 15px;"></div>
-    {% endfor %}
-    </div>
-</div>
-<div class="row statuses wrap">
-    <div class="col">
-        <h4>{{lang.words.checking|title()}}</h4>
-        <p class="smon_stats">({{lang.words.type|title()}})</p>
-        <span class="smon_value" title="{{last_resp_time}}">{{checking_types[check_type_id|string()]}}</span>
-    </div>
-    {% if check_type_id == 2 %}
-    <div class="col">
-        <h4>{{lang.words.method|title()}}</h4>
-        <p class="smon_stats">HTTP</p>
-        <span class="smon_value" title="HTTP {{lang.words.method}}">{{s.method.upper()}}</span>
-    </div>
-    {% endif %}
-    {% if check_type_id == 5 %}
-    <div class="col">
-        <h4>Resolver</h4>
-        <p class="smon_stats">DNS {{ lang.words.server }}</p>
-        <span class="smon_value" title="DNS {{ lang.words.server }}">{{s.resolver}}</span>
-    </div>
-    {% endif %}
-    <div class="col">
-        <h4>{{lang.words.response|title()}}</h4>
-        <p class="smon_stats">({{lang.words.current|title()}})</p>
-        <span class="smon_value" id="last_resp_time" title="{{last_resp_time}}">{{last_resp_time}}ms</span>
-    </div>
-    <div class="col">
-        <h4>{{lang.words.average2|title()}} {{lang.words.response}}</h4>
-        <p class="smon_stats">(24-{{lang.words.hours}})</p>
-        <span class="smon_value" id="avg_res_time">{{avg_res_time}}ms</span>
-    </div>
-    <div class="col">
-        <h4>{{lang.words.uptime}}</h4>
-        <p class="smon_stats">(24-{{lang.words.hours}})</p>
-        <span class="smon_value" id="uptime">{{uptime}}%</span>
-    </div>
-    <div class="col">
-        <h4>{{lang.words.cert_expire}}</h4>
-        {% if s.smon_id.ssl_expire_date is not none %}
-            {% set ssl_date = s.smon_id.ssl_expire_date.split()[0] %}
-        {% else %}
-            {% set ssl_date = 'N/A' %}
-        {% endif %}
-        <p class="smon_stats">({{ssl_date}})</p>
-        <span class="smon_value" id="ssl_expire_date">{{cert_day_diff}}</span> {{lang.words.days}}
-    </div>
-    {% endfor %}
-</div>
-    {% for check in all_checks %}
-        <div class="chart-container_overview" style="width: 98%;" data-check-id="{{ check.id }}" data-check-type="{{ check.check_type }}">
-        <span class="gray_text">
-        {% if check.country_id %}
-            <b>{{ lang.words.country|title() }}</b> {{ check.country_id.name }}
-        {% endif %}
-        {% if check.region_id %}
-            <b>{{ lang.words.region|title() }}</b> {{ check.region_id.name }}
-        {% endif %}
-        {% if check.agent_id %}
-            <b>{{ lang.words.agent|title() }}</b> {{ check.agent_id.name }}
-        {% endif %}
-        </span>
-        <canvas id="metrics_{{ check.id }}" role="img"></canvas>
-        </div>
-    {% endfor %}
-{% endif %}
-{#    {% include 'ajax/alerts_history.html' %}#}
-<script>
-    function showSmonHistory() {
-		let metrics = new Promise(
-			(resolve, reject) => {
-				removeData();
-                {% for check in all_checks %}
-				{#getSmonHistoryCheckData('{{check.id}}', '{{ check_type_id }}');#}
-				updateCurrentStatusRequest('{{check.id}}');
-                show_smon_history_statuses('{{check.id}}', '#smon_history_statuses-{{ check.id }}');
-                {% endfor %}
-			});
-		metrics.then();
-	}
-	showSmonHistory();
-</script>
-    {% include 'include/smon/add_form.html' %}
-    <div id="route">
-        <div id="show_route"></div>
-    </div>
+    <p class="rd-footnote" id="cd-timezone"></p>
+</section>
+<script id="cd-strings" type="application/json">{{ d|tojson }}</script>
+<script defer src="{{ url_for('static', filename='js/rmon/check_detail.js', v=1) }}"></script>
+{% if g.user_params['role'] <= 3 %}{% include 'include/smon/add_form.html' %}{% endif %}
+<div id="route" style="display:none"><div id="show_route"></div></div>
 {% endblock %}

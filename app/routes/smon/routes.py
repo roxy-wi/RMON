@@ -78,75 +78,58 @@ def dashboard_data():
 @get_user_params()
 @feature_required(MONITORING_HISTORY)
 def smon_dashboard(smon_id, check_id):
-    """
-    :param smon_id: The ID of the RMON (Server Monitoring) service.
-    :param check_id: The ID of the check associated with the RMON service.
-    :return: The rendered RMON dashboard template.
+    from flask import abort
+    from peewee import DoesNotExist
+    from app.modules.tools.check_detail import load_check
 
-    This method is used to render the RMON dashboard template for a specific RMON service and check. It retrieves relevant data from the database and passes it to the template for rendering
-    *.
-
-    The `smon_id` parameter specifies the ID of the RMON service.
-    The `check_type_id` parameter specifies the ID of the check associated with the RMON service.
-
-    The method performs the following steps:
-    1. Checks user group for Flask access.
-    2. Retrieves the RMON object from the database using the `smon_id` and `check_type_id` parameters.
-    3. Gets the current date and time using the `get_present_time()` function from the common module.
-    4. Sets the initial value of `cert_day_diff` as 'N/A'.
-    5. Tries to calculate the average response time for the RMON service using the `get_avg_resp_time` function from the SQL module. If an exception occurs, the average response time is
-    * set to 0.
-    6. Tries to retrieve the last response time for the RMON service and check using the `get_last_smon_res_time_by_check` function from the SQL module. If an exception occurs, the last
-    * response time is set to 0.
-    7. Iterates over the retrieved RMON object and checks if the SSL expiration date is not None. If it is not None, calculates the difference in days between the expiration date and the
-    * present date using the `datetime.strptime()` function and assigns it to `cert_day_diff`.
-    8. Constructs a dictionary (`kwargs`) containing various parameters required for rendering the template, including `lang`, `smon`, `group`, `user_subscription`, `check
-    *_interval`, `uptime`, `avg_res_time`, `smon_name`, `cert_day_diff`, `check_type_id`, `dashboard_id`, and `last_resp_time`.
-    9. Renders the RMON history template ('include/smon/smon_history.html') using the `render_template` function from Flask, passing the `kwargs` dictionary as keyword arguments.
-    """
-    roxywi_common.check_user_group_for_flask()
+    if not roxywi_common.check_user_group_for_flask():
+        abort(403)
     group_id = g.user_params['group_id']
     try:
-        multi_check = smon_sql.get_multi_check(smon_id, group_id)
-    except Exception as e:
-        return roxywi_common.handler_exceptions_for_json_data(e, 'Cannot find check')
-    smon = smon_sql.select_one_smon(multi_check.id, check_id)
-    all_checks = smon_sql.select_multi_check(smon_id, group_id)
-    cert_day_diff = 'N/A'
-    avg_res_time = 0
-
-    try:
-        last_resp_time = round(smon_sql.get_last_smon_res_time_by_check(smon_id, check_id), 2)
-    except Exception:
-        last_resp_time = 0
-
-    for s in smon:
-        if s.smon_id.ssl_expire_date is not None:
-            cert_day_diff = smon_mod.get_ssl_expire_date(s.smon_id.ssl_expire_date)
-        smon_name = s.smon_id.multi_check_id.name
-
-    kwargs = {
-        'lang': g.user_params['lang'],
-        'smon': smon,
-        'group': g.user_params['group_id'],
-        'user_subscription': roxywi_common.return_user_subscription(),
-        'uptime': smon_mod.check_uptime(smon_id),
-        'avg_res_time': avg_res_time,
-        'smon_name': smon_name,
-        'cert_day_diff': cert_day_diff,
-        'check_type_id': check_id,
-        'dashboard_id': smon_id,
-        'last_resp_time': last_resp_time,
-        'all_checks': all_checks,
-        'telegrams': channel_sql.get_user_receiver_by_group('telegram', group_id),
-        'slacks': channel_sql.get_user_receiver_by_group('slack', group_id),
-        'pds': channel_sql.get_user_receiver_by_group('pd', group_id),
-        'incidentrelay': channel_sql.get_user_receiver_by_group('incidentrelay', group_id),
-        'mms': channel_sql.get_user_receiver_by_group('mm', group_id),
-        'emails': channel_sql.get_user_receiver_by_group('email', group_id),
-    }
-
+        multi_check, _ = load_check(smon_id, check_id, group_id)
+    except DoesNotExist:
+        abort(404)
+    kwargs = {'lang': g.user_params['lang'], 'group': group_id,
+              'smon_name': multi_check.name or '', 'dashboard_id': smon_id, 'check_type_id': check_id}
+    for channel, key in (('telegram', 'telegrams'), ('slack', 'slacks'), ('pd', 'pds'),
+                         ('incidentrelay', 'incidentrelay'), ('mm', 'mms'), ('email', 'emails')):
+        kwargs[key] = channel_sql.get_user_receiver_by_group(channel, group_id)
     return render_template('include/smon/smon_history.html', **kwargs)
+
+
+@bp.get('/dashboard/<int:smon_id>/<int:check_id>/data')
+@jwt_required()
+@get_user_params()
+@feature_required(MONITORING_HISTORY)
+def check_detail_data(smon_id, check_id):
+    from flask import current_app
+    from peewee import DatabaseError, DoesNotExist
+    from app.modules.db.db_model import UserGroups
+    from app.modules.tools.check_detail import MetricsUnavailable, snapshot
+
+    user = g.user_params
+    if not UserGroups.select().where((UserGroups.user_id == user['user_id']) &
+                                     (UserGroups.user_group_id == user['group_id'])).exists():
+        return jsonify(error='group_denied'), 403
+    try:
+        hours = int(request.args.get('hours', '1'))
+        location_id = int(request.args['location']) if 'location' in request.args else None
+        if hours not in (1, 6, 24) or location_id is not None and location_id <= 0:
+            raise ValueError()
+    except ValueError:
+        return jsonify(error='invalid_query'), 422
+    try:
+        response = jsonify(snapshot(smon_id, check_id, user['group_id'], hours=hours, location_id=location_id))
+    except DoesNotExist:
+        return jsonify(error='check_not_found'), 404
+    except MetricsUnavailable:
+        current_app.logger.warning('Cannot load check metrics', extra={'check_id': smon_id})
+        return jsonify(error='metrics_unavailable'), 503
+    except DatabaseError:
+        current_app.logger.exception('Cannot load check details')
+        return jsonify(error='storage_unavailable'), 503
+    response.headers['Cache-Control'] = 'no-store'
+    return response
 
 
 @bp.route('/status-page', methods=['GET'])
