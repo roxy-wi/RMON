@@ -23,12 +23,14 @@ def compose_config(tmp_path):
     environment['COMPOSE_DISABLE_ENV_FILE'] = 'true'
     env_file = tmp_path / 'test.env'
 
-    def resolve(values=None, server=False):
+    def resolve(values=None, server=False, client=False):
         env_file.write_text('\n'.join(f"{key}='{value}'" for key, value in (values or {}).items()), encoding='utf-8')
         args = [*command, '--project-name', 'rmon-compose-test', '--project-directory', str(tmp_path),
                 '--env-file', str(env_file), '-f', str(ROOT / 'compose.yaml')]
         if server:
             args += ['-f', str(ROOT / 'compose.server.yaml')]
+        if client:
+            args += ['-f', str(ROOT / 'compose.client.yaml')]
         result = subprocess.run([*args, 'config', '--format', 'json'], env=environment,
                                 cwd=tmp_path, capture_output=True, text=True, timeout=30)
         assert result.returncode == 0, result.stderr
@@ -114,6 +116,8 @@ def test_same_host_server_shares_config_database_and_token(compose_config):
     assert web['environment']['RMON_SERVER_INTERNAL_URL'] == 'http://server:5100'
     # Unset environment overrides must leave existing server TLS settings usable.
     assert not server['environment'].get('RMON_SERVER_TRANSPORT')
+    assert server['environment']['RMON_SERVER_ROLES'] == 'classic'
+    assert server['command'] == ['python', '-m', 'modules.common.runtime']
 
 
 def test_existing_directories_are_shared_in_both_services(compose_config, tmp_path):
@@ -156,3 +160,32 @@ def test_server_tls_and_probe_settings_survive_compose(compose_config):
         assert services['server']['environment'][key] == value
     assert services['web']['environment']['RMON_SERVER_INTERNAL_URL'] == 'https://server:5100'
     assert 'RMON_TLS_KEY_FILE' not in services['web']['environment']
+
+
+@pytest.mark.parametrize('roles', [None, 'classic', 'client', 'classic,client'])
+def test_client_overlay_selects_roles_without_extra_containers(compose_config, roles):
+    values = {'RMON_SERVER_ROLES': roles} if roles is not None else {}
+    if roles == 'client':
+        values['RMON_SERVER_INTERNAL_URL'] = 'https://classic.example.test:5100'
+    config = compose_config(values, server=True, client=True)
+    assert set(config['services']) == {'web', 'server', 'scheduler', 'operations', 'proxy'}
+    server = config['services']['server']
+    assert server['environment']['RMON_SERVER_ROLES'] == (roles or 'classic,client')
+    assert server['environment']['RMON_CLIENT_BIND'] == '0.0.0.0:5102'
+    assert 'RMON_CLIENT_ENABLED' not in server['environment']
+    assert server['healthcheck']['test'][-2:] == ['health', 'ready']
+    assert config['services']['proxy']['environment']['RMON_CLIENT_UPSTREAM'] == 'http://server:5102'
+    assert all(port['target'] != 5102 for port in server['ports'])
+    if roles == 'client':
+        for name in ('web', 'scheduler', 'operations'):
+            assert config['services'][name]['environment']['RMON_SERVER_INTERNAL_URL'] == values['RMON_SERVER_INTERNAL_URL']
+
+
+def test_client_settings_are_passed_to_receiver_only(compose_config):
+    values = {'RMON_CLIENT_WORKERS': '3', 'RMON_CLIENT_THREADS': '5',
+              'RMON_CLIENT_TRUSTED_PROXIES': '192.0.2.1/32',
+              'RMON_CLIENT_GEOIP_DB': '/etc/rmon/country.mmdb'}
+    services = compose_config(values, server=True, client=True)['services']
+    for key, value in values.items():
+        assert services['server']['environment'][key] == value
+        assert key not in services['web']['environment']

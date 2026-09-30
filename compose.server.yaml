@@ -9,12 +9,14 @@ services:
 
   server:
     image: "${RMON_SERVER_IMAGE:-ghcr.io/roxy-wi/rmon/rmon-server:7.0}"
+    command: [python, -m, modules.common.runtime]
     user: "33:33"
     restart: unless-stopped
     depends_on:
       web:
         condition: service_healthy
     environment:
+      RMON_SERVER_ROLES: "${RMON_SERVER_ROLES:-classic}"
       RMON_CONFIG_FILE: "${RMON_CONFIG_FILE:-/etc/rmon/rmon.cfg}"
       RMON_DB_PATH: "${RMON_DB_PATH:-/var/lib/rmon/rmon.db}"
       RMON_INTERNAL_API_TOKEN_FILE: /run/secrets/rmon_server_token

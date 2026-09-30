@@ -17,7 +17,7 @@ spec:
     - name: http
       port: {{ .Values.service.port }}
       targetPort: http
-{{- if .Values.server.enabled }}
+{{- if and .Values.server.enabled (has "classic" .Values.server.roles) }}
 ---
 apiVersion: v1
 kind: Service
@@ -45,4 +45,22 @@ spec:
       {{- if and .Values.server.service.nodePort (ne .Values.server.service.type "ClusterIP") }}
       nodePort: {{ .Values.server.service.nodePort }}
       {{- end }}
+{{- end }}
+{{- if and .Values.server.enabled (has "client" .Values.server.roles) }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rmon.fullname" . }}-client
+  labels:
+    {{- include "rmon.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "rmon.selector" . | nindent 4 }}
+    app.kubernetes.io/component: server
+  ports:
+    - name: client-events
+      port: 5102
+      targetPort: client-events
 {{- end }}

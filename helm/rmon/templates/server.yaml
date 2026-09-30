@@ -46,18 +46,22 @@ spec:
         - name: server
           image: {{ include "rmon.image" (dict "image" .Values.server.image "version" "7.0") | quote }}
           imagePullPolicy: {{ .Values.server.image.pullPolicy }}
+          command: [python, -m, modules.common.runtime]
           securityContext:
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             capabilities:
               drop: [ALL]
           env:
+            - name: RMON_SERVER_ROLES
+              value: {{ join "," .Values.server.roles | quote }}
             - name: RMON_CONFIG_FILE
               value: /etc/rmon/rmon.cfg
             - name: RMON_DB_PATH
               value: /var/lib/rmon/rmon.db
             - name: RMON_INTERNAL_API_TOKEN_FILE
               value: /run/rmon-token/token
+            {{- if has "classic" .Values.server.roles }}
             - name: RMON_SERVER_WORKERS
               value: "1"
             - name: RMON_SERVER_THREADS
@@ -84,25 +88,44 @@ spec:
               value: /run/rmon-client-tls/tls.key
             {{- end }}
             {{- end }}
+            {{- end }}
+            {{- if has "client" .Values.server.roles }}
+            - name: RMON_CLIENT_BIND
+              value: "0.0.0.0:5102"
+            - name: RMON_CLIENT_WORKERS
+              value: {{ .Values.server.client.workers | quote }}
+            - name: RMON_CLIENT_THREADS
+              value: {{ .Values.server.client.threads | quote }}
+            - name: RMON_CLIENT_GEOIP_DB
+              value: {{ .Values.server.client.geoipDatabase | quote }}
+            - name: RMON_CLIENT_TRUSTED_PROXIES
+              value: {{ .Values.server.client.trustedProxies | quote }}
+            {{- end }}
           ports:
+            {{- if has "classic" .Values.server.roles }}
             - name: api
               containerPort: 5100
+            {{- end }}
+            {{- if has "client" .Values.server.roles }}
+            - name: client-events
+              containerPort: 5102
+            {{- end }}
           startupProbe:
             exec:
-              command: [python, -m, modules.common.probe, ready]
+              command: [python, -m, modules.common.runtime, health, ready]
             periodSeconds: 10
-            timeoutSeconds: 8
+            timeoutSeconds: 15
             failureThreshold: 60
           readinessProbe:
             exec:
-              command: [python, -m, modules.common.probe, ready]
+              command: [python, -m, modules.common.runtime, health, ready]
             periodSeconds: 15
-            timeoutSeconds: 8
+            timeoutSeconds: 15
           livenessProbe:
             exec:
-              command: [python, -m, modules.common.probe, live]
+              command: [python, -m, modules.common.runtime, health, live]
             periodSeconds: 30
-            timeoutSeconds: 8
+            timeoutSeconds: 15
             failureThreshold: 3
           resources:
             {{- toYaml .Values.server.resources | nindent 12 }}
@@ -110,7 +133,7 @@ spec:
             {{- include "rmon.mounts" . | nindent 12 }}
             - name: tmp
               mountPath: /tmp
-            {{- if ne .Values.server.transport "http" }}
+            {{- if and (has "classic" .Values.server.roles) (ne .Values.server.transport "http") }}
             - name: server-tls
               mountPath: /run/rmon-server-tls
               readOnly: true
@@ -121,7 +144,7 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 32Mi
-        {{- if ne .Values.server.transport "http" }}
+        {{- if and (has "classic" .Values.server.roles) (ne .Values.server.transport "http") }}
         - name: server-tls
           secret:
             secretName: {{ .Values.server.tls.existingServerSecret }}

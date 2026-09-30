@@ -92,6 +92,9 @@ ingress:
 
 server:
   enabled: true
+  # Two independent roles. Use [classic, client] to run both in one pod.
+  # With [client], externalURL can point RMON to a separate classic server.
+  roles: [classic]
   image:
     repository: ghcr.io/roxy-wi/rmon/rmon-server
     tag: "7.0"
@@ -100,7 +103,7 @@ server:
   # The same token is used by RMON and its result server.
   existingTokenSecret: ""
   tokenKey: token
-  # Used when enabled=false. Mount any outbound TLS files with extraVolumes.
+  # Used without a local classic role. Mount outbound TLS files with extraVolumes.
   externalURL: ""
   transport: http
   # Server identity: tls.crt, tls.key, ca.crt. Client identity: ca.crt and,
@@ -116,3 +119,10 @@ server:
     annotations: {}
     loadBalancerSourceRanges: []
   resources: {}
+  client:
+    workers: 1
+    threads: 2
+    # Mount the optional country MMDB using extraVolumes/extraVolumeMounts.
+    geoipDatabase: ""
+    # Comma-separated IPs/CIDRs of trusted ingress proxies, never all clients.
+    trustedProxies: ""

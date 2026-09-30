@@ -97,6 +97,22 @@
     "server": {
       "type": "object",
       "properties": {
+        "roles": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {"enum": ["classic", "client"]}
+        },
+        "client": {
+          "type": "object",
+          "properties": {
+            "workers": {"type": "integer", "minimum": 1},
+            "threads": {"type": "integer", "minimum": 1},
+            "geoipDatabase": {"type": "string"},
+            "trustedProxies": {"type": "string"}
+          }
+        },
         "enabled": {
           "type": "boolean"
         },

@@ -21,6 +21,15 @@ spec:
     - host: {{ .Values.ingress.host | quote }}
       http:
         paths:
+          {{- if and .Values.server.enabled (has "client" .Values.server.roles) }}
+          - path: /api/v1/client/events
+            pathType: Exact
+            backend:
+              service:
+                name: {{ include "rmon.fullname" . }}-client
+                port:
+                  number: 5102
+          {{- end }}
           - path: /
             pathType: Prefix
             backend:

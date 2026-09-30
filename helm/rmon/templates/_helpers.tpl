@@ -82,7 +82,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- if or .Values.server.enabled .Values.server.externalURL -}}
 {{- $_ := required "Set server.existingTokenSecret with the result server access token" .Values.server.existingTokenSecret -}}
 {{- end -}}
-{{- if and .Values.server.enabled (ne .Values.server.transport "http") -}}
+{{- if and .Values.server.enabled (has "classic" .Values.server.roles) (ne .Values.server.transport "http") -}}
 {{- $_ := required "Set server.tls.existingServerSecret for HTTPS/mTLS" .Values.server.tls.existingServerSecret -}}
 {{- $_ = required "Set server.tls.existingClientSecret for HTTPS/mTLS" .Values.server.tls.existingClientSecret -}}
 {{- end -}}
@@ -101,13 +101,13 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
   value: {{ ternary "1" "0" .Values.cookieSecure | quote }}
 - name: RMON_AGENT_IMAGE
   value: {{ .Values.agentImage | quote }}
-{{- if or .Values.server.enabled .Values.server.externalURL }}
+{{- if or (and .Values.server.enabled (has "classic" .Values.server.roles)) .Values.server.externalURL }}
 - name: RMON_SERVER_INTERNAL_URL
-  value: {{ if .Values.server.enabled }}{{ printf "%s://%s-server:%v" (ternary "http" "https" (eq .Values.server.transport "http")) (include "rmon.fullname" .) .Values.server.service.port | quote }}{{ else }}{{ .Values.server.externalURL | quote }}{{ end }}
+  value: {{ if and .Values.server.enabled (has "classic" .Values.server.roles) }}{{ printf "%s://%s-server:%v" (ternary "http" "https" (eq .Values.server.transport "http")) (include "rmon.fullname" .) .Values.server.service.port | quote }}{{ else }}{{ .Values.server.externalURL | quote }}{{ end }}
 - name: RMON_SERVER_INTERNAL_TOKEN_FILE
   value: /run/rmon-token/token
 {{- end }}
-{{- if and .Values.server.enabled (ne .Values.server.transport "http") }}
+{{- if and .Values.server.enabled (has "classic" .Values.server.roles) (ne .Values.server.transport "http") }}
 - name: RMON_SERVER_CA_FILE
   value: /run/rmon-client-tls/ca.crt
 {{- if eq .Values.server.transport "mtls" }}
@@ -136,7 +136,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
   mountPath: /run/rmon-token
   readOnly: true
 {{- end }}
-{{- if and .Values.server.enabled (ne .Values.server.transport "http") }}
+{{- if and .Values.server.enabled (has "classic" .Values.server.roles) (ne .Values.server.transport "http") }}
 - name: client-tls
   mountPath: /run/rmon-client-tls
   readOnly: true
@@ -162,7 +162,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
       - key: {{ .Values.server.tokenKey }}
         path: token
 {{- end }}
-{{- if and .Values.server.enabled (ne .Values.server.transport "http") }}
+{{- if and .Values.server.enabled (has "classic" .Values.server.roles) (ne .Values.server.transport "http") }}
 - name: client-tls
   secret:
     secretName: {{ .Values.server.tls.existingClientSecret }}

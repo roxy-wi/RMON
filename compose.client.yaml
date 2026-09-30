@@ -4,7 +4,8 @@ services:
   server:
     command: [python, -m, modules.common.runtime]
     environment:
-      RMON_CLIENT_ENABLED: "1"
+      # Select client for a dedicated collector; classic,client runs both roles.
+      RMON_SERVER_ROLES: "${RMON_SERVER_ROLES:-classic,client}"
       RMON_CLIENT_BIND: "0.0.0.0:5102"
       RMON_CLIENT_WORKERS: "${RMON_CLIENT_WORKERS:-1}"
       RMON_CLIENT_THREADS: "${RMON_CLIENT_THREADS:-2}"
@@ -12,7 +13,7 @@ services:
       RMON_CLIENT_GEOIP_DB: "${RMON_CLIENT_GEOIP_DB:-}"
       RMON_CLIENT_TRUSTED_PROXIES: "${RMON_CLIENT_TRUSTED_PROXIES:-}"
     healthcheck:
-      test: [CMD, python, -m, modules.common.runtime, health]
+      test: [CMD, python, -m, modules.common.runtime, health, ready]
       interval: 30s
       timeout: 15s
       start_period: 40s
