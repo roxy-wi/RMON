@@ -1,0 +1,34 @@
+.rs { --rs-text: var(--color-blue-dark); color: var(--rs-text); margin: 0 16px; padding-bottom: 24px; }
+.rs [hidden] { display: none !important; }
+.rs .rs-toolbar, .rs .rs-actions, .rs .rs-tabs { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rs .rs-toolbar { justify-content: space-between; margin-bottom: 16px; }
+.rs .rs-tabs { border-bottom: 1px solid var(--light-blue-color); }
+.rs button, .rs input, .rs select { font: inherit; color: inherit; border: 1px solid var(--light-blue-color); border-radius: var(--border-radius, 4px); background: var(--color-white); padding: 9px 12px; box-sizing: border-box; }
+.rs button { cursor: pointer; }
+.rs button:disabled { opacity: .55; cursor: default; }
+.rs button:focus-visible, .rs input:focus-visible, .rs select:focus-visible { outline: 2px solid #087fab; outline-offset: 2px; }
+.rs button.rs-primary, .rs [aria-selected="true"] { background: #087fab; border-color: #087fab; color: #fff; }
+.rs .rs-cards { display: grid; gap: 14px; }
+.rs .rs-card { border: 1px solid var(--light-blue-color); border-radius: var(--big-border-radius, 12px); background: var(--color-gray); padding: 20px; min-width: 0; }
+.rs .rs-card h3, .rs dialog h3 { margin: 0 0 8px; padding: 0; border: 0; background: none; display: block; float: none; font-size: 17px; }
+.rs .rs-muted { color: inherit; opacity: .72; font-size: 12px; }
+.rs p { line-height: 1.6; overflow-wrap: anywhere; }
+.rs .rs-tags { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.rs .rs-tag { border: 1px solid var(--light-blue-color); border-radius: 20px; padding: 4px 10px; font-size: 12px; }
+.rs .rs-state { color: #00658f; }
+.rs .rs-error { color: var(--color-red, #bf3434); }
+.rs .rs-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.rs label { display: grid; gap: 7px; margin-bottom: 14px; line-height: 1.5; font-weight: normal; }
+.rs label:has(input[type="checkbox"]) { display: flex; align-items: center; }
+.rs input:not([type="checkbox"]), .rs select { width: 100%; min-width: 0; }
+.rs input[type="checkbox"] { accent-color: #087fab; width: 17px; height: 17px; flex-shrink: 0; }
+.rs .rs-choices { margin: 12px 0; max-height: 280px; overflow: auto; }
+.rs fieldset { border: 1px solid var(--light-blue-color); border-radius: 8px; padding: 16px; margin: 0 0 16px; min-width: 0; }
+.rs legend { padding: 0 8px; font-weight: 600; }
+.rs dialog { padding: 24px; color: inherit; background: var(--color-white); border: 1px solid var(--light-blue-color); border-radius: 12px; width: min(700px, calc(100vw - 56px)); max-height: calc(100vh - 70px); overflow: auto; }
+.rs dialog::backdrop { background: #0c2d4380; }
+.rs .rs-actions { justify-content: flex-end; margin-top: 18px; }
+.rs .rs-url { font-family: monospace; overflow-wrap: anywhere; }
+.rs dl { display: grid; grid-template-columns: minmax(110px, 1fr) 2fr; gap: 10px; }
+.rs dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 620px) { .rs .rs-grid { grid-template-columns: 1fr; } .rs .rs-card { padding: 14px; } .rs dialog { padding: 16px; } .rs dl { grid-template-columns: 1fr; } }

@@ -1,0 +1,6 @@
+---
+- name: Manage an RMON result server
+  hosts: server
+  become: true
+  roles:
+    - rmon_server

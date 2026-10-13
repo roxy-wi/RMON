@@ -68,3 +68,31 @@ table.dataTable.display tbody tr.even > .sorting_1, table.dataTable.order-column
 .down {
     background-color: #00243E;
 }
+
+/* Native controls and cards on the new pages. */
+.rs, .cc {
+    --color-gray: #002f51;
+    --color-gray2: #002f51;
+    --color-dark-gray: #a8becd;
+    --light-blue-color: #31546b;
+    --border-color: #31546b;
+    color-scheme: dark;
+}
+body .rs {
+    --rs-text: #e7f1f7;
+}
+body .cc {
+    --cc-text: #e7f1f7;
+    --cc-heading: #e7f1f7;
+}
+body .rs .rs-state, body .cc .cc-link {
+    color: #55c7ef;
+}
+body .rs .rs-error {
+    color: #ff959c;
+}
+.check-editor {
+    --color-black: #e7f1f7;
+    --color-grey-dark: #a8becd;
+    color-scheme: dark;
+}

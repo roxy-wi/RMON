@@ -178,7 +178,7 @@ function getCountry(agent_id, new_country=false) {
 				toastr.error(data);
 			} else {
 				if (new_country) {
-					$('#smon-group-countries').append(data);
+					$('#smon-group-countries .location-cards').append(data);
 				} else {
 					$('#country-' + agent_id).replaceWith(data);
 				}

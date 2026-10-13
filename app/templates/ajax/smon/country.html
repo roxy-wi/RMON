@@ -1,60 +1,33 @@
 {% import 'languages/'+lang|default('en')+'.html' as lang %}
-{% from 'include/input_macros.html' import input, checkbox, copy_to_clipboard %}
-<div id="country-{{country.id}}" class="div-server-hapwi">
-    <div class="server-name">
-        <span class="overflow" style="width: 192px;">
-            <span id="country-name-{{country.id}}" style="margin-top: 4px;display: inline-block;">
-                <a href="/rmon/country/{{ country.id }}" title="{{ lang.words.open|title() }} {{ country.name.replace("'","") }}">{{country.name.replace("'","")}}</a>
-            </span>
-            <span id="country-desc-{{country.id}}">{% if country.description %} ({{country.description.replace("'", "")}}) {% endif %}</span>
-        </span>
-    {% if g.user_params['group_id']|string() == country.group_id|string() or g.user_params['role'] == 1 %}
-        <span class="server-action">
-            {% if g.user_params['role'] <= 2 %}
-            <a class="edit" onclick="addCountryDialog('{{country.id}}', true)"></a>
-            <a class="delete" onclick="confirmDeleteCountry('{{country.id}}')"></a>
-            {% endif %}
-        </span>
-    {% endif %}
-    </div>
-    <div class="server-desc">
-        <div>
-            <b>{{ lang.words.country|title() }} ID</b>: {{ country.id }}
-            <b>{{ lang.smon_page.desc.total_checks }}</b>: <span id="total_country_checks-{{ country.id }}"></span>
-        </div>
-        <div>
-            <b>{{ lang.words.enabled|title() }}</b>: {% if country.enabled %} {{ lang.words.yes|title() }} {% else %} {{ lang.words.no|title() }} {% endif %}
-            <b>{{ lang.words.shared|title() }}</b>: {% if country.shared %} {{ lang.words.yes|title() }} {% else %} {{ lang.words.no|title() }} {% endif %}
-        </div>
-        <div>
-            <b>{{ lang.words.regions|title() }}</b>:
-            <div class="region-list">
-            {% for region in regions %}
-                <div class="region-list-child">
-                    <a href="/rmon/region/{{ region.id }}" title="{{ lang.words.more|title }} {{ lang.words.info }}">{{region.name.replace("'", "")}}</a>
-                </div>
-            {% endfor %}
+<article id="country-{{ country.id }}" class="host-card location-card">
+    <header class="host-head">
+        <div class="host-identity">
+            <span class="host-emblem" aria-hidden="true"><i class="fas fa-globe-europe"></i></span>
+            <div>
+                <h3 id="country-name-{{ country.id }}"><a href="/rmon/country/{{ country.id }}">{{ country.name }}</a></h3>
+                <p class="host-subtitle">{{ lang.words.country|title() }} · ID {{ country.id }}</p>
             </div>
         </div>
+    </header>
+    {% if country.description %}<p id="country-desc-{{ country.id }}" class="host-note">{{ country.description }}</p>{% endif %}
+    <dl class="host-details">
+        <div><dt>{{ lang.smon_page.desc.total_checks }}</dt><dd id="total_country_checks-{{ country.id }}">—</dd></div>
+        <div><dt>{{ lang.words.enabled|title() }}</dt><dd>{{ lang.words.yes|title() if country.enabled else lang.words.no|title() }}</dd></div>
+        <div><dt>{{ lang.words.shared|title() }}</dt><dd>{{ lang.words.yes|title() if country.shared else lang.words.no|title() }}</dd></div>
+    </dl>
+    <div class="host-members">
+        <span>{{ lang.words.regions|title() }}</span>
+        <div class="host-member-list">
+            {% for region in regions %}
+            <a href="/rmon/region/{{ region.id }}">{{ region.name }}</a>
+            {% else %}<span>—</span>{% endfor %}
+        </div>
     </div>
-</div>
-<script>
-    $( function() {
-        $('.copyToClipboard').hover(function () {
-            $.getScript("/static/js/fontawesome.min.js");
-        });
-        $('.copyToClipboard').click(function () {
-            let str = $(this).attr('data-copy');
-            const el = document.createElement('textarea');
-            el.value = str;
-            el.setAttribute('readonly', '');
-            el.style.position = 'absolute';
-            el.style.left = '-9999px';
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-        });
-    });
-    get_country_count_checks('{{country.id}}');
-</script>
+    {% if (g.user_params['group_id']|string() == country.group_id|string() or g.user_params['role'] == 1) and g.user_params['role'] <= 2 %}
+    <footer class="host-footer host-actions">
+        <button type="button" class="host-primary" onclick="addCountryDialog('{{ country.id }}', true)">{{ lang.words.edit|title() }}</button>
+        <button type="button" class="host-danger" onclick="confirmDeleteCountry('{{ country.id }}')">{{ lang.words.delete|title() }}</button>
+    </footer>
+    {% endif %}
+</article>
+<script>get_country_count_checks('{{ country.id }}');</script>

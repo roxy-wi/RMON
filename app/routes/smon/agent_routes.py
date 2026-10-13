@@ -1,4 +1,5 @@
 import json
+import requests
 
 from flask import render_template, request, jsonify, g, abort
 from flask_jwt_extended import jwt_required
@@ -15,6 +16,7 @@ import app.modules.tools.smon_agent as smon_agent
 import app.modules.tools.common as tools_common
 import app.modules.roxywi.common as roxywi_common
 from app.modules.common import agent_transport
+from app.modules.receivers.service import routing_pending
 
 
 def _require_agent_access(agent_id: int, server_ip: str = None):
@@ -169,6 +171,7 @@ def get_agent_info(agent_id):
         agent_data = list(smon_sql.get_agent(agent_id))
         for item in agent_data:
             item.transport_pending = agent_transport.pending(item)
+            item.routing_pending = routing_pending(item)
     except Exception as e:
         return f'{e}'
 
@@ -245,6 +248,16 @@ def get_agent_status(server_ip):
 
     try:
         return jsonify(smon_agent.get_agent_health(agent_id, agent.ip))
+    except (requests.ConnectionError, requests.Timeout):
+        # A stopped container cannot answer health requests. Use the last
+        # successful stop only while no later agent operation has superseded it.
+        task = InstallationTasks.select().where(
+            (InstallationTasks.server_id == agent.server_id) &
+            (InstallationTasks.service_name == 'Agent')
+        ).order_by(InstallationTasks.id.desc()).first()
+        if task and task.action == 'stop' and task.status == 'completed':
+            return jsonify(running=False, source='last_completed_stop')
+        return jsonify(error='Cannot reach agent. Check connectivity and agent status.'), 502
     except Exception as e:
         return jsonify(error='Cannot get agent health. Check connectivity and update agents without a health endpoint.'), 502
 

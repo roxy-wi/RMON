@@ -6,7 +6,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import ssl
 import threading
@@ -108,14 +108,28 @@ def run(role):
                 checked = apply(agent_transport=mode, agent_mtls_enabled=mode == 'mtls',
                                 agent_tls_cert_file=str(issued / 'agent.crt'),
                                 agent_tls_key_file=str(issued / 'agent.key'),
-                                agent_verify_result_connection=True, master_ip='127.0.0.1', master_port=port)
+                                agent_verify_result_connection=True, master_ip=' 127.0.0.1,127.0.0.1 ', master_port=port)
                 assert checked.returncode == 0, checked.stdout + checked.stderr
                 print(f'{mode}: verified result-server connection through Ansible passed', flush=True)
+        with ExitStack() as stack:
+            endpoints = []
+            for mode in ('http', 'https', 'mtls'):
+                port = stack.enter_context(receiver(mode, server_cert, server_key, ca))
+                scheme = 'http' if mode == 'http' else 'https'
+                endpoints.append({'url': f'{scheme}://127.0.0.1:{port}', 'transport': mode})
+            checked = apply(agent_transport='mtls', agent_mtls_enabled=True,
+                            agent_verify_result_connection=True, agent_result_endpoints=endpoints)
+            assert checked.returncode == 0, checked.stdout + checked.stderr
+            print('Mixed HTTP, HTTPS and mTLS receiver addresses without legacy settings: passed', flush=True)
         with receiver('https', server_cert, server_key, ca) as port:
             rejected = apply(agent_transport='mtls', agent_mtls_enabled=True,
                              agent_verify_result_connection=True, master_ip='127.0.0.1', master_port=port)
             assert rejected.returncode != 0 and 'must require a trusted client certificate' in rejected.stdout
             print('mTLS selection rejects a server without mandatory client authentication: passed', flush=True)
+            rejected = apply(agent_transport='mtls', agent_mtls_enabled=True, agent_verify_result_connection=True,
+                             agent_result_endpoints=[{'url': f'https://127.0.0.1:{port}', 'transport': 'mtls'}])
+            assert rejected.returncode != 0 and 'must require a trusted client certificate' in rejected.stdout
+            print('mTLS receiver address rejects a server without mandatory client authentication: passed', flush=True)
 
 
 if __name__ == '__main__':

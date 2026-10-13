@@ -36,7 +36,13 @@ function page(t, options = {}) {
         d.documentElement.lang = options.language;
     }
     if (options.noDisplayNames) w.Intl.DisplayNames = undefined;
-    w.Chart = class { constructor(canvas, config) { this.config = config; charts.push(this); } destroy() { this.destroyed = true; } };
+    w.Chart = class {
+        constructor(canvas, config) {
+            this.config = config; this.data = config.data; this.options = config.options; charts.push(this);
+        }
+        update() {}
+        destroy() { this.destroyed = true; }
+    };
     w.setInterval = (callback, delay) => { timers.push({callback, delay}); return timers.length; };
     w.clearInterval = id => { timers[id - 1].cleared = true; };
     w.HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
@@ -52,6 +58,12 @@ function page(t, options = {}) {
         const parsed = new URL(url, w.location.href), route = parsed.pathname.replace('/api/v1.0/client/projects', '');
         const call = {url: parsed, route, ...settings, payload: settings.body && JSON.parse(settings.body)}; calls.push(call);
         if (intercept) { const result = await intercept(call); if (result !== undefined) return result; }
+        if (parsed.pathname === '/api/v1.0/receivers/endpoints') return json({items: [{id: 90, name: 'Collector', role: 'client', url: 'https://collector.test'}]});
+        if (/^\/\d+\/receiver$/.test(route)) {
+            const value = {endpoint_id: call.payload.endpoint_id, ingest_url: call.payload.endpoint_id ? 'https://collector.test/api/v1/client/events' : null};
+            projects.find(p => p.id === Number(route.split('/')[1])).receiver = value;
+            return json(value);
+        }
         if (!route && settings.method === 'POST') { const value = {id: 3, ...call.payload, enabled: true}; projects.push(value); checks[3] = []; return json(value, 201); }
         if (!route) return json({items: projects, next_after_id: null});
         const parts = route.split('/').filter(Boolean), project = Number(parts[0]);
@@ -86,6 +98,41 @@ function page(t, options = {}) {
     const submit = id => get(id + '-form').dispatchEvent(new w.Event('submit', {bubbles: true, cancelable: true}));
     return {w, d, calls, get, change, input, submit, logs, charts, timers, intercept(fn) { intercept = fn; }};
 }
+
+test('report chart follows theme changes without fetching the report again', async t => {
+    const ui = page(t);
+    await until(() => ui.get('project').value === '1');
+    ui.get('tab-report').click();
+    await until(() => ui.charts.length);
+    const chart = ui.charts.at(-1);
+    const calls = ui.calls.length;
+    assert.equal(chart.data.datasets[1].borderColor, '#00243e');
+    const theme = ui.d.createElement('link');
+    theme.rel = 'stylesheet'; theme.href = '/static/css/dark.css';
+    ui.d.head.append(theme);
+    await until(() => chart.data.datasets[1].borderColor === '#cc9fea');
+    assert.equal(chart.options.plugins.legend.labels.color, '#a8becd');
+    assert.equal(chart.options.scales.y.grid.color, '#31546b');
+    theme.remove();
+    await until(() => chart.data.datasets[1].borderColor === '#00243e');
+    assert.equal(chart.options.scales.x.ticks.color, '#4a4a4a');
+    assert.equal(ui.calls.length, calls);
+    assert.equal(ui.charts.length, 1);
+});
+
+test('project receiver is saved and changes only that project integration example', async t => {
+    const {get, calls, change} = page(t);
+    await until(() => !get('save-receiver').disabled);
+    change('receiver', '90'); get('save-receiver').click();
+    await until(() => get('endpoint').value === 'https://collector.test/api/v1/client/events');
+    assert.deepEqual(calls.find(c => c.route === '/1/receiver').payload, {endpoint_id: 90});
+    change('project', '2');
+    await until(() => !get('save-receiver').disabled);
+    assert.equal(get('endpoint').value, 'http://rmon.test/api/v1/client/events');
+    change('project', '1');
+    await until(() => get('receiver').value === '90');
+    assert.equal(get('endpoint').value, 'https://collector.test/api/v1/client/events');
+});
 
 test('overview reads real API summaries, escapes names and preserves authenticated requests', async t => {
     const {get, calls, d} = page(t);

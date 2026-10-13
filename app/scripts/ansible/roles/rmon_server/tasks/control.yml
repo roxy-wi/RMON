@@ -1,0 +1,35 @@
+---
+- name: Inspect the managed server
+  community.docker.docker_container_info:
+    docker_host: '{{ result_server_docker_host }}'
+    name: '{{ result_server_container }}'
+  register: result_server_current
+  no_log: true
+
+- name: Require the server owned by this installation
+  ansible.builtin.assert:
+    that:
+      - action == 'uninstall' or result_server_current.exists
+      - not result_server_current.exists or result_server_current.container.Config.Labels.get('io.rmon.uuid') == result_server_uuid
+    fail_msg: The managed server was not found or belongs to another installation.
+
+- name: Change the container state and retain its data
+  community.docker.docker_container:
+    docker_host: '{{ result_server_docker_host }}'
+    name: '{{ result_server_container }}'
+    state: "{{ {'start': 'started', 'stop': 'stopped', 'restart': 'started', 'uninstall': 'absent'}[action] }}"
+    restart: "{{ action == 'restart' }}"
+    stop_timeout: 45
+    keep_volumes: true
+  when: result_server_current.exists and action != 'check'
+
+- name: Verify readiness after starting or checking the server
+  community.docker.docker_container_exec:
+    docker_host: '{{ result_server_docker_host }}'
+    container: '{{ result_server_container }}'
+    argv: [python, -m, modules.common.runtime, health, ready]
+  register: result_server_ready
+  until: result_server_ready.rc == 0
+  retries: 6
+  delay: 5
+  when: action in ['start', 'restart', 'check']

@@ -10,6 +10,7 @@
 <link href="{{ url_for('static', filename='css/servers.css') }}" rel="stylesheet"/>
 <link href="{{ url_for('static', filename='css/smon.css') }}" rel="stylesheet"/>
 <link href="{{ url_for('static', filename='css/ha.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/host_cards.css') }}" rel="stylesheet">
 {% if smon_status in ('failed', 'inactive', 'ERROR') %}
 <div style="text-align: center;">
 	<br />
@@ -33,9 +34,11 @@
             <span id="hide-smon-group-countries" class="minus switcher_table_metric smon_group_switcher" onclick="hideSmonGroup('countries')" style="display: none;" title="{{lang.words.hide}}"></span>
         </div>
         <div class="smon_named_group" id="smon-group-countries">
-            {% for country in countries %}
-            <div id="country-{{country.id}}" class="div-server-hapwi animated-background"></div>
+            <div class="location-cards">
+{% for country in countries %}
+            <div id="country-{{country.id}}" class="host-card location-card animated-background"></div>
             {% endfor %}
+            </div>
         </div>
     </div>
     <div class="smon_group">
@@ -45,9 +48,11 @@
             <span id="hide-smon-group-regions" class="minus switcher_table_metric smon_group_switcher" onclick="hideSmonGroup('regions')" style="display: none;" title="{{lang.words.hide}}"></span>
         </div>
         <div class="smon_named_group" id="smon-group-regions">
-            {% for region in regions %}
-            <div id="region-{{region.id}}" class="div-server-hapwi animated-background"></div>
+            <div class="location-cards">
+{% for region in regions %}
+            <div id="region-{{region.id}}" class="host-card location-card animated-background"></div>
             {% endfor %}
+            </div>
         </div>
     </div>
     <div class="smon_group">
@@ -57,69 +62,15 @@
             <span id="hide-smon-group-agents" class="minus switcher_table_metric smon_group_switcher" onclick="hideSmonGroup('agents')" style="display: none;" title="{{lang.words.hide}}"></span>
         </div>
         <div class="smon_named_group" id="smon-group-agents">
+            <div class="agent-cards">
             {% for agent in agents %}
-            <div id="agent-{{agent.id}}" class="div-server-hapwi animated-background"></div>
+            <div id="agent-{{agent.id}}" class="host-card agent-card animated-background"></div>
             {% endfor %}
+            </div>
         </div>
     </div>
 </div>
-    <div id="add-agent-page" style="display: none;">
-        <table class="overview" id="add-agent-page-overview"
-               title="{{lang.words.create|title()}} {{lang.words.w_a}} {{lang.words.new2}} {{lang.words.agent}}"
-               data-edit="{{lang.words.edit|title()}} {{lang.words.agent}}">
-            {% include 'include/tr_validate_tips.html' %}
-            {% include 'include/agent_transport.html' %}
-            <tr id="new-agent-select-tr">
-                <td class="padding20">
-                    {{lang.words.server|title()}}
-                    <span class="need-field">*</span>
-                </td>
-                <td>
-                    <select name="new-agent-server-id" id="new-agent-server-id">
-                        <option value="------" disabled selected>------</option>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td class="padding20" style="width: 50%">
-                    {{lang.words.port|title()}}
-                    <span class="need-field">*</span>
-                </td>
-                <td>
-                    {{ input('new-agent-port', autofocus='autofocus', value='5101') }}
-                </td>
-            </tr>
-            <tr>
-                <td class="padding20" style="width: 50%">
-                    {{lang.words.name|title()}}
-                    <span class="need-field">*</span>
-                </td>
-                <td>
-                    {{ input('new-agent-name', autofocus='autofocus') }}
-                </td>
-            </tr>
-            <tr>
-                <td class="padding20">{{lang.words.enable|title()}}</td>
-                <td>
-                    {{ checkbox('new-agent-enabled', checked='checked') }}
-                </td>
-            </tr>
-            <tr>
-                <td class="padding20">{{lang.words.shared|title()}}</td>
-                <td>
-                    {{ checkbox('new-agent-shared') }}
-                </td>
-            </tr>
-            <tr>
-                <td class="padding20" style="width: 50%">
-                    {{lang.words.desc|title()}}
-                </td>
-                <td>
-                    {{ input('new-agent-desc', autofocus='autofocus') }}
-                </td>
-            </tr>
-        </table>
-    </div>
+    {% include 'include/agent_editor.html' %}
     <div id="add-region-page" style="display: none;">
         <table class="overview" id="add-region-page-overview"
                title="{{lang.words.create|title()}} {{lang.words.w_a}} {{lang.words.new2}} {{lang.words.region}}"

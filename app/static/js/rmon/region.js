@@ -178,7 +178,7 @@ function getRegion(agent_id, new_region=false) {
 				toastr.error(data);
 			} else {
 				if (new_region) {
-					$('#smon-group-regions').append(data);
+					$('#smon-group-regions .location-cards').append(data);
 				} else {
 					$('#region-' + agent_id).replaceWith(data);
 				}

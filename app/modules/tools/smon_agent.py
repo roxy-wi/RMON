@@ -2,6 +2,7 @@ import json
 import uuid
 import os
 import re
+from urllib.parse import urlsplit
 from typing import Union
 
 import requests
@@ -18,10 +19,12 @@ from app.modules.roxywi.class_models import RmonAgent
 from app.modules.roxywi.exception import RoxywiResourceNotFound
 from app.modules.roxy_wi_tools import GetConfigVar
 from app.modules.common import agent_transport
+from app.modules.receivers import service as receivers
+from app.modules.db.db_model import SmonAgent
 
 
 def generate_agent_inv(server_ip: str, action: str, agent_uuid: uuid, agent_port=5101,
-                       *, group_id=None, result_transport=None) -> object:
+                       *, group_id=None, result_transport=None, routing=None) -> object:
     config = GetConfigVar().config
     control_url = os.getenv('RMON_AGENT_CONTROL_URL') or config.get('agent_deployment', 'control_url', fallback='')
     if not control_url and has_app_context():
@@ -30,9 +33,23 @@ def generate_agent_inv(server_ip: str, action: str, agent_uuid: uuid, agent_port
         control_url = request.url_root.rstrip('/')
     master_port = sql.get_setting('master_port')
     master_ip = sql.get_setting('master_ip')
-    if not master_ip: raise Exception(' Master IP cannot be empty')
-    if master_port == '': raise Exception(' Master port cannot be empty')
-    if agent_port == '': raise Exception(' Agent port cannot be empty')
+    routing_config = None
+    if action == 'install' and group_id is not None:
+        if routing is None:
+            agent = SmonAgent.get_or_none(SmonAgent.uuid == str(agent_uuid))
+            routing = receivers.routing_json(agent) if agent else {'endpoint_ids': None, 'policy': 'balance'}
+        routing_config = receivers.effective_routing(group_id, routing)
+        if routing_config['endpoints']:
+            first = urlsplit(routing_config['endpoints'][0]['url'])
+            master_ip = f'[{first.hostname}]' if ':' in first.hostname else first.hostname
+            master_port = first.port or (443 if first.scheme == 'https' else 80)
+            result_transport = receivers.routing_transport(routing_config, result_transport)
+            if not control_url:
+                raise ValueError('Configure the RMON assignment address before selecting receiver addresses')
+    if action == 'install':
+        if not master_ip: raise ValueError('Master IP cannot be empty')
+        if master_port == '': raise ValueError('Master port cannot be empty')
+        if agent_port == '': raise ValueError('Agent port cannot be empty')
     inv = {"server": {"hosts": {}}}
     server_ips = [server_ip]
     inv['server']['hosts'][server_ip] = {
@@ -45,6 +62,12 @@ def generate_agent_inv(server_ip: str, action: str, agent_uuid: uuid, agent_port
         'agent_image': os.getenv('RMON_AGENT_IMAGE') or config.get(
             'agent_deployment', 'image', fallback='ghcr.io/roxy-wi/rmon/rmon-agent:2.0'),
     }
+    if routing_config is not None:
+        inv['server']['hosts'][server_ip].update(
+            agent_result_endpoints=routing_config['endpoints'],
+            agent_receiver_ids=routing_config['endpoint_ids'],
+            agent_delivery_policy=routing_config['policy'],
+            agent_routing_hash=receivers.routing_hash(routing_config))
 
     for option in ('bind_ip', 'pull'):
         if config.has_option('agent_deployment', option):
@@ -87,18 +110,21 @@ def add_agent(data: RmonAgent) -> Union[tuple[int, int], tuple[dict, int], None]
     check_agent_limit()
     server = server_sql.get_server_by_ip(server_ip)
     mode = data.result_transport or agent_transport.group_settings(server.group_id)['agent_result_transport']
-    agent_kwargs = data.model_dump(mode='json', exclude={'reconfigure': True})
+    agent_kwargs = data.model_dump(mode='json', exclude={'reconfigure': True, 'receivers': True})
     agent_kwargs['uuid'] = agent_uuid
     agent_kwargs['result_transport'] = mode
 
     try:
         inv, server_ips = generate_agent_inv(server_ip, 'install', agent_uuid, data.port,
-                                             group_id=server.group_id, result_transport=mode)
+                                             group_id=server.group_id, result_transport=mode,
+                                             routing=data.receivers.model_dump() if data.receivers else None)
     except Exception as e:
         roxywi_common.handle_exceptions(e, 'Cannot generate inventory')
     try:
         last_id = smon_sql.add_agent(**agent_kwargs)
         try:
+            if data.receivers is not None:
+                receivers.save_agent_routing(SmonAgent.get_by_id(last_id), data.receivers)
             task_id = run_ansible_thread(inv, server_ips, 'rmon_agent', 'Agent', 'install')
         except Exception:
             smon_sql.delete_agent(last_id)
@@ -126,19 +152,21 @@ def update_agent(agent_id: int, data: RmonAgent):
     agent = smon_sql.get_agent_data(agent_id)
     if data.server_id != agent.server_id_id:
         raise ValueError('An installed agent cannot be moved to another server')
-    json_data = data.model_dump(mode='python', exclude={'reconfigure': True, 'uuid': True}, exclude_none=True)
+    json_data = data.model_dump(mode='python', exclude={'reconfigure': True, 'uuid': True, 'receivers': True}, exclude_none=True)
+    if data.receivers is not None:
+        receivers.effective_routing(agent.server_id.group_id, data.receivers.model_dump())
     inv = None
     if data.reconfigure:
         mode = data.result_transport or agent.result_transport
         inv, server_ips = generate_agent_inv(agent.server_id.ip, 'install', agent.uuid, data.port,
-                                             group_id=agent.server_id.group_id, result_transport=mode)
-    try:
+                                             group_id=agent.server_id.group_id, result_transport=mode,
+                                             routing=data.receivers.model_dump() if data.receivers else None)
+    with receivers.transaction():
         smon_sql.update_agent(agent_id, **json_data)
-    except Exception as e:
-        raise e
-
-    if data.reconfigure:
-        return run_ansible_thread(inv, server_ips, 'rmon_agent', 'Agent', 'reconfigure')
+        if data.receivers is not None:
+            receivers.save_agent_routing(agent, data.receivers)
+        if data.reconfigure:
+            return run_ansible_thread(inv, server_ips, 'rmon_agent', 'Agent', 'reconfigure')
 
 
 def reconfigure_agent(agent_id: int):
@@ -179,7 +207,7 @@ def send_get_request_to_agent(agent_id: int, server_ip: str, api_path: str) -> b
         raise
     except Exception as e:
         roxywi_common.logger(f'Cannot get agent status: {e}', 'error')
-        raise Exception(' Cannot get agent status')
+        raise
 
 
 def get_agent_health(agent_id: int, server_ip: str) -> dict:

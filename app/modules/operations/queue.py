@@ -1,4 +1,4 @@
-"""Durable agent operations. Empty polls are a single indexed read, never a write."""
+"""Durable installation operations. Empty polls are a single indexed read, never a write."""
 import json
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
@@ -33,10 +33,13 @@ def database_time():
 
 
 def enqueue(inventory, server_ips, role, service_name, action, user_id):
-    if role != 'rmon_agent' or action not in {'install', 'delete', 'reconfigure', 'start', 'stop', 'restart'}:
-        raise ValueError('Unsupported agent operation')
+    allowed = {'install', 'delete', 'reconfigure', 'start', 'stop', 'restart'}
+    if role == 'rmon_server':
+        allowed.add('check')
+    if role not in ('rmon_agent', 'rmon_server') or action not in allowed:
+        raise ValueError('Unsupported installation operation')
     if len(server_ips) != 1 or set(inventory.get('server', {}).get('hosts', {})) != set(server_ips):
-        raise ValueError('An agent operation must target exactly one server')
+        raise ValueError('An installation operation must target exactly one server')
     server = Server.get(Server.ip == server_ips[0])
     payload = Fernet(_get_fernet_key()).encrypt(json.dumps({
         'inventory': inventory, 'server_ips': server_ips, 'role': role,
@@ -46,6 +49,9 @@ def enqueue(inventory, server_ips, role, service_name, action, user_id):
         task = InstallationTasks.create(service_name=service_name, server_id=server.server_id,
                                         user_id=user_id, group_id=server.group_id, action=action)
         OperationJob.create(task=task.id, server=server.server_id, payload=payload, available_at=database_time())
+        if role == 'rmon_agent':
+            from app.modules.receivers.service import reserve_agent_receivers
+            reserve_agent_receivers(task.id, inventory)
     return task.id
 
 
@@ -115,6 +121,9 @@ def finish(task_id, owner, error=None, on_success=None):
             return False
         if not error and on_success:
             on_success()
+        if not error:
+            from app.modules.receivers.service import release_agent_receivers
+            release_agent_receivers(task_id)
         InstallationTasks.update(status=status, error=error, finish_date=datetime.now()).where(
             InstallationTasks.id == task_id).execute()
         OperationLock.update(owner=None).where(OperationLock.owner == owner).execute()
@@ -140,7 +149,7 @@ def recover_expired(limit=100):
                 continue
             InstallationTasks.update(
                 status='failed' if failed else 'created',
-                error='Operation interrupted repeatedly. Check the agent and try again.' if failed else None,
+                error='Operation interrupted repeatedly. Check the server and try again.' if failed else None,
                 finish_date=datetime.now(),
             ).where(InstallationTasks.id == job['task']).execute()
             OperationLock.update(owner=None).where(OperationLock.owner == job['owner']).execute()
@@ -152,8 +161,11 @@ def cleanup(batch_size=500, max_batches=20):
     """Bound each daily cleanup; pending operations are never removed."""
     cutoff = datetime.now() - timedelta(days=RETENTION_DAYS)
     active = OperationJob.select(OperationJob.task).where(OperationJob.status.in_(('queued', 'running')))
+    from app.modules.receivers.models import PendingAgentReceiver
+    uncertain = PendingAgentReceiver.select(PendingAgentReceiver.task)
     eligible = ((InstallationTasks.status.in_(('completed', 'failed')))
-                & (InstallationTasks.finish_date < cutoff) & InstallationTasks.id.not_in(active))
+                & (InstallationTasks.finish_date < cutoff) & InstallationTasks.id.not_in(active)
+                & InstallationTasks.id.not_in(uncertain))
     deleted = 0
     for _ in range(max_batches):
         ids = [row.id for row in InstallationTasks.select(InstallationTasks.id).where(eligible)

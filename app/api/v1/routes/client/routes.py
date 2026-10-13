@@ -61,8 +61,22 @@ def number_argument(name, default, minimum, maximum):
 
 
 def project_json(value):
-    return {name: getattr(value, name) for name in ('id', 'group_id', 'name', 'description', 'enabled',
+    from app.modules.receivers.service import project_receiver
+    data = {name: getattr(value, name) for name in ('id', 'group_id', 'name', 'description', 'enabled',
             'events_per_minute', 'requests_per_minute', 'bytes_per_minute', 'created_us')}
+    data['receiver'] = project_receiver(value)
+    return data
+
+
+@bp.route('/projects/<int:project_id>/receiver', methods=['GET', 'PUT'])
+def project_receiver_settings(project_id):
+    from app.modules.receivers.service import project_receiver, save_project_receiver
+    from app.modules.receivers.schemas import ProjectReceiverInput
+    value = project(project_id)
+    if request.method == 'PUT':
+        body = read_body(ProjectReceiverInput)
+        return jsonify(save_project_receiver(value, body.endpoint_id))
+    return jsonify(project_receiver(value))
 
 
 def check_json(value):

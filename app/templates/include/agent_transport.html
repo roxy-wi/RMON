@@ -1,16 +1,23 @@
-<tr>
-    <td class="padding20">{{ lang.agent_transport.label }}</td>
-    <td>
-        <select id="new-agent-result-transport" name="new-agent-result-transport">
-            <option value="">{{ lang.agent_transport.preserve }}</option>
-            <option value="http">HTTP</option>
-            <option value="https">HTTPS</option>
-            <option value="mtls">HTTPS + mTLS</option>
-        </select>
-    </td>
-</tr>
-<tr>
-    <td colspan="2" class="padding20">
-        <small>{{ lang.agent_transport.help }}</small>
-    </td>
-</tr>
+<fieldset id="agent-receivers" data-strings='{{ lang.receivers|tojson }}'>
+    <legend>{{ lang.agent_transport.label }}</legend>
+    <div class="agent-fields">
+        <label class="agent-wide">{{ lang.receivers.routing }}
+            <select id="new-agent-receiver-mode"><option value="inherit">{{ lang.receivers.inherit }}</option><option value="custom">{{ lang.receivers.custom }}</option></select>
+        </label>
+        <div id="new-agent-receiver-list" class="agent-wide agent-receiver-list" hidden></div>
+        <label>{{ lang.receivers.policy }}
+            <select id="new-agent-receiver-policy"><option value="balance">{{ lang.receivers.balance }}</option><option value="failover">{{ lang.receivers.failover }}</option></select>
+        </label>
+        <label>{{ lang.agent_transport.label }}
+            <select id="new-agent-result-transport">
+                <option value="">{{ lang.agent_transport.preserve }}</option>
+                <option value="http">HTTP</option>
+                <option value="https">HTTPS</option>
+                <option value="mtls">HTTPS + mTLS</option>
+            </select>
+        </label>
+    </div>
+    <p>{{ lang.receivers.routing_hint }} {{ lang.receivers.legacy_hint }}</p>
+    <p>{{ lang.agent_transport.help }}</p>
+    <p id="new-agent-routing-pending" hidden>{{ lang.receivers.pending }}</p>
+</fieldset>

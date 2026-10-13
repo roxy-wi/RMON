@@ -63,6 +63,9 @@ app.register_blueprint(logs_bp, url_prefix='/logs')
 app.register_blueprint(oidc_bp, url_prefix='/oidc')
 app.register_blueprint(server_bp, url_prefix='/server')
 app.register_blueprint(admin_bp, url_prefix='/admin')
+from app.modules.receivers.routes import api as receivers_api, pages as receiver_pages
+app.register_blueprint(receivers_api)
+app.register_blueprint(receiver_pages)
 
 from app import login
 from app import jobs

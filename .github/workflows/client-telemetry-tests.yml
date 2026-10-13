@@ -53,4 +53,4 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements.txt -r requirements-dev.txt
       - name: Validate client contracts on the selected database
-        run: python -m pytest tests/functional/test_client_management.py tests/functional/test_client_reports.py -q -p no:cacheprovider
+        run: python -m pytest tests/functional/test_client_management.py tests/functional/test_client_reports.py tests/functional/test_receivers.py -q -p no:cacheprovider

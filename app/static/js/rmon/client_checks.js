@@ -91,7 +91,7 @@ window.RmonClientChecks = (() => {
             target.textContent = lines.join('\n'); target.hidden = false;
         }
         function appError(code, text, details) { const error = new Error(text || t(code)); error.code = code; error.details = details; return error; }
-        async function request(path, {method = 'GET', body, signal, headers = {}} = {}) {
+        async function request(path, {method = 'GET', body, signal, headers = {}, base = api} = {}) {
             const controller = new AbortController();
             let timedOut = false;
             const onAbort = () => controller.abort();
@@ -103,7 +103,7 @@ window.RmonClientChecks = (() => {
             if (body !== undefined) requestHeaders['Content-Type'] = 'application/json';
             if (csrf) requestHeaders['X-CSRF-TOKEN'] = decodeURIComponent(csrf.slice('csrf_access_token='.length));
             try {
-                const response = await fetch(api + path, {method, credentials: 'same-origin', cache: 'no-store',
+                const response = await fetch(base + path, {method, credentials: 'same-origin', cache: 'no-store',
                     headers: requestHeaders, body: body === undefined ? undefined : JSON.stringify(body), signal: controller.signal});
                 if (response.status === 204) return null;
                 if (!(response.headers.get('Content-Type') || '').includes('application/json')) throw appError(response.redirected ? 'unauthorized' : 'request_error');
@@ -187,8 +187,35 @@ window.RmonClientChecks = (() => {
             $('empty').hidden = Boolean(state.project); $('project-area').hidden = !state.project;
             populateProjects();
             if (!state.project) return;
+            $('endpoint').value = state.project.receiver?.ingest_url || new URL('/api/v1/client/events', location.origin).href;
+            loadReceiverChoices();
             heading(); urlState(); refreshView();
         }
+        async function loadReceiverChoices() {
+            const project = state.project;
+            $('receiver').disabled = true;
+            if (canEdit) $('save-receiver').disabled = true;
+            try {
+                const data = await request('/endpoints', {base: '/api/v1.0/receivers'});
+                if (state.project !== project) return;
+                const labels = JSON.parse($('receiver-strings').textContent);
+                options($('receiver'), [['', labels.current_origin], ...data.items.filter(e => e.role === 'client').map(e => [e.id, e.name + ' — ' + e.url])], project.receiver?.endpoint_id || '');
+                $('receiver').disabled = !canEdit;
+                if (canEdit) $('save-receiver').disabled = false;
+            } catch (error) { if (state.project === project) message(error); }
+        }
+        if (canEdit) $('save-receiver').addEventListener('click', () => action(async () => {
+            const project = state.project;
+            $('save-receiver').disabled = true;
+            try {
+                const receiver = await request('/' + project.id + '/receiver', {method: 'PUT', body: {endpoint_id: $('receiver').value ? Number($('receiver').value) : null}});
+                project.receiver = receiver;
+                if (state.project === project) {
+                    $('endpoint').value = receiver.ingest_url || new URL('/api/v1/client/events', location.origin).href;
+                    updateExample();
+                }
+            } finally { if (state.project === project) $('save-receiver').disabled = false; }
+        }));
         function populateChecks() {
             const values = [['', t('choose_check')], ...[...state.checks.values()].map(row => [row.id, checkName(row) + ' · ' + row.code])];
             all('.cc-check-select').forEach(select => options(select, values, state.check || ''));
@@ -240,15 +267,19 @@ window.RmonClientChecks = (() => {
         async function overview(signal) {
             const data = await request(projectPath('/overview?' + pageQuery('overview', {...period(), checks_limit: 20})), {signal});
             $('overview-cards').replaceChildren(...data.items.map(check => {
-                const report = check.report, card = el('article', null, 'cc-check-card');
+                const report = check.report, card = el('article', null, 'host-card cc-check-card');
+                const head = el('header', null, 'host-head'), identity = el('div');
                 const title = el('h3'); title.append(button(checkName(check), () => { chooseCheck(check.id); selectTab('report'); }, 'cc-link'));
-                const values = el('div', null, 'cc-check-values');
+                identity.append(title, el('p', check.code, 'host-subtitle'));
+                head.append(identity);
+                const values = el('footer', null, 'host-footer cc-check-values');
                 values.append(el('span', t('observations') + ': ' + number(report.summary.observations)));
                 if (report.summary.outcomes) values.append(el('span', t('error_rate') + ': ' + percent(report.summary.error_rate)));
                 const metric = metricLabel(check, report.metric, report.metric_label) || (report.metric === 'duration_ms' ? t('duration') : report.metric) || '—';
-                const measured = el('div', null, 'cc-check-measurement');
+                const measured = el('div', null, 'host-block cc-check-measurement');
                 measured.append(el('span', metric + ' · ≈ p95'), el('strong', measurement(report.summary.metric.p95, report.unit)));
-                card.append(title, el('p', check.code, 'cc-muted'), values, measured, el('span', t(report.state), 'cc-check-state'));
+                values.append(el('span', t(report.state), 'cc-check-state'));
+                card.append(head, measured, values);
                 return card;
             }));
             $('overview-rows').replaceChildren(...data.items.map(check => {
@@ -330,7 +361,26 @@ window.RmonClientChecks = (() => {
             }
             return result;
         }
-        function stat(label, value) { const item = el('div', null, 'cc-stat'); item.append(el('span', label), el('strong', value)); return item; }
+        function stat(label, value) { const item = el('div', null, 'host-card cc-stat'); item.append(el('span', label), el('strong', value)); return item; }
+        function updateChartTheme() {
+            const chart = state.chart;
+            if (!chart) return;
+            const dark = document.querySelector('link[href*="/css/dark.css"]');
+            const colors = dark ? ['#55c7ef', '#cc9fea', '#edc96a'] : ['#31afe1', '#00243e', '#d08720'];
+            const text = dark ? '#a8becd' : '#4a4a4a';
+            chart.data.datasets.forEach((dataset, index) => {
+                dataset.borderColor = colors[index];
+                dataset.pointBackgroundColor = colors[index];
+            });
+            chart.options.plugins.legend.labels = {color: text};
+            chart.options.scales.x.ticks.color = text;
+            chart.options.scales.y.ticks.color = text;
+            chart.options.scales.y.title.color = text;
+            chart.options.scales.y.grid = {color: dark ? '#31546b' : '#dce6ed'};
+            chart.update('none');
+        }
+        const themeObserver = new MutationObserver(updateChartTheme);
+        themeObserver.observe(document.head, {childList: true, subtree: true, attributes: true, attributeFilter: ['href']});
         async function report(signal) {
             if (!await ensureDefinitions(signal)) { $('report-state').textContent = t('no_checks'); return; }
             const query = {...period(), filters: JSON.stringify(filters()), outcome: $('report-outcome').value};
@@ -359,10 +409,9 @@ window.RmonClientChecks = (() => {
             $('report-data').hidden = false;
             state.chart?.destroy(); state.chart = null;
             if (window.Chart) {
-                const colors = ['#31afe1', '#00243e', '#d08720'];
                 state.chart = new Chart($('chart'), {type: 'line', data: {labels: data.series.map(point => date(point.at)),
-                    datasets: ['p50', 'p95', 'p99'].map((key, index) => ({label: '≈ ' + key + (data.unit ? ' (' + data.unit + ')' : ''),
-                        data: data.series.map(point => point.metric[key]), borderColor: colors[index], pointBackgroundColor: colors[index],
+                    datasets: ['p50', 'p95', 'p99'].map(key => ({label: '≈ ' + key + (data.unit ? ' (' + data.unit + ')' : ''),
+                        data: data.series.map(point => point.metric[key]),
                         // With gaps, a lone value has no line segment. Keep its marker visible even in long reports.
                         pointRadius: context => {
                             const values = context.dataset.data, i = context.dataIndex;
@@ -380,6 +429,7 @@ window.RmonClientChecks = (() => {
                                 ...(Number($('period').value) > 24 ? {month: '2-digit', day: '2-digit'} : {}),
                                 hour: '2-digit', minute: '2-digit', hourCycle: 'h23'}) : '';
                         }}}, y: {beginAtZero: false, ticks: {callback: value => number(value)}, title: {display: Boolean(data.unit), text: data.unit}}}}});
+                updateChartTheme();
             }
         }
         function updateExample() {
@@ -397,7 +447,7 @@ window.RmonClientChecks = (() => {
         async function keys(signal) {
             const data = await request(projectPath('/keys?' + pageQuery('keys', {limit: 20})), {signal});
             $('key-list').replaceChildren(...data.items.map(key => {
-                const card = el('div', null, 'cc-field-row'); const head = el('div', null, 'cc-section-head');
+                const card = el('div', null, 'host-card cc-key-card'); const head = el('div', null, 'cc-section-head');
                 head.append(el('strong', presetLabel('preset_site_key', key.name)), el('span', key.revoked ? t('revoked') : key.prefix + '…', 'cc-badge'));
                 if (canEdit && !key.revoked) head.append(button(t('revoke'), () => revokeKey(key)));
                 card.append(head, el('p', t('check') + ': ' + key.checks.join(', ')), el('p', t('environment') + ': ' + key.environments.join(', ')),

@@ -217,7 +217,7 @@ def test_group_connection_controls_render(app, owned_agent, language):
             "{% import 'languages/' + language + '.html' as lang %}"
             "{% from 'include/input_macros.html' import input, checkbox %}"
             "{% include 'include/admin_settings.html' %}"
-            "{% include 'include/agent_transport.html' %}",
+            "{% include 'include/agent_editor.html' %}",
             language=language,
             settings=Setting.select().where(Setting.group_id == owned_agent.server_id.group_id),
             agent_certificate_root=transport.certificate_root(owned_agent.server_id.group_id),
@@ -226,4 +226,8 @@ def test_group_connection_controls_render(app, owned_agent, language):
         assert 'id="new-agent-result-transport"' in markup
         assert 'id="agent_tls_ca_file"' in markup
         assert 'HTTPS + mTLS' in markup
+        assert '<dialog id="add-agent-page"' in markup
+        assert 'id="agent-editor-reconfigure">' in markup
+        assert 'id="agent-editor-cancel"></button>' not in markup
+        assert 'id="agent-editor-reconfigure"></button>' not in markup
         assert 'Undefined' not in markup

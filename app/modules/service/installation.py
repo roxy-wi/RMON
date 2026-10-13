@@ -20,10 +20,10 @@ def run_ansible(inv: dict, server_ips: list, ansible_role: str, *, cancel_callba
 
     def check_cancelled():
         if cancel_callback and cancel_callback():
-            raise RuntimeError('Agent operation was interrupted')
+            raise RuntimeError('Installation operation was interrupted')
 
     check_cancelled()
-    collection_path = _ensure_agent_collections() if ansible_role == 'rmon_agent' else None
+    collection_path = _ensure_agent_collections() if ansible_role in ('rmon_agent', 'rmon_server') else None
     if collection_path is None:
         _install_ansible_collections()
     proxy = sql.get_setting('proxy')
@@ -72,7 +72,7 @@ def run_ansible(inv: dict, server_ips: list, ansible_role: str, *, cancel_callba
         result = ansible_runner.run(**kwargs)
         check_cancelled()
         if result.rc != 0:
-            raise RuntimeError('Agent operation failed. Check SSH access and the failed task in the operations service logs.')
+            raise RuntimeError('Installation operation failed. Check SSH access and the failed task in the operations service logs.')
         return result.stats
     finally:
         try:
@@ -135,9 +135,9 @@ def execute_installation(inv, server_ips, service, *, cancel_callback=None):
 	kwargs = {'cancel_callback': cancel_callback} if cancel_callback else {}
 	output = run_ansible(inv, server_ips, service, **kwargs)
 	if output.get('failures') or output.get('dark'):
-		raise RuntimeError('Agent operation failed. Check SSH access and the failed task in the operations service logs.')
+		raise RuntimeError('Installation operation failed. Check SSH access and the failed task in the operations service logs.')
 	if cancel_callback and cancel_callback():
-		raise RuntimeError('Agent operation was interrupted')
+		raise RuntimeError('Installation operation was interrupted')
 
 
 def run_installations(inv: dict, server_ips: list, service: str, task_id: int) -> None:
@@ -146,6 +146,9 @@ def run_installations(inv: dict, server_ips: list, service: str, task_id: int) -
 		execute_installation(inv, server_ips, service)
 		if service == 'rmon_agent':
 			from app.modules.common.agent_transport import record_applied
+			record_applied(inv)
+		elif service == 'rmon_server':
+			from app.modules.receivers.deployment import record_applied
 			record_applied(inv)
 		InstallationTasks.update(status='completed', finish_date=datetime.now()).where(InstallationTasks.id == task_id).execute()
 	except Exception as e:

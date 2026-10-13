@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}{{ lang.receivers.title }}{% endblock %}
+{% block h2 %}{{ lang.receivers.title }}{% endblock %}
+{% block content %}
+{% set r = lang.receivers %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/result_servers.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/host_cards.css') }}">
+<section id="result-servers" class="rs" data-group="{{ g.user_params['group_id'] }}">
+    <script id="rs-strings" type="application/json">{{ r|tojson }}</script>
+    <div class="rs-toolbar">
+        <div class="rs-tabs" role="tablist">
+            {% for tab in ['servers', 'endpoints', 'defaults'] %}
+            <button type="button" id="rs-tab-{{ tab }}" role="tab" aria-controls="rs-panel-{{ tab }}" aria-selected="{{ 'true' if loop.first else 'false' }}" data-tab="{{ tab }}">{{ r[tab] }}</button>
+            {% endfor %}
+        </div>
+        <button type="button" id="rs-refresh">{{ r.refresh }}</button>
+    </div>
+    <p id="rs-message" role="status" aria-live="polite"></p>
+    <section id="rs-panel-servers" role="tabpanel" aria-labelledby="rs-tab-servers">
+        <div class="rs-toolbar"><p>{{ r.shared_address }}</p><button type="button" id="rs-install" class="rs-primary" hidden>+ {{ r.install }}</button></div>
+        <div id="rs-servers" class="rs-cards"></div>
+    </section>
+    <section id="rs-panel-endpoints" role="tabpanel" aria-labelledby="rs-tab-endpoints" hidden>
+        <div class="rs-toolbar"><p>{{ r.lb_hint }}</p><button type="button" id="rs-add-endpoint" class="rs-primary" hidden>+ {{ r.new_endpoint }}</button></div>
+        <div id="rs-endpoints" class="rs-cards"></div>
+    </section>
+    <section id="rs-panel-defaults" role="tabpanel" aria-labelledby="rs-tab-defaults" hidden>
+        <form id="rs-defaults" class="rs-card">
+            <h3>{{ r.routing }}</h3><p>{{ r.legacy_hint }}</p>
+            <label>{{ r.defaults }}<select id="rs-default-mode"><option value="legacy">{{ r.legacy_default }}</option><option value="custom">{{ r.custom }}</option></select></label>
+            <div id="rs-default-choices" class="rs-choices" hidden></div>
+            <button type="submit" class="rs-primary">{{ r.save }}</button>
+        </form>
+    </section>
+    <dialog id="rs-dialog" aria-labelledby="rs-dialog-title">
+        <form id="rs-form">
+            <div class="rs-toolbar"><h3 id="rs-dialog-title"></h3><button type="button" id="rs-close" aria-label="{{ r.cancel }}">×</button></div>
+            <p id="rs-steps" class="rs-muted"></p>
+            <div id="rs-fields"></div>
+            <p id="rs-form-message" role="alert"></p>
+            <div class="rs-actions"><button type="button" id="rs-back">{{ r.back }}</button><button type="button" id="rs-cancel">{{ r.cancel }}</button><button type="submit" id="rs-submit" class="rs-primary">{{ r.save }}</button></div>
+        </form>
+    </dialog>
+</section>
+<script defer src="{{ url_for('static', filename='js/rmon/result_servers.js') }}"></script>
+{% endblock %}

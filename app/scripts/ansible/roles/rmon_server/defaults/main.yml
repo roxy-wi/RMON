@@ -1,0 +1,9 @@
+---
+result_server_docker_host: unix:///var/run/docker.sock
+result_server_container: 'rmon-server-{{ result_server_uuid }}'
+result_server_previous: '{{ result_server_container }}-previous'
+result_server_directory: '/etc/rmon/servers/{{ result_server_uuid }}'
+result_server_data: '/var/lib/rmon/servers/{{ result_server_uuid }}'
+result_server_lock: '/run/lock/rmon-server-{{ result_server_uuid }}'
+result_server_user: '10001'
+result_server_sqlite_path: ''

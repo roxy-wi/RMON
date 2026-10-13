@@ -17,6 +17,7 @@
                 <li><a href="{{ url_for('channel.channels') }}" title="{{lang.words.channels|title()}} {{ lang.words.for }} RMON" class="channel {% if request.url_rule.endpoint == 'channel.channels' %} menu-active{% endif %}">{{lang.words.channels|title}}</a></li>
                 {% if g.user_params['role'] <= 3 %}
                     <li><a href="{{ url_for('smon.agent') }}" title="{{lang.menu_links.monitoring.smon.agent}}" class="admin {% if request.url_rule.endpoint == 'smon.agent' %} menu-active{% endif %}">{{lang.menu_links.monitoring.smon.agent}}</a></li>
+                    <li><a href="{{ url_for('receivers.index') }}" class="admin {% if request.url_rule.endpoint == 'receivers.index' %}menu-active{% endif %}">{{ lang.receivers.title }}</a></li>
                 {% endif %}
                 <li><a href="{{ url_for('main.nettools') }}" title="{{lang.menu_links.monitoring.net_tools}}" class="net-tools {% if request.url_rule.endpoint == 'main.nettools' %} menu-active{% endif %}">{{lang.menu_links.monitoring.net_tools}}</a></li>
 				{% if g.user_params['role'] <= 2 %}

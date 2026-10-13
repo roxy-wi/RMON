@@ -11,52 +11,8 @@
 <link href="{{ url_for('static', filename='css/servers.css') }}" rel="stylesheet"/>
 <link href="{{ url_for('static', filename='css/smon.css') }}" rel="stylesheet"/>
 <link href="{{ url_for('static', filename='css/ha.css') }}" rel="stylesheet">
-<div id="country-{{country.id}}" class="div-server-hapwi">
-    <div class="server-name">
-        <span class="overflow" style="width: 192px;">
-            <span id="country-name-{{country.id}}" style="margin-top: 4px;display: inline-block;">
-                {{country.name.replace("'","")}}
-            </span>
-            <span id="country-desc-{{country.id}}">{% if country.description %} ({{country.description.replace("'", "")}}) {% endif %}</span>
-        </span>
-    {% if g.user_params['group_id']|string() == country.group_id|string() or g.user_params['role'] == 1 %}
-        <span class="server-action">
-            {% if g.user_params['role'] <= 2 %}
-            <a class="edit" onclick="addCountryDialog('{{country.id}}', true)"></a>
-            <a class="delete" onclick="confirmDeleteCountry('{{country.id}}')"></a>
-            {% endif %}
-        </span>
-    {% endif %}
-    </div>
-    <div class="server-desc">
-        <div>
-            <b>{{ lang.words.country|title() }} ID</b>: {{ country.id }}
-            <b>{{ lang.smon_page.desc.total_checks }}</b>: <span id="total_country_checks-{{ country.id }}"></span>
-        </div>
-        <div>
-            <b>{{ lang.words.enabled|title() }}</b>: {% if country.enabled %} {{ lang.words.yes|title() }} {% else %} {{ lang.words.no|title() }} {% endif %}
-            <b>{{ lang.words.shared|title() }}</b>: {% if country.shared %} {{ lang.words.yes|title() }} {% else %} {{ lang.words.no|title() }} {% endif %}
-        </div>
-        <div>
-            <b>{{ lang.words.regions|title() }}</b>:
-            <div class="region-list">
-            {% for region in regions %}
-                <div class="region-list-child">{{region.name.replace("'", "")}}</div>
-            {% endfor %}
-            </div>
-        </div>
-        <div>
-            <b>{{ lang.words.regions|title() }}</b>:
-            <div class="region-list">
-            {% for region in regions %}
-                <div class="region-list-child">
-                    <a href="/rmon/region/{{ region.id }}" title="{{ lang.words.more|title }} {{ lang.words.info }}">{{region.name.replace("'", "")}}</a>
-                </div>
-            {% endfor %}
-            </div>
-        </div>
-    </div>
-</div>
+<link href="{{ url_for('static', filename='css/host_cards.css') }}" rel="stylesheet">
+<div class="location-overview"><div id="country-{{ country.id }}" class="host-card location-card animated-background"></div></div>
     {% include 'include/smon/checks_for_overview.html' %}
 <div id="dialog-confirm" style="display: none;">
     <p><span class="ui-icon ui-icon-alert" style="float:left; margin:3px 12px 20px 0;"></span>{{lang.phrases.are_you_sure}}</p>

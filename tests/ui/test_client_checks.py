@@ -63,6 +63,7 @@ def test_client_catalogs_have_identical_keys_and_browser_fixture_matches_templat
         catalogs = [app.jinja_env.get_template(f'languages/{language}.html').module.client_checks for language in ('en', 'ru', 'fr', 'pt-br')]
         assert all(set(catalog) == set(catalogs[0]) for catalog in catalogs)
         assert all(isinstance(value, str) and value for catalog in catalogs for value in catalog.values())
-        rendered = '\n'.join(line.rstrip() for line in render_template('client/workspace.html', c=catalogs[0], can_edit=True).splitlines()) + '\n'
+        lang = app.jinja_env.get_template('languages/en.html').module
+        rendered = '\n'.join(line.rstrip() for line in render_template('client/workspace.html', c=catalogs[0], lang=lang, can_edit=True).splitlines()) + '\n'
     path = Path(__file__).parents[1] / 'frontend/fixtures/client-checks.html'
     assert path.read_text(encoding='utf-8') == rendered

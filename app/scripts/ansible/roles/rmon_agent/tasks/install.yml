@@ -9,7 +9,7 @@
       - agent_uuid is match('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
       - agent_port | int > 1024 and agent_port | int < 65536
       - master_port | int > 0 and master_port | int < 65536
-      - master_ip is match('^[A-Za-z0-9.,: -]+$')
+      - master_ip is match('^[A-Za-z0-9.,:\[\] -]+$')
       - agent_transport in ['preserve', 'http', 'https', 'mtls']
     quiet: true
   no_log: true
@@ -59,6 +59,22 @@
   ansible.builtin.stat:
     path: '{{ agent_config_path }}'
   register: agent_config_stat
+
+- name: Verify support for receiver routing before replacing the agent
+  ansible.builtin.command:
+    argv:
+      - docker
+      - --host
+      - '{{ agent_docker_host }}'
+      - run
+      - --rm
+      - --network=none
+      - --entrypoint=python
+      - '{{ agent_image_selected.images[0].Id }}'
+      - -c
+      - 'from pathlib import Path; assert "RESULT_ENDPOINTS" in Path("modules/common/rmon_agent_common.py").read_text(), "Update the agent image to a version supporting receiver addresses"'
+  changed_when: false
+  when: agent_result_endpoints | default([]) | length > 0
 
 - name: Save the original configuration for recovery
   ansible.builtin.slurp:
@@ -143,6 +159,19 @@
         - {section: agent, option: agent_port, value: '{{ agent_port }}'}
         - {section: master, option: host, value: '{{ master_ip }}'}
         - {section: master, option: port, value: '{{ master_port }}'}
+      no_log: true
+
+    - name: Configure selected receiver addresses and delivery policy
+      community.general.ini_file:
+        path: '{{ agent_config_path }}'
+        section: results
+        option: '{{ item.option }}'
+        value: '{{ item.value }}'
+        mode: "{{ agent_config_stat.stat.mode | default('0600') }}"
+      loop:
+        - {option: endpoints, value: '{{ agent_result_endpoints | to_json }}'}
+        - {option: policy, value: '{{ agent_delivery_policy }}'}
+      when: agent_result_endpoints is defined
       no_log: true
 
     - name: Set the assignment address when it was not configured

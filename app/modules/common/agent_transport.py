@@ -110,7 +110,9 @@ def inventory_settings(group_id, agent_uuid, mode):
 
 
 def pending(agent):
-    mode = agent.result_transport
+    from app.modules.receivers import service
+    config = service.effective_routing(agent.server_id.group_id, service.routing_json(agent))
+    mode = service.routing_transport(config, agent.result_transport)
     if not mode:
         return False
     return (mode != agent.applied_result_transport or
@@ -121,6 +123,8 @@ def pending(agent):
 def record_applied(inventory):
     from datetime import datetime
     from app.modules.db.db_model import SmonAgent
+    from app.modules.receivers.service import record_agent_applied
+    record_agent_applied(inventory)
     for host in inventory.get('server', {}).get('hosts', {}).values():
         if host.get('agent_verify_result_connection') and host.get('action') == 'install':
             SmonAgent.update(

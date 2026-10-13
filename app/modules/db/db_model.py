@@ -737,6 +737,7 @@ class AggregatorLock(BaseModel):
 
 def create_tables():
     from app.modules.client_telemetry.models import CLIENT_TABLES
+    from app.modules.receivers.models import RECEIVER_TABLES
     conn = connect()
     with conn:
         conn.create_tables(
@@ -749,3 +750,4 @@ def create_tables():
         # Existing telemetry tables may need column migrations before new
         # indexes can be created. Bootstrap only missing tables here.
         conn.create_tables([model for model in CLIENT_TABLES if not conn.table_exists(model._meta.table_name)])
+        conn.create_tables(RECEIVER_TABLES, safe=True)

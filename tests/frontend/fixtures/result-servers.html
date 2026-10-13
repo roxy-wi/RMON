@@ -1,0 +1,41 @@
+<section id="result-servers" class="rs" data-group="1">
+    <script id="rs-strings" type="application/json">{"administrator_required": "A system administrator must perform this action.", "agents": "Agents", "apply": "Apply settings", "back": "Back", "balance": "Distribute between receivers", "bind": "Listen address on host", "cancel": "Cancel", "check": "Check server", "checked": "Last verified", "choose_endpoint": "Select at least one receiver address.", "choose_role": "Select at least one role.", "classic": "Classic checks", "client": "Client projects", "completed": "Completed", "configure": "Configure", "confirm_delete": "Delete this receiver address?", "confirm_stop": "Stop this server?", "confirm_uninstall": "Uninstall this server? Its data and configuration will be retained.", "connections": "Connections", "created": "Queued", "current_origin": "Use the current RMON address", "custom": "Choose receiver addresses", "database_host": "Database host reachable from this server", "database_port": "Database port", "defaults": "Group defaults", "delete": "Delete", "direct": "Direct connection", "duplicate_receiver": "This address already exists. Select the existing receiver.", "edit": "Edit", "empty_endpoints": "No receiver addresses have been registered.", "empty_servers": "No result servers are installed through RMON yet.", "endpoints": "Receiver addresses", "external": "Managed outside RMON", "failed": "Operation failed", "failover": "Primary and fallback, in selected order", "groups": "Group defaults", "host": "Installation host", "host_roles": "Host and roles", "https_hint": "For client HTTPS, use an HTTPS proxy or load balancer. The collector listens over HTTP.", "inherit": "Use group defaults", "install": "Install server", "invalid_payload": "Check the indicated fields.", "kind": "Connection type", "lb": "Load balancer", "lb_hint": "Add the server addresses and ports to your load balancer configuration.", "legacy_default": "Use the existing master_ip settings", "legacy_hint": "Existing agents keep working. Apply new settings to agents when ready.", "loading": "Loading\u2026", "name": "Name", "new_direct": "Create a direct address", "new_endpoint": "Add receiver address", "new_lb": "New load balancer address", "next": "Continue", "no_hosts": "Add an installation host in Administration \u2192 Servers.", "none": "Not assigned", "operation_pending": "Wait for the current host operation to finish.", "operation_queued": "Operation queued. Its state will refresh automatically.", "operation_unknown": "No confirmation received. Refresh the server list before retrying.", "pending": "Settings not applied", "policy": "Delivery policy", "port": "Server port", "project_hint": "New integration examples use this address. Update existing integrations if you change it.", "projects": "Projects", "queued": "Queued", "ready": "Ready at last check", "receiver_in_use": "This address is in use. Remove its assignments first.", "receiver_role": "Select addresses compatible with the enabled roles.", "refresh": "Refresh", "request_error": "Unable to complete the request. Check the settings and try again.", "restart": "Restart", "review": "Review", "revision_conflict": "Settings changed. Reload them before saving.", "role_hint": "Select one or both roles.", "roles": "Server roles", "routing": "Where to send results", "routing_hint": "Addresses are checked from the agent host before applying.", "running": "Operation in progress", "save": "Save", "saved": "Settings saved.", "server_exists": "A result server is already registered on this host.", "server_in_use": "This is the last server for an address in use. Assign a replacement first.", "server_transport": "The direct address must match the server transport. Use a load balancer for HTTPS termination.", "servers": "Servers", "shared": "Available to other groups", "shared_address": "One address is shared by all linked servers.", "sqlite_hint": "Use the same existing database file. A copy on another host is a separate database.", "sqlite_path": "Shared SQLite file on this host", "sqlite_path_required": "Specify the path to the same shared SQLite database on this host.", "start": "Start", "state": "State", "stop": "Stop", "stopped": "Stopped", "storage": "Storage connection", "storage_hint": "The database type, name and credentials belong to this RMON installation.", "title": "RMON servers", "transport": "Transport", "uninstall": "Uninstall server", "unknown": "Not verified", "url": "Receiver URL"}</script>
+    <div class="rs-toolbar">
+        <div class="rs-tabs" role="tablist">
+
+            <button type="button" id="rs-tab-servers" role="tab" aria-controls="rs-panel-servers" aria-selected="true" data-tab="servers">Servers</button>
+
+            <button type="button" id="rs-tab-endpoints" role="tab" aria-controls="rs-panel-endpoints" aria-selected="false" data-tab="endpoints">Receiver addresses</button>
+
+            <button type="button" id="rs-tab-defaults" role="tab" aria-controls="rs-panel-defaults" aria-selected="false" data-tab="defaults">Group defaults</button>
+
+        </div>
+        <button type="button" id="rs-refresh">Refresh</button>
+    </div>
+    <p id="rs-message" role="status" aria-live="polite"></p>
+    <section id="rs-panel-servers" role="tabpanel" aria-labelledby="rs-tab-servers">
+        <div class="rs-toolbar"><p>One address is shared by all linked servers.</p><button type="button" id="rs-install" class="rs-primary" hidden>+ Install server</button></div>
+        <div id="rs-servers" class="rs-cards"></div>
+    </section>
+    <section id="rs-panel-endpoints" role="tabpanel" aria-labelledby="rs-tab-endpoints" hidden>
+        <div class="rs-toolbar"><p>Add the server addresses and ports to your load balancer configuration.</p><button type="button" id="rs-add-endpoint" class="rs-primary" hidden>+ Add receiver address</button></div>
+        <div id="rs-endpoints" class="rs-cards"></div>
+    </section>
+    <section id="rs-panel-defaults" role="tabpanel" aria-labelledby="rs-tab-defaults" hidden>
+        <form id="rs-defaults" class="rs-card">
+            <h3>Where to send results</h3><p>Existing agents keep working. Apply new settings to agents when ready.</p>
+            <label>Group defaults<select id="rs-default-mode"><option value="legacy">Use the existing master_ip settings</option><option value="custom">Choose receiver addresses</option></select></label>
+            <div id="rs-default-choices" class="rs-choices" hidden></div>
+            <button type="submit" class="rs-primary">Save</button>
+        </form>
+    </section>
+    <dialog id="rs-dialog" aria-labelledby="rs-dialog-title">
+        <form id="rs-form">
+            <div class="rs-toolbar"><h3 id="rs-dialog-title"></h3><button type="button" id="rs-close" aria-label="Cancel">×</button></div>
+            <p id="rs-steps" class="rs-muted"></p>
+            <div id="rs-fields"></div>
+            <p id="rs-form-message" role="alert"></p>
+            <div class="rs-actions"><button type="button" id="rs-back">Back</button><button type="button" id="rs-cancel">Cancel</button><button type="submit" id="rs-submit" class="rs-primary">Save</button></div>
+        </form>
+    </dialog>
+</section>

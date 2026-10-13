@@ -3,6 +3,8 @@ import uuid
 from types import SimpleNamespace
 from unittest.mock import Mock
 
+from flask import g, render_template
+
 import pytest
 import requests
 
@@ -13,6 +15,49 @@ from app.modules.server.ssh_connection import SshConnection
 from app.modules.db.db_model import Server, SmonAgent, InstallationTasks
 from app.modules.service import installation
 from app.modules.roxywi.class_models import RmonAgent
+
+
+@pytest.mark.parametrize('language', ['en', 'ru', 'fr', 'pt-br'])
+@pytest.mark.parametrize('role,group,can_edit,can_control', [(1, 2, True, True), (2, 1, True, True),
+                                                           (3, 1, False, True), (4, 1, False, False),
+                                                           (2, 2, False, False)])
+def test_agent_card_keeps_permissions_and_probe_targets(app, language, role, group, can_edit, can_control):
+    agent = SimpleNamespace(id=7, group_id=1, name='<img src=x>', description='<script>bad()</script>',
+                            hostname='Host', ip='192.0.2.10', applied_result_transport='mtls',
+                            transport_pending=True, transport_checked_at=None, routing_pending=True,
+                            enabled=True, shared=False, region_id=None)
+    with app.test_request_context('/'):
+        g.user_params = {'role': role, 'group_id': group}
+        markup = render_template('ajax/smon/agent.html', agents=[agent], lang=language)
+    assert 'class="host-card agent-card"' in markup
+    assert 'HTTPS + mTLS' in markup
+    assert '<img src=x>' not in markup and '<script>bad()' not in markup
+    assert '&lt;img src=x&gt;' in markup
+    assert 'data-unavailable=""' not in markup
+    for target in ['status', 'version', 'uptime', 'total-checks']:
+        assert f'id="agent-{target}-7"' in markup
+    assert ('onclick="addAgentDialog' in markup) is can_edit
+    assert ('onclick="confirmDeleteAgent' in markup) is can_edit
+    assert ('onclick="moveChecksDialog' in markup) is can_edit
+    assert ('id="start-7"' in markup) is can_control
+
+
+@pytest.mark.parametrize('language', ['en', 'ru', 'fr', 'pt-br'])
+@pytest.mark.parametrize('kind,children', [('country', 'regions'), ('region', 'agents')])
+@pytest.mark.parametrize('role,group,can_edit', [(1, 2, True), (2, 1, True), (2, 2, False), (4, 1, False)])
+def test_location_cards_keep_permissions_links_and_counts(app, language, kind, children, role, group, can_edit):
+    location = SimpleNamespace(id=7, group_id=1, name="Owner's <country>", description='<script>bad()</script>',
+                               enabled=True, shared=False)
+    with app.test_request_context('/'):
+        g.user_params = {'role': role, 'group_id': group}
+        markup = render_template(f'ajax/smon/{kind}.html', lang=language,
+                                 **{kind: location, children: [SimpleNamespace(id=8, name='<child>')]})
+    assert 'class="host-card location-card"' in markup
+    assert f'id="total_{kind}_checks-7"' in markup
+    assert f'/rmon/{children[:-1]}/8' in markup
+    assert 'Owner&#39;s &lt;country&gt;' in markup
+    assert '<script>bad()' not in markup and '<child>' not in markup
+    assert ('onclick="add' in markup) is can_edit
 
 
 @pytest.mark.parametrize('description', [{}, {'description': None}, {'description': ''}])
@@ -125,6 +170,32 @@ def test_html_upstream_is_json_failure_not_success(client, auth_headers, agent, 
     assert response.status_code == 502
     assert response.is_json and 'error' in response.get_json()
     assert '<!doctype' not in response.get_data(as_text=True)
+
+
+@pytest.mark.parametrize('later_action,status,expected', [
+    (None, None, 200), ('start', 'created', 502), ('start', 'completed', 502),
+    ('stop', 'failed', 502), ('restart', 'failed', 502),
+])
+def test_unreachable_agent_after_stop(client, auth_headers, agent, monkeypatch, later_action, status, expected):
+    tasks = [InstallationTasks.create(service_name='Agent', server_id=agent.server_id,
+                                      action='stop', status='completed')]
+    if later_action:
+        tasks.append(InstallationTasks.create(service_name='Agent', server_id=agent.server_id,
+                                               action=later_action, status=status))
+    monkeypatch.setattr(agents.requests, 'get', Mock(side_effect=requests.ConnectionError()))
+    monkeypatch.setattr(agents.roxywi_common, 'logger', Mock())
+    try:
+        url = f'/rmon/agent/status/{agent.server_id.ip}?agent_id={agent.id}'
+        response = client.get(url, headers=auth_headers(1, 1))
+        assert response.status_code == expected
+        if expected == 200:
+            assert response.json == {'running': False, 'source': 'last_completed_stop'}
+            # A live response always wins, even if the agent was started outside RMON.
+            monkeypatch.setattr(agents, 'get_agent_health', Mock(return_value={'running': True}))
+            assert client.get(url, headers=auth_headers(1, 1)).json == {'running': True}
+    finally:
+        for task in reversed(tasks):
+            task.delete_instance()
 
 
 @pytest.mark.parametrize('action', ['start', 'stop', 'restart'])

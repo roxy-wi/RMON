@@ -1,5 +1,6 @@
 <section id="client-checks" class="cc" data-can-edit="{{ 'true' if can_edit else 'false' }}" data-api="{{ url_for('api_v1_0_main.client.projects') }}">
     <script id="cc-strings" type="application/json">{{ c|tojson }}</script>
+    <script id="cc-receiver-strings" type="application/json">{{ lang.receivers|tojson }}</script>
     {% include 'client/preset_labels.html' %}
     <p class="cc-intro">{{ c.intro }}</p>
     {% if not can_edit %}<p class="cc-notice">{{ c.read_only }}</p>{% endif %}
@@ -63,18 +64,23 @@
             <div id="cc-report-data" hidden>
                 <div id="cc-stats" class="cc-stats"></div>
                 <p id="cc-report-quality" class="cc-muted"></p>
-                <div class="cc-card cc-chart-card"><h3 id="cc-chart-title">{{ c.timeline }}</h3><p id="cc-chart-empty" class="cc-muted" hidden>{{ c.no_data_hint }}</p><div class="cc-chart"><canvas id="cc-chart" role="img" aria-label="{{ c.timeline }}"></canvas></div>
+                <div class="host-card cc-card cc-chart-card"><h3 id="cc-chart-title">{{ c.timeline }}</h3><p id="cc-chart-empty" class="cc-muted" hidden>{{ c.no_data_hint }}</p><div class="cc-chart"><canvas id="cc-chart" role="img" aria-label="{{ c.timeline }}"></canvas></div>
                     <details><summary>{{ c.table_view }}</summary><div class="cc-table-wrap" tabindex="0" role="region" aria-label="{{ c.table_view }}"><table class="cc-table"><thead><tr><th>{{ c.time }}</th><th>{{ c.observations }}</th><th>{{ c.metric_count }}</th><th>≈ p50</th><th>≈ p95</th><th>≈ p99</th></tr></thead><tbody id="cc-series-rows"></tbody></table></div></details>
                 </div>
                 <p class="cc-muted">{{ c.percentile_note }}</p>
                 <p id="cc-sampling" class="cc-muted"></p>
                 <p class="cc-muted">{{ c.chart_gap_hint }}</p>
-                <div id="cc-groups" class="cc-card" hidden><h3>{{ c.groups }}</h3><div class="cc-table-wrap" tabindex="0" role="region" aria-label="{{ c.groups }}"><table class="cc-table"><thead><tr><th>{{ c.group }}</th><th>{{ c.observations }}</th><th>{{ c.error_rate }}</th><th>{{ c.metric_count }}</th><th>≈ p95</th></tr></thead><tbody id="cc-group-rows"></tbody></table></div><p id="cc-omitted" class="cc-muted"></p></div>
+                <div id="cc-groups" class="host-card cc-card" hidden><h3>{{ c.groups }}</h3><div class="cc-table-wrap" tabindex="0" role="region" aria-label="{{ c.groups }}"><table class="cc-table"><thead><tr><th>{{ c.group }}</th><th>{{ c.observations }}</th><th>{{ c.error_rate }}</th><th>{{ c.metric_count }}</th><th>≈ p95</th></tr></thead><tbody id="cc-group-rows"></tbody></table></div><p id="cc-omitted" class="cc-muted"></p></div>
             </div>
         </section>
         <section id="cc-panel-connect" role="tabpanel" aria-labelledby="cc-tab-connect" hidden>
             <div class="cc-toolbar"><label class="cc-grow">{{ c.check }}<select id="cc-connect-check" class="cc-check-select"></select></label><button type="button" class="cc-more-checks" hidden>{{ c.more_checks }}</button><span id="cc-connect-version"></span></div>
-            <div class="cc-card">
+            <div class="host-card cc-card">
+                <div class="cc-toolbar">
+                    <label class="cc-grow">{{ lang.receivers.endpoints }}<select id="cc-receiver" disabled><option value="">{{ lang.receivers.current_origin }}</option></select></label>
+                    {% if can_edit %}<button type="button" id="cc-save-receiver" disabled>{{ lang.receivers.save }}</button>{% endif %}
+                </div>
+                <p class="cc-muted">{{ lang.receivers.project_hint }}</p>
                 <label>{{ c.endpoint }}<input id="cc-endpoint" type="url" maxlength="2048" placeholder="https://collector.example.com/api/v1/client/events" autocomplete="off"></label>
                 <p class="cc-muted">{{ c.endpoint_hint }}</p>
                 <label>{{ c.project_key }}<input id="cc-sending-key" type="text" maxlength="52" autocomplete="off" spellcheck="false" placeholder="rmon_pub_…"></label>

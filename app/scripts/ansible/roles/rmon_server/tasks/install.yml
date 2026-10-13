@@ -1,0 +1,255 @@
+---
+- name: Validate the server image and private configuration directory
+  ansible.builtin.assert:
+    that:
+      - result_server_image is match('^[A-Za-z0-9][A-Za-z0-9._:/@-]+$')
+      - "':' in result_server_image.split('/')[-1]"
+      - not result_server_image.endswith(':latest')
+      - result_server_hash is match('^[a-f0-9]{64}$')
+      - result_server_sqlite_path | length == 0 or result_server_sqlite_path | dirname != '/'
+
+- name: Install Docker and its module dependencies
+  ansible.builtin.include_tasks: '../../rmon_agent/tasks/docker.yml'
+
+- name: Download the server image before replacing a running server
+  community.docker.docker_image:
+    docker_host: '{{ result_server_docker_host }}'
+    name: '{{ result_server_image }}'
+    source: pull
+
+- name: Inspect the selected image
+  community.docker.docker_image_info:
+    docker_host: '{{ result_server_docker_host }}'
+    name: '{{ result_server_image }}'
+  register: result_server_image_info
+
+- name: Check an existing SQLite database without creating a copy
+  ansible.builtin.stat:
+    path: '{{ result_server_sqlite_path }}'
+  register: result_server_sqlite
+  when: result_server_sqlite_path | length > 0
+
+- name: Require the shared SQLite file
+  ansible.builtin.assert:
+    that: result_server_sqlite.stat.isreg | default(false)
+    fail_msg: The shared SQLite database must already exist on this host.
+  when: result_server_sqlite_path | length > 0
+
+- name: Use the existing SQLite owner without changing database permissions
+  ansible.builtin.set_fact:
+    result_server_user: '{{ result_server_sqlite.stat.uid | string }}'
+  when:
+    - result_server_sqlite_path | length > 0
+    - result_server_sqlite.stat.uid | default(0) | int > 0
+
+- name: Create private configuration and runtime directories
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: directory
+    owner: '{{ result_server_user }}'
+    group: '{{ result_server_user }}'
+    mode: '0700'
+  loop:
+    - '{{ result_server_directory }}/{{ result_server_hash }}'
+    - '{{ result_server_data }}'
+
+- name: Write the configuration snapshot
+  ansible.builtin.copy:
+    content: '{{ result_server_config_b64 | b64decode }}'
+    dest: '{{ result_server_directory }}/{{ result_server_hash }}/rmon-server.cfg'
+    owner: '{{ result_server_user }}'
+    group: '{{ result_server_user }}'
+    mode: '0400'
+  no_log: true
+
+- name: Copy configured certificate and GeoIP files without changing their sources
+  ansible.builtin.copy:
+    remote_src: true
+    src: '{{ item.source }}'
+    dest: '{{ result_server_directory }}/{{ result_server_hash }}/{{ item.name }}'
+    owner: '{{ result_server_user }}'
+    group: '{{ result_server_user }}'
+    mode: '0400'
+  loop: '{{ result_server_files }}'
+  no_log: true
+
+- name: Prepare mounts and environment for both server roles
+  ansible.builtin.set_fact:
+    result_server_mounts: >-
+      {{ [{'type': 'bind', 'source': result_server_directory + '/' + result_server_hash, 'target': '/etc/rmon/managed', 'read_only': true},
+          {'type': 'bind', 'source': result_server_data, 'target': '/var/lib/rmon'}]
+         + ([{'type': 'bind', 'source': result_server_sqlite_path | dirname, 'target': '/var/lib/rmon-shared'}]
+            if result_server_sqlite_path | length > 0 else []) }}
+    result_server_env:
+      RMON_CONFIG_FILE: /etc/rmon/managed/rmon-server.cfg
+      RMON_EXPECTED_DATABASE_ID: '{{ result_server_database_identity }}'
+    result_server_replaced: false
+    result_server_new_started: false
+  no_log: true
+
+- name: Verify the database identity and schema before stopping a server
+  community.docker.docker_container:
+    docker_host: '{{ result_server_docker_host }}'
+    name: '{{ result_server_container }}-verify'
+    image: '{{ result_server_image_info.images[0].Id }}'
+    command:
+      - python
+      - -c
+      - >-
+        import os; from modules.db.connection import ready; from modules.db.models import Setting;
+        assert ready();
+        assert Setting.get((Setting.param == 'server_deployment_id') & (Setting.group_id == 1)).value == os.environ['RMON_EXPECTED_DATABASE_ID'], 'The selected database belongs to another RMON installation';
+        from modules.common.runtime import roles;
+        from modules.common.transport import create_server_context;
+        create_server_context() if 'classic' in roles() else None
+    state: started
+    detach: false
+    cleanup: true
+    recreate: true
+    user: '{{ result_server_user }}:{{ result_server_user }}'
+    read_only: true
+    cap_drop: [ALL]
+    security_opts: ['no-new-privileges:true']
+    env: '{{ result_server_env }}'
+    mounts: '{{ result_server_mounts }}'
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=32m']
+    etc_hosts:
+      host.docker.internal: host-gateway
+  register: result_server_preflight
+  failed_when: result_server_preflight.status | default(1) != 0
+  no_log: true
+
+- name: Inspect the previous container
+  community.docker.docker_container_info:
+    docker_host: '{{ result_server_docker_host }}'
+    name: '{{ result_server_container }}'
+  register: result_server_old
+  no_log: true
+
+- name: Check ownership before replacing a container
+  ansible.builtin.assert:
+    that:
+      - not result_server_old.exists or result_server_old.container.Config.Labels.get('io.rmon.uuid') == result_server_uuid
+    fail_msg: This container belongs to another RMON installation.
+
+- name: Inspect a retained recovery container
+  community.docker.docker_container_info:
+    docker_host: '{{ result_server_docker_host }}'
+    name: '{{ result_server_previous }}'
+  register: result_server_recovery
+  no_log: true
+
+- name: Preserve an interrupted operation for explicit recovery
+  ansible.builtin.assert:
+    that: not result_server_recovery.exists
+    fail_msg: A retained recovery container exists. Check the previous operation before retrying.
+
+- name: Replace the server and verify the selected roles
+  when: >-
+    not result_server_old.exists or
+    result_server_old.container.Config.Labels.get('io.rmon.deployment') != result_server_hash or
+    result_server_old.container.Image != result_server_image_info.images[0].Id or
+    not result_server_old.container.State.Running or
+    result_server_old.container.State.get('Health', {}).get('Status') != 'healthy'
+  block:
+    - name: Stop the previous container
+      community.docker.docker_container:
+        docker_host: '{{ result_server_docker_host }}'
+        name: '{{ result_server_container }}'
+        state: stopped
+        restart_policy: 'no'
+        stop_timeout: 45
+      when: result_server_old.exists
+
+    - name: Retain the previous container for rollback
+      ansible.builtin.command:
+        argv: [docker, --host, '{{ result_server_docker_host }}', rename, '{{ result_server_container }}', '{{ result_server_previous }}']
+      when: result_server_old.exists
+      changed_when: true
+
+    - name: Record that rollback is available
+      ansible.builtin.set_fact:
+        result_server_replaced: '{{ result_server_old.exists }}'
+        result_server_new_started: true
+
+    - name: Start the server and wait for health
+      community.docker.docker_container:
+        docker_host: '{{ result_server_docker_host }}'
+        name: '{{ result_server_container }}'
+        image: '{{ result_server_image_info.images[0].Id }}'
+        state: healthy
+        healthy_wait_timeout: 120
+        command: [python, -m, modules.common.runtime]
+        restart_policy: unless-stopped
+        stop_timeout: 45
+        user: '{{ result_server_user }}:{{ result_server_user }}'
+        read_only: true
+        cap_drop: [ALL]
+        security_opts: ['no-new-privileges:true']
+        tmpfs: ['/tmp:rw,noexec,nosuid,size=32m']
+        env: '{{ result_server_env }}'
+        mounts: '{{ result_server_mounts }}'
+        published_ports: '{{ result_server_ports }}'
+        etc_hosts:
+          host.docker.internal: host-gateway
+        labels:
+          io.rmon.managed: 'true'
+          io.rmon.uuid: '{{ result_server_uuid }}'
+          io.rmon.deployment: '{{ result_server_hash }}'
+      no_log: true
+
+    - name: Require readiness of all selected roles
+      community.docker.docker_container_exec:
+        docker_host: '{{ result_server_docker_host }}'
+        container: '{{ result_server_container }}'
+        argv: [python, -m, modules.common.runtime, health, ready]
+      register: result_server_ready
+      until: result_server_ready.rc == 0
+      retries: 6
+      delay: 5
+
+  rescue:
+    - name: Remove the failed replacement without deleting data
+      community.docker.docker_container:
+        docker_host: '{{ result_server_docker_host }}'
+        name: '{{ result_server_container }}'
+        state: absent
+        keep_volumes: true
+      when: result_server_new_started | bool
+
+    - name: Restore the retained container name
+      ansible.builtin.command:
+        argv: [docker, --host, '{{ result_server_docker_host }}', rename, '{{ result_server_previous }}', '{{ result_server_container }}']
+      when: result_server_replaced | bool
+      changed_when: true
+
+    - name: Restore the previous running state
+      community.docker.docker_container:
+        docker_host: '{{ result_server_docker_host }}'
+        name: '{{ result_server_container }}'
+        state: "{{ 'started' if result_server_old.container.State.Running else 'stopped' }}"
+        restart_policy: '{{ result_server_old.container.HostConfig.RestartPolicy.Name }}'
+      when: result_server_old.exists
+
+    - name: Report a failed deployment after recovery
+      community.docker.docker_container_exec:
+        docker_host: '{{ result_server_docker_host }}'
+        container: '{{ result_server_container }}'
+        argv: [python, -m, modules.common.runtime, health, ready]
+      register: result_server_recovered_ready
+      until: result_server_recovered_ready.rc == 0
+      retries: 12
+      delay: 5
+      when: result_server_old.exists and result_server_old.container.State.Running
+
+    - name: Report a failed deployment after verifying recovery
+      ansible.builtin.fail:
+        msg: The replacement failed. The previous server was restored; configuration and data were preserved.
+
+- name: Remove the retired container after successful readiness checks
+  community.docker.docker_container:
+    docker_host: '{{ result_server_docker_host }}'
+    name: '{{ result_server_previous }}'
+    state: absent
+    keep_volumes: true
+  when: result_server_replaced | bool

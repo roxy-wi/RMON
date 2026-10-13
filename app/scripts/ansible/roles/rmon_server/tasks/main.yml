@@ -1,0 +1,24 @@
+---
+- name: Validate the server operation
+  ansible.builtin.assert:
+    that:
+      - action in ['install', 'uninstall', 'start', 'stop', 'restart', 'check']
+      - result_server_uuid is match('^[0-9a-f-]{36}$')
+      - result_server_roles | length > 0
+      - result_server_roles | difference(['classic', 'client']) | length == 0
+
+- name: Lock changes on this server
+  ansible.builtin.command:
+    argv: [mkdir, '--', '{{ result_server_lock }}']
+  changed_when: true
+
+- name: Perform the requested operation
+  block:
+    - name: Install or control the server
+      ansible.builtin.include_tasks:
+        file: "{{ 'install.yml' if action == 'install' else 'control.yml' }}"
+  always:
+    - name: Release the deployment lock
+      ansible.builtin.file:
+        path: '{{ result_server_lock }}'
+        state: absent

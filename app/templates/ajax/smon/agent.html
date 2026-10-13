@@ -1,70 +1,74 @@
 {% import 'languages/'+lang|default('en')+'.html' as lang %}
-{% from 'include/input_macros.html' import input, checkbox, copy_to_clipboard %}
+{% from 'include/input_macros.html' import copy_to_clipboard %}
 {% for agent in agents %}
-<div id="agent-{{agent.id}}" class="div-server-hapwi">
-    <div class="server-name">
-        <span class="overflow" style="width: 192px;">
-            <span id="agent-name-{{agent.id}}" style="margin-top: 4px;display: inline-block;">
-                <a href="/rmon/agent/{{ agent.id }}" title="{{ lang.words.more|title }} {{ lang.words.info }}">{{agent.name.replace("'","")}}</a>
-            </span>
-            <span id="agent-desc-{{agent.id}}">{% if agent.description %} ({{agent.description.replace("'", "")}}) {% endif %}</span>
-        </span>
-    {% if g.user_params['group_id']|string() == agent.group_id|string() or g.user_params['role'] == 1 %}
-        <span class="server-action">
-            {% if g.user_params['role']|string() <= '3' %}
-                <a id="start-{{ agent.id }}" class="start" title="{{lang.words.start|title()}}">
-                    <span class="service-start" onclick="confirmAjaxAction('start', '{{agent.id}}')"></span>
-                </a>
-                <a id="reload-{{ agent.id }}" class="reload" title="{{lang.words.restart|title()}}">
-                    <span class="service-reload" onclick="confirmAjaxAction('restart', '{{agent.id}}')"></span>
-                </a>
-                <a id="stop-{{ agent.id }}" class="stop" title="{{lang.words.stop|title()}}">
-                    <span class="service-stop" onclick="confirmAjaxAction('stop', '{{agent.id}}')"></span>
-                </a>
-            {% endif %}
+<article id="agent-{{ agent.id }}" class="host-card agent-card" data-state="unknown">
+    <header class="host-head">
+        <div class="host-identity">
+            <span class="host-emblem" aria-hidden="true"><i class="fas fa-satellite-dish"></i></span>
+            <div>
+                <h3 id="agent-name-{{ agent.id }}"><a href="/rmon/agent/{{ agent.id }}">{{ agent.name }}</a></h3>
+                <p class="host-subtitle">{{ copy_to_clipboard(value=agent.hostname) }} · {{ copy_to_clipboard(value=agent.ip) }}</p>
+            </div>
+        </div>
+        <span id="agent-status-{{ agent.id }}" class="host-status" role="status"
+              data-ready="{{ lang.words.running|title() }}" data-stopped="{{ lang.words.stopped|title() }}"
+              data-unavailable="{{ lang.agent_transport.unavailable }}">{{ lang.agent_transport.unknown }}</span>
+    </header>
+    {% if agent.description %}<p id="agent-desc-{{ agent.id }}" class="host-note">{{ agent.description }}</p>{% endif %}
+    <div class="host-grid host-metrics">
+        <div class="host-block">
+            <span class="host-label">{{ lang.smon_page.desc.total_checks }}</span>
+            <strong id="agent-total-checks-{{ agent.id }}">—</strong>
+        </div>
+        <div class="host-block">
+            <span class="host-label">{{ lang.words.version|title() }}</span>
+            <strong><span id="agent-version-{{ agent.id }}">—</span>
+                <span id="agent-update-{{ agent.id }}" class="transport-pending" style="display: none;" title="{{ lang.words.w_update|title() }}">!</span>
+            </strong>
+        </div>
+        <div class="host-block">
+            <span class="host-label">{{ lang.words.uptime|title() }}</span>
+            <strong><time class="timeago" id="agent-uptime-{{ agent.id }}">—</time></strong>
+        </div>
+    </div>
+    <dl class="host-details">
+        <div class="host-delivery">
+            <dt>{{ lang.agent_transport.label }}</dt>
+            <dd>{{ {'http': 'HTTP', 'https': 'HTTPS', 'mtls': 'HTTPS + mTLS'}.get(agent.applied_result_transport, lang.agent_transport.unknown) }}
+                {% if agent.transport_pending %}<span class="transport-pending">— {{ lang.agent_transport.pending }}</span>{% endif %}
+                {% if agent.transport_checked_at %}<small>{{ lang.agent_transport.checked }}: {{ agent.transport_checked_at }}</small>{% endif %}
+                {% if agent.routing_pending %}<small class="transport-pending">{{ lang.receivers.routing }} — {{ lang.receivers.pending }}</small>{% endif %}
+            </dd>
+        </div>
+        <div>
+            <dt>{{ lang.words.region|title() }}</dt>
+            <dd>{{ agent.region_id.name if agent.region_id else '—' }}</dd>
+        </div>
+        <div>
+            <dt>{{ lang.words.agent|title() }} ID</dt><dd>{{ agent.id }}</dd>
+        </div>
+        <div><dt>{{ lang.words.enabled|title() }}</dt><dd>{{ lang.words.yes|title() if agent.enabled else lang.words.no|title() }}</dd></div>
+        <div><dt>{{ lang.words.shared|title() }}</dt><dd>{{ lang.words.yes|title() if agent.shared else lang.words.no|title() }}</dd></div>
+    </dl>
+    {% if (g.user_params['group_id']|string() == agent.group_id|string() or g.user_params['role'] == 1) and g.user_params['role'] <= 3 %}
+    <footer class="host-footer">
+        <div class="host-actions">
             {% if g.user_params['role'] <= 2 %}
-            <a class="edit" onclick="addAgentDialog('{{agent.id}}', true)"></a>
-            <a class="delete" onclick="confirmDeleteAgent('{{agent.id}}')"></a>
-            <a class="move" onclick="moveChecksDialog('{{ agent.id }}', '{{ agent.ip }}')" title="{{ lang.smon_page.desc.move_checks }}"></a>
+            <button type="button" class="host-primary" onclick="addAgentDialog('{{ agent.id }}', true)">{{ lang.words.edit|title() }}</button>
+            <button type="button" onclick="moveChecksDialog('{{ agent.id }}', '{{ agent.ip }}')">{{ lang.smon_page.desc.move_checks }}</button>
             {% endif %}
-        </span>
+            <div class="host-lifecycle">
+                <button type="button" id="start-{{ agent.id }}" disabled>{{ lang.words.start|title() }}</button>
+                <button type="button" id="stop-{{ agent.id }}" disabled>{{ lang.words.stop|title() }}</button>
+                <button type="button" id="reload-{{ agent.id }}" disabled>{{ lang.words.restart|title() }}</button>
+            </div>
+            {% if g.user_params['role'] <= 2 %}
+            <button type="button" class="host-danger" onclick="confirmDeleteAgent('{{ agent.id }}')">{{ lang.words.delete|title() }}</button>
+            {% endif %}
+        </div>
+    </footer>
     {% endif %}
-    </div>
-    <div class="server-desc">
-        <div>
-            <b>{{ lang.agent_transport.label }}</b>:
-            {{ {'http': 'HTTP', 'https': 'HTTPS', 'mtls': 'HTTPS + mTLS'}.get(agent.applied_result_transport, lang.agent_transport.unknown) }}
-            {% if agent.transport_pending %}<span class="transport-pending">— {{ lang.agent_transport.pending }}</span>{% endif %}
-            {% if agent.transport_checked_at %}
-                <span title="{{ lang.agent_transport.checked }}">({{ agent.transport_checked_at }})</span>
-            {% endif %}
-        </div>
-        <div>
-            <b>{{ lang.words.server|title() }}</b>: {{ copy_to_clipboard(value=agent.hostname) }}
-            <b>{{ lang.words.server|title() }} IP</b>: {{ copy_to_clipboard(value=agent.ip) }}
-        </div>
-        <div>
-            <b>{{ lang.words.version|title() }}</b>:
-            <span id="agent-version-{{ agent.id }}"></span>
-            <span id="agent-update-{{ agent.id }}" class="tooltip" style="color: var(--red-color); cursor: help; display: none;" title="Need to be updated">!</span>
-        </div>
-        <div>
-            <b>{{lang.smon_page.desc.total_checks}}</b>:
-            <span id="agent-total-checks-{{ agent.id }}"></span>
-        </div>
-        <div>
-            <b>{{lang.words.uptime|title()}}</b>: <time class="timeago" datetime="" id="agent-uptime-{{ agent.id }}" title="{{ lang.words.agent|title() }} {{ lang.words.uptime }}"></time>
-            <b>{{ lang.words.enabled|title() }}</b>: {% if agent.enabled %} {{ lang.words.yes|title() }} {% else %} {{ lang.words.no|title() }} {% endif %}
-        </div>
-        <div>
-            <b>{{ lang.words.agent|title() }} ID</b>: {{ agent.id }}
-            <b>{{ lang.words.shared|title() }}</b>: {% if agent.shared %} {{ lang.words.yes|title() }} {% else %} {{ lang.words.no|title() }} {% endif %}
-        </div>
-        <div>
-            <b>{{ lang.words.region|title() }}</b>: {% if agent.region_id %} {{ agent.region_id.name.replace("'", "") }} {% endif %}
-        </div>
-    </div>
-</div>
+</article>
     <script>
         getAgentVersion('{{ agent.ip }}', '{{ agent.id }}');
         getAgentStatus('{{ agent.ip }}', '{{ agent.id }}');
@@ -89,6 +93,6 @@
                 document.body.removeChild(el);
             });
         })
-        showOverviewServer('{{ agent.ip }}');
+        if (document.getElementById('cpu')) showOverviewServer('{{ agent.ip }}');
     </script>
 {% endfor %}

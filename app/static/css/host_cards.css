@@ -1,0 +1,137 @@
+.host-card {
+    --host-surface: #fbfcfe;
+    --host-inset: #eff5fa;
+    --host-footer: #f3f7fa;
+    --host-text: #00243e;
+    --host-muted: #526e81;
+    --host-border: #c4d8e6;
+    --host-line: #d8e5ee;
+    --host-accent: #00658f;
+    --host-tint: #dff2fa;
+    --host-glow: #31afe11a;
+    --host-shadow: #00243e16;
+    --host-edge: #ffffff;
+    --host-danger: #a73943;
+    --host-warning: #805500;
+    --host-ready: #17663f;
+    --host-button: #ffffff;
+    color: var(--host-text);
+    background: var(--host-surface);
+    border: 1px solid var(--host-border);
+    border-top: 3px solid var(--host-accent);
+    border-radius: 13px;
+    box-shadow: 0 8px 24px var(--host-shadow), inset 0 1px var(--host-edge);
+    overflow: hidden;
+    min-width: 0;
+    width: 100%;
+    max-width: 680px;
+    box-sizing: border-box;
+    font-size: 13px;
+    line-height: 1.5;
+}
+html:has(link[href*="/css/dark.css"]) .host-card {
+    --host-surface: #07324f;
+    --host-inset: #03283f;
+    --host-footer: #062a43;
+    --host-text: #e7f1f7;
+    --host-muted: #a8becd;
+    --host-border: #31546b;
+    --host-line: #27495f;
+    --host-accent: #55c7ef;
+    --host-tint: #0c405d;
+    --host-glow: #31afe110;
+    --host-shadow: #00111f55;
+    --host-edge: #7acbe91c;
+    --host-danger: #f5a6b1;
+    --host-warning: #f2cc7c;
+    --host-ready: #80d5a3;
+    --host-button: #072c46;
+}
+.host-card *, .host-card *::before, .host-card *::after { box-sizing: border-box; }
+.host-card .host-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; margin-bottom: 8px; background: linear-gradient(115deg, var(--host-glow), transparent 75%); }
+.host-card .host-identity { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.host-card .host-identity > div { min-width: 0; }
+.host-card .host-emblem { display: grid; place-items: center; flex: 0 0 34px; height: 34px; border: 1px solid var(--host-border); border-radius: 9px; background: var(--host-tint); color: var(--host-accent); box-shadow: inset 0 1px var(--host-edge); font-size: 18px; }
+.host-card h3 { margin: 0 0 4px; padding: 0; border: 0; background: none; float: none; display: block; font-size: 16px; line-height: 1.35; font-weight: 600; overflow-wrap: anywhere; }
+.host-card h3 a { color: inherit; text-decoration: none; }
+.host-card h3 a:hover { text-decoration: underline; }
+.host-card .host-subtitle { margin: 0; color: var(--host-muted); font-size: 12px; overflow-wrap: anywhere; }
+.host-card .host-status { display: inline-flex; align-items: center; gap: 8px; padding: 5px 9px; border-radius: 6px; background: var(--host-tint); color: var(--host-accent); font-size: 12px; }
+.host-card .host-status::before { content: ''; width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: currentColor; }
+.host-card[data-state] { --host-state: var(--host-muted); border-top-color: var(--host-state); }
+.host-card[data-state="ready"] { --host-state: var(--host-ready); }
+.host-card[data-state="failed"], .host-card[data-state="unavailable"] { --host-state: var(--host-danger); }
+.host-card[data-state="stopped"], .host-card[data-state="running"], .host-card[data-state="queued"], .host-card[data-state="created"] { --host-state: var(--host-warning); }
+.host-card[data-state] .host-status { color: var(--host-state); }
+.host-card .host-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 0 12px 10px; }
+.host-card .host-block { padding: 8px 10px; min-width: 0; border: 1px solid var(--host-line); border-radius: 8px; background: var(--host-inset); box-shadow: inset 0 1px 3px var(--host-shadow); }
+.host-card .host-label { display: flex; align-items: center; gap: 7px; color: var(--host-muted); font-size: 12px; }
+.host-card .host-label > i, .host-card .host-label > svg { color: var(--host-accent); }
+.host-card .host-protocol { margin-left: auto; font-size: 11px; letter-spacing: .5px; }
+.host-card .host-block strong { display: block; margin-top: 4px; font-weight: 500; overflow-wrap: anywhere; }
+.host-card .host-url { display: block; margin-top: 3px; color: var(--host-muted); font: 12px/1.5 Consolas, monospace; overflow-wrap: anywhere; }
+.host-card .host-note { color: var(--host-muted); font-size: 12px; margin: 0 12px 8px; overflow-wrap: anywhere; }
+.host-card .host-error { color: var(--host-danger); }
+.host-card .host-footer { border-top: 1px solid var(--host-line); padding: 8px 12px; background: var(--host-footer); }
+.host-card .host-verified { margin: 0 0 8px; color: var(--host-muted); font-size: 12px; }
+.host-card .host-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.host-card .host-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px; margin: 0; padding: 6px 9px; border: 1px solid var(--host-border); border-radius: 5px; color: var(--host-text); background: var(--host-button); font: inherit; font-size: 12px; line-height: 18px; cursor: pointer; }
+.host-card .host-actions button:hover { background: var(--host-tint); }
+.host-card .host-actions button:disabled { opacity: .5; cursor: default; }
+.host-card .host-actions .host-primary { color: #fff; background: #087fab; border-color: #087fab; box-shadow: inset 0 1px #ffffff1c; }
+.host-card .host-actions .host-primary:hover { background: #006f98; }
+.host-card .host-lifecycle { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.host-card .host-actions .host-danger { color: var(--host-danger); background: transparent; border-color: transparent; }
+.host-card .host-actions .host-danger:hover { border-color: var(--host-line); background: var(--host-button); }
+.agent-cards, .rs #rs-servers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 540px), 680px)); align-items: start; gap: 16px; }
+.agent-cards, .location-cards { margin: 0 16px 16px 0; }
+.agent-card .host-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.agent-card .host-metrics strong { font-size: 17px; }
+.agent-card .host-metrics time { font-size: 15px; }
+.host-card .host-details { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 12px; padding: 0 12px 12px; margin: 0; }
+.agent-card .host-details dt { color: var(--host-muted); font-size: 12px; }
+.agent-card .host-details dd { margin: 2px 0 0; overflow-wrap: anywhere; }
+.agent-card .host-details .host-delivery { grid-column: 1 / -1; display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; }
+.agent-card .host-delivery dd { margin: 0; }
+.agent-card .host-details .host-delivery small { display: inline; margin-left: 8px; }
+.agent-card .host-details small { display: block; color: var(--host-muted); }
+.agent-card .transport-pending, .agent-card .host-details .transport-pending { color: var(--host-warning); }
+.agent-overview { display: grid; grid-template-columns: minmax(0, 680px) minmax(0, 680px); align-items: start; gap: 16px; margin: 10px 16px 20px; }
+.agent-overview .server-info { float: none; width: auto; min-width: 0; margin: 0; padding: 12px; height: auto; }
+.agent-overview .top-info { display: block; width: 100%; }
+@media (max-width: 1000px) { .agent-overview { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 620px) {
+    .host-card .host-grid { grid-template-columns: minmax(0, 1fr); }
+    .agent-card .host-details { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .agent-card .host-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .agent-card .host-metrics .host-block:last-child { grid-column: 1 / -1; }
+}
+@media (pointer: coarse) { .host-card .host-actions button { min-height: 44px; } }
+.host-card [hidden] { display: none !important; }
+.host-card :focus-visible { outline: 2px solid var(--host-accent); outline-offset: 3px; }
+.location-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 360px)); align-items: start; gap: 16px; }
+.location-card { max-width: 360px; }
+.location-card .host-details { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.location-card dt { color: var(--host-muted); font-size: 12px; }
+.location-card dd { margin: 3px 0 0; }
+.location-card .host-members { display: flex; align-items: baseline; gap: 10px; margin: 0 12px 12px; }
+.location-card .host-members > span { color: var(--host-muted); font-size: 12px; }
+.location-card .host-member-list { display: flex; flex: 1; flex-wrap: wrap; gap: 6px; min-width: 0; max-height: 120px; overflow: auto; }
+.location-card .host-member-list a { color: var(--host-accent); background: var(--host-inset); border: 1px solid var(--host-line); border-radius: 5px; padding: 3px 8px; overflow-wrap: anywhere; }
+.location-overview { margin: 10px 16px 20px; }
+dialog.agent-editor { padding: 0; margin: auto; width: min(640px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; }
+.agent-editor::backdrop { background: #001b2e99; }
+.agent-editor .host-head { margin-bottom: 0; }
+.agent-editor fieldset { border: 1px solid var(--host-line); border-radius: 8px; margin: 16px; padding: 12px; min-width: 0; background: var(--host-inset); }
+.agent-editor legend { color: var(--host-accent); padding: 0 6px; font-weight: 600; }
+.agent-editor .agent-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.agent-editor label { display: grid; gap: 5px; margin: 0; font-weight: normal; }
+.agent-editor .agent-wide { grid-column: 1 / -1; }
+.agent-editor input:not([type="checkbox"]), .agent-editor select, .agent-editor textarea { width: 100%; min-width: 0; margin: 0; padding: 8px 10px; border: 1px solid var(--host-border); border-radius: 5px; background: var(--host-button); color: var(--host-text); font: inherit; }
+.agent-editor textarea { resize: vertical; }
+.agent-editor label:has(input[type="checkbox"]) { display: flex; align-items: center; gap: 8px; }
+.agent-editor input[type="checkbox"] { width: 16px; height: 16px; accent-color: #087fab; margin: 0; flex-shrink: 0; }
+.agent-editor p { margin: 10px 0 0; color: var(--host-muted); font-size: 12px; }
+.agent-editor .agent-receiver-list { display: grid; gap: 8px; max-height: 160px; overflow: auto; overflow-wrap: anywhere; }
+.agent-editor .host-actions { justify-content: flex-end; }
+@media (max-width: 480px) { .agent-editor .agent-fields { grid-template-columns: minmax(0, 1fr); } }

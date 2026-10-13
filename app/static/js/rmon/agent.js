@@ -14,173 +14,138 @@ function checkAgentLimit() {
 	});
 	return return_value;
 }
-function addAgentDialog(agent_id=0, edit=false) {
-	cleanAgentAddForm();
-	let tabel_title = $("#add-agent-page-overview").attr('title');
-	let buttons = [];
-	if (edit) {
-		add_word = $('#translate').attr('data-edit');
-		let reconfigure_word = $('#translate').attr('data-reconfigure');
-		tabel_title = $("#add-agent-page-overview").attr('data-edit');
-		getAgentSettings(agent_id);
-		buttons = [
-			{
-				text: reconfigure_word,
-				click: function () {
-					addAgent($(this), agent_id, true, true);
-				}
-			}, {
-				text: add_word,
-				click: function () {
-					addAgent($(this), agent_id, true);
-				}
-			}, {
-				text: cancel_word,
-				click: function () {
-					$(this).dialog("close");
-				}
-			}
-		]
-	} else {
-		add_word = $('#translate').attr('data-add');
-		if (!checkAgentLimit()) {
-			return false;
-		}
-		getFreeServers();
-		if (!getAgentTransportDefaults()) return false;
-		buttons = [
-			{
-				text: add_word,
-				click: function () {
-					addAgent($(this));
-				}
-			}, {
-				text: cancel_word,
-				click: function () {
-					$(this).dialog("close");
-				}
-			}
-		]
-	}
-	let dialogTable = $("#add-agent-page").dialog({
-		autoOpen: false,
-		resizable: false,
-		height: "auto",
-		width: 630,
-		modal: true,
-		title: tabel_title,
-		show: {
-			effect: "fade",
-			duration: 200
-		},
-		hide: {
-			effect: "fade",
-			duration: 200
-		},
-		buttons: buttons
-	});
-	dialogTable.dialog('open');
+function addAgentDialog(agent_id = 0, edit = false) {
+    const dialog = document.getElementById('add-agent-page');
+    if (dialog.dataset.saving === 'true') return;
+    cleanAgentAddForm();
+    if (!loadAgentReceivers()) return;
+    if (edit) {
+        if (!getAgentSettings(agent_id)) return;
+    } else {
+        if (!checkAgentLimit() || !getFreeServers() || !getAgentTransportDefaults()) return;
+    }
+    $('#agent-editor-title').text(dialog.dataset[edit ? 'edit' : 'create']);
+    $('#agent-editor-save').text($('#translate').attr(edit ? 'data-edit' : 'data-add'));
+    $('#agent-editor-reconfigure').prop('hidden', !edit);
+    $('#agent-editor-cancel').off('click').on('click', () => dialog.close());
+    $('#agent-editor-reconfigure').off('click').on('click', () => addAgent(dialog, agent_id, true, true));
+    $('#agent-editor-form').off('submit').on('submit', function (event) {
+        event.preventDefault();
+        addAgent(dialog, agent_id, edit);
+    });
+    dialog.showModal();
 }
-function addAgent(dialog_id, agent_id=0, edit=false, reconfigure=false) {
-	let valid = true;
-	let agent_name = $('#new-agent-name');
-	let agent_port = $('#new-agent-port');
-    let agent_server_id = $('#new-agent-server-id');
-    let agent_desc = $('#new-agent-desc').val();
-	let allFields = $([]).add(agent_name).add(agent_port);
-	allFields.removeClass("ui-state-error");
-	valid = valid && checkLength(agent_name, "Name", 1);
-	valid = valid && checkLength(agent_port, "Port", 1);
-    let agent_enabled = $('#new-agent-enabled').is(':checked') ? 1 : 0;
-    let agent_shared = $('#new-agent-shared').is(':checked') ? 1 : 0;
-    let agent_data = {
-        'name': agent_name.val(),
-        'server_id': agent_server_id.val(),
-        'port': agent_port.val(),
-        'description': agent_desc,
-        'enabled': agent_enabled,
-        'shared': agent_shared
+function addAgent(dialog, agent_id = 0, edit = false, reconfigure = false) {
+    if (dialog.dataset.saving === 'true' || !dialog.querySelector('form').reportValidity()) return;
+    const receiverIds = $('#new-agent-receiver-mode').val() === 'inherit' ? null : agentReceiverIds;
+    if (receiverIds && !receiverIds.length) {
+        toastr.error(JSON.parse($('#agent-receivers').attr('data-strings')).choose_endpoint);
+        return;
+    }
+    const data = {
+        name: $('#new-agent-name').val(),
+        server_id: $('#new-agent-server-id').val(),
+        port: $('#new-agent-port').val(),
+        description: $('#new-agent-desc').val(),
+        enabled: $('#new-agent-enabled').is(':checked') ? 1 : 0,
+        shared: $('#new-agent-shared').is(':checked') ? 1 : 0,
+        receivers: {endpoint_ids: receiverIds, policy: $('#new-agent-receiver-policy').val()}
     };
-	const resultTransport = $('#new-agent-result-transport').val();
-	if (resultTransport) agent_data.result_transport = resultTransport;
-	let method = 'POST';
-	let req_url = api_v_prefix + "/rmon/agent";
-	if (edit) {
-		method = 'PUT'
-		if (reconfigure) {
-			agent_data['reconfigure'] = "1";
-		}
-		req_url = api_v_prefix + "/rmon/agent/" + agent_id;
-	}
-	if (valid) {
-		$.ajax({
-			url: req_url,
-			type: method,
-			data: JSON.stringify(agent_data),
-			contentType: "application/json; charset=utf-8",
-			success: function (data) {
-				if (data.status === 'failed') {
-					toastr.error(data.error);
-				} else {
-					toastr.clear();
-					$(dialog_id).dialog("close");
-					if (edit) {
-						getAgent(agent_id, false);
-						if (reconfigure) {
-							runInstallationTaskCheck(data.tasks_ids, agent_id);
-						}
-					} else {
-						getAgent(data.id, new_agent = true);
-						runInstallationTaskCheck(data.tasks_ids, data.id);
-					}
-				}
-			}
-		});
-	}
+    const transport = $('#new-agent-result-transport').val();
+    if (transport) data.result_transport = transport;
+    if (edit && reconfigure) data.reconfigure = '1';
+    dialog.dataset.saving = 'true';
+    $(dialog).find('.host-actions button').prop('disabled', true);
+    $.ajax({
+        url: api_v_prefix + '/rmon/agent' + (edit ? '/' + agent_id : ''),
+        type: edit ? 'PUT' : 'POST',
+        data: JSON.stringify(data),
+        contentType: 'application/json; charset=utf-8',
+        success: function (result) {
+            if (result.status === 'failed') {
+                toastr.error(result.error, '', {escapeHtml: true});
+                return;
+            }
+            toastr.clear();
+            dialog.close();
+            getAgent(edit ? agent_id : result.id, !edit);
+            if (!edit || reconfigure) runInstallationTaskCheck(result.tasks_ids, edit ? agent_id : result.id);
+        },
+        error: function (xhr) { RmonUI.notifyRequestError(xhr); },
+        complete: function () {
+            delete dialog.dataset.saving;
+            $(dialog).find('.host-actions button').prop('disabled', false);
+        }
+    });
 }
 function getAgentSettings(agent_id) {
-	$.ajax({
-		url: api_v_prefix + "/rmon/agent/" + agent_id,
-		async: false,
-		success: function (data) {
-			$('#new-agent-name').val(data['name'].replaceAll("'", ""));
-			$('#new-agent-port').val(data['port']);
-			$('#new-agent-result-transport option[value=""]').prop('disabled', Boolean(data.result_transport));
-			$('#new-agent-result-transport').val(data.result_transport || '').selectmenu('refresh');
-			$('#new-agent-select-tr').hide();
-			generateSelect('#new-agent-server-id', data['server_id'], data['server_id'], 'selected')
-			$('#new-agent-server-id').attr('disabled', 'disabled');
-			$('#new-agent-desc').val((data['description'] || '').replaceAll("'", ""));
-			$('#new-agent-enabled').checkboxradio("refresh");
-			if (data['enabled'] == '1') {
-				$('#new-agent-enabled').prop('checked', true)
-			} else {
-				$('#new-agent-enabled').prop('checked', false)
-			}
-			if (data['shared'] == '1') {
-				$('#new-agent-shared').prop('checked', true)
-			} else {
-				$('#new-agent-shared').prop('checked', false)
-			}
-			$('#new-agent-enabled').checkboxradio("refresh");
-			$('#new-agent-shared').checkboxradio("refresh");
-			$('#new-agent-server-id').selectmenu("refresh");
-		}
+    let loaded = false;
+    $.ajax({
+        url: api_v_prefix + '/rmon/agent/' + agent_id,
+        async: false,
+        success: function (data) {
+            $('#new-agent-name').val(data.name);
+            $('#new-agent-port').val(data.port);
+            $('#new-agent-result-transport option[value=""]').prop('disabled', Boolean(data.result_transport));
+            $('#new-agent-result-transport').val(data.result_transport || '');
+            setAgentReceivers(data.receivers, data.routing_pending);
+            $('#new-agent-select-tr').prop('hidden', true);
+            $('#new-agent-server-id').empty().append(new Option(data.server_id, data.server_id, true, true)).prop('disabled', true);
+            $('#new-agent-desc').val(data.description || '');
+            $('#new-agent-enabled').prop('checked', data.enabled == 1);
+            $('#new-agent-shared').prop('checked', data.shared == 1);
+            loaded = true;
+        },
+        error: function (xhr) { RmonUI.notifyRequestError(xhr); }
+    });
+    return loaded;
+}
+let agentReceiverOptions = [], agentReceiverIds = [];
+function loadAgentReceivers() {
+	let loaded = false;
+	$.ajax({url: '/api/v1.0/receivers/endpoints', async: false,
+		success: function (data) { agentReceiverOptions = data.items.filter(e => e.role === 'classic'); setAgentReceivers(); loaded = true; },
+		error: function () { toastr.error(JSON.parse($('#agent-receivers').attr('data-strings')).request_error); }
 	});
+	return loaded;
+}
+function setAgentReceivers(selection = {endpoint_ids: null, policy: 'balance'}, pending = false) {
+	agentReceiverIds = [...(selection.endpoint_ids || [])];
+	$('#new-agent-receiver-mode').val(selection.endpoint_ids === null ? 'inherit' : 'custom');
+	$('#new-agent-receiver-policy').val(selection.policy);
+	$('#new-agent-routing-pending').prop('hidden', !pending);
+	const list = document.getElementById('new-agent-receiver-list'); list.replaceChildren();
+	const options = [...agentReceiverOptions].sort((a, b) => {
+		const x = agentReceiverIds.indexOf(a.id), y = agentReceiverIds.indexOf(b.id);
+		return (x < 0 ? Infinity : x) - (y < 0 ? Infinity : y);
+	});
+	for (const endpoint of options) {
+		const label = document.createElement('label'), input = document.createElement('input');
+		input.type = 'checkbox'; input.checked = agentReceiverIds.includes(endpoint.id);
+		input.addEventListener('change', () => {
+			if (input.checked) agentReceiverIds.push(endpoint.id); else agentReceiverIds.splice(agentReceiverIds.indexOf(endpoint.id), 1);
+		});
+		label.append(input, document.createTextNode(' ' + endpoint.name + ' — ' + endpoint.url));
+		list.append(label);
+	}
+	const toggle = () => { list.hidden = $('#new-agent-receiver-mode').val() !== 'custom'; };
+	$('#new-agent-receiver-mode').off('change.receivers').on('change.receivers', toggle); toggle();
 }
 function getFreeServers() {
-	$.ajax({
-		url: "/rmon/agent/free",
-		async: false,
-		contentType: "application/json; charset=utf-8",
-		success: function (data) {
-			$("#new-agent-server-id option[value!='------']").remove();
-			for (k in data) {
-				generateSelect('#new-agent-server-id', k, data[k])
-			}
-			$('#new-agent-server-id').selectmenu("refresh");
-		}
-	});
+    let loaded = false;
+    $.ajax({
+        url: '/rmon/agent/free',
+        async: false,
+        success: function (data) {
+            const select = document.getElementById('new-agent-server-id');
+            select.replaceChildren(new Option('------', '', true, true));
+            select.options[0].disabled = true;
+            for (const [id, name] of Object.entries(data)) select.add(new Option(name, id));
+            loaded = true;
+        },
+        error: function (xhr) { RmonUI.notifyRequestError(xhr); }
+    });
+    return loaded;
 }
 function getAgentTransportDefaults() {
 	let loaded = false;
@@ -190,7 +155,7 @@ function getAgentTransportDefaults() {
 		success: function (data) {
 			if (!['http', 'https', 'mtls'].includes(data.result_transport)) return;
 			$('#new-agent-result-transport option[value=""]').prop('disabled', true);
-			$('#new-agent-result-transport').val(data.result_transport).selectmenu('refresh');
+			$('#new-agent-result-transport').val(data.result_transport);
 			loaded = true;
 		},
 		error: function (xhr) { toastr.error(xhr.responseJSON?.error || xhr.statusText); }
@@ -198,18 +163,10 @@ function getAgentTransportDefaults() {
 	return loaded;
 }
 function cleanAgentAddForm() {
-	$('#new-agent-name').val('');
-	$('#new-agent-server-id').val('------').change();
-	$('#new-agent-desc').val('');
-	$('#new-agent-result-transport option[value=""]').prop('disabled', false);
-	$('#new-agent-result-transport').val('').selectmenu('refresh');
-	$('#new-agent-shared').prop('checked', false);
-	$('#new-agent-enabled').prop('checked', true);
-	$('#new-agent-shared').checkboxradio("refresh");
-	$('#new-agent-enabled').checkboxradio("refresh");
-	$('#new-agent-server-id').removeAttr('disabled');
-	$('#new-agent-server-id').selectmenu("refresh");
-	$('#new-agent-select-tr').show();
+    document.getElementById('agent-editor-form').reset();
+    $('#new-agent-result-transport option[value=""]').prop('disabled', false);
+    $('#new-agent-server-id').prop('disabled', false);
+    $('#new-agent-select-tr').prop('hidden', false);
 }
 function getAgent(agent_id, new_agent=false) {
 	$.ajax({
@@ -221,7 +178,7 @@ function getAgent(agent_id, new_agent=false) {
 			} else {
 				if (new_agent) {
 					showSmonGroup('agents');
-					$('#smon-group-agents').append(data);
+                    $('#smon-group-agents .agent-cards').append(data);
 				} else {
 					$('#agent-' + agent_id).replaceWith(data);
 				}
@@ -231,23 +188,21 @@ function getAgent(agent_id, new_agent=false) {
 		}
 	});
 }
-function getAgentVersion(server_ip, agent_id){
-	$.ajax({
-		url: '/rmon/agent/version/' + server_ip,
-		type: 'get',
-		dataType: 'json',
-		data: {agent_id: agent_id},
-		success: function (data){
-			try {
-				if (data['update']) {
-					$('#agent-update-' + agent_id).show();
-				}
-				$('#agent-version-' + agent_id).text(data['version'])
-			} catch (e) {
-				console.log(e)
-			}
-		}
-	});
+function getAgentVersion(server_ip, agent_id) {
+    $.ajax({
+        url: '/rmon/agent/version/' + server_ip,
+        type: 'get',
+        dataType: 'json',
+        data: {agent_id: agent_id},
+        success: function (data) {
+            $('#agent-update-' + agent_id).toggle(Boolean(data?.update));
+            $('#agent-version-' + agent_id).text(data?.version || '—');
+        },
+        error: function () {
+            $('#agent-version-' + agent_id).text('—');
+            $('#agent-update-' + agent_id).hide();
+        }
+    });
 }
 function getAgentUptime(server_ip, agent_id){
 	$.ajax({
@@ -269,11 +224,14 @@ function getAgentUptime(server_ip, agent_id){
 	});
 }
 function setAgentStatus(agent_id, running) {
-	$('#agent-' + agent_id).removeClass('div-server-head-up div-server-head-down div-server-head-pause')
-		.addClass(running === null ? 'div-server-head-down' : (running ? 'div-server-head-up' : 'div-server-head-pause'));
-	for (const [action, prefix, enabled] of [['start', 'start', running !== true], ['restart', 'reload', true], ['stop', 'stop', running !== null]]) {
-		$('#' + prefix + '-' + agent_id).children().toggleClass('disabled-button', !enabled)
-			.attr('aria-disabled', String(!enabled)).removeAttr('onclick').off('click.rmonAgent')
+    let state = 'unavailable';
+    if (running === true) state = 'ready';
+    else if (running === false) state = 'stopped';
+    $('#agent-' + agent_id).attr('data-state', state);
+    const label = $('#agent-status-' + agent_id);
+    label.text(label.attr('data-' + state));
+	for (const [action, prefix, enabled] of [['start', 'start', running !== true], ['restart', 'reload', true], ['stop', 'stop', running === true]]) {
+        $('#' + prefix + '-' + agent_id).prop('disabled', !enabled).off('click.rmonAgent')
 			.on('click.rmonAgent', function () { if (enabled) confirmAjaxAction(action, agent_id); });
 	}
 }

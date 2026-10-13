@@ -59,8 +59,8 @@ class Worker:
                                          cancel_callback=guard.cancelled)
                     result['inventory'] = payload['inventory']
             except Exception as error:
-                logger.error('Agent operation %s failed (%s)', task_id, type(error).__name__)
-                result['error'] = 'Agent operation failed. Check SSH access and the operations service logs.'
+                logger.error('Installation operation %s failed (%s)', task_id, type(error).__name__)
+                result['error'] = 'Installation operation failed. Check SSH access and the operations service logs.'
             finally:
                 try:
                     conn.close()
@@ -90,7 +90,11 @@ class Worker:
         if lost or guard.cancelled():
             logger.warning('Operation %s lost its lease; completion was not recorded', task_id)
             return
-        from app.modules.common.agent_transport import record_applied
+        from app.modules.common.agent_transport import record_applied as record_agent
+        from app.modules.receivers.deployment import record_applied as record_server
+        def record_applied(inventory):
+            record_agent(inventory)
+            record_server(inventory)
         if not queue.finish(task_id, owner, result.get('error'),
                             on_success=lambda: record_applied(result['inventory'])):
             logger.warning('Operation %s completion rejected after lease expiry', task_id)

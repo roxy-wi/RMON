@@ -166,31 +166,47 @@
     state: absent
   when: agent_selected_transport == 'https' and agent_tls_ca_file | length == 0
 
+- name: Select receiver addresses for connection checks
+  ansible.builtin.set_fact:
+    agent_probe_endpoints: '{{ agent_result_endpoints | default([]) }}'
+
+- name: Use legacy master addresses when no receivers are selected
+  ansible.builtin.set_fact:
+    agent_probe_endpoints: '{{ agent_probe_endpoints + [endpoint] }}'
+  vars:
+    endpoint:
+      url: "{{ 'http' if agent_selected_transport == 'http' else 'https' }}://{{ item | trim }}:{{ master_port }}"
+      transport: '{{ agent_selected_transport }}'
+  loop: "{{ master_ip.split(',') }}"
+  when:
+    - agent_verify_result_connection | bool
+    - agent_result_endpoints | default([]) | length == 0
+
 - name: Verify result server connections before replacing the agent
   ansible.builtin.uri:
-    url: "{{ 'http' if agent_selected_transport == 'http' else 'https' }}://{{ item | trim }}:{{ master_port }}/"
+    url: '{{ item.url }}/'
     method: GET
     validate_certs: true
     ca_path: "{{ agent_ca_target if agent_tls_ca_file | length > 0 else omit }}"
-    client_cert: "{{ agent_cert_target if agent_selected_transport == 'mtls' else omit }}"
-    client_key: "{{ agent_key_target if agent_selected_transport == 'mtls' else omit }}"
+    client_cert: "{{ agent_cert_target if item.transport == 'mtls' else omit }}"
+    client_key: "{{ agent_key_target if item.transport == 'mtls' else omit }}"
     status_code: [200, 401, 403, 404, 405]
     follow_redirects: none
     use_proxy: false
     timeout: 10
-  loop: "{{ master_ip.split(',') }}"
+  loop: '{{ agent_probe_endpoints }}'
   when: agent_verify_result_connection | bool
   changed_when: false
 
 - name: Check that mTLS rejects connections without a client certificate
   ansible.builtin.uri:
-    url: 'https://{{ item | trim }}:{{ master_port }}/'
+    url: '{{ item.url }}/'
     validate_certs: true
     ca_path: '{{ agent_ca_target }}'
     follow_redirects: none
     use_proxy: false
     timeout: 10
-  loop: "{{ master_ip.split(',') }}"
+  loop: "{{ agent_probe_endpoints | selectattr('transport', 'equalto', 'mtls') | list }}"
   register: agent_unauthenticated_result
   failed_when: false
   changed_when: false

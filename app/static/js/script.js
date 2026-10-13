@@ -192,7 +192,7 @@ $( function() {
 		$("#show").css("cursor", "not-allowed");
 	}
 	$("#tabs").tabs();
-	$("select").selectmenu();
+	$("select").not('.agent-editor select').selectmenu();
 
 	$("[title]").tooltip({
 		"content": function () {
@@ -200,8 +200,8 @@ $( function() {
 		},
 		show: {"delay": 1000}
 	});
-	$("input[type=submit], button").button();
-	$("input[type=checkbox]").checkboxradio();
+	$("input[type=submit], button").not('.host-card button').button();
+	$("input[type=checkbox]").not('.agent-editor input').checkboxradio();
 	$(".controlgroup").controlgroup();
 
     RmonUI.initNavigation();

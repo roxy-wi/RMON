@@ -1,0 +1,31 @@
+<dialog id="add-agent-page" class="host-card agent-editor" aria-labelledby="agent-editor-title"
+        data-create="{{ lang.words.create|title() }} {{ lang.words.agent }}"
+        data-edit="{{ lang.words.edit|title() }} {{ lang.words.agent }}">
+    <form id="agent-editor-form">
+        <header class="host-head">
+            <div class="host-identity">
+                <span class="host-emblem" aria-hidden="true"><i class="fas fa-satellite-dish"></i></span>
+                <h3 id="agent-editor-title"></h3>
+            </div>
+        </header>
+        <fieldset>
+            <legend>{{ lang.words.agent|title() }}</legend>
+            <div class="agent-fields">
+                <label>{{ lang.words.name|title() }}<input id="new-agent-name" required autofocus></label>
+                <label>{{ lang.words.port|title() }}<input id="new-agent-port" type="number" min="1" max="65535" value="5101" required></label>
+                <label id="new-agent-select-tr" class="agent-wide">{{ lang.words.server|title() }}
+                    <select id="new-agent-server-id" required><option value="" disabled selected>------</option></select>
+                </label>
+                <label class="agent-wide">{{ lang.words.desc|title() }}<textarea id="new-agent-desc" rows="2"></textarea></label>
+                <label><input id="new-agent-enabled" type="checkbox" checked>{{ lang.words.enabled|title() }}</label>
+                <label><input id="new-agent-shared" type="checkbox">{{ lang.words.shared|title() }}</label>
+            </div>
+        </fieldset>
+        {% include 'include/agent_transport.html' %}
+        <footer class="host-footer host-actions">
+            <button type="button" id="agent-editor-cancel">{{ lang.words.cancel|title() }}</button>
+            <button type="button" id="agent-editor-reconfigure">{{ lang.words.reconfigure|title() }}</button>
+            <button type="submit" id="agent-editor-save" class="host-primary">{{ lang.words.edit|title() }}</button>
+        </footer>
+    </form>
+</dialog>

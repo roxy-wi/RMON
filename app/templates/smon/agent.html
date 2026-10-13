@@ -13,9 +13,10 @@
 <link href="{{ url_for('static', filename='css/servers.css') }}" rel="stylesheet"/>
 <link href="{{ url_for('static', filename='css/smon.css') }}" rel="stylesheet"/>
 <link href="{{ url_for('static', filename='css/ha.css') }}" rel="stylesheet">
-<div class="up-pannel" style="padding-top: 10px;">
+<link href="{{ url_for('static', filename='css/host_cards.css') }}" rel="stylesheet">
+<div class="agent-overview">
     {% for agent in agents %}
-    <div id="agent-{{agent.id}}" class="div-server-hapwi animated-background"></div>
+    <div id="agent-{{agent.id}}" class="host-card agent-card animated-background"></div>
     <div class="server-info" style="padding-top: 7px;">
         <div class="server-name">
             {{lang.words.agent|title()}} {{lang.words.monitoring}}
@@ -25,7 +26,7 @@
                 </a>
             </span>
         </div>
-        <div class="top-info" style="width: 770px;">
+        <div class="top-info">
             <div id="cpu_div" style="height: 120px;width: 50%;float: left; margin:0; padding:0;">
                 <canvas id="cpu" role="img"></canvas>
             </div>
@@ -36,63 +37,7 @@
     </div>
     {% endfor %}
 </div>
-<div id="add-agent-page" style="display: none;">
-    <table class="overview" id="add-agent-page-overview"
-           title="{{lang.words.create|title()}} {{lang.words.w_a}} {{lang.words.new2}} {{lang.words.agent}}"
-           data-edit="{{lang.words.edit|title()}} {{lang.words.agent}}">
-        {% include 'include/tr_validate_tips.html' %}
-        {% include 'include/agent_transport.html' %}
-        <tr>
-            <td class="padding20">
-                {{lang.words.server|title()}}
-                <span class="need-field">*</span>
-            </td>
-            <td>
-                <select name="new-agent-server-id" id="new-agent-server-id">
-                    <option value="------" disabled selected>------</option>
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td class="padding20" style="width: 50%">
-                {{lang.words.port|title()}}
-                <span class="need-field">*</span>
-            </td>
-            <td>
-                {{ input('new-agent-port', autofocus='autofocus', value='5101') }}
-            </td>
-        </tr>
-        <tr>
-            <td class="padding20" style="width: 50%">
-                {{lang.words.name|title()}}
-                <span class="need-field">*</span>
-            </td>
-            <td>
-                {{ input('new-agent-name', autofocus='autofocus') }}
-            </td>
-        </tr>
-        <tr>
-            <td class="padding20">{{lang.words.enable|title()}}</td>
-            <td>
-                {{ checkbox('new-agent-enabled', checked='checked') }}
-            </td>
-        </tr>
-        <tr>
-            <td class="padding20">{{lang.words.shared|title()}}</td>
-            <td>
-                {{ checkbox('new-agent-shared') }}
-            </td>
-        </tr>
-        <tr>
-            <td class="padding20" style="width: 50%">
-                {{lang.words.desc|title()}}
-            </td>
-            <td>
-                {{ input('new-agent-desc', autofocus='autofocus') }}
-            </td>
-        </tr>
-    </table>
-</div>
+{% include 'include/agent_editor.html' %}
     {% include 'include/smon/checks_for_overview.html' %}
 <div id="dialog-confirm" style="display: none;">
     <p><span class="ui-icon ui-icon-alert" style="float:left; margin:3px 12px 20px 0;"></span>{{lang.phrases.are_you_sure}}</p>

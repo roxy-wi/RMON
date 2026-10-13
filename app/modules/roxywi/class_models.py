@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from pydantic_core import CoreSchema, core_schema
 from pydantic import BaseModel, field_validator, StringConstraints, IPvAnyAddress, AnyUrl, root_validator, \
     GetCoreSchemaHandler, UUID4, model_validator
+from app.modules.receivers.schemas import RoutingInput
 
 DomainName = Annotated[str, StringConstraints(pattern=r"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]{0,61}[a-z0-9]$")]
 
@@ -358,6 +359,7 @@ class RmonAgent(BaseModel):
     reconfigure: Optional[bool] = 0
     region_id: Optional[int] = None
     result_transport: Optional[Literal['http', 'https', 'mtls']] = None
+    receivers: Optional[RoutingInput] = None
 
     @field_validator('description', mode='before')
     @classmethod

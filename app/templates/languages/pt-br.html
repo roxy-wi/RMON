@@ -6,6 +6,7 @@
     "label": "Result delivery",
     "preserve": "Keep current configuration",
     "unknown": "Not yet verified",
+    "unavailable": "Indisponível",
     "pending": "Changes pending application",
     "checked": "Connection verified",
     "help": "Uses the agent owner's group settings. Apply connection changes with Reconfigure. Configure the result server for the selected mode. The agent management API remains HTTP.",
@@ -874,3 +875,6 @@
     "proxy_username": "Usuário do proxy",
     "proxy_password": "Senha do proxy"
 } %}
+
+{% from 'languages/receivers_pt-br.html' import receivers as receiver_labels %}
+{% set receivers = receiver_labels %}

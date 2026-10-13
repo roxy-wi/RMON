@@ -1,56 +1,33 @@
 {% import 'languages/'+lang|default('en')+'.html' as lang %}
-{% from 'include/input_macros.html' import input, checkbox, copy_to_clipboard %}
-<div id="region-{{region.id}}" class="div-server-hapwi">
-    <div class="server-name">
-        <span class="overflow" style="width: 192px;">
-            <span id="region-name-{{region.id}}" style="margin-top: 4px;display: inline-block;">
-                <a href="/rmon/region/{{ region.id }}" title="{{ lang.words.open|title() }} {{ region.name.replace("'","") }}">{{region.name.replace("'","")}}</a>
-            </span>
-            <span id="region-desc-{{region.id}}">{% if region.description %} ({{region.description.replace("'", "")}}) {% endif %}</span>
-        </span>
-    {% if g.user_params['group_id']|string() == region.group_id|string() or g.user_params['role'] == 1 %}
-        <span class="server-action">
-            {% if g.user_params['role'] <= 2 %}
-            <a class="edit" onclick="addRegionDialog('{{region.id}}', true)"></a>
-            <a class="delete" onclick="confirmDeleteRegion('{{region.id}}')"></a>
-            {% endif %}
-        </span>
-    {% endif %}
-    </div>
-    <div class="server-desc">
-        <div>
-            <b>{{ lang.words.region|title() }} ID</b>: {{ region.id }}
-            <b>{{ lang.smon_page.desc.total_checks }}</b>: <span id="total_region_checks-{{ region.id }}"></span>
+<article id="region-{{ region.id }}" class="host-card location-card">
+    <header class="host-head">
+        <div class="host-identity">
+            <span class="host-emblem" aria-hidden="true"><i class="fas fa-map-marker-alt"></i></span>
+            <div>
+                <h3 id="region-name-{{ region.id }}"><a href="/rmon/region/{{ region.id }}">{{ region.name }}</a></h3>
+                <p class="host-subtitle">{{ lang.words.region|title() }} · ID {{ region.id }}</p>
+            </div>
         </div>
-        <div>
-            <b>{{ lang.words.enabled|title() }}</b>: {% if region.enabled %} {{ lang.words.yes|title() }} {% else %} {{ lang.words.no|title() }} {% endif %}
-            <b>{{ lang.words.shared|title() }}</b>: {% if region.shared %} {{ lang.words.yes|title() }} {% else %} {{ lang.words.no|title() }} {% endif %}
-        </div>
-        <div>
-            <b>{{ lang.words.agents|title() }}</b>: <br />
+    </header>
+    {% if region.description %}<p id="region-desc-{{ region.id }}" class="host-note">{{ region.description }}</p>{% endif %}
+    <dl class="host-details">
+        <div><dt>{{ lang.smon_page.desc.total_checks }}</dt><dd id="total_region_checks-{{ region.id }}">—</dd></div>
+        <div><dt>{{ lang.words.enabled|title() }}</dt><dd>{{ lang.words.yes|title() if region.enabled else lang.words.no|title() }}</dd></div>
+        <div><dt>{{ lang.words.shared|title() }}</dt><dd>{{ lang.words.yes|title() if region.shared else lang.words.no|title() }}</dd></div>
+    </dl>
+    <div class="host-members">
+        <span>{{ lang.words.agents|title() }}</span>
+        <div class="host-member-list">
             {% for agent in agents %}
-                <a href="/rmon/agent/{{ agent.id }}" title="{{ lang.words.more|title }} {{ lang.words.info }}">{{agent.name.replace("'","")}}</a><br />
-            {% endfor %}
+            <a href="/rmon/agent/{{ agent.id }}">{{ agent.name }}</a>
+            {% else %}<span>—</span>{% endfor %}
         </div>
     </div>
-</div>
-<script>
-    $( function() {
-        $('.copyToClipboard').hover(function () {
-            $.getScript("/static/js/fontawesome.min.js");
-        });
-        $('.copyToClipboard').click(function () {
-            let str = $(this).attr('data-copy');
-            const el = document.createElement('textarea');
-            el.value = str;
-            el.setAttribute('readonly', '');
-            el.style.position = 'absolute';
-            el.style.left = '-9999px';
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-        });
-    });
-    get_region_count_checks('{{region.id}}');
-</script>
+    {% if (g.user_params['group_id']|string() == region.group_id|string() or g.user_params['role'] == 1) and g.user_params['role'] <= 2 %}
+    <footer class="host-footer host-actions">
+        <button type="button" class="host-primary" onclick="addRegionDialog('{{ region.id }}', true)">{{ lang.words.edit|title() }}</button>
+        <button type="button" class="host-danger" onclick="confirmDeleteRegion('{{ region.id }}')">{{ lang.words.delete|title() }}</button>
+    </footer>
+    {% endif %}
+</article>
+<script>get_region_count_checks('{{ region.id }}');</script>
